@@ -10,9 +10,12 @@ import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Settings, Lock, User, RefreshCw, Globe, Check } from 'lucide-react';
 import { toast } from '@/lib/notify';
+import { cn } from '@/lib/utils';
 
 interface EmployeeSettingsProps {
   employeeId: string;
+  /** En móvil: solo icono, sin etiqueta «Ajustes». */
+  compact?: boolean;
 }
 
 const LANGUAGES = [
@@ -32,7 +35,7 @@ function dicebearSeedFromAvatarUrl(url: string | undefined | null): string | nul
   }
 }
 
-export function EmployeeSettings({ employeeId }: EmployeeSettingsProps) {
+export function EmployeeSettings({ employeeId, compact = false }: EmployeeSettingsProps) {
   const { employees, updateEmployee, currentUser } = useApp();
   const { i18n } = useTranslation();
   const employee = employees.find(e => e.id === employeeId);
@@ -182,9 +185,14 @@ export function EmployeeSettings({ employeeId }: EmployeeSettingsProps) {
       }}
     >
       <DialogTrigger asChild>
-        <Button variant="outline" className="gap-2" size="sm">
+        <Button
+          variant="outline"
+          className={cn('gap-2', compact && 'h-10 w-10 min-h-[44px] min-w-[44px] p-0 shrink-0')}
+          size="sm"
+          aria-label="Ajustes"
+        >
           <Settings className="h-4 w-4" />
-          Ajustes
+          {!compact && 'Ajustes'}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">

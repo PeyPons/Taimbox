@@ -35,6 +35,66 @@ interface PlanningInconsistenciesCardProps {
 
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
+function MobileHoursMetrics({
+  deadlineHours,
+  plannedHours,
+  computedHours,
+}: {
+  deadlineHours: number;
+  plannedHours: number;
+  computedHours: number;
+}) {
+  const columns = [
+    ...(deadlineHours > 0
+      ? [{ label: 'Deadline', value: deadlineHours, valueClass: 'text-slate-900' }]
+      : []),
+    { label: 'Planificado', value: plannedHours, valueClass: 'text-slate-900' },
+    { label: 'Computado', value: computedHours, valueClass: 'text-slate-900' },
+  ];
+
+  return (
+    <div className="rounded-xl border border-slate-200/70 bg-white/80 shadow-[0_1px_2px_rgba(15,23,42,0.04)] overflow-hidden">
+      <div className="flex items-stretch divide-x divide-slate-100">
+        {columns.map((col) => (
+          <div key={col.label} className="flex-1 px-2 py-2.5 text-center min-w-0">
+            <p className="text-[10px] font-medium text-slate-400 leading-none mb-1.5 truncate">
+              {col.label}
+            </p>
+            <p className={cn('text-[15px] font-semibold tabular-nums tracking-tight leading-none', col.valueClass)}>
+              {col.value}h
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function mobileDeltaMeta(difference: number) {
+  if (difference < 0) {
+    return {
+      dot: 'bg-red-500',
+      text: 'text-red-700',
+      label: `${difference}h por planificar`,
+      Icon: TrendingDown,
+    };
+  }
+  if (difference > 0) {
+    return {
+      dot: 'bg-amber-500',
+      text: 'text-amber-700',
+      label: `+${difference}h de desviación`,
+      Icon: TrendingUp,
+    };
+  }
+  return {
+    dot: 'bg-emerald-500',
+    text: 'text-emerald-700',
+    label: 'Sin desviación',
+    Icon: CheckCircle2,
+  };
+}
+
 export const PlanningInconsistenciesCard = memo(function PlanningInconsistenciesCard({
   employeeId,
   viewDate,
@@ -518,7 +578,7 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
             </div>
           </div>
 
-          <div className="space-y-1.5">
+          <div className={cn(isMobile ? "space-y-3" : "space-y-1.5")}>
             {visibleInconsistencies.length === 0 ? (
               <p className="text-sm text-slate-500 py-3">
                 No hay alertas que coincidan con tu búsqueda.
@@ -528,107 +588,172 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
               const hasMore = inc.teammates.length > 0;
               const isPositive = inc.difference > 0;
               const currentEmployee = employees.find(e => e.id === employeeId);
+              const deltaMeta = mobileDeltaMeta(inc.difference);
+              const DeltaIcon = deltaMeta.Icon;
 
               return (
                 <div
                   key={inc.projectId}
                   className={cn(
-                    "border rounded-lg transition-colors",
-                    isPositive ? "bg-amber-50 border-amber-200" : "bg-blue-50 border-blue-200"
+                    "border transition-all overflow-hidden",
+                    isMobile
+                      ? cn(
+                          "rounded-xl bg-white border-slate-200/90 shadow-sm",
+                          inc.difference < 0
+                            ? "border-l-[3px] border-l-red-400/90"
+                            : isPositive
+                              ? "border-l-[3px] border-l-amber-400/90"
+                              : "border-l-[3px] border-l-slate-300"
+                        )
+                      : cn(
+                          "rounded-lg",
+                          isPositive ? "bg-amber-50 border-amber-200" : "bg-blue-50 border-blue-200"
+                        )
                   )}
                 >
                   {/* HEADER - Siempre visible (colapsado) */}
                   <div
                     className={cn(
-                      "flex items-center justify-between gap-2 cursor-pointer hover:bg-white/50 transition-colors touch-manipulation",
-                      isMobile ? "p-3 min-h-[44px]" : "p-2.5"
+                      "cursor-pointer transition-colors touch-manipulation",
+                      isMobile
+                        ? "p-4 space-y-3 active:bg-slate-50/80"
+                        : "flex items-center justify-between gap-2 p-2.5 hover:bg-white/50"
                     )}
                     onClick={() => toggleProject(inc.projectId)}
                   >
-                    <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3">
-                      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                        {/* Botón de expandir/colapsar */}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleProject(inc.projectId);
-                          }}
-                          className={cn("text-slate-400 hover:text-slate-600 transition-colors flex-shrink-0", isMobile && "p-2 -m-2 min-h-[44px] min-w-[44px] flex items-center justify-center")}
-                        >
-                          {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                        </button>
-                        {/* Nombre del proyecto */}
-                        <div className="font-semibold text-sm text-slate-800 truncate min-w-0">
-                          <SensitiveText kind="project" id={inc.projectId}>
-                            {formatProjectName(inc.projectName)}
-                          </SensitiveText>
-                        </div>
-                      </div>
-
-                      {/* Resumen compacto cuando está colapsado (wrap en móvil) */}
-                      {!isExpanded && (
-                        <div className="flex items-center gap-2 text-xs text-slate-600 flex-wrap gap-y-1">
-                          <div className="flex items-center gap-1 text-slate-700 font-semibold">
-                            <User className="h-3 w-3" />
-                            <span>Mis Horas:</span>
+                    <div className={cn(
+                      "min-w-0",
+                      isMobile ? "space-y-3" : "flex-1 flex flex-row items-center gap-3"
+                    )}>
+                      {isMobile ? (
+                        <div className="flex items-start gap-3 min-w-0">
+                          <div className="flex-1 min-w-0 pt-0.5">
+                            <p className="text-[15px] font-semibold text-slate-900 leading-snug line-clamp-2 tracking-tight">
+                              <SensitiveText kind="project" id={inc.projectId}>
+                                {formatProjectName(inc.projectName)}
+                              </SensitiveText>
+                            </p>
                           </div>
-                          {inc.deadlineHours > 0 && (
-                            <span>Deadline: <strong className="text-slate-800">{inc.deadlineHours}h</strong></span>
-                          )}
-                          <span className="text-slate-300">→</span>
-                          <span className="text-blue-600">
-                            Plan: <strong>{inc.plannedHours}h</strong>
-                          </span>
-                          <span className="text-emerald-600">
-                            Comp: <strong>{inc.computedHours}h</strong>
-                          </span>
-                          <span className="text-slate-300">→</span>
-                          {/* DIFERENCIA - Compacta pero destacada */}
-                          <div className={cn(
-                            "flex items-center gap-1 px-2 py-0.5 rounded font-bold text-sm",
-                            inc.difference < 0
-                              ? "bg-red-100 text-red-700 border border-red-300"
-                              : isPositive
-                                ? "bg-amber-100 text-amber-700 border border-amber-300"
-                                : "bg-blue-100 text-blue-700 border border-blue-300"
-                          )}>
-                            {inc.difference < 0 ? (
-                              <>
-                                <TrendingDown className="h-3.5 w-3.5" />
-                                <span>{inc.difference}h</span>
-                              </>
-                            ) : (
-                              <>
-                                {isPositive ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
-                                <span>{isPositive ? '+' : ''}{inc.difference}h</span>
-                              </>
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500">
+                            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-start gap-2 min-w-0">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleProject(inc.projectId);
+                            }}
+                            className="text-slate-400 hover:text-slate-600 transition-colors flex-shrink-0 p-0"
+                          >
+                            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                          </button>
+                          <div className="font-semibold text-sm text-slate-800 truncate min-w-0">
+                            <SensitiveText kind="project" id={inc.projectId}>
+                              {formatProjectName(inc.projectName)}
+                            </SensitiveText>
+                          </div>
+                        </div>
+                      )}
+
+                      {!isExpanded && (
+                        isMobile ? (
+                          <>
+                            <MobileHoursMetrics
+                              deadlineHours={inc.deadlineHours}
+                              plannedHours={inc.plannedHours}
+                              computedHours={inc.computedHours}
+                            />
+
+                            <div className="flex items-center justify-between gap-3 pt-0.5">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', deltaMeta.dot)} aria-hidden />
+                                <span className={cn('inline-flex items-center gap-1 text-sm font-medium tabular-nums truncate', deltaMeta.text)}>
+                                  <DeltaIcon className="h-3.5 w-3.5 shrink-0 opacity-80" />
+                                  {deltaMeta.label}
+                                </span>
+                              </div>
+
+                              {inc.difference < 0 && onAddTasksForProject && (
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onAddTasksForProject(inc.projectId);
+                                  }}
+                                  className="h-9 shrink-0 rounded-lg bg-indigo-600 px-3 text-xs font-medium text-white shadow-sm hover:bg-indigo-700"
+                                  aria-label="Añadir tareas a este proyecto"
+                                >
+                                  <ListPlus className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
+                                  Añadir
+                                </Button>
+                              )}
+                            </div>
+                          </>
+                        ) : (
+                          <div className="flex items-center gap-2 text-xs text-slate-600 flex-wrap gap-y-1">
+                            <div className="flex items-center gap-1 text-slate-700 font-semibold">
+                              <User className="h-3 w-3" />
+                              <span>Mis Horas:</span>
+                            </div>
+                            {inc.deadlineHours > 0 && (
+                              <span>Deadline: <strong className="text-slate-800">{inc.deadlineHours}h</strong></span>
+                            )}
+                            <span className="text-slate-300">→</span>
+                            <span className="text-blue-600">
+                              Plan: <strong>{inc.plannedHours}h</strong>
+                            </span>
+                            <span className="text-emerald-600">
+                              Comp: <strong>{inc.computedHours}h</strong>
+                            </span>
+                            <span className="text-slate-300">→</span>
+                            <div className={cn(
+                              "flex items-center gap-1 px-2 py-0.5 rounded font-bold text-sm",
+                              inc.difference < 0
+                                ? "bg-red-100 text-red-700 border border-red-300"
+                                : isPositive
+                                  ? "bg-amber-100 text-amber-700 border border-amber-300"
+                                  : "bg-blue-100 text-blue-700 border border-blue-300"
+                            )}>
+                              {inc.difference < 0 ? (
+                                <>
+                                  <TrendingDown className="h-3.5 w-3.5" />
+                                  <span>{inc.difference}h</span>
+                                </>
+                              ) : (
+                                <>
+                                  {isPositive ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
+                                  <span>{isPositive ? '+' : ''}{inc.difference}h</span>
+                                </>
+                              )}
+                            </div>
+
+                            {inc.difference < 0 && onAddTasksForProject && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onAddTasksForProject(inc.projectId);
+                                }}
+                                className={cn(addTasksButtonClass, 'flex-shrink-0')}
+                                aria-label="Añadir tareas a este proyecto"
+                              >
+                                <ListPlus className="h-3.5 w-3.5 shrink-0 text-violet-600" strokeWidth={2} aria-hidden />
+                                Añadir
+                              </Button>
                             )}
                           </div>
-
-                          {inc.difference < 0 && onAddTasksForProject && (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onAddTasksForProject(inc.projectId);
-                              }}
-                              className={cn(addTasksButtonClass, 'flex-shrink-0')}
-                              aria-label="Añadir tareas a este proyecto"
-                            >
-                              <ListPlus className="h-3.5 w-3.5 shrink-0 text-violet-600" strokeWidth={2} aria-hidden />
-                              Añadir
-                            </Button>
-                          )}
-                        </div>
+                        )
                       )}
                     </div>
                   </div>
 
                   {/* CONTENIDO EXPANDIDO */}
                   {isExpanded && (
-                    <div className={cn("space-y-2", isMobile ? "px-3 pb-3" : "px-2.5 pb-2.5")}>
-                      {/* Información del proyecto */}
+                    <div className={cn(isMobile ? "px-4 pb-4 pt-0 space-y-3 border-t border-slate-100" : "space-y-2 px-2.5 pb-2.5")}>
                       {(inc.budgetHours > 0 || inc.minimumHours > 0) && (
                         <div className="text-[10px] text-slate-500">
                           {inc.budgetHours > 0 && (
@@ -641,117 +766,189 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
                         </div>
                       )}
 
-                      {/* Tu estado - Estilo similar a compañeros pero destacado */}
-                      <div className="bg-gradient-to-br from-indigo-50 via-indigo-100/30 to-white rounded-lg border-2 border-indigo-400 shadow-lg ring-2 ring-indigo-200/50 min-w-0 overflow-hidden">
-                        <div className={cn("flex gap-3", isMobile ? "flex-col sm:flex-row p-3" : "items-center px-3 py-2.5")}>
-                          <Avatar className={cn("border-2 border-indigo-400 shadow-md ring-2 ring-indigo-200 shrink-0", isMobile ? "h-10 w-10" : "h-8 w-8")}>
-                            <AvatarImage src={currentEmployee?.avatarUrl} />
-                            <AvatarFallback className="text-xs bg-gradient-to-br from-indigo-500 to-indigo-600 text-white font-bold">
-                              {currentEmployee?.name.substring(0, 2).toUpperCase() || 'TU'}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="font-bold text-slate-900 text-sm">Tú</span>
-                              <Badge variant="outline" className="h-4 px-1.5 text-[9px] bg-indigo-100 text-indigo-700 border-indigo-300 font-semibold">
-                                TUS DATOS
-                              </Badge>
-
+                      <div className={cn(
+                        "min-w-0 overflow-hidden",
+                        isMobile
+                          ? "rounded-xl border border-indigo-200/60 bg-gradient-to-b from-indigo-50/40 to-white"
+                          : "bg-gradient-to-br from-indigo-50 via-indigo-100/30 to-white rounded-lg border-2 border-indigo-400 shadow-lg ring-2 ring-indigo-200/50"
+                      )}>
+                        {isMobile ? (
+                          <div className="flex flex-col gap-3 p-4">
+                            <div className="flex items-center gap-3 w-full">
+                              <Avatar className="h-9 w-9 shrink-0 border border-indigo-200/80 shadow-sm">
+                                <AvatarImage src={currentEmployee?.avatarUrl} />
+                                <AvatarFallback className="text-xs bg-gradient-to-br from-indigo-500 to-indigo-600 text-white font-bold">
+                                  {currentEmployee?.name.substring(0, 2).toUpperCase() || 'TU'}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-semibold text-slate-900 text-sm">Tú</span>
+                                  <Badge variant="outline" className="h-5 px-1.5 text-[10px] bg-white/80 text-indigo-700 border-indigo-200 font-medium">
+                                    Tus datos
+                                  </Badge>
+                                </div>
+                              </div>
                               {inc.difference < 0 && onAddTasksForProject && (
                                 <Button
                                   type="button"
-                                  variant="ghost"
+                                  size="sm"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     onAddTasksForProject(inc.projectId);
                                   }}
-                                  className={cn(addTasksButtonClass, 'flex-shrink-0')}
+                                  className="h-9 shrink-0 rounded-lg bg-indigo-600 px-3 text-xs font-medium text-white shadow-sm hover:bg-indigo-700"
                                   aria-label="Añadir tareas a este proyecto"
                                 >
-                                  <ListPlus className="h-3.5 w-3.5 shrink-0 text-violet-600" strokeWidth={2} aria-hidden />
+                                  <ListPlus className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
                                   Añadir
                                 </Button>
                               )}
                             </div>
-                            <div className="flex items-center gap-2 flex-wrap gap-y-1">
-                              {inc.deadlineHours > 0 ? (
-                                <>
-                                  <span className="text-xs text-slate-500">
-                                    Deadline: <span className="font-semibold text-slate-700">{inc.deadlineHours}h</span>
-                                  </span>
-                                  <span className="text-slate-300">→</span>
-                                </>
-                              ) : (
-                                <span className="text-xs text-slate-400 italic">Sin deadline</span>
-                              )}
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-xs text-blue-600">
-                                  Plan: <span className="font-semibold">{inc.plannedHours}h</span>
-                                </span>
-                                <span className="text-xs text-emerald-600">
-                                  Comp: <span className="font-semibold">{inc.computedHours}h</span>
-                                </span>
-                              </div>
-                              <span className="text-slate-300">|</span>
-                              <span className="text-xs font-semibold text-slate-700">
-                                Total: <span className="text-sm">{round2(inc.plannedHours + inc.computedHours)}h</span>
-                              </span>
-                              {inc.deadlineHours > 0 && (
-                                <>
-                                  <span className="text-slate-300">→</span>
-                                  <Badge
-                                    variant="outline"
-                                    className={cn(
-                                      "text-[10px] h-5 px-1.5 font-semibold",
-                                      inc.difference < 0
-                                        ? "bg-red-50 text-red-700 border-red-300"
-                                        : inc.difference > 0
-                                          ? "bg-amber-50 text-amber-700 border-amber-300"
-                                          : "bg-emerald-50 text-emerald-700 border-emerald-300"
-                                    )}
-                                  >
-                                    {inc.difference < 0 ? '' : inc.difference > 0 ? '+' : ''}{inc.difference}h
-                                  </Badge>
-                                </>
-                              )}
-                            </div>
-                            {/* Feedback Directo integrado */}
+
+                            <MobileHoursMetrics
+                              deadlineHours={inc.deadlineHours}
+                              plannedHours={inc.plannedHours}
+                              computedHours={inc.computedHours}
+                            />
+
                             <div className={cn(
-                              "mt-2 flex items-center gap-1.5 px-2 py-1.5 sm:py-1 rounded-md text-xs font-semibold min-h-[44px] sm:min-h-0 flex-wrap",
+                              "flex items-center gap-2 rounded-lg px-3 py-2.5 text-xs font-medium",
                               inc.difference < 0
-                                ? "bg-red-50 text-red-700 border border-red-200"
+                                ? "bg-red-50/80 text-red-700 border border-red-100"
                                 : inc.difference > 0
-                                  ? "bg-amber-50 text-amber-700 border border-amber-200"
-                                  : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                  ? "bg-amber-50/80 text-amber-700 border border-amber-100"
+                                  : "bg-emerald-50/80 text-emerald-700 border border-emerald-100"
                             )}>
                               {inc.difference < 0 ? (
                                 <>
-                                  <AlertTriangle className="h-3 w-3" />
+                                  <AlertTriangle className="h-3.5 w-3.5 shrink-0 opacity-80" />
                                   <span>Te faltan <strong>{Math.abs(inc.difference)}h</strong> por planificar</span>
                                 </>
                               ) : inc.difference > 0 ? (
                                 <>
-                                  <AlertTriangle className="h-3 w-3" />
+                                  <AlertTriangle className="h-3.5 w-3.5 shrink-0 opacity-80" />
                                   <span>Te has excedido en <strong>{inc.difference}h</strong></span>
                                 </>
                               ) : (
                                 <>
-                                  <CheckCircle2 className="h-3 w-3" />
+                                  <CheckCircle2 className="h-3.5 w-3.5 shrink-0 opacity-80" />
                                   <span>Planificación perfecta</span>
                                 </>
                               )}
                             </div>
                           </div>
-                        </div>
+                        ) : (
+                          <div className="flex items-center gap-3 px-3 py-2.5">
+                            <Avatar className="h-8 w-8 border-2 border-indigo-400 shadow-md ring-2 ring-indigo-200 shrink-0">
+                              <AvatarImage src={currentEmployee?.avatarUrl} />
+                              <AvatarFallback className="text-xs bg-gradient-to-br from-indigo-500 to-indigo-600 text-white font-bold">
+                                {currentEmployee?.name.substring(0, 2).toUpperCase() || 'TU'}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="font-bold text-slate-900 text-sm">Tú</span>
+                                <Badge variant="outline" className="h-4 px-1.5 text-[9px] bg-indigo-100 text-indigo-700 border-indigo-300 font-semibold">
+                                  TUS DATOS
+                                </Badge>
+                                {inc.difference < 0 && onAddTasksForProject && (
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      onAddTasksForProject(inc.projectId);
+                                    }}
+                                    className={cn(addTasksButtonClass, 'flex-shrink-0')}
+                                    aria-label="Añadir tareas a este proyecto"
+                                  >
+                                    <ListPlus className="h-3.5 w-3.5 shrink-0 text-violet-600" strokeWidth={2} aria-hidden />
+                                    Añadir
+                                  </Button>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2 flex-wrap gap-y-1">
+                                {inc.deadlineHours > 0 ? (
+                                  <>
+                                    <span className="text-xs text-slate-500">
+                                      Deadline: <span className="font-semibold text-slate-700">{inc.deadlineHours}h</span>
+                                    </span>
+                                    <span className="text-slate-300">→</span>
+                                  </>
+                                ) : (
+                                  <span className="text-xs text-slate-400 italic">Sin deadline</span>
+                                )}
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-xs text-blue-600">
+                                    Plan: <span className="font-semibold">{inc.plannedHours}h</span>
+                                  </span>
+                                  <span className="text-xs text-emerald-600">
+                                    Comp: <span className="font-semibold">{inc.computedHours}h</span>
+                                  </span>
+                                </div>
+                                <span className="text-slate-300">|</span>
+                                <span className="text-xs font-semibold text-slate-700">
+                                  Total: <span className="text-sm">{round2(inc.plannedHours + inc.computedHours)}h</span>
+                                </span>
+                                {inc.deadlineHours > 0 && (
+                                  <>
+                                    <span className="text-slate-300">→</span>
+                                    <Badge
+                                      variant="outline"
+                                      className={cn(
+                                        "text-[10px] h-5 px-1.5 font-semibold",
+                                        inc.difference < 0
+                                          ? "bg-red-50 text-red-700 border-red-300"
+                                          : inc.difference > 0
+                                            ? "bg-amber-50 text-amber-700 border-amber-300"
+                                            : "bg-emerald-50 text-emerald-700 border-emerald-300"
+                                      )}
+                                    >
+                                      {inc.difference < 0 ? '' : inc.difference > 0 ? '+' : ''}{inc.difference}h
+                                    </Badge>
+                                  </>
+                                )}
+                              </div>
+                              <div className={cn(
+                                "mt-2 flex items-center gap-1.5 px-2 py-1.5 rounded-md text-xs font-semibold flex-wrap",
+                                inc.difference < 0
+                                  ? "bg-red-50 text-red-700 border border-red-200"
+                                  : inc.difference > 0
+                                    ? "bg-amber-50 text-amber-700 border border-amber-200"
+                                    : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                              )}>
+                                {inc.difference < 0 ? (
+                                  <>
+                                    <AlertTriangle className="h-3 w-3" />
+                                    <span>Te faltan <strong>{Math.abs(inc.difference)}h</strong> por planificar</span>
+                                  </>
+                                ) : inc.difference > 0 ? (
+                                  <>
+                                    <AlertTriangle className="h-3 w-3" />
+                                    <span>Te has excedido en <strong>{inc.difference}h</strong></span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <CheckCircle2 className="h-3 w-3" />
+                                    <span>Planificación perfecta</span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
 
-
                       {isExpanded && hasMore && (
-                        <div className="pt-3 border-t-2 border-slate-300">
-                          <div className="flex flex-wrap items-center gap-2 text-xs font-bold text-slate-700 uppercase mb-3">
-                            <Users className="h-4 w-4 text-indigo-600 shrink-0" />
-                            <span>Estado del resto del equipo</span>
-                            <Badge variant="outline" className="sm:ml-auto text-[10px] h-5 px-1.5">
+                        <div className={cn(isMobile ? "pt-1 space-y-3" : "pt-3 border-t-2 border-slate-300")}>
+                          <div className={cn(
+                            "flex items-center gap-2 text-slate-700",
+                            isMobile ? "text-sm font-semibold" : "flex-wrap text-xs font-bold uppercase mb-3"
+                          )}>
+                            <Users className={cn("text-indigo-600 shrink-0", isMobile ? "h-4 w-4" : "h-4 w-4")} />
+                            <span>{isMobile ? 'Equipo' : 'Estado del resto del equipo'}</span>
+                            <Badge variant="outline" className={cn("text-[10px] h-5 px-1.5", !isMobile && "sm:ml-auto")}>
                               {inc.teammates.length} {inc.teammates.length === 1 ? 'persona' : 'personas'}
                             </Badge>
                           </div>
@@ -762,61 +959,89 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
                               return (
                                 <div
                                   key={tm.employeeId}
-                                  className="bg-white rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow min-w-0 overflow-hidden"
+                                  className={cn(
+                                    "min-w-0 overflow-hidden",
+                                    isMobile
+                                      ? "rounded-xl border border-slate-200/80 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
+                                      : "bg-white rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow"
+                                  )}
                                 >
-                                  <div className={cn("flex gap-3", isMobile ? "flex-col sm:flex-row p-3" : "items-center px-3 py-2.5")}>
-                                    <Avatar className={cn("border-2 border-slate-200 shadow-sm shrink-0", isMobile ? "h-10 w-10" : "h-8 w-8")}>
-                                      <AvatarImage src={tm.avatarUrl} />
-                                      <AvatarFallback className="text-xs bg-gradient-to-br from-indigo-100 to-slate-100 text-indigo-700 font-semibold">
-                                        {tm.employeeName.substring(0, 2).toUpperCase()}
-                                      </AvatarFallback>
-                                    </Avatar>
-                                    <div className="flex-1 min-w-0">
-                                      <div className="font-semibold text-slate-800 truncate text-sm mb-1">
+                                  <div className={cn("flex gap-3", isMobile ? "flex-col p-3.5" : "items-center px-3 py-2.5")}>
+                                    <div className="flex items-center gap-3 min-w-0">
+                                      <Avatar className={cn(
+                                        "border border-slate-200 shadow-sm shrink-0",
+                                        isMobile ? "h-9 w-9" : "h-8 w-8 border-2"
+                                      )}>
+                                        <AvatarImage src={tm.avatarUrl} />
+                                        <AvatarFallback className="text-xs bg-gradient-to-br from-indigo-100 to-slate-100 text-indigo-700 font-semibold">
+                                          {tm.employeeName.substring(0, 2).toUpperCase()}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                      <div className="font-semibold text-slate-800 truncate text-sm min-w-0">
                                         <SensitiveText kind="employee" id={tm.employeeId}>{tm.employeeName}</SensitiveText>
                                       </div>
-                                      <div className="flex items-center gap-2 flex-wrap gap-y-1">
-                                        {tm.deadlineHours > 0 ? (
-                                          <>
-                                            <span className="text-xs text-slate-500">
-                                              Deadline: <span className="font-semibold text-slate-700">{tm.deadlineHours}h</span>
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      {isMobile ? (
+                                        <>
+                                          <MobileHoursMetrics
+                                            deadlineHours={tm.deadlineHours}
+                                            plannedHours={tm.plannedHours}
+                                            computedHours={tm.computedHours}
+                                          />
+                                          {tm.deadlineHours > 0 && (
+                                            <p className={cn(
+                                              "mt-2 text-xs font-medium tabular-nums",
+                                              tmIsPositive ? "text-amber-700" : tm.difference < 0 ? "text-red-700" : "text-emerald-700"
+                                            )}>
+                                              {tmIsPositive ? '+' : ''}{tm.difference}h de desviación · Total {tmTotal}h
+                                            </p>
+                                          )}
+                                        </>
+                                      ) : (
+                                        <div className="flex items-center gap-2 flex-wrap gap-y-1">
+                                          {tm.deadlineHours > 0 ? (
+                                            <>
+                                              <span className="text-xs text-slate-500">
+                                                Deadline: <span className="font-semibold text-slate-700">{tm.deadlineHours}h</span>
+                                              </span>
+                                              <span className="text-slate-300">→</span>
+                                            </>
+                                          ) : (
+                                            <span className="text-xs text-slate-400 italic">Sin deadline</span>
+                                          )}
+                                          <div className="flex items-center gap-1.5">
+                                            <span className="text-xs text-blue-600">
+                                              Plan: <span className="font-semibold">{tm.plannedHours}h</span>
                                             </span>
-                                            <span className="text-slate-300">→</span>
-                                          </>
-                                        ) : (
-                                          <span className="text-xs text-slate-400 italic">Sin deadline</span>
-                                        )}
-                                        <div className="flex items-center gap-1.5">
-                                          <span className="text-xs text-blue-600">
-                                            Plan: <span className="font-semibold">{tm.plannedHours}h</span>
+                                            <span className="text-xs text-emerald-600">
+                                              Comp: <span className="font-semibold">{tm.computedHours}h</span>
+                                            </span>
+                                          </div>
+                                          <span className="text-slate-300">|</span>
+                                          <span className="text-xs font-semibold text-slate-700">
+                                            Total: <span className="text-sm">{tmTotal}h</span>
                                           </span>
-                                          <span className="text-xs text-emerald-600">
-                                            Comp: <span className="font-semibold">{tm.computedHours}h</span>
-                                          </span>
+                                          {tm.deadlineHours > 0 && (
+                                            <>
+                                              <span className="text-slate-300">→</span>
+                                              <Badge
+                                                variant="outline"
+                                                className={cn(
+                                                  "text-[10px] h-5 px-1.5 font-semibold",
+                                                  tmIsPositive
+                                                    ? "bg-amber-50 text-amber-700 border-amber-300"
+                                                    : tm.difference < 0
+                                                      ? "bg-red-50 text-red-700 border-red-300"
+                                                      : "bg-emerald-50 text-emerald-700 border-emerald-300"
+                                                )}
+                                              >
+                                                {tmIsPositive ? '+' : ''}{tm.difference}h
+                                              </Badge>
+                                            </>
+                                          )}
                                         </div>
-                                        <span className="text-slate-300">|</span>
-                                        <span className="text-xs font-semibold text-slate-700">
-                                          Total: <span className="text-sm">{tmTotal}h</span>
-                                        </span>
-                                        {tm.deadlineHours > 0 && (
-                                          <>
-                                            <span className="text-slate-300">→</span>
-                                            <Badge
-                                              variant="outline"
-                                              className={cn(
-                                                "text-[10px] h-5 px-1.5 font-semibold",
-                                                tmIsPositive
-                                                  ? "bg-amber-50 text-amber-700 border-amber-300"
-                                                  : tm.difference < 0
-                                                    ? "bg-red-50 text-red-700 border-red-300"
-                                                    : "bg-emerald-50 text-emerald-700 border-emerald-300"
-                                              )}
-                                            >
-                                              {tmIsPositive ? '+' : ''}{tm.difference}h
-                                            </Badge>
-                                          </>
-                                        )}
-                                      </div>
+                                      )}
                                     </div>
                                   </div>
                                 </div>

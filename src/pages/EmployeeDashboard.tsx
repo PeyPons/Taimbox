@@ -41,9 +41,16 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
   from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { NewTaskRow, Deadline } from '@/types';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { ChevronLeft, ChevronRight, CalendarDays, TrendingUp, Calendar, Clock, CheckCircle2, Plus, X, Check, ListPlus, AlertTriangle, HelpCircle, RotateCcw, FileDown, CheckSquare, AlertCircle, Trash2, Sun } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CalendarDays, TrendingUp, Calendar, Clock, CheckCircle2, Plus, X, Check, ListPlus, AlertTriangle, HelpCircle, RotateCcw, FileDown, CheckSquare, AlertCircle, Trash2, Sun, MoreHorizontal, Users, BarChart3 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { startOfMonth, endOfMonth, format, isSameMonth, parseISO, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from '@/lib/notify';
@@ -100,6 +107,7 @@ export default function EmployeeDashboard() {
   const [dialogDeadlines, setDialogDeadlines] = useState<Deadline[]>([]);
   const [showConfirmClose, setShowConfirmClose] = useState(false);
   const [pendingCloseState, setPendingCloseState] = useState<boolean | null>(null);
+  const [actionsDropdownOpen, setActionsDropdownOpen] = useState(false);
 
   const { showTour, resetTour } = useWelcomeTour();
   const isMobile = useIsMobile();
@@ -471,6 +479,58 @@ export default function EmployeeDashboard() {
     batchPreview: batchPreviewContext,
   });
 
+  const monthKey = format(currentMonth, 'yyyy-MM');
+
+  const dashboardDetailTabs = useMemo(() => ([
+    {
+      value: 'coherence',
+      icon: CheckCircle2,
+      label: t('team.dashboard.tabCoherence', 'Control de planificación'),
+      shortLabel: t('team.dashboard.tabCoherenceShort', 'Planificación'),
+      activeClass: 'data-[state=active]:bg-red-50 data-[state=active]:text-red-700 data-[state=active]:border-red-200/80',
+      iconClass: 'text-red-500',
+    },
+    {
+      value: 'dependencies',
+      icon: AlertCircle,
+      label: t('team.dashboard.tabDependencies', 'Dependencias'),
+      shortLabel: t('team.dashboard.tabDependenciesShort', 'Dependencias'),
+      activeClass: 'data-[state=active]:bg-orange-50 data-[state=active]:text-orange-700 data-[state=active]:border-orange-200/80',
+      iconClass: 'text-orange-500',
+    },
+    {
+      value: 'projects',
+      icon: ListPlus,
+      label: t('team.dashboard.tabProjects', 'Mis proyectos'),
+      shortLabel: t('team.dashboard.tabProjectsShort', 'Proyectos'),
+      activeClass: 'data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 data-[state=active]:border-indigo-200/80',
+      iconClass: 'text-indigo-500',
+    },
+    {
+      value: 'teammates',
+      icon: Users,
+      label: t('team.dashboard.tabTeammates', 'Compañeros'),
+      shortLabel: t('team.dashboard.tabTeammatesShort', 'Compañeros'),
+      activeClass: 'data-[state=active]:bg-slate-100 data-[state=active]:text-slate-800 data-[state=active]:border-slate-300/80',
+      iconClass: 'text-slate-500',
+    },
+    {
+      value: 'metrics',
+      icon: BarChart3,
+      label: t('team.dashboard.tabMetrics', 'Métricas'),
+      shortLabel: t('team.dashboard.tabMetricsShort', 'Métricas'),
+      activeClass: 'data-[state=active]:bg-emerald-50 data-[state=active]:text-emerald-700 data-[state=active]:border-emerald-200/80',
+      iconClass: 'text-emerald-500',
+    },
+  ] satisfies Array<{
+    value: string;
+    icon: LucideIcon;
+    label: string;
+    shortLabel: string;
+    activeClass: string;
+    iconClass: string;
+  }>), [t]);
+
   // Cargar deadlines del mes (filtrados por agencia)
   const loadDeadlinesForMonth = useCallback(async (month: Date) => {
     const monthKey = format(startOfMonth(month), 'yyyy-MM');
@@ -575,122 +635,231 @@ export default function EmployeeDashboard() {
       <PendingTransfersPanel />
 
       {/* 1. CABECERA UNIFICADA */}
-      <div className="flex items-center gap-3 bg-white/70 backdrop-blur-sm rounded-xl border border-slate-200/80 p-2 shadow-sm">
-        {/* Left: View toggle */}
-        {showToggle && myEmployeeProfile && (
-          <div className="flex items-center rounded-lg bg-slate-100/80 p-0.5 gap-0.5 shrink-0" data-tour="dashboard-view-toggle">
-            <Button
-              type="button"
-              variant={activeView === 'weekly' ? 'default' : 'ghost'}
-              size="sm"
-              className={cn('h-8 px-3 text-xs font-medium', isMobile && 'h-11 min-h-[44px]')}
-              onClick={() => void setView('weekly')}
-              disabled={isSavingViewPref}
-            >
-              {t('team.dashboard.myWeek', 'Mi semana')}
-            </Button>
-            <Button
-              type="button"
-              variant={activeView === 'daily' ? 'default' : 'ghost'}
-              size="sm"
-              className={cn('h-8 px-3 gap-1.5 text-xs font-medium', isMobile && 'h-11 min-h-[44px]')}
-              onClick={() => void setView('daily')}
-              disabled={isSavingViewPref}
-            >
-              <Sun className="h-3.5 w-3.5 shrink-0" /> {t('team.dashboard.myDay', 'Mi día')}
-            </Button>
+      {isMobile ? (
+        <div className="space-y-2.5 bg-white/70 backdrop-blur-sm rounded-xl border border-slate-200/80 p-2.5 shadow-sm">
+          <div className="flex items-center gap-2">
+            {showToggle && myEmployeeProfile ? (
+              <div className="flex flex-1 items-center rounded-lg bg-slate-100/80 p-0.5 gap-0.5 min-w-0" data-tour="dashboard-view-toggle">
+                <Button
+                  type="button"
+                  variant={activeView === 'weekly' ? 'default' : 'ghost'}
+                  size="sm"
+                  className="flex-1 h-10 min-h-[44px] px-2 text-xs font-medium"
+                  onClick={() => void setView('weekly')}
+                  disabled={isSavingViewPref}
+                >
+                  {t('team.dashboard.myWeek', 'Mi semana')}
+                </Button>
+                <Button
+                  type="button"
+                  variant={activeView === 'daily' ? 'default' : 'ghost'}
+                  size="sm"
+                  className="flex-1 h-10 min-h-[44px] px-2 gap-1 text-xs font-medium"
+                  onClick={() => void setView('daily')}
+                  disabled={isSavingViewPref}
+                >
+                  <Sun className="h-3.5 w-3.5 shrink-0" />
+                  {t('team.dashboard.myDay', 'Mi día')}
+                </Button>
+              </div>
+            ) : (
+              <div className="flex-1" />
+            )}
+
+            <DropdownMenu open={actionsDropdownOpen} onOpenChange={setActionsDropdownOpen}>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-10 w-10 min-h-[44px] min-w-[44px] p-0 shrink-0 border-slate-200 bg-white"
+                  aria-label={t('common.more', 'Más acciones')}
+                  data-tour="actions-dropdown"
+                >
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                {isCrmExportEnabled && (
+                  <>
+                    <DropdownMenuItem
+                      onClick={handleExportCRM}
+                      disabled={!myEmployeeProfile?.crmUserId}
+                      className="gap-2 text-sm min-h-[44px]"
+                      data-tour="crm-export"
+                    >
+                      <FileDown className="h-4 w-4 text-purple-600" />
+                      {t('team.dashboard.exportCrm', 'Exportar a CRM')}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
+                <DropdownMenuItem
+                  onClick={() => setShowGoals(true)}
+                  className="gap-2 text-sm min-h-[44px]"
+                  data-tour="goals"
+                >
+                  <TrendingUp className="h-4 w-4 text-emerald-600" />
+                  {t('team.dashboard.goals', 'Objetivos')}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setShowAbsences(true)}
+                  className="gap-2 text-sm min-h-[44px]"
+                  data-tour="absences"
+                >
+                  <Calendar className="h-4 w-4 text-amber-600" />
+                  {t('team.dashboard.absences', 'Ausencias')}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={resetTour} className="gap-2 text-sm min-h-[44px]">
+                  <RotateCcw className="h-4 w-4" />
+                  {t('team.dashboard.repeatTour', 'Repetir tour')}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <EmployeeSettings employeeId={myEmployeeProfile.id} compact />
           </div>
-        )}
 
-        {!showToggle && <div className="shrink-0" />}
+          <div className="space-y-1.5">
+            {isWeeklyFeedbackEnabled && (
+              <Button
+                onClick={() => setShowWeeklyDialog(true)}
+                size="sm"
+                className={cn(
+                  'w-full h-10 min-h-[44px] gap-1.5 text-xs font-medium shadow-sm',
+                  hasPendingWeeklyTasks
+                    ? 'bg-amber-600 text-white hover:bg-amber-700 animate-pulse shadow-amber-500/30'
+                    : 'bg-primary text-white hover:bg-primary/90'
+                )}
+                data-tour="weekly-button"
+              >
+                {hasPendingWeeklyTasks ? <AlertCircle className="h-3.5 w-3.5" /> : <CheckSquare className="h-3.5 w-3.5" />}
+                {t('team.dashboard.weekly', 'Weekly')}
+              </Button>
+            )}
 
-        <div className="h-6 w-px bg-slate-200/80 shrink-0 hidden sm:block" />
+            <div className="grid grid-cols-2 gap-1.5">
+              <Button
+                size="sm"
+                onClick={() => openAddTasksDialog()}
+                variant="outline"
+                className="h-10 min-h-[44px] gap-1 px-2 text-xs font-medium border-slate-200 bg-white hover:bg-slate-50"
+                data-tour="add-tasks"
+              >
+                <ListPlus className="h-3.5 w-3.5 shrink-0 text-primary" />
+                <span className="truncate">{t('team.dashboard.addTasks', 'Añadir tareas')}</span>
+              </Button>
 
-        {/* Center: Primary actions */}
-        <div className="flex items-center gap-1.5 flex-1 min-w-0 overflow-x-auto no-scrollbar">
-          {isWeeklyFeedbackEnabled && (
-            <Button
-              onClick={() => setShowWeeklyDialog(true)}
-              size="sm"
-              className={cn(
-                "gap-1.5 shrink-0 text-xs font-medium shadow-sm transition-all",
-                hasPendingWeeklyTasks
-                  ? "bg-amber-600 text-white hover:bg-amber-700 animate-pulse shadow-amber-500/30"
-                  : "bg-primary text-white hover:bg-primary/90"
-              )}
-              data-tour="weekly-button"
-            >
-              {hasPendingWeeklyTasks ? <AlertCircle className="h-3.5 w-3.5" /> : <CheckSquare className="h-3.5 w-3.5" />}
-              {t('team.dashboard.weekly', 'Weekly')}
-            </Button>
-          )}
-
-          <Button size="sm" onClick={() => openAddTasksDialog()} variant="outline" className="gap-1.5 shrink-0 text-xs font-medium border-slate-200 bg-white hover:bg-slate-50" data-tour="add-tasks">
-            <ListPlus className="h-3.5 w-3.5 text-primary" /> {t('team.dashboard.addTasks', 'Añadir tareas')}
-          </Button>
-
-          <Button size="sm" onClick={() => setIsAddingExtra(true)} variant="outline" className="gap-1.5 shrink-0 text-xs font-medium border-slate-200 bg-white hover:bg-slate-50" data-tour="internal-tasks">
-            <Clock className="h-3.5 w-3.5 text-slate-500" /> {t('team.dashboard.internalTask', 'Tarea interna')}
-          </Button>
-
-          <div className="h-6 w-px bg-slate-200/80 shrink-0 mx-0.5" aria-hidden />
-
-          {isCrmExportEnabled && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleExportCRM}
-              disabled={!myEmployeeProfile?.crmUserId}
-              className="gap-1.5 shrink-0 text-xs font-medium border-slate-200 bg-white hover:bg-slate-50"
-              data-tour="crm-export"
-            >
-              <FileDown className="h-3.5 w-3.5 text-purple-600" /> {t('team.dashboard.exportCrm', 'Exportar a CRM')}
-            </Button>
-          )}
-
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setShowGoals(true)}
-            className="gap-1.5 shrink-0 text-xs font-medium border-slate-200 bg-white hover:bg-slate-50"
-            data-tour="goals"
-          >
-            <TrendingUp className="h-3.5 w-3.5 text-emerald-600" /> {t('team.dashboard.goals', 'Objetivos')}
-          </Button>
-
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setShowAbsences(true)}
-            className="gap-1.5 shrink-0 text-xs font-medium border-slate-200 bg-white hover:bg-slate-50"
-            data-tour="absences"
-          >
-            <Calendar className="h-3.5 w-3.5 text-amber-600" /> {t('team.dashboard.absences', 'Ausencias')}
-          </Button>
-
-          <Tooltip>
-            <TooltipTrigger asChild>
+              <Button
+                size="sm"
+                onClick={() => setIsAddingExtra(true)}
+                variant="outline"
+                className="h-10 min-h-[44px] gap-1 px-2 text-xs font-medium border-slate-200 bg-white hover:bg-slate-50"
+                data-tour="internal-tasks"
+              >
+                <Clock className="h-3.5 w-3.5 shrink-0 text-slate-500" />
+                <span className="truncate">{t('team.dashboard.internalTask', 'Tarea interna')}</span>
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-center gap-3 bg-white/70 backdrop-blur-sm rounded-xl border border-slate-200/80 p-2 shadow-sm">
+          {showToggle && myEmployeeProfile && (
+            <div className="flex items-center rounded-lg bg-slate-100/80 p-0.5 gap-0.5 shrink-0" data-tour="dashboard-view-toggle">
               <Button
                 type="button"
+                variant={activeView === 'weekly' ? 'default' : 'ghost'}
                 size="sm"
-                variant="outline"
-                onClick={resetTour}
-                className="h-8 w-8 p-0 shrink-0 border-slate-200 bg-white hover:bg-slate-50"
-                aria-label={t('team.dashboard.repeatTour', 'Repetir tour')}
-                data-tour="repeat-tour"
+                className="h-8 px-3 text-xs font-medium"
+                onClick={() => void setView('weekly')}
+                disabled={isSavingViewPref}
               >
-                <RotateCcw className="h-3.5 w-3.5 text-slate-600" />
+                {t('team.dashboard.myWeek', 'Mi semana')}
               </Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">{t('team.dashboard.repeatTour', 'Repetir tour')}</TooltipContent>
-          </Tooltip>
-        </div>
+              <Button
+                type="button"
+                variant={activeView === 'daily' ? 'default' : 'ghost'}
+                size="sm"
+                className="h-8 px-3 gap-1.5 text-xs font-medium"
+                onClick={() => void setView('daily')}
+                disabled={isSavingViewPref}
+              >
+                <Sun className="h-3.5 w-3.5 shrink-0" /> {t('team.dashboard.myDay', 'Mi día')}
+              </Button>
+            </div>
+          )}
 
-        {/* Right: Secondary actions */}
-        <div className="flex items-center gap-1 shrink-0">
-          <EmployeeSettings employeeId={myEmployeeProfile.id} />
+          {!showToggle && <div className="shrink-0" />}
+
+          <div className="h-6 w-px bg-slate-200/80 shrink-0" />
+
+          <div className="flex items-center gap-1.5 flex-1 min-w-0">
+            {isWeeklyFeedbackEnabled && (
+              <Button
+                onClick={() => setShowWeeklyDialog(true)}
+                size="sm"
+                className={cn(
+                  'gap-1.5 shrink-0 text-xs font-medium shadow-sm transition-all',
+                  hasPendingWeeklyTasks
+                    ? 'bg-amber-600 text-white hover:bg-amber-700 animate-pulse shadow-amber-500/30'
+                    : 'bg-primary text-white hover:bg-primary/90'
+                )}
+                data-tour="weekly-button"
+              >
+                {hasPendingWeeklyTasks ? <AlertCircle className="h-3.5 w-3.5" /> : <CheckSquare className="h-3.5 w-3.5" />}
+                {t('team.dashboard.weekly', 'Weekly')}
+              </Button>
+            )}
+
+            <Button size="sm" onClick={() => openAddTasksDialog()} variant="outline" className="gap-1.5 shrink-0 text-xs font-medium border-slate-200 bg-white hover:bg-slate-50" data-tour="add-tasks">
+              <ListPlus className="h-3.5 w-3.5 text-primary" /> {t('team.dashboard.addTasks', 'Añadir tareas')}
+            </Button>
+
+            <Button size="sm" onClick={() => setIsAddingExtra(true)} variant="outline" className="gap-1.5 shrink-0 text-xs font-medium border-slate-200 bg-white hover:bg-slate-50" data-tour="internal-tasks">
+              <Clock className="h-3.5 w-3.5 text-slate-500" /> {t('team.dashboard.internalTask', 'Tarea interna')}
+            </Button>
+          </div>
+
+          <div className="flex items-center gap-1 shrink-0">
+            <DropdownMenu open={actionsDropdownOpen} onOpenChange={setActionsDropdownOpen}>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 px-2 gap-1.5 text-xs text-slate-500 hover:text-slate-700"
+                  data-tour="actions-dropdown"
+                >
+                  <MoreHorizontal className="h-4 w-4" />
+                  <span>{t('common.more', 'Más')}</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                {isCrmExportEnabled && (
+                  <>
+                    <DropdownMenuItem onClick={handleExportCRM} disabled={!myEmployeeProfile?.crmUserId} className="gap-2 text-sm" data-tour="crm-export">
+                      <FileDown className="h-4 w-4 text-purple-600" /> {t('team.dashboard.exportCrm', 'Exportar a CRM')}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
+                <DropdownMenuItem onClick={() => setShowGoals(true)} className="gap-2 text-sm" data-tour="goals">
+                  <TrendingUp className="h-4 w-4 text-emerald-600" /> {t('team.dashboard.goals', 'Objetivos')}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowAbsences(true)} className="gap-2 text-sm" data-tour="absences">
+                  <Calendar className="h-4 w-4 text-amber-600" /> {t('team.dashboard.absences', 'Ausencias')}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={resetTour} className="gap-2 text-sm">
+                  <RotateCcw className="h-4 w-4" /> {t('team.dashboard.repeatTour', 'Repetir tour')}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <EmployeeSettings employeeId={myEmployeeProfile.id} />
+          </div>
         </div>
-      </div>
+      )}
 
       {activeView === 'daily' && myEmployeeProfile && (
         <MyDayView
@@ -788,23 +957,50 @@ export default function EmployeeDashboard() {
 
       {/* 4. VISTA DETALLADA POR PESTAÑAS */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="w-full justify-start h-auto p-1 bg-white border border-slate-200 flex-nowrap overflow-x-auto custom-scrollbar gap-2 min-w-0 pr-2">
-          <TabsTrigger value="coherence" className="px-4 py-2 min-h-[44px] min-w-[9rem] whitespace-nowrap data-[state=active]:bg-red-50 data-[state=active]:text-red-700 shrink-0">
-            <CheckCircle2 className="h-4 w-4 mr-2 shrink-0" /> {t('team.dashboard.tabCoherence', 'Control de planificación')}
-          </TabsTrigger>
-          <TabsTrigger value="dependencies" className="px-4 py-2 min-h-[44px] min-w-[7rem] whitespace-nowrap data-[state=active]:bg-orange-50 data-[state=active]:text-orange-700 shrink-0">
-            <AlertCircle className="h-4 w-4 mr-2 shrink-0" /> {t('team.dashboard.tabDependencies', 'Dependencias')}
-          </TabsTrigger>
-          <TabsTrigger value="projects" className="px-4 py-2 min-h-[44px] min-w-[7rem] whitespace-nowrap data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 shrink-0">
-            <ListPlus className="h-4 w-4 mr-2 shrink-0" /> {t('team.dashboard.tabProjects', 'Mis proyectos')}
-          </TabsTrigger>
-          <TabsTrigger value="teammates" className="px-4 py-2 min-h-[44px] min-w-[7rem] whitespace-nowrap shrink-0">
-            <div className="flex items-center gap-2">{t('team.dashboard.tabTeammates', 'Compañeros')}</div>
-          </TabsTrigger>
-          <TabsTrigger value="metrics" className="px-4 py-2 min-h-[44px] min-w-[7.5rem] whitespace-nowrap shrink-0">
-            <div className="flex items-center gap-2">{t('team.dashboard.tabMetrics', 'Métricas')}</div>
-          </TabsTrigger>
-        </TabsList>
+        <div className={cn('relative min-w-0', isMobile && 'rounded-xl border border-slate-200/90 bg-white shadow-sm')}>
+          <TabsList className={cn(
+            'w-full justify-start h-auto flex-nowrap min-w-0',
+            isMobile
+              ? 'gap-1.5 p-1.5 overflow-x-auto no-scrollbar snap-x snap-mandatory scroll-smooth bg-transparent border-0 rounded-xl'
+              : 'p-1 bg-white border border-slate-200 overflow-x-auto custom-scrollbar gap-2 pr-2'
+          )}>
+            {dashboardDetailTabs.map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <TabsTrigger
+                  key={tab.value}
+                  value={tab.value}
+                  className={cn(
+                    'shrink-0 transition-all snap-start',
+                    isMobile
+                      ? cn(
+                          'inline-flex items-center gap-1.5 rounded-lg px-3 py-2 min-h-[44px] text-xs font-medium whitespace-nowrap',
+                          'data-[state=inactive]:bg-slate-100/80 data-[state=inactive]:text-slate-600',
+                          'data-[state=active]:shadow-sm',
+                          tab.activeClass
+                        )
+                      : cn(
+                          'px-4 py-2 min-h-[44px] whitespace-nowrap',
+                          tab.value === 'coherence' && 'min-w-[9rem]',
+                          tab.value === 'metrics' && 'min-w-[7.5rem]',
+                          (tab.value === 'dependencies' || tab.value === 'projects' || tab.value === 'teammates') && 'min-w-[7rem]',
+                          (tab.value === 'coherence' || tab.value === 'dependencies' || tab.value === 'projects') && tab.activeClass
+                        )
+                  )}
+                >
+                  <Icon className={cn('shrink-0', isMobile ? cn('h-4 w-4', tab.iconClass) : 'h-4 w-4 mr-2')} />
+                  {isMobile ? tab.shortLabel : tab.label}
+                </TabsTrigger>
+              );
+            })}
+          </TabsList>
+          {isMobile && (
+            <div
+              className="pointer-events-none absolute inset-y-0 right-0 w-6 rounded-r-xl bg-gradient-to-l from-white via-white/80 to-transparent"
+              aria-hidden
+            />
+          )}
+        </div>
 
         <div className="mt-4">
           <TabsContent value="dependencies" className="space-y-6 focus-visible:outline-none">
