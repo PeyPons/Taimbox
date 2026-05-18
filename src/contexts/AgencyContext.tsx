@@ -57,10 +57,31 @@ export interface UserAgency {
   isPrimary: boolean;
 }
 
+interface UserAgencyMembershipRow {
+  agency_id: string;
+  is_impersonation?: boolean;
+}
+
+function computeSupportImpersonation(
+  agencyId: string | null | undefined,
+  membershipRows: UserAgencyMembershipRow[],
+  employeeAgencyIds: string[],
+): boolean {
+  if (!agencyId) return false;
+  const impersonating =
+    membershipRows.some(
+      (row) => row.agency_id === agencyId && row.is_impersonation === true,
+    );
+  const hasEmployeeInAgency = employeeAgencyIds.includes(agencyId);
+  return impersonating && !hasEmployeeInAgency;
+}
+
 interface AgencyContextType {
   currentAgency: Agency | null;
   isLoading: boolean;
   error: string | null;
+  /** Platform admin en user_agencies.is_impersonation sin empleado en esa agencia. */
+  isSupportImpersonation: boolean;
   refreshAgency: () => Promise<void>;
   completeSetup: () => Promise<void>;
   updateAgencyName: (name: string) => Promise<void>;
@@ -90,6 +111,7 @@ const AgencyContext = createContext<AgencyContextType | undefined>(undefined);
 export function AgencyProvider({ children }: { children: React.ReactNode }) {
   const { user, isInitialized: isAuthInitialized } = useAuth();
   const [currentAgency, setCurrentAgency] = useState<Agency | null>(null);
+  const [isSupportImpersonation, setIsSupportImpersonation] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [availableAgencies, setAvailableAgencies] = useState<Array<{ agencyId: string; agencyName: string }>>([]);
@@ -103,6 +125,7 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
   const fetchAgencyForUser = useCallback(async () => {
     if (!user?.email) {
       setCurrentAgency(null);
+      setIsSupportImpersonation(false);
       setIsLoading(false);
       isInitialLoadRef.current = false;
       return;
@@ -135,9 +158,10 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
 
       const { data: uaMembershipRows } = await supabase
         .from('user_agencies')
-        .select('agency_id')
+        .select('agency_id, is_impersonation')
         .eq('user_id', user.id);
-      const membershipAgencyIds = [...new Set((uaMembershipRows || []).map(r => r.agency_id))];
+      const membershipRows = (uaMembershipRows || []) as UserAgencyMembershipRow[];
+      const membershipAgencyIds = [...new Set(membershipRows.map(r => r.agency_id))];
       const urlAgencyInMembership =
         !!(urlAgencyFromQuery && membershipAgencyIds.includes(urlAgencyFromQuery));
 
@@ -177,7 +201,7 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
         if (userIdError || !selectedEmployee?.agency_id) {
           // Fallback: agencias ya cargadas en user_agencies; buscar empleado en esas agencias
           console.debug('[AgencyContext] Fallback: buscando empleado en agencias de user_agencies:', user.id);
-          const userAgenciesData = uaMembershipRows || [];
+          const userAgenciesData = membershipRows;
 
           if (userAgenciesData.length > 0) {
             const agencyIds = userAgenciesData.map(ua => ua.agency_id);
@@ -238,6 +262,13 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
                     agenciesList.filter(a => agencyIds.includes(a.agencyId)),
                   );
                   setCurrentAgency(agency);
+                  setIsSupportImpersonation(
+                    computeSupportImpersonation(
+                      selectedAgencyId,
+                      membershipRows,
+                      allEmployees.map((emp) => emp.agency_id),
+                    ),
+                  );
                   if (isInitialLoad) setIsLoading(false);
                   return;
                 }
@@ -250,6 +281,7 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
               userIdError: userIdError
             });
             setCurrentAgency(null);
+            setIsSupportImpersonation(false);
             if (isInitialLoad) {
               setIsLoading(false);
             }
@@ -313,6 +345,9 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
       // No usar is_primary por encima de URL/localStorage: si no, al cambiar de agencia el contexto
       // seguía cargando la “primaria” y el planificador / Realtime parecían no aplicar cambios.
       const storageKeyAgency = `selected_agency_${user.id}`;
+      const savedAgencyId =
+        typeof window !== 'undefined' ? localStorage.getItem(storageKeyAgency) : null;
+      const impersonationAgencyId = membershipRows.find((row) => row.is_impersonation === true)?.agency_id;
       let agencyIdToLoad: string | null = null;
 
       if (urlAgencyInMembership && urlAgencyFromQuery) {
@@ -325,11 +360,27 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
           localStorage.setItem(storageKeyAgency, urlAgencyFromQuery);
         }
         console.debug('[AgencyContext] agencyIdToLoad priorizado por ?agency= en membresía:', urlAgencyFromQuery);
+      } else if (
+        savedAgencyId &&
+        membershipAgencyIds.includes(savedAgencyId) &&
+        !allEmployees.some((emp) => emp.agency_id === savedAgencyId)
+      ) {
+        agencyIdToLoad = savedAgencyId;
+        console.debug('[AgencyContext] agencyIdToLoad: agencia guardada sin empleado (soporte):', savedAgencyId);
+      } else if (
+        impersonationAgencyId &&
+        membershipAgencyIds.includes(impersonationAgencyId) &&
+        !allEmployees.some((emp) => emp.agency_id === impersonationAgencyId)
+      ) {
+        agencyIdToLoad = impersonationAgencyId;
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(storageKeyAgency, impersonationAgencyId);
+        }
+        console.debug('[AgencyContext] agencyIdToLoad: impersonación activa:', impersonationAgencyId);
       } else if (usedExplicitAgencyChoice) {
-        const savedOnly = typeof window !== 'undefined' ? localStorage.getItem(storageKeyAgency) : null;
-        if (savedOnly && membershipAgencyIds.includes(savedOnly)) {
-          agencyIdToLoad = savedOnly;
-          const empSaved = allEmployees.find(emp => emp.agency_id === savedOnly);
+        if (savedAgencyId && membershipAgencyIds.includes(savedAgencyId)) {
+          agencyIdToLoad = savedAgencyId;
+          const empSaved = allEmployees.find(emp => emp.agency_id === savedAgencyId);
           if (empSaved) {
             selectedEmployee = empSaved;
           }
@@ -375,6 +426,7 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
         console.error('[AgencyContext] Error obteniendo agencia:', agencyError?.message ?? agencyError);
         setError('No se pudo cargar la información de la agencia');
         setCurrentAgency(null);
+        setIsSupportImpersonation(false);
         if (isInitialLoad) {
           setIsLoading(false);
         }
@@ -382,6 +434,10 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
       }
 
       const agency = await mapSupabaseAgency(agencyData);
+      const employeeAgencyIds = allEmployees.map((emp) => emp.agency_id);
+      setIsSupportImpersonation(
+        computeSupportImpersonation(agencyIdToLoad, membershipRows, employeeAgencyIds),
+      );
 
       // Solo actualizar si la agencia cambió para evitar loops infinitos (incl. token Google Ads).
       // Incluir plan/suscripción: si no, cambios vía webhook (Stripe) no refrescan la UI aunque la BD esté bien.
@@ -410,6 +466,7 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
       console.error('[AgencyContext] Error inesperado:', err);
       setError('Error al cargar la agencia');
       setCurrentAgency(null);
+      setIsSupportImpersonation(false);
       isInitialLoadRef.current = false;
     } finally {
       // Asegurarnos de quitar el loading solo si lo pusimos (carga inicial)
@@ -582,6 +639,7 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
     currentAgency,
     isLoading,
     error,
+    isSupportImpersonation,
     refreshAgency,
     completeSetup,
     updateAgencyName,

@@ -222,7 +222,7 @@ export default function AdminAgenciesPage() {
       });
       if (error) throw error;
       toast.success(t("admin.agencies.redirecting", "Redirigiendo a la app con la agencia seleccionada"));
-      navigate(`/dashboard?agency=${agencyId}`);
+      navigate(`/planner?agency=${agencyId}`);
     } catch (e: unknown) {
       console.error("[AdminAgenciesPage] Error accediendo como agencia:", e);
       toast.error(t("admin.agencies.errImpersonate", "No se pudo acceder como esta agencia"));

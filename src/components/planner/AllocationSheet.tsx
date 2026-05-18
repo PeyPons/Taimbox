@@ -267,8 +267,16 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
     addTaskRow, removeTaskRow, updateTaskRow, handleSave, startEditFull, handleDeleteClick,
     confirmDelete, toggleTaskCompletion, startInlineEdit, saveInlineEdit, updateInlineHours, moveTaskToWeek,
     closeForm, recentlyToggled, cancelInlineEdit, clearNewTasks,
-    canSubmitBatchAdd, batchAddHint
-  } = useAllocationActions(employeeId, weeks, canAssignToOthers, isWeeklyEnabled);
+    canSubmitBatchAdd, batchAddHint, batchPreviewContext
+  } = useAllocationActions(employeeId, weeks, canAssignToOthers, isWeeklyEnabled, {
+    batchPreview: {
+      allocations,
+      viewDate,
+      weeks,
+      getProjectBudgetStatus,
+      getEmployeeLoadForWeek,
+    },
+  });
 
   const toggleTaskCompletionWithSums = useCallback(
     async (allocation: Parameters<typeof toggleTaskCompletion>[0]) => {
@@ -285,7 +293,8 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
     employeeId,
     getEmployeeLoadForWeek,
     getProjectBudgetStatus,
-    viewMonth: viewDate
+    viewMonth: viewDate,
+    batchPreview: batchPreviewContext,
   });
 
   // Encontrar el índice de la semana clicada cuando weeks esté disponible
@@ -1906,6 +1915,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
         formatProjectName={formatProjectName}
         canSubmitBatchAdd={canSubmitBatchAdd}
         batchAddHint={batchAddHint}
+        batchPreview={batchPreviewContext}
       />
 
       {/* Tour interactivo del planificador */}

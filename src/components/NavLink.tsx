@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { buildAgencyAwarePath, useSupportAgencyView } from "@/hooks/useSupportAgencyView";
 
 interface NavLinkProps {
   to: string;
@@ -8,12 +9,27 @@ interface NavLinkProps {
   children: React.ReactNode;
   active?: boolean;
   className?: string;
+  /** Si false, no añade ?agency= en vista de soporte (p. ej. /admin). */
+  preserveAgency?: boolean;
 }
 
-export function NavLink({ to, icon: Icon, children, active, className }: NavLinkProps) {
+export function NavLink({
+  to,
+  icon: Icon,
+  children,
+  active,
+  className,
+  preserveAgency = true,
+}: NavLinkProps) {
+  const { agencyId } = useSupportAgencyView();
+  const resolvedTo =
+    preserveAgency && !to.startsWith('/admin')
+      ? buildAgencyAwarePath(to, agencyId)
+      : to;
+
   return (
     <Link
-      to={to}
+      to={resolvedTo}
       className={cn(
         "flex items-center gap-3 px-3 py-2 rounded-md transition-all duration-200 text-sm font-medium group",
         active 

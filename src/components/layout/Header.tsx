@@ -1,7 +1,8 @@
-import { Menu, LayoutDashboard } from "lucide-react";
+import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { useImpersonationStatus } from "@/components/admin/ImpersonationBanner";
+import { TaimboxLogo } from "@/components/brand/TaimboxLogo";
 import { cn } from "@/lib/utils";
 
 interface HeaderProps {
@@ -17,12 +18,11 @@ export function Header({ onMenuClick }: HeaderProps) {
                 isImpersonating && "shadow-[inset_0_2px_0_0_#f59e0b]"
             )}
         >
-            <div className="flex items-center gap-2 font-bold text-lg tracking-tight text-white">
-                <div className="h-7 w-7 rounded bg-primary flex items-center justify-center">
-                    <LayoutDashboard className="h-4 w-4 text-white" />
-                </div>
-                <span>Taimbox</span>
-            </div>
+            <TaimboxLogo
+                variant="dark"
+                markClassName="h-7 w-7"
+                wordmarkClassName="font-bold text-lg tracking-tight text-white"
+            />
 
             <div className="flex items-center gap-1">
                 <NotificationBell />

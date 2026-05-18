@@ -9,14 +9,26 @@ const VARIANT_CLASS: Record<CtaBlockType["variant"], string> = {
     "bg-white/10 hover:bg-white/15 text-white px-10 py-6 text-lg font-bold rounded-xl border border-white/20 transition-all duration-300",
 };
 
+function isStaticAssetHref(href: string): boolean {
+  return href.startsWith("/recursos/") || /\.(xlsx|xls|pdf|zip)$/i.test(href);
+}
+
 export function CtaBlock({ block }: { block: CtaBlockType }) {
+  const button = (
+    <Button size="lg" className={VARIANT_CLASS[block.variant]}>
+      {block.text}
+    </Button>
+  );
+
   return (
     <div className="text-center my-10">
-      <LocaleLink to={block.href}>
-        <Button size="lg" className={VARIANT_CLASS[block.variant]}>
-          {block.text}
-        </Button>
-      </LocaleLink>
+      {isStaticAssetHref(block.href) ? (
+        <a href={block.href} download>
+          {button}
+        </a>
+      ) : (
+        <LocaleLink to={block.href}>{button}</LocaleLink>
+      )}
     </div>
   );
 }

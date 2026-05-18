@@ -12,6 +12,7 @@ import { toast } from "@/lib/notify";
 import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { Rocket, LogIn } from "lucide-react";
 import { useAppTranslation } from "@/hooks/useAppTranslation";
+import { TaimboxMark } from "@/components/brand/TaimboxLogo";
 
 type LoginFormValues = {
   email: string;
@@ -269,11 +270,7 @@ export default function Login() {
       <Card className="w-full max-w-md bg-white shadow-xl">
         <CardHeader className="space-y-1">
           <div className="flex justify-center mb-4">
-            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center shadow-lg">
-              <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
+            <TaimboxMark className="h-12 w-12" variant="light" />
           </div>
           <CardTitle className="text-2xl text-center font-bold text-slate-900">
             {t("auth.brand")}

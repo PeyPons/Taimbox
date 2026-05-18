@@ -73,8 +73,16 @@ export function CoherenceAllocationEditDialog({
     clearNewTasks,
     canSubmitBatchAdd,
     batchAddHint,
+    batchPreviewContext,
   } = useAllocationActions(employeeId, weeks, canAssignToOthers, isWeeklyEnabled, {
     allowEditPastWeeks: true,
+    batchPreview: {
+      allocations,
+      viewDate,
+      weeks,
+      getProjectBudgetStatus,
+      getEmployeeLoadForWeek,
+    },
   });
 
   const getAvailableDependencies = useMemo(
@@ -99,6 +107,7 @@ export function CoherenceAllocationEditDialog({
     getEmployeeLoadForWeek,
     getProjectBudgetStatus,
     viewMonth: viewDate,
+    batchPreview: batchPreviewContext,
   });
 
   useEffect(() => {
@@ -183,6 +192,7 @@ export function CoherenceAllocationEditDialog({
       formatProjectName={formatProjectName}
       canSubmitBatchAdd={canSubmitBatchAdd}
       batchAddHint={batchAddHint}
+      batchPreview={batchPreviewContext}
     />
   );
 }

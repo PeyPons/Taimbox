@@ -1,8 +1,9 @@
 import { useMemo } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { useAgency } from '@/contexts/AgencyContext';
-import { UserPermissions, ROUTE_PERMISSIONS } from '@/types/permissions';
+import { UserPermissions, ROUTE_PERMISSIONS, SUPPORT_IMPERSONATION_PERMISSIONS } from '@/types/permissions';
 import { canAccessRoute, hasPermissionFlag, resolveUserPermissions } from '@/utils/permissionsUtils';
+import { usePlatformAdmin } from '@/hooks/usePlatformAdmin';
 
 /**
  * Hook para verificar permisos del usuario actual basados en su rol
@@ -10,13 +11,18 @@ import { canAccessRoute, hasPermissionFlag, resolveUserPermissions } from '@/uti
 export function usePermissions() {
   const { currentUser } = useApp();
   const { currentAgency } = useAgency();
+  const { isPlatformAdmin } = usePlatformAdmin();
 
   const permissions = useMemo(() => {
+    // Vista de soporte: platform admin con agencia cargada pero sin perfil de empleado en ella.
+    if (isPlatformAdmin && currentAgency && !currentUser) {
+      return SUPPORT_IMPERSONATION_PERMISSIONS;
+    }
     return resolveUserPermissions({
       currentUserRole: currentUser?.role,
       agencyRoles: currentAgency?.settings?.roles,
     });
-  }, [currentUser, currentAgency]);
+  }, [currentUser, currentAgency, isPlatformAdmin]);
 
   /**
    * Verifica si el usuario tiene permiso para acceder a una ruta

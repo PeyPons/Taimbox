@@ -82,6 +82,12 @@ export const DEFAULT_PERMISSIONS: UserPermissions = {
   can_assign_tasks_to_others: true,
 };
 
+/** Platform admin impersonando agencia sin perfil de empleado: vista operativa de soporte. */
+export const SUPPORT_IMPERSONATION_PERMISSIONS: UserPermissions = {
+  ...DEFAULT_PERMISSIONS,
+  can_access_api_keys: false,
+};
+
 /**
  * Etiquetas amigables para los permisos
  */

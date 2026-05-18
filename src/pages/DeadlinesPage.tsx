@@ -49,6 +49,7 @@ import { useDeadlinesPageData } from '@/hooks/useDeadlinesPageData';
 import { useDeadlinesEditing } from '@/hooks/useDeadlinesEditing';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { useAppTranslation } from '@/hooks/useAppTranslation';
+import { useSupportAgencyView, buildAgencyAwarePath } from '@/hooks/useSupportAgencyView';
 
 export default function DeadlinesPage() {
   const { t } = useAppTranslation();
@@ -60,6 +61,7 @@ export default function DeadlinesPage() {
   const isManager = canAccess('/planner') || canAccess('/reports') || canAccess('/operaciones') || canAccess('/finanzas');
   const canEditDeadlines = isManager || canAccess('/deadlines');
   const { currentAgency } = useAgency();
+  const { isSupportView } = useSupportAgencyView();
   const { selectedDepartmentId } = useDepartmentView();
 
   const departments = useMemo(() => normalizeDepartments(currentAgency?.settings?.departments), [currentAgency?.settings?.departments]);
@@ -134,6 +136,7 @@ export default function DeadlinesPage() {
     canEditDeadlines,
     selectedMonth,
     currentUser,
+    skipEditLocks: isSupportView,
     employees: employees ?? [],
     getProjectDeadline,
     getProject: (projectId) => {

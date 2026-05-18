@@ -22,6 +22,8 @@ import { ProjectImpactSummary } from '@/components/planner/ProjectImpactSummary'
 import { BatchTaskRow } from '@/components/planner/BatchTaskRow';
 import { useAllocationSheet, ProjectBudgetStatus } from '@/hooks/useAllocationSheet';
 import { useTasksImpact } from '@/hooks/useTasksImpact';
+import { useBatchCommitPreview } from '@/hooks/useBatchCommitPreview';
+import { createPlannerBatchPreviewContext } from '@/utils/plannerBatchPreview';
 import { AbsencesSheet } from '@/components/team/AbsencesSheet';
 import { ProfessionalGoalsSheet } from '@/components/team/ProfessionalGoalsSheet';
 import { getWeeksForMonth, getMonthName, isAllocationInEffectiveMonth, normalizeWeekStart, getWeekEndDate } from '@/utils/dateUtils';
@@ -52,7 +54,7 @@ import { useIntegration } from '@/hooks/useIntegration';
 import { PendingTransfersPanel } from '@/components/transfers/TaskTransferComponents';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
 import { usePlatformAdmin } from '@/hooks/usePlatformAdmin';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 
 const INTERNAL_CLIENT_NAME = 'Interno';
 const INTERNAL_PROJECT_NAME = 'Gestiones internas';
@@ -197,6 +199,37 @@ export default function EmployeeDashboard() {
   }, [projects, clients]);
 
   const { getProjectBudgetStatus } = useAllocationSheet(myEmployeeProfile?.id || '', currentMonth);
+
+  const batchCommitPreview = useBatchCommitPreview(
+    myEmployeeProfile
+      ? {
+          allocations,
+          pendingRows: newTasks,
+          viewDate: currentMonth,
+          defaultEmployeeId: myEmployeeProfile.id,
+          weeks,
+          getProjectBudgetStatus,
+          getEmployeeLoadForWeek,
+        }
+      : null
+  );
+  const batchPreviewContext = useMemo(
+    () =>
+      batchCommitPreview.previewContext ??
+      createPlannerBatchPreviewContext({
+        allocations,
+        pendingRows: newTasks,
+        viewDate: currentMonth,
+        defaultEmployeeId: myEmployeeProfile?.id ?? '',
+      }),
+    [
+      batchCommitPreview.previewContext,
+      allocations,
+      newTasks,
+      currentMonth,
+      myEmployeeProfile?.id,
+    ]
+  );
 
   const getOrCreateInternalProject = async (): Promise<string | null> => {
     if (internalProject) return internalProject.id;
@@ -352,6 +385,7 @@ export default function EmployeeDashboard() {
     const validTasks = newTasks.filter(t => t.projectId && t.taskName.trim() && parseFloat(t.hours) > 0);
     if (validTasks.length === 0) { toast.error("Añade al menos una tarea válida"); return; }
 
+    batchCommitPreview.captureSnapshot(validTasks);
     setIsSavingTasks(true);
     try {
       for (const task of validTasks) {
@@ -373,6 +407,7 @@ export default function EmployeeDashboard() {
       console.error('Error guardando tareas:', error);
       toast.error('Error al guardar las tareas');
     } finally {
+      batchCommitPreview.clearSnapshot();
       setIsSavingTasks(false);
     }
   };
@@ -432,7 +467,8 @@ export default function EmployeeDashboard() {
     employeeId: myEmployeeProfile?.id || '',
     getEmployeeLoadForWeek,
     getProjectBudgetStatus,
-    viewMonth: currentMonth
+    viewMonth: currentMonth,
+    batchPreview: batchPreviewContext,
   });
 
   // Cargar deadlines del mes (filtrados por agencia)
@@ -496,6 +532,9 @@ export default function EmployeeDashboard() {
   }
 
   if (!myEmployeeProfile) {
+    if (!isPlatformAdminLoading && isPlatformAdmin && currentAgency) {
+      return <Navigate to={`/planner?agency=${currentAgency.id}`} replace />;
+    }
     if (!isPlatformAdminLoading && isPlatformAdmin) {
       return (
         <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -881,7 +920,7 @@ export default function EmployeeDashboard() {
                 <BatchTaskRow
                   key={task.id}
                   task={task}
-                  otherTasks={newTasks}
+                  batchPreview={batchPreviewContext}
                   updateTaskRow={updateTaskRow}
                   removeTaskRow={removeTaskRow}
                   canRemove={newTasks.length > 1}
@@ -947,7 +986,7 @@ export default function EmployeeDashboard() {
                       <BatchTaskRow
                         key={task.id}
                         task={task}
-                        otherTasks={newTasks}
+                        batchPreview={batchPreviewContext}
                         updateTaskRow={updateTaskRow}
                         removeTaskRow={removeTaskRow}
                         canRemove={newTasks.length > 1}
@@ -985,7 +1024,7 @@ export default function EmployeeDashboard() {
                   variant="vertical"
                   newTasks={newTasks}
                   projects={projects}
-                  allocations={allocations}
+                  batchPreview={batchPreviewContext}
                   viewDate={currentMonth}
                   getProjectBudgetStatus={getProjectBudgetStatus}
                   getEmployeeLoadForWeek={getEmployeeLoadForWeek}

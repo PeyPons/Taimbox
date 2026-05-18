@@ -2,9 +2,9 @@
   "s09": {
     "badge": "Start with 4 people and one project",
     "titleLine1": "Measure at month-end.",
-    "titleLine2": "If it's not what we promised, we'll help you leave.",
+    "titleLine2": "If it's not a fit, we'll help you leave.",
     "ctaPrimary": "Start free",
-    "ctaSecondary": "The cost of not tracking",
+    "ctaSecondary": "What not tracking costs (3 min)",
     "trust1": "14 days Business free",
     "trust2": "No credit card",
     "trust3": "Export anytime"
@@ -60,7 +60,7 @@
     "kicker": "For the whole team",
     "title": "Every role gets its",
     "titleHighlight": "own entry point",
-    "subtitle": "Not another PM tool. Each role opens exactly what they need.",
+    "subtitle": "Not another PM tool. Each role lands where it belongs: plan, execute, track the month, or close the numbers.",
     "mockNav": {
       "home": "My space",
       "planner": "Planner",
@@ -237,74 +237,74 @@
           { "name": "LocalBiz", "pct": 71, "target": 54, "color": "rgb(245, 158, 11)" },
           { "name": "StartupHub", "pct": 42, "target": 54, "color": "rgb(239, 68, 68)" }
         ],
-        "footerTitle": "F1–F4 on screen · Excel / CSV / API export",
-        "footerSub": "No black box · every euro auditable"
+        "footerTitle": "All four metrics on screen · export anytime",
+        "footerSub": "Every euro traceable — no hidden formulas"
       }
     },
     "roles": [
       {
         "label": "Leaders",
-        "badgeText": "For leaders",
-        "heading": "All hours, one grid",
-        "description": "The planner shows impact before you save: dependencies, absences, and costs split across months.",
+        "badgeText": "Leadership & ops",
+        "heading": "The whole team in one grid",
+        "description": "See impact before you save: who gets overloaded, time off, and what happens when a week straddles two months.",
         "bullets": [
-          "Assignment with impact calculation and redistribution assistant",
-          "Blockers and dependencies visible before they escalate",
-          "Real cost when a week spans two months (to the cent)"
+          "Live impact on every assignment, plus a redistribution assistant",
+          "Dependencies and blockers before they blow up",
+          "True cost when a week sits across two months — to the cent"
         ],
-        "linkText": "See resource planner",
+        "linkText": "Explore the planner",
         "linkHref": "/planificador-recursos"
       },
       {
         "label": "Team members",
-        "badgeText": "For team members",
-        "heading": "My space: your week at a glance",
-        "description": "Per-task timer, clear priorities, and a weekly close validated in two minutes without chasing Slack links.",
+        "badgeText": "Day-to-day delivery",
+        "heading": "Your week without tab-hopping",
+        "description": "Timer on the task, clear priorities, and a weekly close in a couple of minutes — no digging through Slack for yesterday's link.",
         "bullets": [
-          "Per-task timer in sidebar and Time page",
-          "Today's priorities and blockers without Slack chasing",
-          "Fast weekly close: 2 minutes per person"
+          "Timer in the sidebar and on the Time page",
+          "Today's priorities and blockers at a glance",
+          "Quick weekly close: about two minutes per person"
         ],
-        "linkText": "See employee dashboard",
+        "linkText": "See My space",
         "linkHref": "/dashboard-empleado"
       },
       {
         "label": "Project managers",
-        "badgeText": "For project managers",
-        "heading": "Operations tracking without Excel",
-        "description": "Project status, blocking tasks, and planning coherence — the same view as /operaciones.",
+        "badgeText": "Project delivery",
+        "heading": "Operations tracking without another spreadsheet",
+        "description": "Status per project, what's blocking the team, and whether the plan holds — the same view you use every day.",
         "bullets": [
-          "Filters for progress, delay, over-hours, or no activity",
-          "Team-blocking tasks visible in the month",
-          "Weekly Forecast to redistribute load"
+          "Filter by delay, over-hours, missing plan, or no activity",
+          "Team-blocking tasks visible for the month",
+          "Weekly Forecast to rebalance load before it hurts"
         ],
-        "linkText": "See project control",
+        "linkText": "See operations tracking",
         "linkHref": "/control-proyectos"
       },
       {
         "label": "HR",
-        "badgeText": "For HR",
-        "heading": "Capacity, absences, and load in detail",
-        "description": "Planned absences, real effective capacity (not theoretical), and deviations by person and department, month by month.",
+        "badgeText": "People & capacity",
+        "heading": "Load, absences, and headroom per person",
+        "description": "How much each person can take on, with holidays in the same planner grid and drift by department.",
         "bullets": [
-          "Absences and holidays integrated in the planner",
-          "Real effective capacity per person and team",
-          "Load and hours reports exportable for payroll"
+          "Absences and holidays where you already plan",
+          "Effective capacity, not just theoretical",
+          "Hours and load ready to export for payroll or reporting"
         ],
-        "linkText": "See team management",
+        "linkText": "See team capacity",
         "linkHref": "/gestion-equipos"
       },
       {
         "label": "Finance",
-        "badgeText": "For finance",
-        "heading": "Financial Health with auditable formulas",
-        "description": "Mid-month you already know accrued revenue, EHR, pacing, and margin per project — transparent F1–F4 formulas and exports.",
+        "badgeText": "Month-end numbers",
+        "heading": "Profitability you can audit",
+        "description": "Labor cost, accrued revenue, margin, and effective hourly rate (F1–F4) on one consistent base. Mid-month you already know where you stand.",
         "bullets": [
-          "Transparent F1–F4 and EHR, not a black box",
-          "Accrued revenue to the cent, health per project and agency",
-          "Export Excel/CSV/JSON or via API"
+          "F1 through F4 and EHR without a black box",
+          "Accrued revenue to the cent, by project and agency",
+          "Export to Excel, CSV, JSON, or connect via API"
         ],
-        "linkText": "See profitability reports",
+        "linkText": "See profitability",
         "linkHref": "/reportes-rentabilidad"
       }
     ]
@@ -361,9 +361,9 @@
   },
   "s05": {
     "kicker": "Connected, not locked in",
-    "title": "Your real pipeline,",
-    "titleHighlight": "read by us",
-    "subtitle": "Read-only OAuth for Ads, REST API, and full exports. Your data stays yours.",
+    "title": "Your real stack,",
+    "titleHighlight": "without rewriting it",
+    "subtitle": "Connect Ads read-only, pull data via API, or export whenever you want. What goes in and out stays under your control.",
     "integrations": [
       {
         "title": "Google Ads",
@@ -393,7 +393,7 @@
     "ppcKicker": "Live PPC monitor",
     "ppcTitle": "Your Meta and Google campaigns,",
     "ppcTitleHighlight": "read inside Taimbox",
-    "ppcBody": "Connect once with read-only OAuth. Taimbox syncs spend, ROAS, CPL, and conversions hourly, groups accounts by client, and projects month-end. If a campaign will blow the budget, you know on day 12, not the last day.",
+    "ppcBody": "Connect once, read-only. Taimbox pulls spend, ROAS, CPL, and conversions hourly, groups accounts by client, and shows where you'll land this month. If a campaign is going over budget, you see it mid-month — not on the last day.",
     "ppcBullet1Prefix": "States",
     "ppcBullet1Suffix": "per account and campaign.",
     "ppcBullets": [
@@ -451,9 +451,9 @@
   "s06": {
     "badge": "Security by design",
     "title": "Your client's data.",
-    "titleHighlight": "Encrypted, in the EU",
-    "titleSuffix": ", never crossed.",
-    "subtitle": "Postgres RLS isolation in the database — not in the app. Read-only OAuth for Ads. PCI delegated to Stripe. Encrypted daily backups.",
+    "titleHighlight": "Encrypted in the EU",
+    "titleSuffix": ", never mixed across agencies.",
+    "subtitle": "Each agency is isolated in the database, not just in the app. Ads are read-only, payments go through Stripe, and daily backups are encrypted.",
     "cards": [
       {
         "title": "Per-agency isolation (RLS)",
@@ -488,12 +488,12 @@
     "kicker": "Plans",
     "title": "Start with four people.",
     "titleHighlight": "Grow at your pace.",
-    "subtitle": "Early Adopter active: the first agencies keep 50% lifetime before official pricing applies.",
+    "subtitle": "Join now as an early adopter and keep 50% for life before official pricing kicks in.",
     "plans": [
       {
         "id": "starter",
         "name": "Starter",
-        "desc": "To try Taimbox with your small team.",
+        "desc": "Try it with a small team, no strings attached.",
         "price": "€0",
         "priceSuffix": "/mo · always free",
         "features": [
@@ -510,7 +510,7 @@
       {
         "id": "pro",
         "name": "Pro",
-        "desc": "For agencies already living in spreadsheets.",
+        "desc": "For teams already living between Excel and Slack.",
         "priceWas": "€99/mo",
         "price": "€49",
         "priceSuffix": "/mo",
@@ -530,7 +530,7 @@
       {
         "id": "business",
         "name": "Business",
-        "desc": "For agencies with PPC, deadlines, and finance oversight.",
+        "desc": "For teams with PPC, tight deadlines, and close financial control.",
         "priceWas": "€249/mo",
         "price": "€149",
         "priceSuffix": "/mo",
@@ -549,7 +549,7 @@
       {
         "id": "enterprise",
         "name": "Enterprise",
-        "desc": "For holdings and agencies > 50 people with SLA.",
+        "desc": "For holdings and teams over 50 people with SLA.",
         "price": "Custom",
         "features": [
           "Unlimited people",
@@ -570,7 +570,7 @@
   "s04": {
     "kicker": "The operating system",
     "title": "From planning to forecasting",
-    "titleHighlight": "without switching apps",
+    "titleHighlight": "without changing tools",
     "mockupAria": "Product views in Taimbox",
     "ctaPrimary": "Try the full flow",
     "ctaGuide": "See detailed guide",
@@ -578,45 +578,45 @@
       {
         "number": "01",
         "label": "Plan",
-        "heading": "Assign with visible impact",
-        "description": "The planner grid shows what happens before you save. Impact assignment, visible dependencies, respected absences, and costs split across months.",
+        "heading": "Assign while seeing the impact",
+        "description": "On the grid you see what happens before you save: dependencies, time off, and cost when a week straddles two months.",
         "bullets": [
-          "Live impact calculation on assignment",
+          "Impact on every assignment, live",
           "Dependencies and blockers before they escalate",
-          "Prorated costs to the cent when a week spans two months"
+          "Cost prorated to the cent across months"
         ]
       },
       {
         "number": "02",
         "label": "Execute",
-        "heading": "Close the week in two minutes",
-        "description": "The employee day stops being four tabs. Per-task timer, clear dependencies, and a weekly close in two minutes without Slack links.",
+        "heading": "Close the week in no time",
+        "description": "Timer on the task, an ordered day, and a weekly close that doesn't depend on chasing links in Slack.",
         "bullets": [
-          "Per-task timer in sidebar and Time page",
-          "Dependencies and daily priorities at a glance",
-          "Fast weekly close: 2 minutes per person"
+          "Timer in the sidebar and on the Time page",
+          "Daily priorities and dependencies, clear",
+          "Weekly close in about two minutes per person"
         ]
       },
       {
         "number": "03",
         "label": "Measure",
-        "heading": "Health radar without a black box",
-        "description": "Mid-month you know accrued revenue and pacing per project. Financial Health shows where margin bleeds, with auditable formulas.",
+        "heading": "Know how the month is going before close",
+        "description": "Accrued revenue and pace per project, live. Profitability shows where margin slips, with formulas you can review.",
         "bullets": [
-          "Accrued revenue and live pacing per project",
-          "Transparent F1–F4 and EHR",
-          "Agency Financial Health and Excel/CSV/JSON or API export"
+          "Accrued revenue and pacing per project, up to date",
+          "F1 through F4 and hourly rate without a black box",
+          "Agency view and export to Excel, CSV, JSON, or API"
         ]
       },
       {
         "number": "04",
         "label": "Forecast",
-        "heading": "Rebalance before Excel warns you",
-        "description": "Weekly Forecast redistributes load before Excel does. Monthly deadlines with suggestions among people who share projects, OKRs, and coherence checks.",
+        "heading": "Adjust load before the surprise",
+        "description": "Weekly Forecast shares hours across the same project team. Deadlines and coherence flag issues before the committee meeting.",
         "bullets": [
-          "Weekly Forecast redistribution among shared projects",
-          "Monthly deadlines with load limits and deviation",
-          "Coherence check: warns before the committee"
+          "Suggested redistribution within the same project team",
+          "Deadlines with load limits and deviation",
+          "Planning coherence: a heads-up before the meeting"
         ]
       }
     ]

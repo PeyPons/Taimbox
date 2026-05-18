@@ -4,23 +4,31 @@ import { cn } from '@/lib/utils';
 import { AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Project, Allocation, NewTaskRow, Deadline, Employee } from '@/types';
+import { Project, NewTaskRow, Deadline, Employee } from '@/types';
 import { ProjectBudgetStatus } from '@/hooks/useAllocationSheet';
 import { format, startOfMonth } from 'date-fns';
-import { findWeekIndexForTaskWeekDate, formatPlannerWeekWorkingRangeLabel, isAllocationInEffectiveMonth } from '@/utils/dateUtils';
+import { findWeekIndexForTaskWeekDate, formatPlannerWeekWorkingRangeLabel } from '@/utils/dateUtils';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
 import { SensitiveText } from '@/components/privacy/SensitiveText';
 import { budgetAdjustmentDelta, hasActiveBudgetAdjustment } from '@/utils/budgetUtils';
-
-const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
+import {
+  buildEmployeeProjectHoursMap,
+  resolveEmployeeIdForPendingRow,
+  resolveProjectBudgetForPreview,
+  resolveWeekLoadForPreview,
+  sumPendingHoursForEmployeeProject,
+  type GetEmployeeLoadForWeekFn,
+  type PlannerBatchPreviewContext,
+} from '@/utils/plannerBatchPreview';
+import { round2 } from '@/utils/numbers';
 
 interface ProjectImpactSummaryProps {
   newTasks: NewTaskRow[];
   projects: Project[];
-  allocations: Allocation[];
+  batchPreview: PlannerBatchPreviewContext;
   viewDate: Date;
   getProjectBudgetStatus: (projectId: string) => ProjectBudgetStatus;
-  getEmployeeLoadForWeek: (employeeId: string, weekStart: string, effectiveStart?: Date, effectiveEnd?: Date, viewMonth?: Date) => { hours: number; capacity: number; percentage: number };
+  getEmployeeLoadForWeek: GetEmployeeLoadForWeekFn;
   employeeId: string;
   weeks: { weekStart: Date; effectiveStart?: Date; effectiveEnd?: Date }[];
   deadlines?: Deadline[];
@@ -31,7 +39,7 @@ interface ProjectImpactSummaryProps {
 export function ProjectImpactSummary({
   newTasks,
   projects,
-  allocations,
+  batchPreview,
   viewDate,
   getProjectBudgetStatus,
   getEmployeeLoadForWeek,
@@ -52,59 +60,14 @@ export function ProjectImpactSummary({
     return deadlines.filter(d => d.month === monthKey && !d.isHidden);
   }, [deadlines, monthKey]);
 
-  // Calcular horas asignadas del empleado por proyecto (para deadlines)
-  const employeeProjectHours = useMemo(() => {
-    const hoursByProject: Record<string, { planned: number; computed: number }> = {};
-
-    allocations
-      .filter(a => a.employeeId === employeeId && isAllocationInEffectiveMonth(a.weekStartDate, viewDate))
-      .forEach(a => {
-        if (!hoursByProject[a.projectId]) {
-          hoursByProject[a.projectId] = { planned: 0, computed: 0 };
-        }
-        if (a.status === 'completed') {
-          hoursByProject[a.projectId].computed += a.hoursComputed || 0;
-        } else {
-          hoursByProject[a.projectId].planned += a.hoursAssigned || 0;
-        }
-      });
-
-    return hoursByProject;
-  }, [allocations, employeeId, viewDate]);
-
-  // Calcular horas asignadas por empleado y proyecto (para deadlines de otros empleados)
   const allEmployeeProjectHours = useMemo(() => {
-    const hoursByEmployeeAndProject: Record<string, Record<string, { planned: number; computed: number }>> = {};
-
-    // Obtener todos los employeeIds únicos de las nuevas tareas
     const taskEmployeeIds = new Set<string>();
     newTasks.forEach(task => {
-      const taskEmpId = task.employeeId || employeeId;
+      const taskEmpId = resolveEmployeeIdForPendingRow(task, employeeId);
       if (taskEmpId) taskEmployeeIds.add(taskEmpId);
     });
-
-    // Calcular horas para cada empleado
-    taskEmployeeIds.forEach(empId => {
-      if (!hoursByEmployeeAndProject[empId]) {
-        hoursByEmployeeAndProject[empId] = {};
-      }
-
-      allocations
-        .filter(a => a.employeeId === empId && isAllocationInEffectiveMonth(a.weekStartDate, viewDate))
-        .forEach(a => {
-          if (!hoursByEmployeeAndProject[empId][a.projectId]) {
-            hoursByEmployeeAndProject[empId][a.projectId] = { planned: 0, computed: 0 };
-          }
-          if (a.status === 'completed') {
-            hoursByEmployeeAndProject[empId][a.projectId].computed += a.hoursComputed || 0;
-          } else {
-            hoursByEmployeeAndProject[empId][a.projectId].planned += a.hoursAssigned || 0;
-          }
-        });
-    });
-
-    return hoursByEmployeeAndProject;
-  }, [allocations, employeeId, viewDate, newTasks]);
+    return buildEmployeeProjectHoursMap(batchPreview, taskEmployeeIds);
+  }, [batchPreview, employeeId, newTasks]);
 
   // Agrupar horas por proyecto
   const projectImpact = useMemo(() => {
@@ -119,7 +82,11 @@ export function ProjectImpactSummary({
             impact[task.projectId] = {
               name: project?.name || 'Desconocido',
               adding: 0,
-              current: getProjectBudgetStatus(task.projectId)
+              current: resolveProjectBudgetForPreview(
+                batchPreview,
+                task.projectId,
+                getProjectBudgetStatus
+              ),
             };
           }
           impact[task.projectId].adding += hours;
@@ -144,7 +111,7 @@ export function ProjectImpactSummary({
       const employeesInProject = new Set<string>();
       newTasks.forEach(task => {
         if (task.projectId === id) {
-          const taskEmpId = task.employeeId || employeeId;
+          const taskEmpId = resolveEmployeeIdForPendingRow(task, employeeId);
           if (taskEmpId) employeesInProject.add(taskEmpId);
         }
       });
@@ -153,9 +120,12 @@ export function ProjectImpactSummary({
         const deadlineHours = deadline?.employeeHours?.[empId] || 0;
         if (deadlineHours > 0) {
           const employeeHours = allEmployeeProjectHours[empId]?.[id] || { planned: 0, computed: 0 };
-          const employeeAdding = newTasks
-            .filter(t => t.projectId === id && (t.employeeId || employeeId) === empId)
-            .reduce((sum, t) => sum + (parseFloat(t.hours) || 0), 0);
+          const employeeAdding = sumPendingHoursForEmployeeProject(
+            newTasks,
+            id,
+            empId,
+            employeeId
+          );
           const totalEmployeeHours = round2(employeeHours.planned + employeeHours.computed + employeeAdding);
           const employee = employees.find(e => e.id === empId);
 
@@ -180,7 +150,7 @@ export function ProjectImpactSummary({
         employeeDeadlines
       };
     });
-  }, [newTasks, projects, getProjectBudgetStatus, monthDeadlines, employeeId, allEmployeeProjectHours, employees]);
+  }, [newTasks, projects, getProjectBudgetStatus, monthDeadlines, employeeId, allEmployeeProjectHours, employees, batchPreview]);
 
   // Agrupar horas por semana para verificar capacidad
   const weekImpact = useMemo(() => {
@@ -195,7 +165,7 @@ export function ProjectImpactSummary({
       if (task.weekDate && task.hours) {
         const hours = parseFloat(task.hours) || 0;
         if (hours > 0) {
-          const taskEmpId = task.employeeId || employeeId;
+          const taskEmpId = resolveEmployeeIdForPendingRow(task, employeeId);
           if (!impact[task.weekDate]) {
             const weekIndex = findWeekIndexForTaskWeekDate(task.weekDate, weeks, viewDate);
             const weekData = weeks[weekIndex >= 0 ? weekIndex : 0];
@@ -229,12 +199,12 @@ export function ProjectImpactSummary({
       }> = [];
 
       Object.entries(data.employeeTasks).forEach(([empId, adding]) => {
-        const currentLoad = getEmployeeLoadForWeek(
+        const currentLoad = resolveWeekLoadForPreview(
+          batchPreview,
           empId,
           weekDate,
-          data.weekData.effectiveStart,
-          data.weekData.effectiveEnd,
-          viewDate
+          getEmployeeLoadForWeek,
+          data.weekData
         );
         const newTotal = round2(currentLoad.hours + adding);
         const exceeds = newTotal > currentLoad.capacity;
@@ -253,12 +223,12 @@ export function ProjectImpactSummary({
       });
 
       // Mantener compatibilidad con el formato anterior para el empleado actual
-      const currentLoad = getEmployeeLoadForWeek(
+      const currentLoad = resolveWeekLoadForPreview(
+        batchPreview,
         employeeId,
         weekDate,
-        data.weekData.effectiveStart,
-        data.weekData.effectiveEnd,
-        viewDate
+        getEmployeeLoadForWeek,
+        data.weekData
       );
       const employeeAdding = data.employeeTasks[employeeId] || 0;
       const newTotal = round2(currentLoad.hours + employeeAdding);
@@ -276,7 +246,7 @@ export function ProjectImpactSummary({
         employeeLoads
       };
     }).sort((a, b) => a.weekIndex - b.weekIndex);
-  }, [newTasks, weeks, viewDate, getEmployeeLoadForWeek, employeeId, employees]);
+  }, [newTasks, weeks, viewDate, getEmployeeLoadForWeek, employeeId, employees, batchPreview]);
 
   const hasProjectExcesses = projectImpact.some(p => p.exceeds);
   const hasWeekExcesses = weekImpact.some(w => w.exceeds);

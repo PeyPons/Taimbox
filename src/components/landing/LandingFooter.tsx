@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Calendar, FileText, Code, HelpCircle, Mail, BookOpen, PlayCircle, LayoutDashboard, CalendarRange, Users, BarChart3, FolderKanban, Plug, Presentation, Shield, Scale, Newspaper, Tag } from 'lucide-react';
+import { FileText, Code, HelpCircle, Mail, BookOpen, PlayCircle, LayoutDashboard, CalendarRange, Users, BarChart3, FolderKanban, Plug, Presentation, Shield, Scale, Newspaper, Tag } from 'lucide-react';
+import { TaimboxLogo } from '@/components/brand/TaimboxLogo';
 import { localizedHashPath, localizedPathFromEs } from '@/i18n/publicPaths';
 import { cn } from '@/lib/utils';
 
@@ -44,11 +45,14 @@ export function LandingFooter({ variant = 'dark' }: LandingFooterProps) {
           {/* Brand */}
           <div className="lg:col-span-1">
             <Link to={localizedPathFromEs('/', i18n.language)} className={cn(
-              'inline-flex items-center gap-2 font-bold text-lg transition-colors',
+              'inline-flex transition-colors',
               light ? 'text-slate-900 hover:text-violet-700' : 'text-white hover:text-indigo-200',
             )}>
-              <Calendar className={cn('h-5 w-5', light ? 'text-violet-600' : 'text-indigo-400')} />
-              Taimbox
+              <TaimboxLogo
+                variant={light ? "light" : "dark"}
+                markClassName="h-5 w-5"
+                wordmarkClassName={cn('font-bold text-lg', light ? 'text-slate-900' : 'text-white')}
+              />
             </Link>
             <p className={cn('mt-2 text-xs max-w-xs leading-snug', light ? 'text-slate-600' : 'text-indigo-200/80')}>
               {t('footer.tagline')}

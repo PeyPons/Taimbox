@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { localizedPathFromEs } from "@/i18n/publicPaths";
 import { cn } from "@/lib/utils";
 import {
-  Calendar,
   Menu,
   X,
   ArrowRight,
@@ -18,6 +17,7 @@ import {
   DollarSign,
   Shield,
 } from "lucide-react";
+import { TaimboxLogo } from "@/components/brand/TaimboxLogo";
 import { FeaturesDropdown } from "./FeaturesDropdown";
 import { LanguageSelector } from "./LanguageSelector";
 
@@ -67,23 +67,18 @@ export function LandingHeader({ variant = "dark" }: LandingHeaderProps) {
           <Link
             to={localizedPathFromEs("/", i18n.language)}
             className={cn(
-              "group flex shrink-0 items-center gap-2.5 font-semibold transition-colors",
-              light ? "text-[16px] -tracking-[0.012em] text-slate-900 hover:text-slate-900" : "gap-2 text-lg font-bold text-white hover:text-indigo-200",
+              "group shrink-0 transition-colors",
+              light ? "text-slate-900 hover:text-slate-900" : "text-white hover:text-indigo-200",
             )}
           >
-            {light ? (
-              <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden className="shrink-0">
-                <circle cx="11" cy="11" r="9" stroke="rgba(15,23,42,0.30)" strokeWidth="1" fill="none" />
-                <circle cx="11" cy="11" r="4.5" stroke="rgba(15,23,42,0.15)" strokeWidth="0.75" fill="none" strokeDasharray="1.5 2" />
-                <g style={{ transformOrigin: "50% 50%", transformBox: "fill-box", animation: "spin 24s linear infinite" }} className="motion-reduce:animate-none">
-                  <line x1="11" y1="11" x2="11" y2="3.5" stroke="#7c3aed" strokeWidth="1.5" strokeLinecap="round" />
-                  <circle cx="11" cy="3.5" r="1.6" fill="#a855f7" />
-                </g>
-                <circle cx="11" cy="11" r="1.4" fill="rgba(124,58,237,0.95)" />
-              </svg>
-            ) : null}
-            {!light && <Calendar className="h-5 w-5 shrink-0 text-indigo-400" />}
-            <span className="leading-none">Taimbox</span>
+            <TaimboxLogo
+              variant={light ? "light" : "dark"}
+              markClassName={light ? "h-[22px] w-[22px]" : "h-5 w-5"}
+              wordmarkClassName={cn(
+                "leading-none",
+                light ? "text-[16px] font-semibold -tracking-[0.012em]" : "text-lg font-bold",
+              )}
+            />
           </Link>
 
           <div className={cn(`hidden ${navBp}:flex items-center`, light ? "gap-1" : "gap-4")}>

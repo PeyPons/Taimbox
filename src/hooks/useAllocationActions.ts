@@ -1,6 +1,10 @@
 import { useState, useMemo } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { Allocation, NewTaskRow } from '@/types';
+import type { ProjectBudgetStatus } from '@/hooks/useAllocationSheet';
+import { useBatchCommitPreview } from '@/hooks/useBatchCommitPreview';
+import type { GetEmployeeLoadForWeekFn, PlannerBatchPreviewContext } from '@/utils/plannerBatchPreview';
+import { createPlannerBatchPreviewContext } from '@/utils/plannerBatchPreview';
 import { format, parseISO } from 'date-fns';
 import { getWeekEndDate } from '@/utils/dateUtils';
 import { useWeeklyCloseDay } from '@/hooks/useWeeklyCloseDay';
@@ -30,12 +34,22 @@ function toastWeeklyPastEditBlockedOnce(allocationId: string): void {
     toast.error(WEEKLY_PAST_EDIT_TOAST);
 }
 
+export interface UseAllocationActionsBatchPreviewDeps {
+    allocations: Allocation[];
+    viewDate: Date;
+    weeks: { weekStart: Date; effectiveStart?: Date; effectiveEnd?: Date }[];
+    getProjectBudgetStatus: (projectId: string) => ProjectBudgetStatus;
+    getEmployeeLoadForWeek: GetEmployeeLoadForWeekFn;
+}
+
 export interface UseAllocationActionsOptions {
     /**
      * Omite el bloqueo de edición en semanas ya cerradas (Weekly).
      * Usar solo en contextos administrativos (p. ej. seguimiento operativo / coherencia).
      */
     allowEditPastWeeks?: boolean;
+    /** Datos para congelar el preview de impacto durante el guardado en lote */
+    batchPreview?: UseAllocationActionsBatchPreviewDeps;
 }
 
 export function useAllocationActions(
@@ -46,6 +60,7 @@ export function useAllocationActions(
     options?: UseAllocationActionsOptions
 ) {
     const allowEditPastWeeks = options?.allowEditPastWeeks === true;
+    const batchPreviewDeps = options?.batchPreview;
     const { addAllocation, updateAllocation, deleteAllocation } = useApp();
     const weeklyCloseDay = useWeeklyCloseDay();
     const { currentAgency } = useAgency();
@@ -81,6 +96,29 @@ export function useAllocationActions(
     const [editDescription, setEditDescription] = useState('');
     const [editWeek, setEditWeek] = useState('');
     const [editDependencyId, setEditDependencyId] = useState('none');
+
+    const batchCommitPreview = useBatchCommitPreview(
+        batchPreviewDeps
+            ? {
+                  allocations: batchPreviewDeps.allocations,
+                  pendingRows: newTasks,
+                  viewDate: batchPreviewDeps.viewDate,
+                  defaultEmployeeId: employeeId,
+                  weeks: batchPreviewDeps.weeks,
+                  getProjectBudgetStatus: batchPreviewDeps.getProjectBudgetStatus,
+                  getEmployeeLoadForWeek: batchPreviewDeps.getEmployeeLoadForWeek,
+              }
+            : null
+    );
+
+    const batchPreviewContext: PlannerBatchPreviewContext =
+        batchCommitPreview.previewContext ??
+        createPlannerBatchPreviewContext({
+            allocations: batchPreviewDeps?.allocations ?? [],
+            pendingRows: newTasks,
+            viewDate: batchPreviewDeps?.viewDate ?? new Date(),
+            defaultEmployeeId: employeeId,
+        });
 
     const addTaskRow = (weekDate?: string) => {
         if (guardSoftLock()) return;
@@ -174,6 +212,9 @@ export function useAllocationActions(
                     setIsSaving(false);
                     return;
                 }
+                if (batchPreviewDeps) {
+                    batchCommitPreview.captureSnapshot(validTasks);
+                }
                 const savePromises = validTasks.map(task => {
                     const targetEmployeeId = task.employeeId || employeeId;
                     return addAllocation({
@@ -197,6 +238,9 @@ export function useAllocationActions(
             console.error('Error guardando tareas:', error);
             toast.error('Error al guardar las tareas');
         } finally {
+            if (batchPreviewDeps) {
+                batchCommitPreview.clearSnapshot();
+            }
             setIsSaving(false);
         }
     };
@@ -450,7 +494,8 @@ export function useAllocationActions(
         cancelInlineEdit,
         clearNewTasks,
         canSubmitBatchAdd,
-        batchAddHint
+        batchAddHint,
+        batchPreviewContext,
     };
 }
 

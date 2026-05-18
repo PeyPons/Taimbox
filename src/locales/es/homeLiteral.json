@@ -2,9 +2,9 @@
   "s09": {
     "badge": "Empieza con 4 personas y un proyecto",
     "titleLine1": "Mide a fin de mes.",
-    "titleLine2": "Si no es lo prometido, te ayudamos a salir.",
+    "titleLine2": "Si no encaja, te ayudamos a salir.",
     "ctaPrimary": "Empezar gratis",
-    "ctaSecondary": "El coste de no medir",
+    "ctaSecondary": "Qué cuesta no medir (3 min)",
     "trust1": "14 días Business gratis",
     "trust2": "Sin tarjeta de crédito",
     "trust3": "Export en cualquier momento"
@@ -60,7 +60,7 @@
     "kicker": "Para todo el equipo",
     "title": "Cada perfil tiene su",
     "titleHighlight": "propia entrada",
-    "subtitle": "No es un PM tool más. Cada rol abre la herramienta justo en lo que necesita.",
+    "subtitle": "No hace falta otro PM tool. Cada rol entra por la puerta que le toca: planificar, ejecutar, seguir el mes o cerrar números.",
     "mockNav": {
       "home": "Mi espacio",
       "planner": "Planificador",
@@ -237,74 +237,74 @@
           { "name": "LocalBiz", "pct": 71, "target": 54, "color": "rgb(245, 158, 11)" },
           { "name": "StartupHub", "pct": 42, "target": 54, "color": "rgb(239, 68, 68)" }
         ],
-        "footerTitle": "F1–F4 en pantalla · export Excel / CSV / API",
-        "footerSub": "Sin caja negra · cada euro auditable"
+        "footerTitle": "Las cuatro métricas en pantalla · exporta cuando quieras",
+        "footerSub": "Cada euro con su recorrido — sin fórmulas escondidas"
       }
     },
     "roles": [
       {
         "label": "Directores",
-        "badgeText": "Para directores",
-        "heading": "Todas las horas, un solo grid",
-        "description": "El planificador te enseña qué pasa antes de guardar: impacto, dependencias, ausencias y costes que se parten entre meses.",
+        "badgeText": "Dirección y operaciones",
+        "heading": "El equipo entero en un solo grid",
+        "description": "Ves el impacto antes de guardar: quién se queda colgado, las ausencias y qué pasa cuando una semana se reparte entre dos meses.",
         "bullets": [
-          "Asignación con cálculo de impacto y asistente de redistribución",
-          "Bloqueos y dependencias visibles antes de que escalen",
-          "Coste real cuando una semana parte entre dos meses (al céntimo)"
+          "Asignas con impacto al vuelo y un asistente que propone redistribuir",
+          "Dependencias y bloqueos visibles antes de que exploten",
+          "El coste real cuando una semana cae entre dos meses — al céntimo"
         ],
-        "linkText": "Ver planificador de recursos",
+        "linkText": "Conocer el planificador",
         "linkHref": "/planificador-recursos"
       },
       {
         "label": "Empleados",
-        "badgeText": "Para empleados",
-        "heading": "Mi espacio: tu semana en un vistazo",
-        "description": "Dashboard con cronómetro por tarea (sidebar y Tiempos), prioridades del día y cierre Weekly sin perseguir enlaces.",
+        "badgeText": "Quien ejecuta el día a día",
+        "heading": "Tu semana, sin saltar de pestaña",
+        "description": "Cronómetro en la tarea, prioridades claras y cierre semanal en un par de minutos. Sin ir a Slack a buscar el enlace de ayer.",
         "bullets": [
-          "Cronómetro por tarea, en sidebar y página Tiempos",
-          "Prioridades del día y bloqueos sin perseguir Slacks",
-          "Weekly de cierre rápido: 2 minutos por persona"
+          "Cronómetro en la barra lateral y en Tiempos",
+          "Prioridades y bloqueos del día a primera vista",
+          "Cierre semanal rápido: unos dos minutos por persona"
         ],
-        "linkText": "Ver dashboard de empleado",
+        "linkText": "Ver Mi espacio",
         "linkHref": "/dashboard-empleado"
       },
       {
         "label": "Project Managers",
-        "badgeText": "Para project managers",
-        "heading": "Seguimiento operativo sin saltar a Excel",
-        "description": "Estado de proyectos, tareas bloqueantes y coherencia de planificación — la misma vista que en /operaciones.",
+        "badgeText": "Quien lleva los proyectos",
+        "heading": "Seguimiento operativo sin otro Excel",
+        "description": "Estado de cada proyecto, lo que bloquea al equipo y si la planificación cuadra — la misma vista que usas en el día a día.",
         "bullets": [
-          "Filtros por avance, retraso, exceso de horas o sin actividad",
-          "Tareas que bloquean al equipo visibles en el mes",
-          "Weekly Forecast para redistribuir carga"
+          "Filtra por retraso, exceso de horas, falta de planificación o sin actividad",
+          "Las tareas que atan al equipo, visibles en el mes",
+          "Weekly Forecast para repartir carga antes de que duela"
         ],
-        "linkText": "Ver control de proyectos",
+        "linkText": "Ver seguimiento operativo",
         "linkHref": "/control-proyectos"
       },
       {
         "label": "RRHH",
-        "badgeText": "Para RRHH",
-        "heading": "Capacidad de equipo y ausencias",
-        "description": "Vista /capacidad con carga por persona, ausencias en el planificador y desviaciones por departamento.",
+        "badgeText": "Personas y capacidad",
+        "heading": "Carga, ausencias y margen por persona",
+        "description": "Cuánto puede asumir cada uno, con vacaciones en el mismo grid del planificador y desvíos por departamento.",
         "bullets": [
-          "Ausencias y vacaciones en el mismo grid del planificador",
-          "Capacidad efectiva (no solo teórica) por persona",
-          "Horas y carga exportables para nómina o reporting"
+          "Ausencias y vacaciones donde ya planificas",
+          "Capacidad efectiva, no solo la teórica",
+          "Horas y carga listas para exportar a nómina o reporting"
         ],
-        "linkText": "Ver gestión de equipos",
+        "linkText": "Ver capacidad de equipo",
         "linkHref": "/gestion-equipos"
       },
       {
         "label": "Finanzas",
-        "badgeText": "Para finanzas",
-        "heading": "Rentabilidad con fórmulas auditables",
-        "description": "Página Rentabilidad (/finanzas): coste laboral, ingreso devengado, margen y EHR (F1–F4) con la misma base que la app.",
+        "badgeText": "Números del mes",
+        "heading": "Rentabilidad con fórmulas que puedes revisar",
+        "description": "Coste laboral, ingreso devengado, margen y precio hora (F1–F4) con la misma base en toda la app. A mitad de mes ya sabes cómo vas.",
         "bullets": [
-          "Fórmulas F1–F4 y EHR transparentes, no caja negra",
-          "Ingreso devengado al céntimo, salud por proyecto y agencia",
-          "Export Excel/CSV/JSON o vía API"
+          "F1 a F4 y EHR sin caja negra",
+          "Ingreso devengado al céntimo, por proyecto y por agencia",
+          "Exporta a Excel, CSV, JSON o conéctalo por API"
         ],
-        "linkText": "Ver reportes de rentabilidad",
+        "linkText": "Ver rentabilidad",
         "linkHref": "/reportes-rentabilidad"
       }
     ]
@@ -361,9 +361,9 @@
   },
   "s05": {
     "kicker": "Conectado, no encerrado",
-    "title": "Tu pipeline real,",
-    "titleHighlight": "leído por nosotros",
-    "subtitle": "OAuth solo lectura para Ads, API REST y exports completos. Tus datos siguen siendo tuyos.",
+    "title": "Tu stack real,",
+    "titleHighlight": "sin reescribirlo",
+    "subtitle": "Conectas Ads en solo lectura, sacas datos por API o exportas cuando quieras. Lo que entra y sale, lo controlas tú.",
     "integrations": [
       {
         "title": "Google Ads",
@@ -393,7 +393,7 @@
     "ppcKicker": "Monitor PPC en vivo",
     "ppcTitle": "Tus campañas Meta y Google,",
     "ppcTitleHighlight": "leídas dentro de Taimbox",
-    "ppcBody": "Conecta una vez con OAuth solo lectura. Taimbox sincroniza spend, ROAS, CPL y conversiones cada hora, agrupa cuentas por cliente y proyecta el cierre de mes. Si una campaña va a pasarse del budget, lo sabes el día 12, no el último.",
+    "ppcBody": "Conectas una vez, en solo lectura. Taimbox trae gasto, ROAS, CPL y conversiones cada hora, agrupa cuentas por cliente y te dice cómo cerrarás el mes. Si una campaña se va de presupuesto, lo ves a mitad de mes — no el último día.",
     "ppcBullet1Prefix": "Estados",
     "ppcBullet1Suffix": "por cuenta y campaña.",
     "ppcBullets": [
@@ -451,9 +451,9 @@
   "s06": {
     "badge": "Seguridad por diseño",
     "title": "Datos de tu cliente.",
-    "titleHighlight": "Cifrados, en UE",
-    "titleSuffix": ", nunca cruzados.",
-    "subtitle": "Aislamiento RLS de Postgres en la base — no en la aplicación. OAuth solo lectura para Ads. PCI delegado a Stripe. Backups diarios cifrados.",
+    "titleHighlight": "Cifrados en la UE",
+    "titleSuffix": ", sin mezclarse entre agencias.",
+    "subtitle": "Cada agencia vive aislada en la base de datos, no solo en la app. Ads en solo lectura, pagos con Stripe y copias de seguridad diarias cifradas.",
     "cards": [
       {
         "title": "Aislamiento por agencia (RLS)",
@@ -488,12 +488,12 @@
     "kicker": "Planes",
     "title": "Empieza con cuatro personas.",
     "titleHighlight": "Crece a tu ritmo.",
-    "subtitle": "Early Adopter activo: las primeras agencias mantienen el 50% lifetime antes de aplicar tarifas oficiales.",
+    "subtitle": "Si entras ahora como early adopter, mantienes el 50% de por vida antes de que suban las tarifas oficiales.",
     "plans": [
       {
         "id": "starter",
         "name": "Starter",
-        "desc": "Para probar Taimbox con tu equipo pequeño.",
+        "desc": "Para probar con un equipo pequeño, sin compromiso.",
         "price": "0€",
         "priceSuffix": "/mes · siempre gratis",
         "features": [
@@ -510,7 +510,7 @@
       {
         "id": "pro",
         "name": "Pro",
-        "desc": "Para agencias que ya viven en hojas de cálculo.",
+        "desc": "Para quien ya vive entre Excel y Slack.",
         "priceWas": "99€/mes",
         "price": "49€",
         "priceSuffix": "/mes",
@@ -530,7 +530,7 @@
       {
         "id": "business",
         "name": "Business",
-        "desc": "Para agencias con PPC, deadlines y consejo financiero.",
+        "desc": "Para equipos con PPC, plazos ajustados y control financiero fino.",
         "priceWas": "249€/mes",
         "price": "149€",
         "priceSuffix": "/mes",
@@ -549,7 +549,7 @@
       {
         "id": "enterprise",
         "name": "Enterprise",
-        "desc": "Para holdings y agencias > 50 personas con SLA.",
+        "desc": "Para holdings y equipos de más de 50 personas con SLA.",
         "price": "A medida",
         "features": [
           "Personas sin límite",
@@ -570,7 +570,7 @@
   "s04": {
     "kicker": "El sistema operativo",
     "title": "De planificar a predecir",
-    "titleHighlight": "sin saltar entre apps",
+    "titleHighlight": "sin cambiar de herramienta",
     "mockupAria": "Vistas del producto en Taimbox",
     "ctaPrimary": "Probar el flujo completo",
     "ctaGuide": "Ver guía detallada",
@@ -578,45 +578,45 @@
       {
         "number": "01",
         "label": "Planificar",
-        "heading": "Asigna con impacto visible",
-        "description": "El grid del planificador te enseña qué pasa antes de guardar. Asignación con impacto, dependencias visibles, ausencias respetadas y costes que se parten entre meses.",
+        "heading": "Asigna viendo el impacto",
+        "description": "En el grid ves qué pasa antes de guardar: dependencias, ausencias y el coste cuando una semana se parte entre dos meses.",
         "bullets": [
-          "Asignación con cálculo de impacto en vivo",
-          "Dependencias y bloqueos antes de que escalen",
-          "Costes prorrateados al céntimo cuando una semana parte entre dos meses"
+          "Impacto de cada asignación en el momento",
+          "Dependencias y bloqueos antes de que escale",
+          "Coste prorrateado al céntimo entre meses"
         ]
       },
       {
         "number": "02",
         "label": "Ejecutar",
-        "heading": "Cierra la semana en dos minutos",
-        "description": "El día del empleado deja de ser cuatro pestañas. Cronómetro por tarea, dependencias claras, y un weekly que se cierra en dos minutos sin perseguir links de Slack.",
+        "heading": "Cierra la semana en un rato",
+        "description": "Cronómetro en la tarea, el día ordenado y un cierre semanal que no depende de perseguir enlaces en Slack.",
         "bullets": [
-          "Cronómetro por tarea, en sidebar y página Tiempos",
-          "Dependencias y prioridades del día visibles de un vistazo",
-          "Weekly de cierre rápido: 2 minutos por persona"
+          "Cronómetro en la barra lateral y en Tiempos",
+          "Prioridades y dependencias del día, claras",
+          "Cierre semanal en unos dos minutos por persona"
         ]
       },
       {
         "number": "03",
         "label": "Medir",
-        "heading": "Radar de salud sin caja negra",
-        "description": "A mitad de mes ya sabes el ingreso devengado y el pacing por proyecto. Salud Financiera te muestra dónde sangra el margen, con fórmulas auditables.",
+        "heading": "Sabes cómo va el mes antes del cierre",
+        "description": "Ingreso devengado y ritmo por proyecto en vivo. Rentabilidad te dice dónde se va el margen, con fórmulas que puedes revisar.",
         "bullets": [
-          "Ingreso devengado y pacing por proyecto, en vivo",
-          "Fórmulas F1–F4 y EHR transparentes",
-          "Salud Financiera de la agencia y export Excel/CSV/JSON o vía API"
+          "Ingreso devengado y pacing por proyecto, al día",
+          "F1 a F4 y precio hora sin caja negra",
+          "Vista de agencia y export a Excel, CSV, JSON o API"
         ]
       },
       {
         "number": "04",
         "label": "Predecir",
-        "heading": "Redistribuye antes de que Excel avise",
-        "description": "El Weekly Forecast redistribuye carga antes de que el Excel te avise. Deadlines mensuales con sugerencias entre quien comparte proyectos, OKRs y control de coherencia.",
+        "heading": "Ajusta la carga antes del susto",
+        "description": "Weekly Forecast reparte horas entre quien comparte proyecto. Deadlines y coherencia te avisan antes de llegar al comité con sorpresas.",
         "bullets": [
-          "Weekly Forecast con redistribución entre quien comparte proyectos",
-          "Deadlines mensuales con límites de carga y desviación",
-          "Control de coherencia: avisa antes del comité"
+          "Redistribución sugerida entre el mismo equipo de proyecto",
+          "Deadlines con límites de carga y desviación",
+          "Coherencia de planificación: aviso antes de la reunión"
         ]
       }
     ]

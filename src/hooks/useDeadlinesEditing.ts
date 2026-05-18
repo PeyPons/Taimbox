@@ -42,6 +42,8 @@ export interface UseDeadlinesEditingParams {
   canEditDeadlines: boolean;
   selectedMonth: string;
   currentUser: { id: string } | null;
+  /** Vista soporte (platform admin sin empleado): edición sin locks (FK exige employee_id). */
+  skipEditLocks?: boolean;
   employees: { id: string; first_name?: string; name: string }[];
   getProjectDeadline: (projectId: string) => Deadline | undefined;
   hiddenProjects: Set<string>;
@@ -62,6 +64,7 @@ export function useDeadlinesEditing(params: UseDeadlinesEditingParams) {
     canEditDeadlines,
     selectedMonth,
     currentUser,
+    skipEditLocks = false,
     employees,
     getProjectDeadline,
     hiddenProjects,
@@ -100,7 +103,7 @@ export function useDeadlinesEditing(params: UseDeadlinesEditingParams) {
 
   const releaseEditLock = useCallback(
     async (projectId: string) => {
-      if (!currentUser) return;
+      if (skipEditLocks || !currentUser) return;
       try {
         await supabase
           .from('project_editing_locks')
@@ -125,11 +128,12 @@ export function useDeadlinesEditing(params: UseDeadlinesEditingParams) {
         console.error('Error liberando lock:', error);
       }
     },
-    [currentUser, selectedMonth, setEditingLocks, broadcastChannelRef]
+    [currentUser, selectedMonth, setEditingLocks, broadcastChannelRef, skipEditLocks]
   );
 
   const verifyEditLock = useCallback(
     async (projectId: string): Promise<boolean> => {
+      if (skipEditLocks) return true;
       if (!currentUser) return false;
       const { data: lock, error } = await supabase
         .from('project_editing_locks')
@@ -148,12 +152,16 @@ export function useDeadlinesEditing(params: UseDeadlinesEditingParams) {
       );
       return false;
     },
-    [currentUser, selectedMonth, employees]
+    [currentUser, selectedMonth, employees, skipEditLocks]
   );
 
   const acquireEditLock = useCallback(
     async (projectId: string): Promise<boolean> => {
       const t0 = perfNow();
+      if (skipEditLocks) {
+        logPerf('acquireEditLock:skippedSupportView', t0, { projectId });
+        return true;
+      }
       if (!currentUser) return false;
       const expiresAt = new Date(Date.now() + 60 * 1000).toISOString();
       try {
@@ -235,7 +243,7 @@ export function useDeadlinesEditing(params: UseDeadlinesEditingParams) {
         logPerf('acquireEditLock', t0, { projectId, month: selectedMonth });
       }
     },
-    [currentUser, selectedMonth, employees, setEditingLocks]
+    [currentUser, selectedMonth, employees, setEditingLocks, skipEditLocks]
   );
 
   const persistSaveDeadline = useCallback(
@@ -466,7 +474,7 @@ export function useDeadlinesEditing(params: UseDeadlinesEditingParams) {
       const tBeforeLock = perfNow();
 
       const knownLock = editingLocks[projectId];
-      if (knownLock && knownLock.employeeId !== currentUser?.id) {
+      if (!skipEditLocks && knownLock && knownLock.employeeId !== currentUser?.id) {
         toast.warning(`${knownLock.employeeName || 'Alguien'} está editando este proyecto. Espera a que termine.`);
         logPerf('startEditingProject:knownLockRejected', t0, { projectId });
         return;
@@ -539,13 +547,15 @@ export function useDeadlinesEditing(params: UseDeadlinesEditingParams) {
       logPerf('startEditingProject:untilLockAcquired', tBeforeLock, { projectId });
 
       if (lockRefreshIntervalRef.current) clearInterval(lockRefreshIntervalRef.current);
-      lockRefreshIntervalRef.current = setInterval(() => renewEditLock(projectId), 20 * 1000);
+      if (!skipEditLocks) {
+        lockRefreshIntervalRef.current = setInterval(() => renewEditLock(projectId), 20 * 1000);
 
-      const handleBeforeUnload = () => {
-        if (currentUser) releaseEditLock(projectId);
-      };
-      window.addEventListener('beforeunload', handleBeforeUnload);
-      (window as unknown as { __deadlineBeforeUnload?: () => void }).__deadlineBeforeUnload = handleBeforeUnload;
+        const handleBeforeUnload = () => {
+          if (currentUser) releaseEditLock(projectId);
+        };
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        (window as unknown as { __deadlineBeforeUnload?: () => void }).__deadlineBeforeUnload = handleBeforeUnload;
+      }
       logPerf('startEditingProject:total', t0, { projectId });
     },
     [
@@ -561,6 +571,7 @@ export function useDeadlinesEditing(params: UseDeadlinesEditingParams) {
       currentUser,
       releaseEditLock,
       enqueueAutoSave,
+      skipEditLocks,
     ]
   );
 

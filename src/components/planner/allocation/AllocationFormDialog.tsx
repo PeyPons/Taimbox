@@ -17,6 +17,7 @@ import { BatchTaskRow } from '../BatchTaskRow';
 import { ProjectImpactSummary } from '../ProjectImpactSummary';
 import { ProjectBudgetStatus } from '@/hooks/useAllocationSheet';
 import { useIsMobile } from '@/hooks/use-mobile';
+import type { GetEmployeeLoadForWeekFn, PlannerBatchPreviewContext } from '@/utils/plannerBatchPreview';
 
 interface AllocationFormDialogProps {
     isOpen: boolean;
@@ -65,11 +66,12 @@ interface AllocationFormDialogProps {
     getProjectBudgetStatus: (projectId: string) => ProjectBudgetStatus;
     getAvailableDependencies: (projectId: string, excludeId?: string) => Allocation[];
     getWeekExceedStatus: (weekDate: string) => boolean;
-    getEmployeeLoadForWeek: (employeeId: string, weekStart: string, effectiveStart?: Date, effectiveEnd?: Date, viewMonth?: Date) => { hours: number; capacity: number; percentage: number };
+    getEmployeeLoadForWeek: GetEmployeeLoadForWeekFn;
     formatProjectName: (name: string) => string;
     /** Añadir tareas en lote (planificador): mismas reglas que dashboard empleado */
     canSubmitBatchAdd: boolean;
     batchAddHint: string | null;
+    batchPreview: PlannerBatchPreviewContext;
 }
 
 export function AllocationFormDialog({
@@ -112,7 +114,8 @@ export function AllocationFormDialog({
     getEmployeeLoadForWeek,
     formatProjectName,
     canSubmitBatchAdd,
-    batchAddHint
+    batchAddHint,
+    batchPreview,
 }: AllocationFormDialogProps) {
     const [editProjectOpen, setEditProjectOpen] = React.useState(false);
     const [openDependency, setOpenDependency] = React.useState(false);
@@ -303,7 +306,7 @@ export function AllocationFormDialog({
                                             <BatchTaskRow
                                                 key={task.id}
                                                 task={task}
-                                                otherTasks={newTasks}
+                                                batchPreview={batchPreview}
                                                 updateTaskRow={updateTaskRow}
                                                 removeTaskRow={removeTaskRow}
                                                 canRemove={newTasks.length > 1}
@@ -346,7 +349,7 @@ export function AllocationFormDialog({
                                     variant="vertical"
                                     newTasks={newTasks}
                                     projects={activeProjects}
-                                    allocations={allocations}
+                                    batchPreview={batchPreview}
                                     viewDate={viewDate}
                                     getProjectBudgetStatus={getProjectBudgetStatus}
                                     getEmployeeLoadForWeek={getEmployeeLoadForWeek}

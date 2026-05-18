@@ -2,12 +2,14 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import {
-    Calendar, ArrowRight, ArrowLeft, Clock, DollarSign, Target, Users,
+    ArrowRight, ArrowLeft, Clock, DollarSign, Target, Users,
     BarChart3, LayoutDashboard, CalendarRange, FolderKanban, Plug,
     TrendingUp, AlertTriangle, CheckCircle2, Zap, Shield, PieChart,
     Timer, ChevronLeft, ChevronRight, Sparkles, Building2, Eye, Layers,
     Table2, Mail, Gauge, FileText,
 } from 'lucide-react';
+
+import { TaimboxMark } from '@/components/brand/TaimboxLogo';
 
 import { useTranslation } from 'react-i18next';
 import { pathEsToEn } from '@/i18n/publicPaths';
@@ -112,9 +114,7 @@ function S00_Portada({ isActive, direction }: SlideProps) {
             <div className="flex flex-col items-center justify-center min-h-full text-center px-2">
                 <div className="relative mb-5 sm:mb-8">
                     <div className="absolute -inset-6 sm:-inset-10 bg-gradient-to-r from-indigo-500/30 via-purple-500/30 to-pink-500/30 rounded-full blur-3xl animate-pulse" />
-                    <div className="relative w-20 h-20 sm:w-28 sm:h-28 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-2xl shadow-indigo-500/40">
-                        <Calendar className="h-10 w-10 sm:h-14 sm:w-14 text-white" />
-                    </div>
+                    <TaimboxMark className="relative h-20 w-20 sm:h-28 sm:w-28" variant="dark" />
                 </div>
                 <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-white mb-3 sm:mb-4 tracking-tight">Taimbox</h1>
                 <p className="text-base sm:text-xl md:text-2xl lg:text-3xl text-indigo-200/90 max-w-xl font-light">

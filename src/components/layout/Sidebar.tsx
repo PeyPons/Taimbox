@@ -42,6 +42,7 @@ import { Button } from '@/components/ui/button';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { useActiveTimerForSidebar } from '@/hooks/useActiveTimerForSidebar';
 import { SensitiveText } from '@/components/privacy/SensitiveText';
+import { TaimboxLogo } from '@/components/brand/TaimboxLogo';
 import { SidebarImpersonationPanel } from '@/components/admin/ImpersonationBanner';
 import {
   Collapsible,
@@ -204,12 +205,11 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
         {/* Header */}
         <div className="h-16 flex items-center justify-between px-6 border-b border-slate-800 bg-slate-950/50">
-          <div className="flex items-center gap-2 font-bold text-xl tracking-tight">
-            <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-              <LayoutDashboard className="h-5 w-5 text-white" />
-            </div>
-            <span className="text-slate-100">Taimbox</span>
-          </div>
+          <TaimboxLogo
+            variant="dark"
+            markClassName="h-8 w-8"
+            wordmarkClassName="text-slate-100 font-bold text-xl tracking-tight"
+          />
 
           <div className="flex items-center gap-1">
             <div className="hidden lg:block">
@@ -440,7 +440,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           {/* ADMINISTRACIÓN (solo platform admins; visible aunque no sea isSuperior) */}
           {isPlatformAdmin && (
             <div className="pt-2 mt-2 border-t border-slate-800">
-              <NavLink to="/admin" icon={Shield} active={location.pathname.startsWith('/admin')}>
+              <NavLink to="/admin" icon={Shield} active={location.pathname.startsWith('/admin')} preserveAgency={false}>
                 {t('sidebar.menu.admin', 'Administración')}
               </NavLink>
             </div>

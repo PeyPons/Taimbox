@@ -17,6 +17,9 @@ const ROOT = resolve(__dirname, "..");
 const ES = JSON.parse(readFileSync(resolve(ROOT, "src/locales/es/blog.json"), "utf8"));
 const EN = JSON.parse(readFileSync(resolve(ROOT, "src/locales/en/blog.json"), "utf8"));
 
+/** Misma ruta que PlantillaPlanificacionRecursosArticle y `public/recursos/`. */
+const PLANTILLA_XLSX_HREF = "/recursos/plantilla-planificacion-recursos-taimbox.xlsx";
+
 // ---------------------------------------------------------------------------
 // Utilidades
 // ---------------------------------------------------------------------------
@@ -754,7 +757,9 @@ function mapPlantillaPlanificacionRecursos(p) {
         html: `${asHtml(p.hero.metricsPrefix)} <strong>${asHtml(p.hero.metricsLink)}</strong>${asHtml(p.hero.metricsSuffix)}`,
       }));
     }
-    if (p.hero.downloadCta) blocks.push(block("cta", { text: asHtml(p.hero.downloadCta), href: "/planificador-recursos", variant: "primary" }));
+    if (p.hero.downloadCta) {
+      blocks.push(block("cta", { text: asHtml(p.hero.downloadCta), href: PLANTILLA_XLSX_HREF, variant: "primary" }));
+    }
     if (p.hero.downloadHint) blocks.push(block("paragraph", { html: `<em>${asHtml(p.hero.downloadHint)}</em>` }));
   }
   blocks.push(block("toc", {}));
@@ -796,7 +801,9 @@ function mapPlantillaPlanificacionRecursos(p) {
       const tm = tableBlock(m);
       if (tm) blocks.push(tm);
     }
-    if (sk.downloadCta) blocks.push(block("cta", { text: asHtml(sk.downloadCta), href: "/planificador-recursos", variant: "primary" }));
+    if (sk.downloadCta) {
+      blocks.push(block("cta", { text: asHtml(sk.downloadCta), href: PLANTILLA_XLSX_HREF, variant: "primary" }));
+    }
     // utilization
     if (sk.masterFormulaTitle) {
       blocks.push(block("heading", { level: 3, text: asHtml(sk.masterFormulaTitle) }));
@@ -879,7 +886,9 @@ function mapPlantillaPlanificacionRecursos(p) {
     if (p.cta.mainTitle) blocks.push(block("heading", { level: 2, text: asHtml(p.cta.mainTitle), anchorId: "cta-final" }));
     if (p.cta.mainSubtitle) blocks.push(block("paragraph", { html: asHtml(p.cta.mainSubtitle) }));
     if (p.cta.primaryCta) blocks.push(block("cta", { text: asHtml(p.cta.primaryCta), href: "/planificador-recursos", variant: "primary" }));
-    if (p.cta.secondaryCta) blocks.push(block("cta", { text: asHtml(p.cta.secondaryCta), href: "/reportes-rentabilidad", variant: "secondary" }));
+    if (p.cta.secondaryCta) {
+      blocks.push(block("cta", { text: asHtml(p.cta.secondaryCta), href: PLANTILLA_XLSX_HREF, variant: "secondary" }));
+    }
     if (p.cta.footerNote) blocks.push(block("paragraph", { html: `<em>${asHtml(p.cta.footerNote)}</em>` }));
   }
 

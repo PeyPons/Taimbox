@@ -2,23 +2,23 @@ import { useMemo } from 'react';
 import { Project, NewTaskRow } from '@/types';
 import { ProjectBudgetStatus } from './useAllocationSheet';
 import { format } from 'date-fns';
-
-const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
+import {
+  resolveProjectBudgetForPreview,
+  resolveWeekLoadForPreview,
+  type GetEmployeeLoadForWeekFn,
+  type PlannerBatchPreviewContext,
+} from '@/utils/plannerBatchPreview';
+import { round2 } from '@/utils/numbers';
 
 interface UseTasksImpactProps {
     newTasks: NewTaskRow[];
     projects: Project[];
     weeks: { weekStart: Date; effectiveStart?: Date; effectiveEnd?: Date }[];
     employeeId: string;
-    getEmployeeLoadForWeek: (
-        employeeId: string,
-        weekStart: string,
-        effectiveStart?: Date,
-        effectiveEnd?: Date,
-        viewMonth?: Date
-    ) => { hours: number; capacity: number; percentage: number };
+    getEmployeeLoadForWeek: GetEmployeeLoadForWeekFn;
     getProjectBudgetStatus: (projectId: string) => ProjectBudgetStatus;
     viewMonth?: Date;
+    batchPreview: PlannerBatchPreviewContext;
 }
 
 export function useTasksImpact({
@@ -28,7 +28,8 @@ export function useTasksImpact({
     employeeId,
     getEmployeeLoadForWeek,
     getProjectBudgetStatus,
-    viewMonth
+    viewMonth,
+    batchPreview,
 }: UseTasksImpactProps) {
 
     const tasksImpact = useMemo(() => {
@@ -47,7 +48,11 @@ export function useTasksImpact({
 
         const projectsResult = Object.entries(projectImpact).map(([projectId, adding]) => {
             const project = projects.find(p => p.id === projectId);
-            const currentStatus = getProjectBudgetStatus(projectId);
+            const currentStatus = resolveProjectBudgetForPreview(
+                batchPreview,
+                projectId,
+                getProjectBudgetStatus
+            );
             const newTotal = currentStatus.totalComputed + currentStatus.totalPlanned + adding;
             const exceeds = currentStatus.budgetMax > 0 && newTotal > currentStatus.budgetMax;
             return {
@@ -57,7 +62,7 @@ export function useTasksImpact({
                 current: currentStatus,
                 newTotal,
                 exceeds,
-                status: currentStatus // Ensure status is passed if needed
+                status: currentStatus
             };
         });
 
@@ -66,16 +71,16 @@ export function useTasksImpact({
             if (weekIndex === -1) return null;
 
             const weekData = weeks[weekIndex];
-            const currentLoad = getEmployeeLoadForWeek(
+            const currentLoad = resolveWeekLoadForPreview(
+                batchPreview,
                 employeeId,
-                weekData.weekStart.toISOString(), // Assuming string input based on typical usage, checking compatibility
-                weekData.effectiveStart,
-                weekData.effectiveEnd,
-                viewMonth
+                weekDate,
+                getEmployeeLoadForWeek,
+                weekData
             );
 
             const newTotal = round2(currentLoad.hours + adding);
-            // Logic for capacity might vary, assuming currentLoad.capacity is the weekly limit
+
             const exceeds = newTotal > currentLoad.capacity;
 
             return {
@@ -90,7 +95,7 @@ export function useTasksImpact({
         }).filter((w): w is NonNullable<typeof w> => w !== null);
 
         return { projects: projectsResult, weeks: weeksResult };
-    }, [newTasks, projects, weeks, employeeId, getEmployeeLoadForWeek, getProjectBudgetStatus, viewMonth]);
+    }, [newTasks, projects, weeks, employeeId, getEmployeeLoadForWeek, getProjectBudgetStatus, viewMonth, batchPreview]);
 
     const getWeekExceedStatus = (weekDate: string) => tasksImpact.weeks.find((w) => w.weekDate === weekDate)?.exceeds || false;
     const getProjectExceedStatus = (projectId: string) => tasksImpact.projects.find((p) => p.id === projectId)?.exceeds || false;
