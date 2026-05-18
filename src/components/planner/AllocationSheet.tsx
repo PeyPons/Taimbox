@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { TimelineSheet } from '@/components/shared/TimelineSheet';
 import { WeeklyReportDialog } from '@/components/employee/WeeklyReportDialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -22,7 +22,6 @@ import { format, addMonths, subMonths, isSameMonth, parseISO, addDays, isBefore,
 import { es } from 'date-fns/locale';
 import { toast } from '@/lib/notify';
 import { PlannerTour } from './PlannerTour';
-import { WeekNavigation } from './WeekNavigation';
 import { ProjectImpactSummary } from './ProjectImpactSummary';
 import { useAllocationSheet, ProjectBudgetStatus } from '@/hooks/useAllocationSheet';
 import { useAllocationActions } from '@/hooks/useAllocationActions';
@@ -31,8 +30,8 @@ import { TaskNotesTrigger } from '@/components/planner/allocation/TaskNotesTrigg
 import { AllocationProjectHeader } from '@/components/planner/allocation/AllocationProjectHeader';
 import { AllocationTaskRow } from '@/components/planner/allocation/AllocationTaskRow';
 import { PlannerTaskContextMenu } from '@/components/planner/allocation/PlannerTaskContextMenu';
-import { AllocationMonthNavigation } from '@/components/planner/allocation/AllocationMonthNavigation';
-import { AllocationToolbarControls } from '@/components/planner/allocation/AllocationToolbarControls';
+import { AllocationSheetHeader } from '@/components/planner/allocation/AllocationSheetHeader';
+import type { WeekStripItemSummary } from '@/components/planner/allocation/AllocationWeekStrip';
 import { TaskTimer } from '@/components/employee/TaskTimer';
 import { BatchTaskRow } from '@/components/planner/BatchTaskRow';
 import { AllocationFormDialog } from '@/components/planner/allocation/AllocationFormDialog';
@@ -208,9 +207,6 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
 
   const isMobile = useIsMobile();
   const effectiveShowAllWeeks = showAllWeeks; // Permitir vista mensual en móvil si el usuario lo activa
-  const sortMenuLabel = effectiveShowAllWeeks ? 'Vistas' : 'Ordenar';
-
-  // Inicializar selectedWeekIndex como null para que use currentWeekIndex del hook por defecto
   const [selectedWeekIndex, setSelectedWeekIndex] = useState<number | null>(null);
 
   // Preferencia de visualización: auto-expandir o colapsar proyectos
@@ -233,7 +229,8 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
     name_asc: 'Nombre (A-Z)',
     name_desc: 'Nombre (Z-A)',
   };
-  const sortButtonLabel = effectiveShowAllWeeks ? sortMenuLabel : `${sortMenuLabel}: ${sortOptionLabels[sortOption]}`;
+  const sortButtonLabel = effectiveShowAllWeeks ? 'Opciones' : 'Ordenar';
+  const sortOptionLabel = sortOptionLabels[sortOption];
 
   // Proyecto seleccionado para mostrar detalles en panel lateral
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
@@ -349,27 +346,45 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
     return [weeks[activeWeekIndex]];
   }, [weeks, showAllWeeks, activeWeekIndex]);
 
-  const toolbarContextLine = useMemo(() => {
-    if (effectiveShowAllWeeks) return `Viendo todo el mes · ${weeks.length} semanas`;
-    if (weeks.length === 0 || activeWeekIndex < 0 || activeWeekIndex >= weeks.length) return null;
-    const w = weeks[activeWeekIndex];
-    const start = w.effectiveStart || w.weekStart;
-    const end = w.effectiveEnd || addDays(w.weekStart, 6);
-    return `Viendo la semana del ${format(start, 'd', { locale: es })} al ${format(end, 'd MMM', { locale: es })}`;
-  }, [effectiveShowAllWeeks, weeks, activeWeekIndex]);
+  const weekStripSummaries = useMemo((): WeekStripItemSummary[] => {
+    if (effectiveShowAllWeeks || weeks.length === 0) return [];
+    return weeks.map((week) => {
+      const weekStartDate = format(week.weekStart, 'yyyy-MM-dd');
+      const load = getEmployeeLoadForWeek(
+        employeeId,
+        weekStartDate,
+        week.effectiveStart,
+        week.effectiveEnd,
+        viewDate
+      );
 
-  // Navegación entre semanas
-  const goToPrevWeek = () => {
-    if (activeWeekIndex > 0) {
-      setSelectedWeekIndex(activeWeekIndex - 1);
-    }
-  };
+      const weekAllocations = getEmployeeAllocationsForWeek(employeeId, weekStartDate).filter((a) =>
+        isAllocationInEffectiveMonth(a.weekStartDate, viewDate)
+      );
+      const weekReal = round2(weekAllocations.reduce((sum, a) => sum + (a.hoursActual || 0), 0));
+      const weekComp = round2(weekAllocations.reduce((sum, a) => sum + (a.hoursComputed || 0), 0));
+      const planHours = round2(weekAllocations.reduce((sum, a) => sum + (a.hoursAssigned || 0), 0));
+      const showComp = preference !== 'actual';
 
-  const goToNextWeek = () => {
-    if (activeWeekIndex < weeks.length - 1) {
-      setSelectedWeekIndex(activeWeekIndex + 1);
-    }
-  };
+      return {
+        planHours,
+        loadHours: round2(load.hours),
+        capacity: load.capacity,
+        status: load.status,
+        weekReal,
+        weekComp,
+        showComp,
+      };
+    });
+  }, [
+    effectiveShowAllWeeks,
+    weeks,
+    employeeId,
+    getEmployeeLoadForWeek,
+    getEmployeeAllocationsForWeek,
+    viewDate,
+    preference,
+  ]);
 
   const monthName = format(viewDate, 'MMMM', { locale: es });
   const monthLabel = `${monthName.charAt(0).toUpperCase() + monthName.slice(1)} - ${format(viewDate, 'yyyy')}`;
@@ -639,75 +654,38 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
           }}
         >
           <TooltipProvider delayDuration={200}>
-            <SheetHeader className="pb-6 border-b mb-6 space-y-4">
-              <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-6 relative">
-
-                {/* 1. SECCIÓN IZQUIERDA: INFO EMPLEADO */}
-                <div className="flex items-center gap-4 z-10">
-                  {employee.avatarUrl ? (
-                    <Avatar className="h-12 w-12 border-2 border-indigo-200 shadow-sm">
-                      <AvatarImage src={employee.avatarUrl} alt={employee.name} />
-                      <AvatarFallback className="bg-indigo-100 text-indigo-700 font-bold text-lg">
-                        {employee.name.substring(0, 2).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                  ) : (
-                    <div className="h-12 w-12 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-lg shadow-sm border border-indigo-200">
-                      {employee.name.substring(0, 2).toUpperCase()}
-                    </div>
-                  )}
-                  <div>
-                    <SheetTitle className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
-                      <SensitiveText kind="employee" id={employee.id} asBlock>
-                        {employee.name}
-                      </SensitiveText>
-                      <Badge variant="outline" className="ml-2 font-normal text-slate-500 bg-slate-50 hidden sm:inline-flex">
-                        Planificación
-                      </Badge>
-                    </SheetTitle>
-                    <SheetDescription className="text-sm flex items-center gap-2 mt-0.5">
-                      <span className="capitalize text-slate-500">{format(viewDate, 'MMMM yyyy', { locale: es })}</span>
-                    </SheetDescription>
-                  </div>
-                </div>
-
-                {/* 2. SECCIÓN CENTRAL: NAVEGACIÓN (Absoluta en desktop para centrado perfecto) */}
-                <AllocationMonthNavigation
-                  isMobile={isMobile}
-                  monthLabel={monthLabel}
-                  showAllWeeks={showAllWeeks}
-                  onPrevMonth={handlePrevMonth}
-                  onNextMonth={handleNextMonth}
-                  onScrollWeeksLeft={() => scrollContainerRef.current?.scrollBy({ left: -420, behavior: 'smooth' })}
-                  onScrollWeeksRight={() => scrollContainerRef.current?.scrollBy({ left: 420, behavior: 'smooth' })}
-                />
-
-                {/* 3. SECCIÓN DERECHA: HERRAMIENTAS */}
-                <AllocationToolbarControls
-                  isMobile={isMobile}
-                  searchTerm={searchTerm}
-                  onSearchTermChange={setSearchTerm}
-                  effectiveShowAllWeeks={effectiveShowAllWeeks}
-                  showAllWeeks={showAllWeeks}
-                  onToggleShowAllWeeks={() => setShowAllWeeks(!showAllWeeks)}
-                  onOpenTimeline={() => setTimelineOpen(true)}
-                  onOpenWeekly={() => {
-                    setWeeklyFocusAllocationId(null);
-                    setWeeklyOpen(true);
-                  }}
-                  sortButtonLabel={sortButtonLabel}
-                  autoExpand={autoExpand}
-                  onToggleAutoExpand={() => setAutoExpand(!autoExpand)}
-                  sortOption={sortOption}
-                  onSetSortOption={setSortOption}
-                />
-              </div>
-              {toolbarContextLine && (
-                <p className="text-xs text-slate-500 mt-1 px-0.5" aria-live="polite">
-                  {toolbarContextLine}
-                </p>
-              )}
-            </SheetHeader>
+            <AllocationSheetHeader
+              employee={employee}
+              monthLabel={monthLabel}
+              isMobile={isMobile}
+              effectiveShowAllWeeks={effectiveShowAllWeeks}
+              weeks={weeks}
+              weekSummaries={weekStripSummaries}
+              activeWeekIndex={activeWeekIndex}
+              currentWeekIndex={hookCurrentWeekIndex ?? null}
+              onPrevMonth={handlePrevMonth}
+              onNextMonth={handleNextMonth}
+              onSelectWeek={setSelectedWeekIndex}
+              onAddTask={
+                !effectiveShowAllWeeks && weeks[activeWeekIndex]
+                  ? () => startAdd(weeks[activeWeekIndex].weekStart)
+                  : undefined
+              }
+              searchTerm={searchTerm}
+              onSearchTermChange={setSearchTerm}
+              onToggleShowAllWeeks={() => setShowAllWeeks(!showAllWeeks)}
+              onOpenTimeline={() => setTimelineOpen(true)}
+              onOpenWeekly={() => {
+                setWeeklyFocusAllocationId(null);
+                setWeeklyOpen(true);
+              }}
+              sortButtonLabel={sortButtonLabel}
+              sortOptionLabel={sortOptionLabel}
+              autoExpand={autoExpand}
+              onToggleAutoExpand={() => setAutoExpand(!autoExpand)}
+              sortOption={sortOption}
+              onSetSortOption={setSortOption}
+            />
           </TooltipProvider>
 
           {isLoadingTasks ? (
@@ -721,6 +699,28 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
             <TooltipProvider delayDuration={300}>
               {/* Contenedor relativo para posicionar flechas de navegación */}
               <div className="relative group">
+                {showAllWeeks && (
+                  <>
+                    <Button
+                      variant="secondary"
+                      size="icon"
+                      className="absolute left-1 top-1/2 -translate-y-1/2 z-10 h-9 w-9 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity hidden sm:flex"
+                      onClick={() => scrollContainerRef.current?.scrollBy({ left: -420, behavior: 'smooth' })}
+                      aria-label="Desplazar semanas hacia la izquierda"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="icon"
+                      className="absolute right-1 sm:right-[240px] top-1/2 -translate-y-1/2 z-10 h-9 w-9 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity hidden sm:flex"
+                      onClick={() => scrollContainerRef.current?.scrollBy({ left: 420, behavior: 'smooth' })}
+                      aria-label="Desplazar semanas hacia la derecha"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </>
+                )}
                 <div
                   ref={scrollContainerRef}
                   className={cn(
@@ -811,62 +811,6 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                             : undefined;
                         return (
                           <div key={weekStr} className="flex-1 min-w-0 overflow-x-hidden w-full max-w-full">
-                            {/* Header compacto de la semana */}
-                            <div className="flex flex-col gap-4 mb-4 pb-3 border-b">
-                              <div className="flex items-center justify-between w-full" data-tour="planner-week-nav">
-                                <div className="flex items-center gap-2 xs:gap-3">
-                                  <Button variant="outline" size="sm" className={cn("h-8 w-8 p-0", isMobile && "h-11 w-11 min-h-[44px]")} onClick={goToPrevWeek} disabled={activeWeekIndex === 0}>
-                                    <ChevronLeft className="h-4 w-4" />
-                                  </Button>
-                                  <div>
-                                    <div className="font-bold text-base xs:text-lg text-foreground truncate max-w-[140px] xs:max-w-none">Semana {activeWeekIndex + 1}</div>
-                                    <div className="text-xs text-slate-500">{weekDateLabel}</div>
-                                  </div>
-                                  <Button variant="outline" size="sm" className={cn("h-8 w-8 p-0", isMobile && "h-11 w-11 min-h-[44px]")} onClick={goToNextWeek} disabled={activeWeekIndex === weeks.length - 1}>
-                                    <ChevronRight className="h-4 w-4" />
-                                  </Button>
-                                </div>
-
-                                <Button variant="outline" size="sm" className={cn("gap-2 h-8", isMobile && "h-11 min-h-[44px]")} onClick={() => startAdd(week.weekStart)} data-tour="planner-add-task">
-                                  <Plus className="h-4 w-4" /> <span className="hidden xs:inline">Añadir</span>
-                                </Button>
-                              </div>
-
-                              {/* Resumen de la semana - Stacking en móvil */}
-                              <div className="flex flex-wrap items-center gap-2 text-xs">
-                                <div className="flex items-center gap-1 px-2 py-1 bg-slate-100 rounded shrink-0">
-                                  <span className="text-slate-500">Plan:</span>
-                                  <span className="font-bold">{weekEst}h</span>
-                                  <span className="text-slate-400">/</span>
-                                  <span className="text-slate-500 font-medium">{load.capacity}h</span>
-                                </div>
-
-                                {(weekReal > 0 || weekComp > 0 || completedTasks.length > 0) && (
-                                  <div className="flex flex-wrap items-center gap-2">
-                                    <div className="flex items-center gap-1.5 px-2 py-1 bg-blue-50 rounded shrink-0">
-                                      <span className="text-blue-600">Real:</span>
-                                      <span className="font-bold text-blue-700">{weekReal}h</span>
-                                    </div>
-                                    {preference !== 'actual' && (
-                                      <div className="flex items-center gap-1.5 px-2 py-1 bg-emerald-50 rounded shrink-0">
-                                        <span className="text-emerald-600">Comp:</span>
-                                        <span className="font-bold text-emerald-700">{weekComp}h</span>
-                                      </div>
-                                    )}
-                                    {weekPlanDelta !== 0 && (
-                                      <div className={cn(
-                                        "flex items-center gap-1 px-2 py-1 rounded font-bold shrink-0",
-                                        weekPlanDelta >= 0 ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
-                                      )}>
-                                        {weekPlanDelta >= 0 ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
-                                        {weekPlanDelta >= 0 ? '+' : ''}{weekPlanDelta}h
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-
                             {/* Tabla de proyectos y tareas */}
                             <div className="space-y-4 max-h-[70vh] overflow-y-auto overflow-x-hidden min-w-0 pr-2" data-tour="planner-projects">
                               {sortedGroups.map(([projId, projAllocations]) => {
@@ -1483,35 +1427,14 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                           {/* HEADER SEMANA MEJORADO */}
                           <div className="flex flex-col gap-3 pb-3 border-b border-slate-100">
                             <div className="flex items-center justify-between">
-                              {/* Navegación entre semanas (solo en vista de una semana) */}
                               {!showAllWeeks ? (
-                                <div className="flex items-center gap-2">
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="h-8 w-8 p-0"
-                                    onClick={goToPrevWeek}
-                                    disabled={activeWeekIndex === 0}
-                                  >
-                                    <ChevronLeft className="h-4 w-4" />
-                                  </Button>
-                                  <div className="text-center min-w-[140px]">
-                                    <div className="font-bold text-sm text-foreground/80 uppercase tracking-wider">
-                                      Semana {activeWeekIndex + 1}
-                                    </div>
-                                    <div className="text-[10px] text-slate-400">
-                                      {weekDateLabel} · <span className="text-slate-500">{activeWeekIndex + 1} de {weeks.length}</span>
-                                    </div>
+                                <div className="min-w-0">
+                                  <div className="font-bold text-sm text-foreground/80 uppercase tracking-wider">
+                                    Semana {activeWeekIndex + 1}
                                   </div>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="h-8 w-8 p-0"
-                                    onClick={goToNextWeek}
-                                    disabled={activeWeekIndex === weeks.length - 1}
-                                  >
-                                    <ChevronRight className="h-4 w-4" />
-                                  </Button>
+                                  <div className="text-[10px] text-slate-400 tabular-nums">
+                                    {weekDateLabel}
+                                  </div>
                                 </div>
                               ) : (
                                 <div className="flex items-center gap-3">
@@ -1524,7 +1447,13 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                   </div>
                                 </div>
                               )}
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-indigo-100 hover:text-indigo-700 rounded-full transition-colors" onClick={() => startAdd(week.weekStart)}>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 hover:bg-indigo-100 hover:text-indigo-700 rounded-full transition-colors shrink-0"
+                                onClick={() => startAdd(week.weekStart)}
+                                aria-label="Añadir tarea"
+                              >
                                 <Plus className="h-4 w-4" />
                               </Button>
                             </div>

@@ -3,7 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
-import { Calendar, Check, ChevronDown, GanttChart, LayoutGrid, Search, SlidersHorizontal, TrendingUp } from 'lucide-react';
+import { Calendar, Check, ChevronDown, GanttChart, LayoutGrid, Plus, Search, SlidersHorizontal, TrendingUp } from 'lucide-react';
 
 type SortOption = 'budget_desc' | 'budget_asc' | 'my_hours_desc' | 'my_hours_asc' | 'name_asc' | 'name_desc';
 
@@ -12,15 +12,16 @@ interface AllocationToolbarControlsProps {
   searchTerm: string;
   onSearchTermChange: (value: string) => void;
   effectiveShowAllWeeks: boolean;
-  showAllWeeks: boolean;
   onToggleShowAllWeeks: () => void;
   onOpenTimeline: () => void;
   onOpenWeekly: () => void;
   sortButtonLabel: string;
+  sortOptionLabel: string;
   autoExpand: boolean;
   onToggleAutoExpand: () => void;
   sortOption: SortOption;
   onSetSortOption: (option: SortOption) => void;
+  onAddTask?: () => void;
 }
 
 export function AllocationToolbarControls({
@@ -28,25 +29,31 @@ export function AllocationToolbarControls({
   searchTerm,
   onSearchTermChange,
   effectiveShowAllWeeks,
-  showAllWeeks,
   onToggleShowAllWeeks,
   onOpenTimeline,
   onOpenWeekly,
   sortButtonLabel,
+  sortOptionLabel,
   autoExpand,
   onToggleAutoExpand,
   sortOption,
   onSetSortOption,
+  onAddTask,
 }: AllocationToolbarControlsProps) {
   return (
-    <div className="flex items-center gap-2 z-10 ml-auto order-2 xl:order-3">
+    <div className="flex flex-wrap items-center justify-end gap-1.5 sm:gap-2">
       <Tooltip>
         <TooltipTrigger asChild>
-          <div className={cn("relative transition-all duration-300 ease-in-out", searchTerm ? "w-48" : "w-9 focus-within:w-48")}>
+          <div
+            className={cn(
+              'relative transition-all duration-300 ease-in-out',
+              searchTerm ? 'w-full sm:w-44' : 'w-9 focus-within:w-full sm:focus-within:w-44'
+            )}
+          >
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
             <Input
-              placeholder="Buscar tarea o proyecto..."
-              className={cn("pl-9 h-9 text-xs bg-white/50 focus:bg-white transition-all", !searchTerm && "cursor-pointer")}
+              placeholder="Buscar..."
+              className={cn('pl-9 h-9 text-xs bg-white/50 focus:bg-white transition-all', !searchTerm && 'cursor-pointer')}
               value={searchTerm}
               onChange={(e) => onSearchTermChange(e.target.value)}
             />
@@ -55,9 +62,9 @@ export function AllocationToolbarControls({
         <TooltipContent side="bottom">Filtra por nombre de tarea o de proyecto</TooltipContent>
       </Tooltip>
 
-      <div className="h-6 w-px bg-slate-200 mx-1" />
+      <div className="hidden sm:block h-6 w-px bg-slate-200" />
 
-      <div className="flex bg-slate-100/80 p-1 rounded-lg gap-1" data-tour="planner-view-toggle">
+      <div className="flex bg-slate-100/80 p-1 rounded-lg gap-0.5 shrink-0" data-tour="planner-view-toggle">
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
@@ -108,13 +115,19 @@ export function AllocationToolbarControls({
         </Tooltip>
       </div>
 
-      <div className="h-6 w-px bg-slate-200 mx-1" />
+      <div className="hidden sm:block h-6 w-px bg-slate-200" />
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" className="h-9 px-2 gap-2 text-slate-600 border-slate-200 min-w-0" data-tour="planner-sort">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-9 px-2 gap-1.5 text-slate-600 border-slate-200 min-w-0 shrink-0"
+            data-tour="planner-sort"
+            aria-label={sortOptionLabel}
+          >
             <SlidersHorizontal className="h-3.5 w-3.5 shrink-0" />
-            <span className="text-xs truncate max-w-[140px] sm:max-w-[200px]">{sortButtonLabel}</span>
+            <span className="text-xs hidden md:inline truncate max-w-[120px] lg:max-w-[160px]">{sortButtonLabel}</span>
             <ChevronDown className="h-3 w-3 opacity-50 shrink-0" />
           </Button>
         </DropdownMenuTrigger>
@@ -150,6 +163,24 @@ export function AllocationToolbarControls({
           </div>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      {onAddTask && (
+        <>
+          <div className="hidden sm:block h-6 w-px bg-slate-200" />
+          <Button
+            size="sm"
+            className={cn(
+              'gap-1.5 shrink-0 bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm',
+              isMobile ? 'h-11 min-h-[44px]' : 'h-9'
+            )}
+            onClick={onAddTask}
+            data-tour="planner-add-task"
+          >
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline">Añadir tarea</span>
+          </Button>
+        </>
+      )}
     </div>
   );
 }
