@@ -43,15 +43,6 @@ function BrowserFrame({ accent, children, activeNav = 0 }: { accent: string; chi
           `transform: rotateY(-5deg) rotateX(2deg); transform-style: preserve-3d; box-shadow: ${rgba(accent, 0.3)} 0px 36px 80px -20px, rgba(15, 23, 42, 0.18) 0px 22px 42px -18px;`,
         )}
       >
-        <div className="flex items-center gap-2 px-4 py-2.5 border-b border-slate-100 bg-slate-50/80">
-          <div className="h-2.5 w-2.5 rounded-full bg-rose-300" />
-          <div className="h-2.5 w-2.5 rounded-full bg-amber-300" />
-          <div className="h-2.5 w-2.5 rounded-full bg-emerald-300" />
-          <div className="ml-2 flex-1 h-5 rounded-md bg-white border border-slate-100 flex items-center px-2 gap-1.5">
-            <div className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-            <span className="font-mono text-[10px] text-slate-400 tracking-tight">taimbox.com</span>
-          </div>
-        </div>
         <div className="flex">
           <div className="hidden sm:flex w-10 bg-slate-900 flex-col items-center py-2.5 gap-2 shrink-0 border-r border-slate-800">
             <div className="h-5 w-5 rounded-md bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center mb-0.5" style={landingInlineStyle("box-shadow: rgba(124,58,237,0.35) 0px 3px 8px -2px;")}>

@@ -1,7 +1,7 @@
 import { useCallback, useRef } from "react";
 import { animate } from "motion";
 
-const STATUS_CYCLE_MS = 3200;
+const STATUS_CYCLE_MS = 2800;
 const STATUS_SLIDE_S = 0.45;
 
 /**
@@ -49,17 +49,32 @@ export function useLandingLiteralDomMotion(_reduceMotion: boolean | null) {
       // Vertical status ticker (hero team stats)
       const statusContainer = root.querySelector<HTMLElement>("[data-hero-status-ticker]");
       if (statusContainer) {
-        const items = Array.from(statusContainer.querySelectorAll<HTMLElement>("[data-hero-status-item]"));
+        const items = Array.from(
+          statusContainer.querySelectorAll<HTMLElement>("[data-hero-status-item]"),
+        );
         if (items.length > 1) {
           let current = 0;
+          let statusCycleTimer: ReturnType<typeof window.setInterval> | undefined;
+          let activeSlideStops: Array<() => void> = [];
+
+          const setStatusItemState = (el: HTMLElement, visible: boolean) => {
+            el.style.opacity = visible ? "1" : "0";
+            el.style.transform = visible ? "translateY(0)" : "translateY(100%)";
+          };
+
+          items.forEach((el, i) => setStatusItemState(el, i === 0));
 
           const cycle = () => {
+            activeSlideStops.forEach((stop) => stop());
+            activeSlideStops = [];
+
             const prev = current;
             current = (current + 1) % items.length;
             const outEl = items[prev];
             const inEl = items[current];
 
-            // Slide out upward
+            setStatusItemState(inEl, false);
+
             const ctrlOut = animate(0, 1, {
               duration: STATUS_SLIDE_S,
               ease: [0.22, 1, 0.36, 1],
@@ -68,9 +83,8 @@ export function useLandingLiteralDomMotion(_reduceMotion: boolean | null) {
                 outEl.style.transform = `translateY(${-p * 100}%)`;
               },
             });
-            stopRef.current.push(() => ctrlOut.stop());
+            activeSlideStops.push(() => ctrlOut.stop());
 
-            // Slide in from below
             const ctrlIn = animate(0, 1, {
               duration: STATUS_SLIDE_S,
               ease: [0.22, 1, 0.36, 1],
@@ -79,11 +93,14 @@ export function useLandingLiteralDomMotion(_reduceMotion: boolean | null) {
                 inEl.style.transform = `translateY(${(1 - p) * 100}%)`;
               },
             });
-            stopRef.current.push(() => ctrlIn.stop());
+            activeSlideStops.push(() => ctrlIn.stop());
           };
 
-          const timer = window.setInterval(cycle, STATUS_CYCLE_MS);
-          stopRef.current.push(() => window.clearInterval(timer));
+          statusCycleTimer = window.setInterval(cycle, STATUS_CYCLE_MS);
+          stopRef.current.push(() => {
+            if (statusCycleTimer !== undefined) window.clearInterval(statusCycleTimer);
+            activeSlideStops.forEach((stop) => stop());
+          });
         }
       }
     },

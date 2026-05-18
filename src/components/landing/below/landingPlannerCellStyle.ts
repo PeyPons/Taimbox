@@ -37,7 +37,3 @@ export const LEGEND_SWATCH_STYLE: Record<string, string> = {
   absence:
     "background: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.4) 0px, rgba(255, 255, 255, 0.4) 1px, transparent 1px, transparent 3px) rgb(148, 163, 184);",
 };
-
-export const S01_PILL_BORDERS = ["border-emerald-200", "border-amber-200", "border-violet-200", "border-sky-200"] as const;
-export const S01_PILL_ICON_BG = ["bg-emerald-50", "bg-amber-50", "bg-violet-50", "bg-sky-50"] as const;
-export const S01_PILL_ICON_COLOR = ["text-emerald-700", "text-amber-700", "text-violet-700", "text-sky-700"] as const;

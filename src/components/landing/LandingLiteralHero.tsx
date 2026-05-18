@@ -23,14 +23,14 @@ function HeroTickerEntry({
 }) {
   return (
     <div className="flex items-center gap-3 shrink-0">
-      <span className="text-[11px] font-mono text-slate-400 tabular-nums">
+      <span className="text-[11px] font-mono text-indigo-200/70 tabular-nums">
         {item.time}
       </span>
       <span className={`text-[12.5px] font-semibold ${toneClass}`}>
         {item.name}
       </span>
-      <span className="text-[12.5px] text-slate-700">{item.verb}</span>
-      <span className="text-[12.5px] text-slate-400">{item.detail}</span>
+      <span className="text-[12.5px] text-white/85">{item.verb}</span>
+      <span className="text-[12.5px] text-indigo-200/75">{item.detail}</span>
     </div>
   );
 }
@@ -53,7 +53,7 @@ function HeroTickerTrack({
         <HeroTickerEntry
           key={`${item.time}-${item.name}-${item.verb}`}
           item={item}
-          toneClass={toneClasses[item.tone] ?? "text-slate-700"}
+          toneClass={toneClasses[item.tone] ?? "text-indigo-300"}
         />
       ))}
     </div>
@@ -96,9 +96,9 @@ export const LandingLiteralHero = forwardRef<
   return (
     <section
       ref={ref}
-      className="relative overflow-hidden min-h-[calc(100vh-68px)] flex flex-col"
+      className="relative overflow-hidden min-h-[calc(100vh-3.5rem)] flex flex-col"
       style={landingInlineStyle(
-        `background: radial-gradient(80% 60% at 15% 20%, rgba(196, 181, 253, 0.2), transparent 60%), radial-gradient(70% 50% at 90% 70%, rgba(251, 207, 232, 0.16), transparent 60%), linear-gradient(rgb(255, 255, 255) 0%, rgb(253, 251, 245) 50%, rgb(253, 251, 245) 100%);`,
+        "background: radial-gradient(80% 60% at 15% 20%, rgba(99, 102, 241, 0.22), transparent 60%), radial-gradient(70% 50% at 90% 70%, rgba(168, 85, 247, 0.14), transparent 60%);",
       )}
     >
       <style dangerouslySetInnerHTML={{ __html: LANDING_HERO_CSS }} />
@@ -113,7 +113,7 @@ export const LandingLiteralHero = forwardRef<
           style={landingInlineStyle(`opacity: 1; transform: none;`)}
         >
           <div
-            className="inline-flex items-center gap-2.5 mb-8 px-3 py-1.5 rounded-full bg-white border border-slate-200/70 shadow-[0_2px_6px_-2px_rgba(15,23,42,0.06)]"
+            className="inline-flex items-center gap-2.5 mb-8 px-3 py-1.5 rounded-full bg-indigo-500/15 border border-indigo-400/30"
             style={landingInlineStyle(`opacity: 1; transform: none;`)}
           >
             <svg
@@ -158,12 +158,12 @@ export const LandingLiteralHero = forwardRef<
               </g>
               <circle cx="7" cy="7" r="1" fill="rgba(124,58,237,0.95)"></circle>
             </svg>
-            <span className="text-[11.5px] font-medium text-slate-700">
+            <span className="text-[11.5px] font-medium text-indigo-200">
               {t("heroBadge")}
             </span>
-            <span className="h-3 w-px bg-slate-200"></span>
+            <span className="h-3 w-px bg-white/15"></span>
             <a
-              className="text-[11.5px] font-medium text-violet-700 hover:text-violet-900 inline-flex items-center gap-1 transition-colors"
+              className="text-[11.5px] font-medium text-indigo-300 hover:text-white inline-flex items-center gap-1 transition-colors"
               href={path("/precios")}
             >
               {t("heroPricingLink")}
@@ -184,7 +184,7 @@ export const LandingLiteralHero = forwardRef<
               </svg>
             </a>
           </div>
-          <h1 className="text-[2.5rem] sm:text-[3.5rem] md:text-[4.5rem] lg:text-[5.25rem] xl:text-[6rem] font-semibold text-slate-900 leading-[0.96] -tracking-[0.04em]">
+          <h1 className="text-[2.5rem] sm:text-[3.5rem] md:text-[4.5rem] lg:text-[5.25rem] xl:text-[6rem] font-black text-white leading-[1.1] tracking-tight">
             <span
               className="block"
               style={landingInlineStyle(
@@ -199,26 +199,21 @@ export const LandingLiteralHero = forwardRef<
                 `opacity: 1; filter: blur(0px); transform: none;`,
               )}
             >
-              <span
-                className="inline-block font-normal italic bg-gradient-to-r from-violet-600 via-indigo-600 to-pink-600 bg-clip-text text-transparent"
-                style={landingInlineStyle(
-                  `padding-right: 0.18em; padding-bottom: 0.05em;`,
-                )}
-              >
+              <span className="bg-gradient-to-r from-blue-400 via-cyan-400 to-teal-400 bg-clip-text text-transparent">
                 {t("heroTitleHighlight")}
               </span>
             </span>
           </h1>
           <p
-            className="mt-7 max-w-lg text-[15px] sm:text-[17px] leading-relaxed text-slate-600"
+            className="mt-7 max-w-lg text-[15px] sm:text-[17px] leading-relaxed text-indigo-100/90"
             style={landingInlineStyle(`opacity: 1; transform: none;`)}
           >
             {t("heroSubtitleLine1")} {t("heroSubtitleLine2Prefix")}{" "}
-            <span className="text-slate-900 font-semibold">
+            <span className="text-white font-semibold">
               {t("heroSubtitleLine2When")}
             </span>{" "}
             {t("heroSubtitleLine2And")}{" "}
-            <span className="text-slate-900 font-semibold">
+            <span className="text-white font-semibold">
               {t("heroSubtitleLine2Why")}
             </span>
             .
@@ -228,7 +223,7 @@ export const LandingLiteralHero = forwardRef<
             style={landingInlineStyle(`opacity: 1; transform: none;`)}
           >
             <a className="group" href={path("/login?tab=register")}>
-              <button className="inline-flex items-center justify-center gap-2 whitespace-nowrap ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 w-full sm:w-auto h-12 px-7 rounded-full bg-slate-900 text-white hover:bg-slate-800 text-[14px] font-medium shadow-[0_8px_24px_-8px_rgba(15,23,42,0.4)] transition-colors">
+              <button className="inline-flex items-center justify-center gap-2 whitespace-nowrap ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 w-full sm:w-auto h-12 px-7 rounded-full bg-white text-indigo-950 hover:bg-indigo-50 text-[14px] font-medium shadow-[0_8px_24px_-8px_rgba(0,0,0,0.35)] transition-colors">
                 {t("heroPrimaryCta")}
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -248,7 +243,7 @@ export const LandingLiteralHero = forwardRef<
               </button>
             </a>
             <a className="group" href={path("/pitch")}>
-              <button className="inline-flex items-center justify-center gap-2 whitespace-nowrap ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 hover:text-foreground w-full sm:w-auto h-12 px-6 rounded-full text-[14px] font-medium text-slate-900 bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition-colors">
+              <button className="inline-flex items-center justify-center gap-2 whitespace-nowrap ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 w-full sm:w-auto h-12 px-6 rounded-full text-[14px] font-medium text-white bg-white/5 border border-white/20 hover:border-white/35 hover:bg-white/10 transition-colors">
                 {t("heroSecondaryCta")}
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -302,37 +297,35 @@ export const LandingLiteralHero = forwardRef<
                 LF
               </div>
             </div>
-            <div className="relative h-10 flex-1 min-w-0 overflow-hidden" data-hero-status-ticker>
+            <div className="relative h-11 flex-1 min-w-0 overflow-hidden" data-hero-status-ticker>
               {[
-                { value: "0", text: tLit("hero.overloads"), color: "rgb(5, 150, 105)" },
-                { value: "100%", text: tLit("hero.statusHoursTracked"), color: "rgb(99, 102, 241)" },
-                { value: "3", text: tLit("hero.statusRedistributions"), color: "rgb(139, 92, 246)" },
-                { value: "93%", text: tLit("hero.statusCapacity"), color: "rgb(5, 150, 105)" },
-                { value: "12", text: tLit("hero.statusBudget"), color: "rgb(8, 145, 178)" },
+                { value: "0", text: tLit("hero.overloads"), valueClass: "text-emerald-400" },
+                { value: "100%", text: tLit("hero.statusHoursTracked"), valueClass: "text-indigo-300" },
+                { value: "3", text: tLit("hero.statusRedistributions"), valueClass: "text-violet-300" },
+                { value: "93%", text: tLit("hero.statusCapacity"), valueClass: "text-emerald-400" },
+                { value: "12", text: tLit("hero.statusBudget"), valueClass: "text-cyan-300" },
               ].map((item, i) => (
                 <div
                   key={i}
                   className="absolute inset-0 flex flex-col justify-center"
                   data-hero-status-item
-                  style={{ opacity: i === 0 ? 1 : 0, transform: i === 0 ? "none" : "translateY(100%)" }}
                 >
                   <div className="flex items-baseline gap-1.5">
                     <span
-                      className="text-[15px] font-bold tabular-nums -tracking-[0.01em]"
-                      style={{ color: item.color }}
+                      className={`text-[15px] font-bold tabular-nums -tracking-[0.01em] ${item.valueClass}`}
                     >
                       {item.value}
                     </span>
-                    <span className="text-[13px] text-slate-700 font-medium truncate">
+                    <span className="text-[13px] text-white/90 font-medium truncate">
                       {item.text}
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5 mt-0.5">
                     <span className="relative flex h-1 w-1">
-                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500/70"></span>
-                      <span className="relative inline-flex h-1 w-1 rounded-full bg-emerald-500"></span>
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400/70" />
+                      <span className="relative inline-flex h-1 w-1 rounded-full bg-emerald-400" />
                     </span>
-                    <span className="text-[10px] uppercase tracking-[0.16em] font-mono text-slate-400">
+                    <span className="text-[10px] uppercase tracking-[0.16em] font-mono text-indigo-200/70">
                       {tLit("hero.live")}
                     </span>
                   </div>
@@ -348,21 +341,21 @@ export const LandingLiteralHero = forwardRef<
           <div className="relative w-full max-w-[460px] aspect-square mx-auto">
             <div
               aria-hidden="true"
-              className="absolute inset-0 rounded-full border border-violet-200/40 pointer-events-none"
+              className="absolute inset-0 rounded-full border border-indigo-400/25 pointer-events-none"
               style={landingInlineStyle(
                 `transform: scale(1.4298); transform-origin: center center;`,
               )}
             ></div>
             <div
               aria-hidden="true"
-              className="absolute inset-0 rounded-full border border-violet-200/40 pointer-events-none"
+              className="absolute inset-0 rounded-full border border-indigo-400/25 pointer-events-none"
               style={landingInlineStyle(
                 `transform: scale(1.25201); transform-origin: center center;`,
               )}
             ></div>
             <div
               aria-hidden="true"
-              className="absolute inset-0 rounded-full border border-violet-200/40 pointer-events-none"
+              className="absolute inset-0 rounded-full border border-indigo-400/25 pointer-events-none"
               style={landingInlineStyle(
                 `transform: scale(1.14988); transform-origin: center center;`,
               )}
@@ -371,7 +364,7 @@ export const LandingLiteralHero = forwardRef<
               aria-hidden="true"
               className="absolute inset-[5%] rounded-full blur-3xl pointer-events-none"
               style={landingInlineStyle(
-                `background: radial-gradient(circle, rgba(196, 181, 253, 0.55), rgba(251, 207, 232, 0.32) 55%, transparent 80%); transform: scale(1.01637);`,
+                "background: radial-gradient(circle, rgba(99, 102, 241, 0.45), rgba(168, 85, 247, 0.28) 55%, transparent 80%); transform: scale(1.01637);",
               )}
             ></div>
             <svg
@@ -504,7 +497,7 @@ export const LandingLiteralHero = forwardRef<
             </div>
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
               <span
-                className="font-mono text-[10px] uppercase tracking-[0.22em] text-slate-400 mb-2"
+                className="font-mono text-[10px] uppercase tracking-[0.22em] text-indigo-300/70 mb-2"
                 style={landingInlineStyle(`opacity: 1; transform: none;`)}
               >
                 {tLit("hero.orbitKicker")}
@@ -513,10 +506,10 @@ export const LandingLiteralHero = forwardRef<
                 className="flex items-baseline gap-1"
                 style={landingInlineStyle(`opacity: 1; transform: none;`)}
               >
-                <span className="text-6xl sm:text-7xl font-semibold tabular-nums -tracking-[0.04em] text-slate-900">
+                <span className="text-6xl sm:text-7xl font-semibold tabular-nums -tracking-[0.04em] text-white">
                   47
                 </span>
-                <span className="text-2xl sm:text-3xl font-normal text-slate-400">
+                <span className="text-2xl sm:text-3xl font-normal text-indigo-300/60">
                   h
                 </span>
               </div>
@@ -534,20 +527,20 @@ export const LandingLiteralHero = forwardRef<
                   strokeWidth="2.5"
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  className="lucide lucide-arrow-up-right h-3 w-3 text-emerald-600"
+                  className="lucide lucide-arrow-up-right h-3 w-3 text-emerald-400"
                 >
                   <path d="M7 7h10v10"></path>
                   <path d="M7 17 17 7"></path>
                 </svg>
-                <span className="text-[12px] font-semibold tabular-nums text-emerald-700">
+                <span className="text-[12px] font-semibold tabular-nums text-emerald-400">
                   +12,4%
                 </span>
-                <span className="text-[11px] text-slate-400">
+                <span className="text-[11px] text-indigo-300/60">
                   {tLit("hero.plannedSuffix")}
                 </span>
               </div>
               <span
-                className="font-mono text-[9px] uppercase tracking-[0.22em] text-slate-400 mt-3"
+                className="font-mono text-[9px] uppercase tracking-[0.22em] text-indigo-300/60 mt-3"
                 style={landingInlineStyle(`opacity: 1;`)}
               >
                 {tLit("hero.balancedCapacity")}
@@ -714,8 +707,7 @@ export const LandingLiteralHero = forwardRef<
         </div>
       </motion.div>
       <motion.div
-        className="relative z-10 mt-auto border-y border-slate-200/70 backdrop-blur-md"
-        style={landingInlineStyle(`background: rgba(253, 251, 245, 0.85);`)}
+        className="relative z-10 mt-auto border-y border-white/10 backdrop-blur-md bg-indigo-950/70"
         initial={prefersReduced ? false : { opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{
@@ -752,19 +744,19 @@ export const LandingLiteralHero = forwardRef<
                 )}
               ></span>
             </span>
-            <span className="text-[10px] uppercase tracking-[0.22em] text-slate-500 font-mono font-semibold">
+            <span className="text-[10px] uppercase tracking-[0.22em] text-indigo-200/90 font-mono font-semibold">
               {tLit("hero.tickerLive")}
             </span>
           </div>
-          <div className="hidden lg:block h-4 w-px bg-slate-200"></div>
+          <div className="hidden lg:block h-4 w-px bg-white/15"></div>
           <div className="flex-1 overflow-hidden relative min-w-0">
             <div
               aria-hidden="true"
-              className="pointer-events-none absolute inset-y-0 left-0 w-12 bg-gradient-to-r from-[#fdfbf5] to-transparent z-10"
+              className="pointer-events-none absolute inset-y-0 left-0 w-12 bg-gradient-to-r from-indigo-950 to-transparent z-10"
             ></div>
             <div
               aria-hidden="true"
-              className="pointer-events-none absolute inset-y-0 right-0 w-12 bg-gradient-to-l from-[#fdfbf5] to-transparent z-10"
+              className="pointer-events-none absolute inset-y-0 right-0 w-12 bg-gradient-to-l from-indigo-950 to-transparent z-10"
             ></div>
             <div
               className="flex w-max will-change-transform [backface-visibility:hidden] js-landing-ticker"

@@ -18,31 +18,229 @@
   },
   "s02": {
     "kicker": "Why Taimbox",
-    "title": "Three ideas that separate profitable agencies from",
-    "titleEmphasis": "\"busy\"",
+    "title": "Planning, deadlines, and profitability in",
+    "titleEmphasis": "one system",
     "cards": [
       {
-        "step": "01 · Principle",
-        "heading": "Utilization ≠ profitability",
-        "body": "Seeing the team at 86% doesn't mean billing 86%. Measure the real gap between used capacity and accrued revenue, month after month."
+        "step": "01 · Capacity vs. revenue",
+        "heading": "86% loaded doesn't mean 86% billed",
+        "body": "The planner shows weekly load per person. Financial Health crosses those hours with accrued revenue, pacing, and margin — you see the gap between hours and money before month-end, not in a separate sheet."
       },
       {
-        "step": "02 · Principle",
-        "heading": "Integrated flow",
-        "body": "Plan, execute, measure, and forecast on one surface. No parallel Excel, no Slack to find who's doing what."
+        "step": "02 · Grid to close",
+        "heading": "The same data flows through the agency",
+        "body": "Assign in the planner, tune budget and deadlines in Deadlines (including split weeks across months), log time, and read the outcome in Financial Health. No re-exporting to another Excel to reconcile."
       },
       {
-        "step": "03 · Principle",
-        "heading": "Data to the cent",
-        "body": "Auditable F1–F4 formulas + EHR. Every euro of accrued revenue is traceable — exportable to Excel, CSV, or via API."
+        "step": "03 · Unit economics",
+        "heading": "Cost, revenue, margin, and €/h — no black box",
+        "body": "Four linked metrics (F1 labor cost, F2 accrued revenue, F3 margin, F4 effective hourly rate) use the same logic as the app. Open or closed month; export to Excel, CSV, and API for your ERP or BI."
       }
-    ]
+    ],
+    "visual1": {
+      "load": "Planned load",
+      "accrued": "Accrued revenue",
+      "gap": "Hours ↔ revenue gap"
+    },
+    "visual2": {
+      "railLabel": "Data flow",
+      "steps": ["Planner", "Deadlines", "Time", "Financial Health"]
+    },
+    "visual3": {
+      "caption": "Financial Health · project",
+      "rows": [
+        { "badge": "F1", "label": "Labor cost", "value": "€1,008", "tone": "neutral" },
+        { "badge": "F2", "label": "Accrued revenue", "value": "€1,200", "tone": "neutral" },
+        { "badge": "F3", "label": "Net margin", "value": "+16%", "tone": "positive" },
+        { "badge": "F4", "label": "Hourly rate (EHR)", "value": "€119/h", "tone": "positive" }
+      ]
+    }
   },
   "s03": {
     "kicker": "For the whole team",
     "title": "Every role gets its",
     "titleHighlight": "own entry point",
     "subtitle": "Not another PM tool. Each role opens exactly what they need.",
+    "mockNav": {
+      "home": "My space",
+      "planner": "Planner",
+      "deadlines": "Deadlines",
+      "operations": "Operations tracking",
+      "finance": "Financial Health",
+      "capacity": "Team capacity"
+    },
+    "mocks": {
+      "directores": {
+        "moduleLabel": "Planner · May",
+        "scope": "4 people · 3 weeks",
+        "overloadBadge": "1 overload",
+        "weekCols": ["W1", "W2", "W3"],
+        "totalCol": "Tot",
+        "capacityLabel": "Effective capacity",
+        "capacityPct": "91%",
+        "legendOk": "OK",
+        "legendHigh": "High",
+        "legendOver": "Over",
+        "people": [
+          {
+            "initials": "MA",
+            "name": "María A.",
+            "color": "rgb(99,102,241)",
+            "weeks": [
+              { "hours": "7h", "pct": 92, "status": "ok" },
+              { "hours": "8h", "pct": 88, "status": "ok" },
+              { "hours": "8h", "pct": 98, "status": "ok" }
+            ],
+            "total": "23h",
+            "cap": "/24h",
+            "rowStatus": "ok"
+          },
+          {
+            "initials": "CR",
+            "name": "Carlos R.",
+            "color": "rgb(251,146,60)",
+            "weeks": [
+              { "hours": "11h", "pct": 118, "status": "over" },
+              { "hours": "8h", "pct": 96, "status": "ok" },
+              { "hours": "9h", "pct": 112, "status": "warn" }
+            ],
+            "total": "28h",
+            "cap": "/24h",
+            "rowStatus": "over"
+          },
+          {
+            "initials": "JL",
+            "name": "Julia L.",
+            "color": "rgb(236,72,153)",
+            "weeks": [
+              { "hours": "6h", "pct": 78, "status": "ok" },
+              { "hours": "—", "pct": 0, "status": "away" },
+              { "hours": "8h", "pct": 82, "status": "ok" }
+            ],
+            "total": "14h",
+            "cap": "/16h",
+            "rowStatus": "ok"
+          },
+          {
+            "initials": "PS",
+            "name": "Pedro S.",
+            "color": "rgb(34,211,238)",
+            "weeks": [
+              { "hours": "7h", "pct": 86, "status": "ok" },
+              { "hours": "8h", "pct": 94, "status": "ok" },
+              { "hours": "7.5h", "pct": 90, "status": "ok" }
+            ],
+            "total": "22.5h",
+            "cap": "/24h",
+            "rowStatus": "ok"
+          }
+        ]
+      },
+      "empleados": {
+        "moduleLabel": "My space · current week",
+        "scope": "32h planned · 19h logged",
+        "timerBadge": "Timer · 32:14",
+        "statusRunning": "In progress",
+        "statusDone": "Validated",
+        "statusPending": "Pending",
+        "weekTotalLabel": "Week total",
+        "weekTotal": "12.8h / 16h at close",
+        "tasks": [
+          {
+            "status": "running",
+            "title": "Global retainer design",
+            "client": "TechCorp",
+            "time": "2.3h / 4h",
+            "color": "rgb(139, 92, 246)",
+            "bg": "rgb(245, 243, 255)",
+            "border": "rgba(139, 92, 246, 0.18)"
+          },
+          {
+            "status": "done",
+            "title": "Quarterly SEO audit",
+            "client": "LocalBiz",
+            "time": "6.5h / 6h",
+            "color": "rgb(16, 185, 129)",
+            "bg": "rgb(236, 253, 245)",
+            "border": "rgba(16, 185, 129, 0.18)"
+          },
+          {
+            "status": "done",
+            "title": "Q2 campaign brief",
+            "client": "StartupHub",
+            "time": "4h / 4h",
+            "color": "rgb(16, 185, 129)",
+            "bg": "rgb(236, 253, 245)",
+            "border": "rgba(16, 185, 129, 0.18)"
+          },
+          {
+            "status": "pending",
+            "title": "OKR review",
+            "client": "Internal ops",
+            "time": "0h / 2h",
+            "color": "rgb(100, 116, 139)",
+            "bg": "rgb(248, 250, 252)",
+            "border": "rgba(100, 116, 139, 0.16)"
+          }
+        ]
+      },
+      "projectManagers": {
+        "moduleLabel": "Operations tracking · May",
+        "scope": "Project status · current month",
+        "riskBadge": "3 at risk",
+        "filters": ["All", "Behind schedule", "Over hours", "No activity"],
+        "activeFilter": "All",
+        "colProject": "Project",
+        "colStatus": "Status",
+        "projects": [
+          { "name": "Web TechCorp v2", "type": "Retainer", "status": "inRule", "statusLabel": "On track" },
+          { "name": "Audit LocalBiz", "type": "Project", "status": "behind", "statusLabel": "Behind schedule" },
+          { "name": "PPC StartupHub", "type": "Retainer", "status": "overHours", "statusLabel": "Over hours" },
+          { "name": "Client onboarding", "type": "Project", "status": "noActivity", "statusLabel": "No activity" }
+        ],
+        "blockingLabel": "Blocking tasks",
+        "blockingCount": "1",
+        "healthyPct": "75% healthy"
+      },
+      "rrhh": {
+        "moduleLabel": "Team capacity · May",
+        "scope": "Load per person and department",
+        "capacityBadge": "88% capacity",
+        "statusOk": "Available",
+        "statusOver": "Overload",
+        "statusAway": "Absence",
+        "summaryAvailable": "Available",
+        "summaryOver": "Overload",
+        "summaryAbsences": "Absences",
+        "people": [
+          { "name": "María", "role": "Design", "initials": "MG", "color": "rgb(251, 113, 133)", "cap": 92, "status": "ok", "note": "—" },
+          { "name": "Carlos", "role": "Design", "initials": "CR", "color": "rgb(251, 146, 60)", "cap": 118, "status": "over", "note": "+8h pending" },
+          { "name": "Ana", "role": "Marketing", "initials": "AM", "color": "rgb(167, 139, 250)", "cap": 78, "status": "away", "note": "Vacation 14–16" },
+          { "name": "Luis", "role": "Development", "initials": "LF", "color": "rgb(34, 211, 238)", "cap": 95, "status": "ok", "note": "—" }
+        ],
+        "counts": { "available": "9", "over": "1", "absences": "2" }
+      },
+      "finanzas": {
+        "moduleLabel": "Financial Health · May",
+        "scope": "Current month · live pacing",
+        "marginBadge": "Margin 32%",
+        "kpis": [
+          { "label": "Labor cost", "value": "€12,840", "sub": "F1", "color": "rgb(100, 116, 139)", "bg": "rgb(248, 250, 252)" },
+          { "label": "Accrued revenue", "value": "€18,420", "sub": "F2", "color": "rgb(16, 185, 129)", "bg": "rgb(236, 253, 245)" },
+          { "label": "Net margin", "value": "32%", "sub": "F3", "color": "rgb(99, 102, 241)", "bg": "rgb(238, 242, 255)" },
+          { "label": "EHR (€/h)", "value": "€47.8", "sub": "F4", "color": "rgb(8, 145, 178)", "bg": "rgb(236, 254, 255)" }
+        ],
+        "pacingTitle": "Pacing by project",
+        "pacingDay": "Day 12 / 22",
+        "pacingProjects": [
+          { "name": "TechCorp", "pct": 58, "target": 54, "color": "rgb(16, 185, 129)" },
+          { "name": "LocalBiz", "pct": 71, "target": 54, "color": "rgb(245, 158, 11)" },
+          { "name": "StartupHub", "pct": 42, "target": 54, "color": "rgb(239, 68, 68)" }
+        ],
+        "footerTitle": "F1–F4 on screen · Excel / CSV / API export",
+        "footerSub": "No black box · every euro auditable"
+      }
+    },
     "roles": [
       {
         "label": "Leaders",
@@ -60,7 +258,7 @@
       {
         "label": "Team members",
         "badgeText": "For team members",
-        "heading": "Your day on one screen",
+        "heading": "My space: your week at a glance",
         "description": "Per-task timer, clear priorities, and a weekly close validated in two minutes without chasing Slack links.",
         "bullets": [
           "Per-task timer in sidebar and Time page",
@@ -73,12 +271,12 @@
       {
         "label": "Project managers",
         "badgeText": "For project managers",
-        "heading": "Pacing and delivery without Excel",
-        "description": "Real progress per project, overloads caught before Monday, and automatic load redistribution suggestions.",
+        "heading": "Operations tracking without Excel",
+        "description": "Project status, blocking tasks, and planning coherence — the same view as /operaciones.",
         "bullets": [
-          "Accrued revenue and live pacing per project",
-          "Overload detected before it escalates",
-          "Weekly Forecast with suggested redistribution"
+          "Filters for progress, delay, over-hours, or no activity",
+          "Team-blocking tasks visible in the month",
+          "Weekly Forecast to redistribute load"
         ],
         "linkText": "See project control",
         "linkHref": "/control-proyectos"
@@ -99,7 +297,7 @@
       {
         "label": "Finance",
         "badgeText": "For finance",
-        "heading": "Financial health with auditable formulas",
+        "heading": "Financial Health with auditable formulas",
         "description": "Mid-month you already know accrued revenue, EHR, pacing, and margin per project — transparent F1–F4 formulas and exports.",
         "bullets": [
           "Transparent F1–F4 and EHR, not a black box",
@@ -119,14 +317,18 @@
     "secondaryCta": "The cost of not tracking (3 min)",
     "mockDomain": "taimbox.com",
     "plannerKicker": "Planner · March",
-    "plannerMeta": "4 people · 16 person-weeks",
+    "plannerScope": "4 people · weekly load",
     "overloadBadge": "2 overloads",
+    "gridEmployee": "Person",
     "weekCols": ["W1", "W2", "W3", "W4"],
+    "weekDates": ["Mar 5–9", "Mar 12–16", "Mar 19–23", "Mar 26–30"],
+    "absenceShort": "Away",
+    "overloadAlert": "Carlos exceeds 100% in W1 — rebalance load before Monday.",
     "people": [
-      { "initials": "MG", "name": "María", "cells": ["92%", "88%", "98%", "90%"] },
-      { "initials": "CR", "name": "Carlos", "cells": ["118%", "96%", "112%", "88%"] },
-      { "initials": "AM", "name": "Ana", "cells": ["78%", "84%", "—", "82%"] },
-      { "initials": "LF", "name": "Luis", "cells": ["86%", "94%", "95%", "90%"] }
+      { "initials": "MA", "name": "María A.", "cells": ["92%", "88%", "98%", "90%"] },
+      { "initials": "CR", "name": "Carlos R.", "cells": ["118%", "96%", "112%", "88%"] },
+      { "initials": "JL", "name": "Julia L.", "cells": ["78%", "84%", "—", "82%"] },
+      { "initials": "PS", "name": "Pedro S.", "cells": ["86%", "94%", "95%", "90%"] }
     ],
     "legend": [
       { "label": "Available", "variant": "available" },
@@ -136,12 +338,25 @@
     ],
     "capacityLabel": "Effective capacity",
     "capacityPct": "93%",
-    "capacityHours": "612h / 672h base",
-    "pills": [
-      "Accrued revenue to the cent",
-      "Overload caught before Monday",
-      "Forecast + automatic suggestions",
-      "Weekly close validated per project"
+    "capacityHoursLabel": "Hours vs. base",
+    "capacityHoursValue": "612h / 672h",
+    "highlights": [
+      {
+        "title": "Weekly load per person",
+        "description": "One row per teammate, one column per week — the whole month in one view."
+      },
+      {
+        "title": "Absences in the same grid",
+        "description": "Time off sits next to planned load, not in a separate spreadsheet."
+      },
+      {
+        "title": "Overloads stand out immediately",
+        "description": "Above 100% turns red — like Carlos’s row in the mock."
+      },
+      {
+        "title": "Team capacity at a glance",
+        "description": "Effective % and available hours without leaving the planner."
+      }
     ]
   },
   "s05": {
@@ -434,13 +649,13 @@
       { "time": "13:05", "name": "Milestone", "tone": "pink", "verb": "LocalBiz delivery", "detail": "— Monday May 19 · in 3 days" }
     ],
     "tickerToneClass": {
-      "emerald": "text-emerald-700",
-      "indigo": "text-indigo-700",
-      "violet": "text-violet-700",
-      "amber": "text-amber-700",
-      "pink": "text-pink-700",
-      "rose": "text-rose-700",
-      "cyan": "text-cyan-700"
+      "emerald": "text-emerald-300",
+      "indigo": "text-indigo-300",
+      "violet": "text-violet-300",
+      "amber": "text-amber-300",
+      "pink": "text-pink-300",
+      "rose": "text-rose-300",
+      "cyan": "text-cyan-300"
     }
   }
 }

@@ -66,15 +66,6 @@ const AUDIT_EVENTS = [
 const AuditLogMockup: FC = () => (
   <div className="relative w-full mx-auto max-w-lg" style={landingInlineStyle("perspective: 1200px;")}>
     <div className="relative rounded-2xl bg-white border border-slate-200/80 overflow-hidden" style={landingInlineStyle("transform: rotateY(3deg) rotateX(1deg); transform-style: preserve-3d; box-shadow: rgba(5,150,105,0.25) 0px 30px 70px -20px, rgba(15,23,42,0.15) 0px 18px 36px -16px;")}>
-      <div className="flex items-center gap-2 px-4 py-2.5 border-b border-slate-100 bg-slate-50/80">
-        <div className="h-2.5 w-2.5 rounded-full bg-rose-300" />
-        <div className="h-2.5 w-2.5 rounded-full bg-amber-300" />
-        <div className="h-2.5 w-2.5 rounded-full bg-emerald-300" />
-        <div className="ml-2 flex-1 h-5 rounded-md bg-white border border-slate-100 flex items-center px-2 gap-1.5">
-          <div className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-          <span className="font-mono text-[10px] text-slate-400 tracking-tight">taimbox.com/settings/audit</span>
-        </div>
-      </div>
       <div className="flex">
         <div className="hidden sm:flex w-10 bg-slate-900 flex-col items-center py-2.5 gap-2 shrink-0 border-r border-slate-800">
           <div className="h-5 w-5 rounded-md bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center mb-0.5" style={landingInlineStyle("box-shadow: rgba(124,58,237,0.35) 0px 3px 8px -2px;")}>

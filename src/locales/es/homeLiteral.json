@@ -18,31 +18,229 @@
   },
   "s02": {
     "kicker": "Por qué Taimbox",
-    "title": "Tres ideas que separan agencias rentables de agencias",
-    "titleEmphasis": "\"ocupadas\"",
+    "title": "Planificación, plazos y rentabilidad en",
+    "titleEmphasis": "un solo sistema",
     "cards": [
       {
-        "step": "01 · Principio",
-        "heading": "Ocupación ≠ rentabilidad",
-        "body": "Ver al equipo al 86% no significa cobrar el 86%. Mide la brecha real entre capacidad usada e ingreso devengado, mes a mes."
+        "step": "01 · Capacidad vs. ingreso",
+        "heading": "Estar al 86% de carga no es cobrar el 86%",
+        "body": "El planificador muestra ocupación por semana y persona. Salud financiera cruza esas horas con ingreso devengado, ritmo (pacing) y margen: ves la brecha entre horas y euros antes del cierre, no en una hoja aparte."
       },
       {
-        "step": "02 · Principio",
-        "heading": "Flujo integrado",
-        "body": "Planificar, ejecutar, medir y predecir en una sola superficie. Sin Excel paralelo, sin Slack para encontrar quién hace qué."
+        "step": "02 · Del grid al cierre",
+        "heading": "El mismo dato recorre la agencia",
+        "body": "Asignas en el planificador, ajustas presupuesto y plazos en Deadlines (con semanas partidas entre meses si hace falta), registras tiempo y lees el resultado en Rentabilidad. Sin reexportar a otro Excel para cuadrar."
       },
       {
-        "step": "03 · Principio",
-        "heading": "Datos al céntimo",
-        "body": "Fórmulas auditables F1–F4 + EHR. Cada euro devengado tiene su trazabilidad — exportable a Excel, CSV o vía API."
+        "step": "03 · Unit economics",
+        "heading": "Coste, ingreso, margen y €/h — sin caja negra",
+        "body": "Cuatro métricas encadenadas (F1 coste laboral, F2 ingreso devengado, F3 margen y F4 precio hora efectivo) con la misma base que la app. Mes en curso o cerrado; export a Excel, CSV y API para tu ERP o BI."
       }
-    ]
+    ],
+    "visual1": {
+      "load": "Carga planificada",
+      "accrued": "Ingreso devengado",
+      "gap": "Brecha horas ↔ ingreso"
+    },
+    "visual2": {
+      "railLabel": "Flujo de datos",
+      "steps": ["Planificador", "Deadlines", "Tiempos", "Rentabilidad"]
+    },
+    "visual3": {
+      "caption": "Rentabilidad · proyecto",
+      "rows": [
+        { "badge": "F1", "label": "Coste laboral", "value": "1.008 €", "tone": "neutral" },
+        { "badge": "F2", "label": "Ingreso devengado", "value": "1.200 €", "tone": "neutral" },
+        { "badge": "F3", "label": "Margen neto", "value": "+16%", "tone": "positive" },
+        { "badge": "F4", "label": "Precio hora (EHR)", "value": "119 €/h", "tone": "positive" }
+      ]
+    }
   },
   "s03": {
     "kicker": "Para todo el equipo",
     "title": "Cada perfil tiene su",
     "titleHighlight": "propia entrada",
     "subtitle": "No es un PM tool más. Cada rol abre la herramienta justo en lo que necesita.",
+    "mockNav": {
+      "home": "Mi espacio",
+      "planner": "Planificador",
+      "deadlines": "Deadlines",
+      "operations": "Seguimiento operativo",
+      "finance": "Rentabilidad",
+      "capacity": "Capacidad de equipo"
+    },
+    "mocks": {
+      "directores": {
+        "moduleLabel": "Planificador · Mayo",
+        "scope": "4 personas · 3 semanas",
+        "overloadBadge": "1 sobrecarga",
+        "weekCols": ["S1", "S2", "S3"],
+        "totalCol": "Tot",
+        "capacityLabel": "Capacidad efectiva",
+        "capacityPct": "91%",
+        "legendOk": "OK",
+        "legendHigh": "Alto",
+        "legendOver": "Sobre",
+        "people": [
+          {
+            "initials": "MA",
+            "name": "María A.",
+            "color": "rgb(99,102,241)",
+            "weeks": [
+              { "hours": "7h", "pct": 92, "status": "ok" },
+              { "hours": "8h", "pct": 88, "status": "ok" },
+              { "hours": "8h", "pct": 98, "status": "ok" }
+            ],
+            "total": "23h",
+            "cap": "/24h",
+            "rowStatus": "ok"
+          },
+          {
+            "initials": "CR",
+            "name": "Carlos R.",
+            "color": "rgb(251,146,60)",
+            "weeks": [
+              { "hours": "11h", "pct": 118, "status": "over" },
+              { "hours": "8h", "pct": 96, "status": "ok" },
+              { "hours": "9h", "pct": 112, "status": "warn" }
+            ],
+            "total": "28h",
+            "cap": "/24h",
+            "rowStatus": "over"
+          },
+          {
+            "initials": "JL",
+            "name": "Julia L.",
+            "color": "rgb(236,72,153)",
+            "weeks": [
+              { "hours": "6h", "pct": 78, "status": "ok" },
+              { "hours": "—", "pct": 0, "status": "away" },
+              { "hours": "8h", "pct": 82, "status": "ok" }
+            ],
+            "total": "14h",
+            "cap": "/16h",
+            "rowStatus": "ok"
+          },
+          {
+            "initials": "PS",
+            "name": "Pedro S.",
+            "color": "rgb(34,211,238)",
+            "weeks": [
+              { "hours": "7h", "pct": 86, "status": "ok" },
+              { "hours": "8h", "pct": 94, "status": "ok" },
+              { "hours": "7.5h", "pct": 90, "status": "ok" }
+            ],
+            "total": "22.5h",
+            "cap": "/24h",
+            "rowStatus": "ok"
+          }
+        ]
+      },
+      "empleados": {
+        "moduleLabel": "Mi espacio · semana actual",
+        "scope": "32h planificadas · 19h reportadas",
+        "timerBadge": "Cronómetro · 32:14",
+        "statusRunning": "En curso",
+        "statusDone": "Validada",
+        "statusPending": "Pendiente",
+        "weekTotalLabel": "Total semana",
+        "weekTotal": "12.8h / 16h al cierre",
+        "tasks": [
+          {
+            "status": "running",
+            "title": "Diseño Retainer global",
+            "client": "TechCorp",
+            "time": "2.3h / 4h",
+            "color": "rgb(139, 92, 246)",
+            "bg": "rgb(245, 243, 255)",
+            "border": "rgba(139, 92, 246, 0.18)"
+          },
+          {
+            "status": "done",
+            "title": "Audit SEO trimestral",
+            "client": "LocalBiz",
+            "time": "6.5h / 6h",
+            "color": "rgb(16, 185, 129)",
+            "bg": "rgb(236, 253, 245)",
+            "border": "rgba(16, 185, 129, 0.18)"
+          },
+          {
+            "status": "done",
+            "title": "Brief campaña Q2",
+            "client": "StartupHub",
+            "time": "4h / 4h",
+            "color": "rgb(16, 185, 129)",
+            "bg": "rgb(236, 253, 245)",
+            "border": "rgba(16, 185, 129, 0.18)"
+          },
+          {
+            "status": "pending",
+            "title": "Revisión OKR",
+            "client": "Gestiones internas",
+            "time": "0h / 2h",
+            "color": "rgb(100, 116, 139)",
+            "bg": "rgb(248, 250, 252)",
+            "border": "rgba(100, 116, 139, 0.16)"
+          }
+        ]
+      },
+      "projectManagers": {
+        "moduleLabel": "Seguimiento operativo · mayo",
+        "scope": "Estado de proyectos · mes en curso",
+        "riskBadge": "3 en riesgo",
+        "filters": ["Todos", "Retrasados", "Exceso horas", "Sin actividad"],
+        "activeFilter": "Todos",
+        "colProject": "Proyecto",
+        "colStatus": "Estado",
+        "projects": [
+          { "name": "Web TechCorp v2", "type": "Retainer", "status": "inRule", "statusLabel": "En regla" },
+          { "name": "Audit LocalBiz", "type": "Proyecto", "status": "behind", "statusLabel": "Retrasado" },
+          { "name": "PPC StartupHub", "type": "Retainer", "status": "overHours", "statusLabel": "Exceso horas" },
+          { "name": "Onboarding cli.", "type": "Proyecto", "status": "noActivity", "statusLabel": "Sin actividad" }
+        ],
+        "blockingLabel": "Tareas bloqueantes",
+        "blockingCount": "1",
+        "healthyPct": "75% saludable"
+      },
+      "rrhh": {
+        "moduleLabel": "Capacidad de equipo · mayo",
+        "scope": "Carga por persona y departamento",
+        "capacityBadge": "88% capacidad",
+        "statusOk": "Disponible",
+        "statusOver": "Sobrecarga",
+        "statusAway": "Ausencia",
+        "summaryAvailable": "Disponible",
+        "summaryOver": "Sobrecarga",
+        "summaryAbsences": "Ausencias",
+        "people": [
+          { "name": "María", "role": "Diseño", "initials": "MG", "color": "rgb(251, 113, 133)", "cap": 92, "status": "ok", "note": "—" },
+          { "name": "Carlos", "role": "Diseño", "initials": "CR", "color": "rgb(251, 146, 60)", "cap": 118, "status": "over", "note": "+8h pendientes" },
+          { "name": "Ana", "role": "Marketing", "initials": "AM", "color": "rgb(167, 139, 250)", "cap": 78, "status": "away", "note": "Vacaciones 14–16" },
+          { "name": "Luis", "role": "Desarrollo", "initials": "LF", "color": "rgb(34, 211, 238)", "cap": 95, "status": "ok", "note": "—" }
+        ],
+        "counts": { "available": "9", "over": "1", "absences": "2" }
+      },
+      "finanzas": {
+        "moduleLabel": "Rentabilidad · mayo",
+        "scope": "Mes en curso · pacing en vivo",
+        "marginBadge": "Margen 32%",
+        "kpis": [
+          { "label": "Coste laboral", "value": "€12.840", "sub": "F1", "color": "rgb(100, 116, 139)", "bg": "rgb(248, 250, 252)" },
+          { "label": "Ingreso devengado", "value": "€18.420", "sub": "F2", "color": "rgb(16, 185, 129)", "bg": "rgb(236, 253, 245)" },
+          { "label": "Margen neto", "value": "32%", "sub": "F3", "color": "rgb(99, 102, 241)", "bg": "rgb(238, 242, 255)" },
+          { "label": "EHR (€/h)", "value": "€47,8", "sub": "F4", "color": "rgb(8, 145, 178)", "bg": "rgb(236, 254, 255)" }
+        ],
+        "pacingTitle": "Pacing por proyecto",
+        "pacingDay": "Día 12 / 22",
+        "pacingProjects": [
+          { "name": "TechCorp", "pct": 58, "target": 54, "color": "rgb(16, 185, 129)" },
+          { "name": "LocalBiz", "pct": 71, "target": 54, "color": "rgb(245, 158, 11)" },
+          { "name": "StartupHub", "pct": 42, "target": 54, "color": "rgb(239, 68, 68)" }
+        ],
+        "footerTitle": "F1–F4 en pantalla · export Excel / CSV / API",
+        "footerSub": "Sin caja negra · cada euro auditable"
+      }
+    },
     "roles": [
       {
         "label": "Directores",
@@ -60,8 +258,8 @@
       {
         "label": "Empleados",
         "badgeText": "Para empleados",
-        "heading": "Tu día, en una sola pantalla",
-        "description": "Cronómetro por tarea, prioridades visibles y un cierre semanal que se valida en dos minutos sin perseguir links de Slack.",
+        "heading": "Mi espacio: tu semana en un vistazo",
+        "description": "Dashboard con cronómetro por tarea (sidebar y Tiempos), prioridades del día y cierre Weekly sin perseguir enlaces.",
         "bullets": [
           "Cronómetro por tarea, en sidebar y página Tiempos",
           "Prioridades del día y bloqueos sin perseguir Slacks",
@@ -73,12 +271,12 @@
       {
         "label": "Project Managers",
         "badgeText": "Para project managers",
-        "heading": "Pacing y entregas sin saltar a Excel",
-        "description": "Avance real por proyecto, sobrecargas detectadas antes del lunes y sugerencias automáticas de redistribución de carga.",
+        "heading": "Seguimiento operativo sin saltar a Excel",
+        "description": "Estado de proyectos, tareas bloqueantes y coherencia de planificación — la misma vista que en /operaciones.",
         "bullets": [
-          "Ingreso devengado y pacing en vivo por proyecto",
-          "Sobrecargas detectadas antes de que escalen",
-          "Weekly Forecast con redistribución sugerida"
+          "Filtros por avance, retraso, exceso de horas o sin actividad",
+          "Tareas que bloquean al equipo visibles en el mes",
+          "Weekly Forecast para redistribuir carga"
         ],
         "linkText": "Ver control de proyectos",
         "linkHref": "/control-proyectos"
@@ -86,12 +284,12 @@
       {
         "label": "RRHH",
         "badgeText": "Para RRHH",
-        "heading": "Capacidad, ausencias y cargas al detalle",
-        "description": "Ausencias planificadas, capacidad efectiva real (no teórica) y desviaciones por persona y departamento, mes a mes.",
+        "heading": "Capacidad de equipo y ausencias",
+        "description": "Vista /capacidad con carga por persona, ausencias en el planificador y desviaciones por departamento.",
         "bullets": [
-          "Ausencias y vacaciones integradas en el planificador",
-          "Capacidad efectiva real por persona y equipo",
-          "Reportes de carga y horas exportables a nómina"
+          "Ausencias y vacaciones en el mismo grid del planificador",
+          "Capacidad efectiva (no solo teórica) por persona",
+          "Horas y carga exportables para nómina o reporting"
         ],
         "linkText": "Ver gestión de equipos",
         "linkHref": "/gestion-equipos"
@@ -99,8 +297,8 @@
       {
         "label": "Finanzas",
         "badgeText": "Para finanzas",
-        "heading": "Salud financiera con fórmulas auditables",
-        "description": "A mitad de mes ya sabes ingreso devengado, EHR, pacing y margen por proyecto — fórmulas F1–F4 transparentes y exportables.",
+        "heading": "Rentabilidad con fórmulas auditables",
+        "description": "Página Rentabilidad (/finanzas): coste laboral, ingreso devengado, margen y EHR (F1–F4) con la misma base que la app.",
         "bullets": [
           "Fórmulas F1–F4 y EHR transparentes, no caja negra",
           "Ingreso devengado al céntimo, salud por proyecto y agencia",
@@ -119,14 +317,18 @@
     "secondaryCta": "El coste de no medir (3 min)",
     "mockDomain": "taimbox.com",
     "plannerKicker": "Planificador · Marzo",
-    "plannerMeta": "4 personas · 16 semanas-persona",
+    "plannerScope": "4 personas · carga por semana",
     "overloadBadge": "2 sobrecargas",
+    "gridEmployee": "Persona",
     "weekCols": ["S1", "S2", "S3", "S4"],
+    "weekDates": ["5–9 mar", "12–16 mar", "19–23 mar", "26–30 mar"],
+    "absenceShort": "Ausencia",
+    "overloadAlert": "Carlos supera el 100% en S1 — redistribuye carga antes del lunes.",
     "people": [
-      { "initials": "MG", "name": "María", "cells": ["92%", "88%", "98%", "90%"] },
-      { "initials": "CR", "name": "Carlos", "cells": ["118%", "96%", "112%", "88%"] },
-      { "initials": "AM", "name": "Ana", "cells": ["78%", "84%", "—", "82%"] },
-      { "initials": "LF", "name": "Luis", "cells": ["86%", "94%", "95%", "90%"] }
+      { "initials": "MA", "name": "María A.", "cells": ["92%", "88%", "98%", "90%"] },
+      { "initials": "CR", "name": "Carlos R.", "cells": ["118%", "96%", "112%", "88%"] },
+      { "initials": "JL", "name": "Julia L.", "cells": ["78%", "84%", "—", "82%"] },
+      { "initials": "PS", "name": "Pedro S.", "cells": ["86%", "94%", "95%", "90%"] }
     ],
     "legend": [
       { "label": "Disponible", "variant": "available" },
@@ -136,12 +338,25 @@
     ],
     "capacityLabel": "Capacidad efectiva",
     "capacityPct": "93%",
-    "capacityHours": "612h / 672h base",
-    "pills": [
-      "Ingreso devengado al céntimo",
-      "Sobrecargas detectadas antes del lunes",
-      "Forecast + sugerencias automáticas",
-      "Cierre semanal validado por proyecto"
+    "capacityHoursLabel": "Horas vs. base",
+    "capacityHoursValue": "612h / 672h",
+    "highlights": [
+      {
+        "title": "Carga por semana y persona",
+        "description": "Cada fila es alguien del equipo; cada columna, una semana del mes."
+      },
+      {
+        "title": "Ausencias en el mismo grid",
+        "description": "Vacaciones y bajas junto a la planificación, sin otro Excel aparte."
+      },
+      {
+        "title": "Sobrecargas visibles al instante",
+        "description": "Por encima del 100% se marca en rojo — como en la fila de Carlos."
+      },
+      {
+        "title": "Capacidad del equipo al vuelo",
+        "description": "Porcentaje efectivo y horas disponibles sin salir del planificador."
+      }
     ]
   },
   "s05": {
@@ -434,13 +649,13 @@
       { "time": "13:05", "name": "Hito", "tone": "pink", "verb": "entrega LocalBiz", "detail": "— lunes 19 mayo · en 3 días" }
     ],
     "tickerToneClass": {
-      "emerald": "text-emerald-700",
-      "indigo": "text-indigo-700",
-      "violet": "text-violet-700",
-      "amber": "text-amber-700",
-      "pink": "text-pink-700",
-      "rose": "text-rose-700",
-      "cyan": "text-cyan-700"
+      "emerald": "text-emerald-300",
+      "indigo": "text-indigo-300",
+      "violet": "text-violet-300",
+      "amber": "text-amber-300",
+      "pink": "text-pink-300",
+      "rose": "text-rose-300",
+      "cyan": "text-cyan-300"
     }
   }
 }

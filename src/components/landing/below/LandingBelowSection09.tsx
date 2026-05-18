@@ -61,20 +61,6 @@ export const LandingBelowSection09: FC = () => {
           <ArrowUpRight className="h-4 w-4 opacity-70" aria-hidden />
         </a>
       </div>
-      <div className="mt-12 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[12px] uppercase tracking-[0.18em] font-medium text-white/45">
-        <span className="inline-flex items-center gap-1.5">
-          <span className="h-1 w-1 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399]" />
-          {t("s09.trust1")}
-        </span>
-        <span className="inline-flex items-center gap-1.5">
-          <span className="h-1 w-1 rounded-full bg-violet-400 shadow-[0_0_6px_#c084fc]" />
-          {t("s09.trust2")}
-        </span>
-        <span className="inline-flex items-center gap-1.5">
-          <span className="h-1 w-1 rounded-full bg-cyan-400 shadow-[0_0_6px_#67e8f9]" />
-          {t("s09.trust3")}
-        </span>
-      </div>
     </div>
   </section>
   );
