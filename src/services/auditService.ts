@@ -8,7 +8,7 @@
 import { supabase } from '@/lib/supabase';
 
 export type AuditAction = 'CREATE' | 'UPDATE' | 'DELETE';
-export type AuditResource = 'ALLOCATION' | 'PROJECT' | 'EMPLOYEE' | 'CLIENT' | 'ABSENCE' | 'TEAM_EVENT';
+export type AuditResource = 'ALLOCATION' | 'ALLOCATION_NOTE' | 'PROJECT' | 'EMPLOYEE' | 'CLIENT' | 'ABSENCE' | 'TEAM_EVENT';
 
 interface AuditDetails {
     previousValue?: Record<string, unknown>;

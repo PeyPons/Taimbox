@@ -2026,5 +2026,20 @@
     "count": "{{filtered}} de {{total}} clientes",
     "title": "Clientes",
     "subtitle": "Gestiona tus clientes y el consumo de sus horas"
+  },
+  "taskNotes": {
+    "title": "Anotaciones",
+    "hint": "Usa un título corto en la tarea y pon aquí el detalle (idiomas, enlaces, criterios…).",
+    "empty": "Sin anotaciones todavía.",
+    "placeholder": "Detalle: qué hacer en ES / EN / DE, enlaces, criterios…",
+    "add": "Añadir anotación",
+    "open": "Ver anotaciones",
+    "countOne": "1 anotación",
+    "countMany": "{{count}} anotaciones",
+    "clickToView": "Clic para ver",
+    "addQuick": "Añadir anotación",
+    "clickToAdd": "Clic para añadir",
+    "saveError": "No se pudo guardar la anotación",
+    "deleteError": "No se pudo eliminar la anotación"
   }
 }

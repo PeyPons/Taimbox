@@ -2,9 +2,10 @@ import { format, startOfMonth } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { Check, X, Plus, Trash2, AlertTriangle, Link as LinkIcon, User, ChevronDown } from 'lucide-react';
+import { Check, X, Plus, Trash2, AlertTriangle, Link as LinkIcon, User, ChevronDown, StickyNote } from 'lucide-react';
 import { Project, Employee, Allocation, NewTaskRow, Client, Deadline } from '@/types';
 import { ProjectBudgetStatus } from '@/hooks/useAllocationSheet';
 import { useState, useMemo } from 'react';
@@ -63,6 +64,7 @@ export function BatchTaskRow({
     const [openEmployeeCombobox, setOpenEmployeeCombobox] = useState(false);
     const [openDependency, setOpenDependency] = useState(false);
     const [openWeek, setOpenWeek] = useState(false);
+    const [showInitialNote, setShowInitialNote] = useState(() => Boolean(task.initialNote?.trim()));
     const { formatName: formatProjectName } = useProjectAliasing();
 
     // Ordenar proyectos: primero los que tienen deadline asignado al empleado de la tarea, luego el resto
@@ -313,11 +315,33 @@ export function BatchTaskRow({
                 {/* Nombre de la tarea */}
                 <Input
                     className="flex-1 min-w-0 h-11 sm:h-9 min-h-[44px] sm:min-h-0 text-sm"
-                    placeholder="Nombre de la tarea"
+                    placeholder="Ej: CMS multilingüe — Guacamayo Jacinto"
                     value={task.taskName}
                     onChange={(e) => updateTaskRow(task.id, 'taskName', e.target.value)}
                 />
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className={cn(
+                        'h-11 w-11 sm:h-9 sm:w-9 shrink-0',
+                        (showInitialNote || task.initialNote?.trim()) && 'text-amber-600 bg-amber-50'
+                    )}
+                    onClick={() => setShowInitialNote(v => !v)}
+                    title="Anotación inicial"
+                >
+                    <StickyNote className="h-4 w-4" />
+                </Button>
             </div>
+            {(showInitialNote || task.initialNote?.trim()) && (
+                <Textarea
+                    className="text-sm resize-none"
+                    rows={2}
+                    placeholder="Detalle: qué subir en ES / EN / DE, enlaces, criterios…"
+                    value={task.initialNote ?? ''}
+                    onChange={e => updateTaskRow(task.id, 'initialNote', e.target.value)}
+                />
+            )}
 
             {/* Fila 2: Detalles adicionales (apilado en móvil para evitar scroll horizontal) */}
             <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">

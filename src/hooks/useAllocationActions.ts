@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useApp } from '@/contexts/AppContext';
 import { Allocation, NewTaskRow } from '@/types';
 import type { ProjectBudgetStatus } from '@/hooks/useAllocationSheet';
@@ -14,6 +15,9 @@ import { toast } from '@/lib/notify';
 import { supabase } from '@/lib/supabase';
 import { round2 } from '@/utils/numbers';
 import { mergeActualWithTimeEntriesSum } from '@/utils/timerReconcile';
+import { createAllocationNote } from '@/services/allocationNotesService';
+
+const TASK_NAME_SOFT_LIMIT = 100;
 
 const WEEKLY_PAST_EDIT_TOAST =
     'No puedes editar tareas de semanas pasadas. Usa el botón "Weekly" para gestionarlas.';
@@ -61,7 +65,8 @@ export function useAllocationActions(
 ) {
     const allowEditPastWeeks = options?.allowEditPastWeeks === true;
     const batchPreviewDeps = options?.batchPreview;
-    const { addAllocation, updateAllocation, deleteAllocation } = useApp();
+    const { addAllocation, updateAllocation, deleteAllocation, currentUser } = useApp();
+    const queryClient = useQueryClient();
     const weeklyCloseDay = useWeeklyCloseDay();
     const { currentAgency } = useAgency();
     const preference = currentAgency?.settings?.hoursTrackingPreference;
@@ -93,7 +98,6 @@ export function useAllocationActions(
     const [editProjectId, setEditProjectId] = useState('');
     const [editTaskName, setEditTaskName] = useState('');
     const [editHours, setEditHours] = useState('');
-    const [editDescription, setEditDescription] = useState('');
     const [editWeek, setEditWeek] = useState('');
     const [editDependencyId, setEditDependencyId] = useState('none');
 
@@ -132,7 +136,7 @@ export function useAllocationActions(
             taskName: '',
             hours: '',
             weekDate: targetDate,
-            description: '',
+            initialNote: '',
             dependencyId: 'none',
             employeeId: canAssignToOthers ? undefined : employeeId
         }]);
@@ -200,9 +204,13 @@ export function useAllocationActions(
                     taskName: editTaskName,
                     weekStartDate: editWeek,
                     hoursAssigned: parseFloat(editHours),
-                    description: editDescription,
                     dependencyId: editDependencyId === 'none' ? null : editDependencyId
                 });
+                if (editTaskName.trim().length > TASK_NAME_SOFT_LIMIT) {
+                    toast.info(
+                        'El título es muy largo. Considera acortarlo y usar anotaciones para el detalle.'
+                    );
+                }
             } else {
                 const validTasks = newTasks.filter(
                     t => t.projectId && t.taskName.trim() && parseFloat(t.hours) > 0
@@ -215,21 +223,33 @@ export function useAllocationActions(
                 if (batchPreviewDeps) {
                     batchCommitPreview.captureSnapshot(validTasks);
                 }
-                const savePromises = validTasks.map(task => {
+                for (const task of validTasks) {
                     const targetEmployeeId = task.employeeId || employeeId;
-                    return addAllocation({
+                    const created = await addAllocation({
                         employeeId: targetEmployeeId,
                         projectId: task.projectId,
                         taskName: task.taskName.trim(),
                         weekStartDate: task.weekDate,
                         hoursAssigned: parseFloat(task.hours),
                         status: 'planned',
-                        description: task.description,
                         dependencyId: task.dependencyId === 'none' ? null : task.dependencyId
                     });
-                });
-
-                await Promise.all(savePromises);
+                    const noteBody = task.initialNote?.trim();
+                    if (created && noteBody && currentAgency?.id && currentUser?.id) {
+                        await createAllocationNote({
+                            allocationId: created.id,
+                            agencyId: currentAgency.id,
+                            authorEmployeeId: currentUser.id,
+                            body: noteBody,
+                        });
+                        void queryClient.invalidateQueries({ queryKey: ['allocation-notes'] });
+                    }
+                    if (task.taskName.trim().length > TASK_NAME_SOFT_LIMIT) {
+                        toast.info(
+                            'El título es muy largo. Considera acortarlo y usar anotaciones para el detalle.'
+                        );
+                    }
+                }
                 setNewTasks([]);
             }
             setIsFormOpen(false);
@@ -266,7 +286,6 @@ export function useAllocationActions(
         setEditProjectId(allocation.projectId);
         setEditTaskName(allocation.taskName || '');
         setEditHours(allocation.hoursAssigned.toString());
-        setEditDescription(allocation.description || '');
         setEditWeek(allocation.weekStartDate);
         setEditDependencyId(allocation.dependencyId || 'none');
         setIsFormOpen(true);
@@ -471,8 +490,6 @@ export function useAllocationActions(
         setEditTaskName,
         editHours,
         setEditHours,
-        editDescription,
-        setEditDescription,
         editWeek,
         setEditWeek,
         editDependencyId,

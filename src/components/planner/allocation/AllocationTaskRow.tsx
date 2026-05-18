@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Link as LinkIcon, CheckCircle2, Users, Clock, TrendingUp, TrendingDown, Sun } from 'lucide-react';
+import { TaskNotesTrigger } from '@/components/planner/allocation/TaskNotesTrigger';
 import { format } from 'date-fns';
 import { useWeeklyCloseDay } from '@/hooks/useWeeklyCloseDay';
 import { PlannerTaskContextMenu } from '@/components/planner/allocation/PlannerTaskContextMenu';
@@ -46,6 +47,7 @@ interface AllocationTaskRowProps {
     onTimeLogged?: (allocationId: string, hoursLogged: number) => void;
     /** Suma de time_entries para esta allocation (mismo empleado); alinea UI si Real en BD está desfasado */
     timeEntriesSum?: number;
+    noteCount?: number;
 }
 
 export function AllocationTaskRow({
@@ -74,6 +76,7 @@ export function AllocationTaskRow({
     showTaskTimer = false,
     onTimeLogged,
     timeEntriesSum,
+    noteCount = 0,
 }: AllocationTaskRowProps) {
     const weeklyCloseDay = useWeeklyCloseDay();
     const { currentAgency } = useAgency();
@@ -217,7 +220,9 @@ export function AllocationTaskRow({
                                 )}
                             </div>
 
-                            <PlannerTaskContextMenu
+                            <div className="flex items-center gap-0.5 shrink-0">
+                                <TaskNotesTrigger allocationId={alloc.id} noteCount={noteCount} />
+                                <PlannerTaskContextMenu
                                 alloc={alloc}
                                 pendingTransfer={!!pendingTransfer}
                                 isWeeklyEnabled={isWeeklyEnabled}
@@ -235,6 +240,7 @@ export function AllocationTaskRow({
                                 )}
                                 iconClassName={isMobile ? 'h-4 w-4' : 'h-3 w-3'}
                             />
+                            </div>
                         </div>
                     )}
                 </div>

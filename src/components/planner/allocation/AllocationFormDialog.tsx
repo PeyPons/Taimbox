@@ -15,7 +15,10 @@ import { Allocation, Project, Client, Employee, Deadline } from '@/types';
 import { NewTaskRow } from '@/types';
 import { BatchTaskRow } from '../BatchTaskRow';
 import { ProjectImpactSummary } from '../ProjectImpactSummary';
+import { TaskNotesTrigger } from '@/components/planner/allocation/TaskNotesTrigger';
+import { useAllocationNoteCounts } from '@/hooks/useAllocationNotes';
 import { ProjectBudgetStatus } from '@/hooks/useAllocationSheet';
+import { useMouseWheelScroll } from '@/hooks/useMouseWheelScroll';
 import { useIsMobile } from '@/hooks/use-mobile';
 import type { GetEmployeeLoadForWeekFn, PlannerBatchPreviewContext } from '@/utils/plannerBatchPreview';
 
@@ -123,15 +126,21 @@ export function AllocationFormDialog({
     const [showConfirmClose, setShowConfirmClose] = React.useState(false);
     const [pendingCloseAction, setPendingCloseAction] = React.useState<'open-change' | 'close-click' | null>(null);
     const isMobile = useIsMobile();
+    const editScrollRef = useMouseWheelScroll<HTMLDivElement>();
+    const editAllocationId = editingAllocation?.id;
+    const { data: noteCounts = {} } = useAllocationNoteCounts(editAllocationId ? [editAllocationId] : []);
+    const editNoteCount = editAllocationId ? noteCounts[editAllocationId] ?? 0 : 0;
 
     const hasUnsavedChanges = () => {
         if (!editingAllocation) {
             return newTasks.length > 1 || newTasks.some(t => t.taskName.trim() !== '' || t.hours !== '');
         }
         return (
-            editTaskName !== editingAllocation.taskName ||
+            editTaskName !== (editingAllocation.taskName || '') ||
             editHours !== editingAllocation.hoursAssigned.toString() ||
-            (Boolean(editProjectId) && editProjectId !== editingAllocation.projectId)
+            (Boolean(editProjectId) && editProjectId !== editingAllocation.projectId) ||
+            editWeek !== editingAllocation.weekStartDate ||
+            editDependencyId !== (editingAllocation.dependencyId || 'none')
         );
     };
 
@@ -168,9 +177,12 @@ export function AllocationFormDialog({
     );
 
     const bodyContent = (
-        <div className={cn("flex-1 min-w-0 overflow-hidden", !editingAllocation && "flex flex-col sm:flex-row")}>
+        <div className={cn("flex-1 min-h-0 min-w-0 overflow-hidden flex flex-col", !editingAllocation && "sm:flex-row")}>
                     {editingAllocation ? (
-                        <div className="p-4 sm:p-6 pt-2">
+                        <div
+                            ref={editScrollRef}
+                            className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain p-4 sm:p-6 pt-2 custom-scrollbar"
+                        >
                             <div className="grid gap-4 mt-4">
                                 <div className="space-y-2">
                                     <Label>Proyecto</Label>
@@ -226,7 +238,17 @@ export function AllocationFormDialog({
                                         </PopoverContent>
                                     </Popover>
                                 </div>
-                                <div className="space-y-2"><Label>Tarea</Label><Input value={editTaskName} onChange={e => setEditTaskName(e.target.value)} className={cn(isMobile && "h-11 min-h-[44px]")} /></div>
+                                <div className="space-y-2">
+                                    <div className="flex items-center justify-between gap-2">
+                                        <Label>Tarea</Label>
+                                        <TaskNotesTrigger
+                                            allocationId={editingAllocation.id}
+                                            noteCount={editNoteCount}
+                                            inline
+                                        />
+                                    </div>
+                                    <Input value={editTaskName} onChange={e => setEditTaskName(e.target.value)} placeholder="Ej: CMS multilingüe — Guacamayo Jacinto" className={cn(isMobile && "h-11 min-h-[44px]")} />
+                                </div>
 
                                 <div className="space-y-2">
                                     <Label className="flex items-center gap-2 text-xs text-slate-500"><LinkIcon className="w-3 h-3" /> Depende de otra tarea</Label>
@@ -365,7 +387,7 @@ export function AllocationFormDialog({
     );
 
     const footerBlock = (
-        <div className={cn("p-4 sm:p-6 py-4 border-t bg-slate-50/50 shrink-0 flex flex-wrap items-center gap-2 w-full", editingAllocation && "bg-transparent border-t-0 pt-0")}>
+        <div className={cn("p-4 sm:p-6 py-4 border-t bg-slate-50/50 shrink-0 flex flex-wrap items-center gap-2 w-full")}>
             {!editingAllocation && (
                 <div className="flex items-center gap-2 text-xs mr-auto w-full sm:w-auto min-w-0">
                     {batchAddHint ? (
@@ -460,7 +482,7 @@ export function AllocationFormDialog({
     return (
         <>
         <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-            <DialogContent className={cn("overflow-hidden gap-0 p-0 transition-all duration-300 max-w-[95vw] sm:max-w-[650px]", editingAllocation && "overflow-visible", !editingAllocation && "sm:max-w-[1100px] h-[85vh] sm:h-[80vh] flex flex-col")}>
+            <DialogContent className={cn("overflow-hidden gap-0 p-0 transition-all duration-300 max-w-[95vw] flex flex-col max-h-[90vh]", editingAllocation ? "sm:max-w-[650px]" : "sm:max-w-[1100px] h-[85vh] sm:h-[80vh]")}>
                 {modalContent}
             </DialogContent>
         </Dialog>

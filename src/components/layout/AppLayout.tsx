@@ -6,6 +6,7 @@ import { ImpersonationProvider } from '@/components/admin/ImpersonationBanner';
 import { DepartmentViewBanner } from '@/components/layout/DepartmentViewBanner';
 import { SubscriptionSoftLockBanner } from '@/components/layout/SubscriptionSoftLockBanner';
 import { PrivacyDemoIndicator } from '@/components/privacy/PrivacyDemoIndicator';
+import { useAllocationNotesRealtime } from '@/hooks/useAllocationNotes';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 
@@ -13,6 +14,7 @@ export function AppLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const isMobile = useIsMobile();
   const location = useLocation();
+  useAllocationNotesRealtime();
 
   // Close sidebar when route changes on mobile
   useEffect(() => {

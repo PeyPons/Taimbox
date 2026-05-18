@@ -10,6 +10,7 @@ import { round2 } from '@/utils/numbers';
 import { useWeeklyCloseDay } from '@/hooks/useWeeklyCloseDay';
 import { collectSelectableFutureWeekSlots, isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { normalizeWeeklyHourInput, parseWeeklyCloseHours } from '@/utils/weeklyCloseShared';
+import { copyAllocationNotes } from '@/services/allocationNotesService';
 import type { Allocation } from '@/types';
 
 export const WEEKLY_SLOT_EXTRA_MONTHS = 1;
@@ -152,8 +153,9 @@ export function useWeeklyCloseMutations(viewDate: Date): UseWeeklyCloseMutations
         await updateAllocation({ ...task, hoursAssigned: effectiveActual, status: 'completed' });
         if (existing) {
           await updateAllocation({ ...existing, hoursAssigned: existing.hoursAssigned + remainingHours });
+          await copyAllocationNotes(task.id, existing.id);
         } else {
-          await addAllocation({
+          const created = await addAllocation({
             employeeId,
             projectId: task.projectId,
             weekStartDate: targetWeekVal,
@@ -161,6 +163,7 @@ export function useWeeklyCloseMutations(viewDate: Date): UseWeeklyCloseMutations
             taskName: task.taskName || 'Tarea movida',
             status: 'planned',
           });
+          if (created) await copyAllocationNotes(task.id, created.id);
         }
         await addWeeklyFeedback({
           employeeId,
@@ -223,7 +226,7 @@ export function useWeeklyCloseMutations(viewDate: Date): UseWeeklyCloseMutations
       const taskNameTransferred = task.taskName || 'Tarea';
       try {
         await updateAllocation({ ...task, hoursAssigned: task.hoursActual || 0, status: 'completed' });
-        await addAllocation({
+        const created = await addAllocation({
           employeeId: targetEmployeeId,
           projectId: task.projectId,
           weekStartDate: targetWeekVal,
@@ -235,6 +238,7 @@ export function useWeeklyCloseMutations(viewDate: Date): UseWeeklyCloseMutations
             task.originalTransferredTaskName || taskNameTransferred.replace(/\(transferida de .+\)/, '').trim(),
           transferSourceEmployeeId: employeeId,
         });
+        if (created) await copyAllocationNotes(task.id, created.id);
         const transferBase = `Tarea transferida a ${employees.find(e => e.id === targetEmployeeId)?.name || 'otro empleado'} (${remainingHours}h restantes) | Nombre: ${task.taskName || 'Sin nombre'}`;
         await addWeeklyFeedback({
           employeeId,
@@ -464,19 +468,22 @@ export function useWeeklyCloseMutations(viewDate: Date): UseWeeklyCloseMutations
           originalTransferredTaskName: originalTransferredTaskName || distTask.taskName,
           transferSourceEmployeeId: task.transferSourceEmployeeId || (isTransferredTask ? undefined : employeeId),
         });
-        if (isTransferredTask && fromEmployeeName && newAllocation) {
-          const fbComment =
-            originalTransferredTaskName && originalTransferredTaskName !== distTask.taskName
-              ? `Tarea distribuida desde transferencia de ${fromEmployeeName} (tarea original: ${originalTransferredTaskName})`
-              : `Tarea distribuida desde transferencia de ${fromEmployeeName}`;
-          await addWeeklyFeedback({
-            employeeId,
-            weekStartDate: distTask.weekDate,
-            projectId: task.projectId,
-            allocationId: newAllocation.id,
-            reason: 'other',
-            comments: fbComment,
-          });
+        if (newAllocation) {
+          await copyAllocationNotes(originalTaskId, newAllocation.id);
+          if (isTransferredTask && fromEmployeeName) {
+            const fbComment =
+              originalTransferredTaskName && originalTransferredTaskName !== distTask.taskName
+                ? `Tarea distribuida desde transferencia de ${fromEmployeeName} (tarea original: ${originalTransferredTaskName})`
+                : `Tarea distribuida desde transferencia de ${fromEmployeeName}`;
+            await addWeeklyFeedback({
+              employeeId,
+              weekStartDate: distTask.weekDate,
+              projectId: task.projectId,
+              allocationId: newAllocation.id,
+              reason: 'other',
+              comments: fbComment,
+            });
+          }
         }
       }
       await deleteAllocation(originalTaskId);

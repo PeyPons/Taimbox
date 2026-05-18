@@ -20,7 +20,9 @@ import type { Allocation } from '@/types';
 import { parseDateStringLocal } from '@/utils/dateUtils';
 import { supabase } from '@/lib/supabase';
 import { round2 } from '@/utils/numbers';
-import { toast } from '@/lib/notify';
+import { TaskNotesTrigger } from '@/components/planner/allocation/TaskNotesTrigger';
+import { useAllocationNoteCounts } from '@/hooks/useAllocationNotes';
+import { searchAllocationIdsByNoteBody } from '@/services/allocationNotesService';
 
 export interface MyDayViewProps {
   employeeId: string;
@@ -60,6 +62,7 @@ export function MyDayView({
   const [popoverOpenId, setPopoverOpenId] = useState<string | null>(null);
   const [completionData, setCompletionData] = useState({ actual: 0, computed: 0 });
   const [searchQuery, setSearchQuery] = useState('');
+  const [noteSearchHits, setNoteSearchHits] = useState<Set<string>>(new Set());
 
   const today = new Date();
   const todayStr = format(today, 'yyyy-MM-dd');
@@ -68,6 +71,36 @@ export function MyDayView({
     void ensureMonthLoaded(viewDate);
     void ensureMonthLoaded(new Date());
   }, [ensureMonthLoaded, viewDate]);
+
+  const scopedAllocationIds = useMemo(
+    () =>
+      (allocations || [])
+        .filter(
+          a =>
+            a.employeeId === employeeId &&
+            a.status !== 'completed' &&
+            !completedToday.includes(a.id) &&
+            isInWeeklyOrPastScope(a.weekStartDate, today)
+        )
+        .map(a => a.id),
+    [allocations, employeeId, completedToday, today]
+  );
+  const { data: noteCounts = {} } = useAllocationNoteCounts(scopedAllocationIds);
+
+  useEffect(() => {
+    const q = searchQuery.trim();
+    if (!q) {
+      setNoteSearchHits(new Set());
+      return;
+    }
+    let cancelled = false;
+    void searchAllocationIdsByNoteBody(scopedAllocationIds, q).then(hits => {
+      if (!cancelled) setNoteSearchHits(hits);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [searchQuery, scopedAllocationIds]);
 
   const dailyCapacity = useMemo(() => {
     if (currentUser?.workSchedule) {
@@ -102,7 +135,7 @@ export function MyDayView({
       if (q) {
         const proj = projects.find(p => p.id === a.projectId);
         const text = `${a.taskName ?? ''} ${formatProjectName(proj?.name ?? '')}`.toLowerCase();
-        if (!text.includes(q)) return false;
+        if (!text.includes(q) && !noteSearchHits.has(a.id)) return false;
       }
       return true;
     });
@@ -111,7 +144,7 @@ export function MyDayView({
     const backlog = candidates.filter(a => a.focusDate !== todayStr);
     const sorted = [...backlog].sort(sortByUserPriority);
     return { focusTasks: focus, backlogTasks: backlog, sortedBacklog: sorted };
-  }, [allocations, employeeId, today, todayStr, completedToday, searchQuery, projects, formatProjectName]);
+  }, [allocations, employeeId, today, todayStr, completedToday, searchQuery, projects, formatProjectName, noteSearchHits]);
 
   const handleTimeLogged = useCallback(() => {
     void loadDataForMonth(today);
@@ -289,6 +322,7 @@ export function MyDayView({
             )}
           </div>
           <div className="flex items-center gap-0.5 shrink-0">
+            <TaskNotesTrigger allocationId={task.id} noteCount={noteCounts[task.id] ?? 0} />
             {weeklyEnabled && onOpenWeeklyForAllocation && (
               <Button
                 type="button"

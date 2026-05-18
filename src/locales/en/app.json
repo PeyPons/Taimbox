@@ -2026,5 +2026,20 @@
       "noData": "No data",
       "syncPrompt": "Sync to load accounts"
     }
+  },
+  "taskNotes": {
+    "title": "Notes",
+    "hint": "Keep the task title short and put details here (languages, links, acceptance criteria…).",
+    "empty": "No notes yet.",
+    "placeholder": "Details: what to do in ES / EN / DE, links, criteria…",
+    "add": "Add note",
+    "open": "View notes",
+    "countOne": "1 note",
+    "countMany": "{{count}} notes",
+    "clickToView": "Click to view",
+    "addQuick": "Add note",
+    "clickToAdd": "Click to add",
+    "saveError": "Could not save the note",
+    "deleteError": "Could not delete the note"
   }
 }

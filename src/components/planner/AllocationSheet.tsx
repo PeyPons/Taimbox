@@ -26,6 +26,8 @@ import { WeekNavigation } from './WeekNavigation';
 import { ProjectImpactSummary } from './ProjectImpactSummary';
 import { useAllocationSheet, ProjectBudgetStatus } from '@/hooks/useAllocationSheet';
 import { useAllocationActions } from '@/hooks/useAllocationActions';
+import { useAllocationNoteCounts } from '@/hooks/useAllocationNotes';
+import { TaskNotesTrigger } from '@/components/planner/allocation/TaskNotesTrigger';
 import { AllocationProjectHeader } from '@/components/planner/allocation/AllocationProjectHeader';
 import { AllocationTaskRow } from '@/components/planner/allocation/AllocationTaskRow';
 import { PlannerTaskContextMenu } from '@/components/planner/allocation/PlannerTaskContextMenu';
@@ -263,7 +265,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
     newTasks, inlineEditingId, inlineNameValue, setInlineNameValue,
     editingAllocation, isFormOpen, setIsFormOpen, isSaving, showDeleteConfirm, setShowDeleteConfirm,
     editProjectId, setEditProjectId, editTaskName, setEditTaskName, editHours, setEditHours,
-    editDescription, setEditDescription, editWeek, setEditWeek, editDependencyId, setEditDependencyId,
+    editWeek, setEditWeek, editDependencyId, setEditDependencyId,
     addTaskRow, removeTaskRow, updateTaskRow, handleSave, startEditFull, handleDeleteClick,
     confirmDelete, toggleTaskCompletion, startInlineEdit, saveInlineEdit, updateInlineHours, moveTaskToWeek,
     closeForm, recentlyToggled, cancelInlineEdit, clearNewTasks,
@@ -285,6 +287,15 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
     },
     [toggleTaskCompletion, refreshTimeEntrySums]
   );
+
+  const employeeAllocationIds = useMemo(
+    () =>
+      allocations
+        .filter(a => a.employeeId === employeeId && isAllocationInEffectiveMonth(a.weekStartDate, viewDate))
+        .map(a => a.id),
+    [allocations, employeeId, viewDate]
+  );
+  const { data: noteCounts = {} } = useAllocationNoteCounts(employeeAllocationIds);
 
   const { getWeekExceedStatus } = useTasksImpact({
     newTasks,
@@ -1056,10 +1067,10 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                   </td>
                                                   <td className="py-2 px-3">
                                                     <div className="space-y-1">
-                                                      <div className="flex items-center gap-1.5">
+                                                      <div className="flex items-center gap-1.5 min-w-0">
                                                         <div
                                                           className={cn(
-                                                            "font-medium rounded px-1 -mx-1",
+                                                            "font-medium rounded px-1 -mx-1 min-w-0 flex-1",
                                                             isCompleted && "line-through text-slate-400",
                                                             pendingTransfer ? "cursor-not-allowed opacity-70" : "cursor-pointer hover:bg-slate-100"
                                                           )}
@@ -1081,8 +1092,8 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                             />
                                                           ) : (
                                                             // Limpiar nombre de tarea removiendo información de transferencia
-                                                            <div className="flex items-center gap-2">
-                                                              <span>
+                                                            <div className="flex items-center gap-2 min-w-0">
+                                                              <span className="truncate">
                                                                 {(() => {
                                                                   let cleanName = alloc.taskName || 'Tarea';
                                                                   // Remover "(transferida de X, original: Y)" o "(transferida de X)"
@@ -1161,7 +1172,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                           return (
                                                             <Tooltip>
                                                               <TooltipTrigger asChild>
-                                                                <Badge variant="outline" className="h-4 px-1.5 text-[9px] bg-primary/10 text-indigo-700 border-indigo-200 cursor-help">
+                                                                <Badge variant="outline" className="h-4 px-1.5 text-[9px] bg-primary/10 text-indigo-700 border-indigo-200 cursor-help shrink-0">
                                                                   Weekly
                                                                 </Badge>
                                                               </TooltipTrigger>
@@ -1177,6 +1188,11 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                             </Tooltip>
                                                           );
                                                         })()}
+                                                        <TaskNotesTrigger
+                                                          allocationId={alloc.id}
+                                                          noteCount={noteCounts[alloc.id] ?? 0}
+                                                          badge
+                                                        />
                                                       </div>
                                                       {depTask && !isCompleted && (
                                                         <div
@@ -1744,6 +1760,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                             showTaskTimer={isTimeTrackerEnabled}
                                             onTimeLogged={handleTimeLogged}
                                             timeEntriesSum={timeEntrySumsByAllocationId[alloc.id]}
+                                            noteCount={noteCounts[alloc.id] ?? 0}
                                             onOpenWeeklyForTask={
                                               isWeeklyEnabled
                                                 ? (a) => {

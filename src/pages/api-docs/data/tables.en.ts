@@ -395,6 +395,69 @@ export const TABLE_GROUPS_EN: TableGroup[] = [
         },
       },
       {
+        name: 'allocation_notes',
+        description:
+          'Append-only notes per task (allocation). Distinct from weekly_feedback.comments and time_entries.notes.',
+        authNote: 'Authentication required. Filter by agency_id.',
+        columns: [
+          { name: 'id', type: 'uuid', required: false, default: 'gen_random_uuid()', pk: true, description: 'Unique identifier.' },
+          { name: 'allocation_id', type: 'uuid', required: true, fk: 'allocations(id)', description: 'Linked weekly task.' },
+          { name: 'agency_id', type: 'uuid', required: true, fk: 'agencies(id)', description: 'Agency (direct RLS).' },
+          { name: 'author_employee_id', type: 'uuid', required: false, fk: 'employees(id)', description: 'Note author.' },
+          { name: 'body', type: 'text', required: true, description: 'Content (max 10000 chars).' },
+          { name: 'source', type: 'text', required: true, default: "'user'", check: "IN ('user','legacy_description','system_copy')", description: 'Note origin.' },
+          { name: 'created_at', type: 'timestamptz', required: false, default: 'now()', description: 'Auto-generated.' },
+          { name: 'deleted_at', type: 'timestamptz', required: false, description: 'Soft delete; null = active.' },
+        ],
+        examples: {
+          select: `const { data } = await timeboxing
+  .from('allocation_notes')
+  .select('id, allocation_id, body, source, created_at')
+  .eq('allocation_id', allocationId)
+  .is('deleted_at', null)
+  .order('created_at')`,
+          insert: `const { data } = await timeboxing
+  .from('allocation_notes')
+  .insert({
+    allocation_id: allocationId,
+    agency_id: agencyId,
+    author_employee_id: employeeId,
+    body: 'Upload ES images and EN/DE copy',
+    source: 'user'
+  })
+  .select()
+  .single()`,
+        },
+        responses: {
+          getList: `[
+  {
+    "id": "an1-...",
+    "allocation_id": "al1-...",
+    "body": "Upload ES images and EN/DE copy",
+    "source": "user",
+    "created_at": "2026-02-17T09:00:00Z"
+  }
+]`,
+          getOne: `{
+  "id": "an1-...",
+  "allocation_id": "al1-...",
+  "agency_id": "a1b2c3d4-...",
+  "author_employee_id": "e1f2a3b4-...",
+  "body": "Upload ES images and EN/DE copy",
+  "source": "user",
+  "created_at": "2026-02-17T09:00:00Z",
+  "deleted_at": null
+}`,
+          post: `{
+  "id": "an2-...",
+  "allocation_id": "al1-...",
+  "body": "Upload ES images and EN/DE copy",
+  "source": "user",
+  "created_at": "2026-02-17T12:00:00Z"
+}`,
+        },
+      },
+      {
         name: 'deadlines',
         description:
           'Monthly targets per project. Defines how many hours each employee should spend on a project in a month.',

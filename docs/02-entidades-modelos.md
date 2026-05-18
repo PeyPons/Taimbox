@@ -128,4 +128,11 @@ La unidad fundamental de planificación semanal.
 - `focusDate` (BD `focus_date`): Fecha `YYYY-MM-DD` en que el empleado marca la tarea **en foco** para su vista diaria; `null` = solo backlog semanal. **No** sustituye a `hoursAssigned` ni afecta a métricas financieras. El “hoy” lo resuelve el navegador del usuario al filtrar.
 - `userPriority`: Orden personal en backlog (menor = más arriba); reutilizado en `MyDayView` para subir/bajar.
 
+#### Anotaciones (`AllocationNote` / tabla `allocation_notes`)
+- Historial **append-only** por tarea (`allocation_id`): instrucciones, idiomas, enlaces, criterios. El **`taskName`** debe ser corto y escaneable.
+- **Distinto de:** `weekly_feedback.comments` (justificación de cierre Weekly), `time_entries.notes` (registro de cronómetro), `allocations.description` (legacy, ya no se escribe desde la app).
+- **UI:** `TaskNotesPanel`, `TaskNotesTrigger`; hooks `useAllocationNotes`, `useAllocationNoteCounts`; Realtime en `AppLayout` vía `useAllocationNotesRealtime`.
+- **Permisos:** cualquier miembro de la agencia puede añadir notas en tareas visibles; borrar solo autor o admin de agencia (`can_access_agency_settings`).
+- **Ciclo de vida:** RPC `copy_allocation_notes` en rollover, transferencia (modo distribute/rollover) y flujos Weekly cliente (`useWeeklyCloseMutations`).
+
 ---

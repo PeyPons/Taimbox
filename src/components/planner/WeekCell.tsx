@@ -98,7 +98,7 @@ export function WeekCell({ allocations, hours, capacity, status, isCurrentWeek, 
                   <Clock className="h-3 w-3" />
                   Est.
                 </span>
-                <span className="font-mono font-semibold">{totalEst}h</span>
+                <span className="font-mono font-semibold text-[10px] sm:text-[11px] truncate min-w-0">{totalEst}h</span>
               </div>
 
               {/* REAL y COMPUTADO - Incluye horas del cronómetro en tareas pendientes */}
@@ -108,11 +108,11 @@ export function WeekCell({ allocations, hours, capacity, status, isCurrentWeek, 
                   <div className="space-y-0.5 text-[11px] py-0.5 px-1 rounded bg-blue-50/70">
                     <div className="flex items-center justify-between gap-1 text-blue-700 min-w-0">
                       <span className="font-medium shrink-0">Real</span>
-                      <span className="font-mono font-bold whitespace-nowrap">{totalReal}h</span>
+                      <span className="font-mono font-bold text-[10px] sm:text-[11px] truncate min-w-0">{totalReal}h</span>
                     </div>
                     <div className="flex items-center justify-between gap-1 text-emerald-700 min-w-0">
                       <span className="font-medium shrink-0">Comp.</span>
-                      <span className="font-mono font-bold whitespace-nowrap">{totalComp}h</span>
+                      <span className="font-mono font-bold text-[10px] sm:text-[11px] truncate min-w-0">{totalComp}h</span>
                     </div>
                   </div>
 
@@ -201,30 +201,37 @@ export function WeekCell({ allocations, hours, capacity, status, isCurrentWeek, 
 
 
         {/* FOOTER - CARGA TOTAL */}
-        <div className={cn("pt-2 border-t border-slate-200/50 mt-auto")}>
+        <div className={cn("pt-1.5 border-t border-slate-200/50 mt-auto")}>
           {/* Alerta especial: tareas en semana de vacaciones */}
           {isZeroCapacityOverload && (
             <div className="flex items-center gap-1 text-[10px] text-red-700 bg-red-100 border border-red-300 rounded px-1.5 py-1 mb-1.5">
               <AlertCircle className="h-3 w-3 flex-shrink-0" />
-              <span className="font-medium">Tareas en vacaciones</span>
+              <span className="font-medium leading-tight">Tareas en vacaciones</span>
             </div>
           )}
-          <div className={cn(
-            "flex items-center justify-between gap-1 font-bold min-w-0",
-            "text-[11px]",
-            touchTarget && "text-base",
-            isOverload ? "text-red-600" :
-              isWarning ? "text-amber-600" :
-                isHealthy ? "text-emerald-600" :
-                  "text-slate-400"
-          )}>
-            <span className="flex items-center gap-1 shrink-0">
-              {isOverload && <><AlertTriangle className="h-4 w-4 flex-shrink-0" /><AlertCircle className="h-3.5 w-3.5 flex-shrink-0" /></>}
-              {isWarning && <AlertTriangle className="h-3.5 w-3.5" />}
-              {isHealthy && <CheckCircle2 className="h-3.5 w-3.5" />}
-            </span>
-            <span className="font-mono text-base tabular-nums whitespace-nowrap">{hours}/{capacity}h</span>
-          </div>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className={cn(
+                "flex items-center justify-center gap-1 font-bold min-w-0 w-full px-0.5",
+                "text-[10px] sm:text-[11px] leading-none",
+                touchTarget && "text-sm",
+                isOverload ? "text-red-600" :
+                  isWarning ? "text-amber-600" :
+                    isHealthy ? "text-emerald-600" :
+                      "text-slate-400"
+              )}>
+                {isOverload && <AlertTriangle className="h-3 w-3 shrink-0" />}
+                {isWarning && <AlertTriangle className="h-3 w-3 shrink-0" />}
+                {isHealthy && <CheckCircle2 className="h-3 w-3 shrink-0" />}
+                <span className="font-mono tabular-nums truncate min-w-0">
+                  {hours}/{capacity}h
+                </span>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="text-xs font-mono tabular-nums">
+              {hours}/{capacity}h
+            </TooltipContent>
+          </Tooltip>
         </div>
       </div>
     </TooltipProvider>

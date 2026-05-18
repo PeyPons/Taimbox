@@ -22,6 +22,7 @@ import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
 import { normalizeDepartments, employeeBelongsToDepartment } from '@/utils/departmentUtils';
 import { fetchDeadlinesForMonth } from '@/utils/deadlineUtils';
 import { fetchGlobalAssignmentsForMonth } from '@/utils/globalAssignmentsUtils';
+import { fetchAllocationNotesForIds } from '@/services/allocationNotesService';
 import { isAllocationInEffectiveMonth, parseDateStringLocal } from '@/utils/dateUtils';
 import { computeGlobalPlanningInconsistencies } from '@/utils/planningCoherenceCompute';
 import { computeProjectMetricsForMonth } from '@/utils/projectMetricsCompute';
@@ -286,6 +287,10 @@ export default function DataExportHubPage() {
       }));
 
       const monthAllocations = inc.planning ? allocationsForMonth(allocations ?? [], monthDate) : [];
+      const allocationNotesForMonth =
+        inc.planning && monthAllocations.length > 0
+          ? await fetchAllocationNotesForIds(monthAllocations.map(a => a.id))
+          : [];
 
       let coherencePayload: {
         schemaVersion: 1;
@@ -435,6 +440,7 @@ export default function DataExportHubPage() {
               monthKey,
               count: monthAllocations.length,
               allocations: monthAllocations,
+              allocationNotes: allocationNotesForMonth,
             }
           : null,
         coherence: coherencePayload,

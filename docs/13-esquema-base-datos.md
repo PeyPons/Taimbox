@@ -23,6 +23,7 @@ Si el código o una migración **contradice** el snapshot, **prevalece el códig
 ## 13.3. Planificador y tiempo
 
 - **`allocations`**: tareas semanales (horas, estado, transferencias, `focus_date`, `user_priority`, bloqueo). **No tiene `agency_id`**; la agencia se deduce por `employee_id` / `project_id` y RLS. Las queries PostgREST directas a `allocations` no deben pedir columnas ajenas a esta tabla (p. ej. un `select` con `agency_id` devuelve 400).
+- **`allocation_notes`**: anotaciones append-only por allocation (`body`, `author_employee_id`, `agency_id`, `source`). Distinto de `weekly_feedback.comments` (cierre semanal) y `time_entries.notes` (cronómetro). La columna legacy `allocations.description` ya no se escribe desde la app; datos migrados a notas con `source = legacy_description`. RPC `copy_allocation_notes` en rollover/transfer/distribución.
 - **`absences`**, **`team_events`**: capacidad y calendario.
 - **`time_entries`**, **`timer_sessions`**, **`active_timers`**: registro de tiempo y cronómetro (muchas tablas llevan `agency_id` para RLS directo).
 - **`weekly_feedback`**, **`user_routines`**, **`professional_goals`**: feedback y hábitos del empleado.

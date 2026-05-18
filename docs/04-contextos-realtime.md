@@ -18,6 +18,7 @@ En Supabase (Database → Replication / publicación `supabase_realtime`) deben 
 | Tabla | Uso en la app |
 |-------|----------------|
 | `allocations` | AppContext (planificador) y TeamPulsePage |
+| `allocation_notes` | TanStack Query (`useAllocationNotes`); invalidación vía `useAllocationNotesRealtime` en AppLayout (no en AppContext) |
 | `projects` | AppContext |
 | `absences` | AppContext |
 | `team_events` | AppContext |

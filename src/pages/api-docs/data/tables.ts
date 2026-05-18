@@ -395,6 +395,69 @@ export const TABLE_GROUPS: TableGroup[] = [
         },
       },
       {
+        name: 'allocation_notes',
+        description:
+          'Anotaciones append-only por tarea (allocation). Distinto de weekly_feedback.comments y time_entries.notes.',
+        authNote: 'Requiere autenticacion. Filtra por agency_id.',
+        columns: [
+          { name: 'id', type: 'uuid', required: false, default: 'gen_random_uuid()', pk: true, description: 'Identificador unico.' },
+          { name: 'allocation_id', type: 'uuid', required: true, fk: 'allocations(id)', description: 'Tarea semanal asociada.' },
+          { name: 'agency_id', type: 'uuid', required: true, fk: 'agencies(id)', description: 'Agencia (RLS directo).' },
+          { name: 'author_employee_id', type: 'uuid', required: false, fk: 'employees(id)', description: 'Autor de la anotacion.' },
+          { name: 'body', type: 'text', required: true, description: 'Contenido (max 10000 caracteres).' },
+          { name: 'source', type: 'text', required: true, default: "'user'", check: "IN ('user','legacy_description','system_copy')", description: 'Origen de la nota.' },
+          { name: 'created_at', type: 'timestamptz', required: false, default: 'now()', description: 'Auto-generado.' },
+          { name: 'deleted_at', type: 'timestamptz', required: false, description: 'Soft delete; null = activa.' },
+        ],
+        examples: {
+          select: `const { data } = await timeboxing
+  .from('allocation_notes')
+  .select('id, allocation_id, body, source, created_at')
+  .eq('allocation_id', allocationId)
+  .is('deleted_at', null)
+  .order('created_at')`,
+          insert: `const { data } = await timeboxing
+  .from('allocation_notes')
+  .insert({
+    allocation_id: allocationId,
+    agency_id: agencyId,
+    author_employee_id: employeeId,
+    body: 'Subir imagenes ES y textos EN/DE',
+    source: 'user'
+  })
+  .select()
+  .single()`,
+        },
+        responses: {
+          getList: `[
+  {
+    "id": "an1-...",
+    "allocation_id": "al1-...",
+    "body": "Subir imagenes ES y textos EN/DE",
+    "source": "user",
+    "created_at": "2026-02-17T09:00:00Z"
+  }
+]`,
+          getOne: `{
+  "id": "an1-...",
+  "allocation_id": "al1-...",
+  "agency_id": "a1b2c3d4-...",
+  "author_employee_id": "e1f2a3b4-...",
+  "body": "Subir imagenes ES y textos EN/DE",
+  "source": "user",
+  "created_at": "2026-02-17T09:00:00Z",
+  "deleted_at": null
+}`,
+          post: `{
+  "id": "an2-...",
+  "allocation_id": "al1-...",
+  "body": "Subir imagenes ES y textos EN/DE",
+  "source": "user",
+  "created_at": "2026-02-17T12:00:00Z"
+}`,
+        },
+      },
+      {
         name: 'deadlines',
         description:
           'Objetivos mensuales por proyecto. Define cuantas horas debe dedicar cada empleado a un proyecto en un mes.',

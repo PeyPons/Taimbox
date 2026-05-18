@@ -46,7 +46,7 @@ describe('plannerBatchPreview', () => {
         taskName: 'Nueva',
         hours: '5',
         weekDate: '2026-05-12',
-        description: '',
+        initialNote: '',
         dependencyId: 'none',
       },
     ];
@@ -84,7 +84,7 @@ describe('plannerBatchPreview', () => {
         taskName: 'Nueva',
         hours: '5',
         weekDate: '2026-05-12',
-        description: '',
+        initialNote: '',
         dependencyId: 'none',
       },
     ];
@@ -126,7 +126,7 @@ describe('plannerBatchPreview', () => {
         taskName: 'T',
         hours: '2',
         weekDate: '2026-05-05',
-        description: '',
+        initialNote: '',
         dependencyId: 'none',
       },
     ];

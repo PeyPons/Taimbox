@@ -332,6 +332,21 @@ export interface Allocation {
   focusDate?: string | null;
 }
 
+export type AllocationNoteSource = 'user' | 'legacy_description' | 'system_copy';
+
+export interface AllocationNote {
+  id: string;
+  allocationId: string;
+  agencyId: string;
+  authorEmployeeId?: string | null;
+  body: string;
+  source: AllocationNoteSource;
+  createdAt: string;
+  deletedAt?: string | null;
+  authorName?: string;
+  authorAvatarUrl?: string | null;
+}
+
 export interface TimeEntry {
   id: string;
   allocationId: string;
@@ -349,7 +364,8 @@ export interface NewTaskRow {
   taskName: string;
   hours: string;
   weekDate: string;
-  description?: string;
+  /** Nota inicial creada tras insertar la allocation (no se persiste en allocations.description). */
+  initialNote?: string;
   dependencyId?: string;
   employeeId?: string; // Opcional: para asignar tareas a otros empleados
 }
