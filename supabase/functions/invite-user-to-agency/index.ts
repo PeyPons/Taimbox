@@ -2,6 +2,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 import { sendWelcomeOrInvitationEmail } from "../_shared/welcome-and-invitation-email.ts"
+import {
+  AgencyAccessError,
+  assertCanInviteToAgency,
+  getBearerToken,
+} from "../_shared/auth-user-access.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -15,22 +20,25 @@ serve(async (req) => {
   }
 
   try {
-    // 2. Validar variables de entorno
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
 
-    if (!supabaseUrl || !supabaseServiceKey) {
-      console.error('Variables de entorno faltantes:', {
-        hasUrl: !!supabaseUrl,
-        hasKey: !!supabaseServiceKey
-      })
+    if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceKey) {
+      console.error('Variables de entorno faltantes')
       throw new Error('Configuración del servidor incompleta. Contacta al administrador.')
     }
 
-    // 3. Crear cliente de Supabase con permisos de SUPERADMIN (Service Role)
+    const bearer = getBearerToken(req)
+    if (!bearer) {
+      return new Response(JSON.stringify({ error: 'No se proporcionó token de autorización' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 401,
+      })
+    }
+
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
 
-    // 4. Leer y validar los datos que envía el frontend
     let body
     try {
       body = await req.json()
@@ -39,7 +47,9 @@ serve(async (req) => {
       throw new Error('Formato de datos inválido. Verifica que los datos se envíen correctamente.')
     }
 
-    const { email, agencyId, role, department, inviterUserId } = body
+    const { email, agencyId, role, department } = body
+    let inviteRole = role
+    let inviteDepartment = department
 
     if (!email || typeof email !== 'string' || !email.trim()) {
       throw new Error('El email es obligatorio y debe ser una cadena de texto válida')
@@ -49,52 +59,16 @@ serve(async (req) => {
       throw new Error('El ID de agencia es obligatorio')
     }
 
-    if (!inviterUserId || typeof inviterUserId !== 'string') {
-      throw new Error('El ID del usuario que invita es obligatorio')
-    }
+    const inviterUser = await assertCanInviteToAgency({
+      supabaseUrl,
+      supabaseAnonKey,
+      supabaseServiceKey,
+      token: bearer,
+      agencyId,
+    })
 
     const cleanEmail = email.trim().toLowerCase()
-    console.log(`Intentando invitar usuario: ${cleanEmail} a agencia: ${agencyId}`)
-
-    // 5. Verificar que el usuario que invita sea admin de la agencia
-    const { data: inviterEmployee, error: inviterError } = await supabaseAdmin
-      .from('employees')
-      .select('id, role, agency_id')
-      .eq('user_id', inviterUserId)
-      .eq('agency_id', agencyId)
-      .maybeSingle()
-
-    if (inviterError) {
-      console.error('Error verificando inviter:', inviterError)
-      throw new Error('Error al verificar permisos del invitador')
-    }
-
-    if (!inviterEmployee) {
-      throw new Error('No tienes permisos para invitar usuarios a esta agencia')
-    }
-
-    // Verificar que el inviter tenga permisos de admin (verificar en user_agencies o en employees.role)
-    // Por ahora, verificamos que tenga un rol que contenga keywords de admin
-    const MANAGER_KEYWORDS = ['manager', 'admin', 'director', 'ceo', 'founder', 'head', 'lead', 'responsable', 'coordinador']
-    const inviterRole = inviterEmployee.role || ''
-    const isInviterAdmin = MANAGER_KEYWORDS.some(k => inviterRole.toLowerCase().includes(k))
-
-    // También verificar en user_agencies si existe
-    const { data: inviterUserAgency } = await supabaseAdmin
-      .from('user_agencies')
-      .select('role')
-      .eq('user_id', inviterUserId)
-      .eq('agency_id', agencyId)
-      .maybeSingle()
-
-    const finalIsAdmin = isInviterAdmin ||
-      (inviterUserAgency?.role && MANAGER_KEYWORDS.some(k => inviterUserAgency.role.toLowerCase().includes(k)))
-
-    if (!finalIsAdmin) {
-      throw new Error('Solo los administradores pueden invitar usuarios a la agencia')
-    }
-
-    // 6. Verificar que el email no esté ya en la agencia (por email Y agency_id)
+    console.log(`Usuario ${inviterUser.id} invita a ${cleanEmail} en agencia ${agencyId}`)
     // Con la nueva restricción única compuesta, esto verifica duplicados en la misma agencia
     const { data: existingEmployeeInAgency } = await supabaseAdmin
       .from('employees')
@@ -154,11 +128,11 @@ serve(async (req) => {
           }
           // Si no tiene empleado pero está en user_agencies, continuar para crear el empleado
           // Usar el rol y departamento de user_agencies si no se proporcionaron nuevos
-          if (!role && existingRelation.role) {
-            role = existingRelation.role
+          if (!inviteRole && existingRelation.role) {
+            inviteRole = existingRelation.role
           }
-          if (!department && existingRelation.department) {
-            department = existingRelation.department
+          if (!inviteDepartment && existingRelation.department) {
+            inviteDepartment = existingRelation.department
           }
         }
       }
@@ -217,8 +191,8 @@ serve(async (req) => {
           .from('employees')
           .update({
             email: cleanEmail, // Asegurar que el email esté actualizado
-            role: role || null,
-            department: department || null
+            role: inviteRole || null,
+            department: inviteDepartment || null
           })
           .eq('id', existingEmployeeInAgency.id)
 
@@ -259,8 +233,8 @@ serve(async (req) => {
             first_name: sourceEmployee.first_name,
             last_name: sourceEmployee.last_name,
             user_id: userId,
-            role: role || null,
-            department: department || null,
+            role: inviteRole || null,
+            department: inviteDepartment || null,
             default_weekly_capacity: sourceEmployee.default_weekly_capacity || 40,
             work_schedule: sourceEmployee.work_schedule || { monday: 8, tuesday: 8, wednesday: 8, thursday: 8, friday: 8, saturday: 0, sunday: 0 },
             is_active: true,
@@ -313,8 +287,8 @@ serve(async (req) => {
           email: cleanEmail,
           name: cleanEmail.split('@')[0], // Usar parte antes del @ como nombre temporal
           user_id: userId,
-          role: role || null,
-          department: department || null,
+          role: inviteRole || null,
+          department: inviteDepartment || null,
           default_weekly_capacity: 40,
           work_schedule: { monday: 8, tuesday: 8, wednesday: 8, thursday: 8, friday: 8, saturday: 0, sunday: 0 },
           is_active: true,
@@ -358,8 +332,8 @@ serve(async (req) => {
           .insert({
             user_id: userId,
             agency_id: agencyId,
-            role: role || null,
-            department: department || null,
+            role: inviteRole || null,
+            department: inviteDepartment || null,
             is_primary: isPrimaryForNewRow
           })
 
@@ -372,10 +346,10 @@ serve(async (req) => {
         }
       } else {
         // Ya existe, actualizar rol y departamento si se proporcionaron nuevos valores
-        if (role !== undefined || department !== undefined) {
-          const updateData: any = {}
-          if (role !== undefined) updateData.role = role || null
-          if (department !== undefined) updateData.department = department || null
+        if (inviteRole !== undefined || inviteDepartment !== undefined) {
+          const updateData: Record<string, string | null> = {}
+          if (inviteRole !== undefined) updateData.role = inviteRole || null
+          if (inviteDepartment !== undefined) updateData.department = inviteDepartment || null
 
           const { error: updateError } = await supabaseAdmin
             .from('user_agencies')
@@ -436,9 +410,16 @@ serve(async (req) => {
       }
     )
 
-  } catch (error: any) {
+  } catch (error: unknown) {
+    if (error instanceof AgencyAccessError) {
+      return new Response(JSON.stringify({ error: error.message }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: error.status,
+      })
+    }
+
     console.error("Error general:", error)
-    const errorMessage = error?.message || 'Error desconocido al invitar usuario'
+    const errorMessage = error instanceof Error ? error.message : 'Error desconocido al invitar usuario'
 
     return new Response(
       JSON.stringify({ error: errorMessage }),

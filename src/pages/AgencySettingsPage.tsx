@@ -28,6 +28,7 @@ import { normalizeDepartments } from '@/utils/departmentUtils';
 import { DEFAULT_FILTERS } from '@/hooks/useProjectFilters';
 import { UserPermissions, DEFAULT_PERMISSIONS } from '@/types/permissions';
 import { normalizeRolesForSave } from '@/utils/agencySettingsPermissions';
+import { sanitizeIntegrationsForSave } from '@/utils/agencyUtils';
 import { RolePermissionsEditor } from '@/components/agency/RolePermissionsEditor';
 import {
   Tooltip,
@@ -458,7 +459,7 @@ export default function AgencySettingsPage() {
         },
         projectFilters,
         projectAliasingRules,
-        integrations,
+        integrations: sanitizeIntegrationsForSave(integrations),
         enabledIntegrations,
         weeklyCloseDay,
         planningPrecisionExclusions,

@@ -611,7 +611,6 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
           agencyId: currentAgency.id,
           role: role ?? null,
           department: department ?? null,
-          inviterUserId: user.id,
         },
       });
       if (error) {

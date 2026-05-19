@@ -1,6 +1,11 @@
 // supabase/functions/delete-user/index.ts
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
+import {
+  AgencyAccessError,
+  assertCanDeleteAuthUser,
+  getBearerToken,
+} from "../_shared/auth-user-access.ts"
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -13,20 +18,37 @@ serve(async (req) => {
     }
 
     try {
-        const supabaseAdmin = createClient(
-            Deno.env.get('SUPABASE_URL') ?? '',
-            Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-        )
+        const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
+        const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+        const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 
-        if (!Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')) {
-            throw new Error('Falta la Service Role Key')
+        if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceKey) {
+            throw new Error('Falta la Service Role Key o configuración de Supabase')
+        }
+
+        const bearer = getBearerToken(req)
+        if (!bearer) {
+            return new Response(JSON.stringify({ error: 'No se proporcionó token de autorización' }), {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                status: 401,
+            })
         }
 
         const { userId } = await req.json()
 
-        if (!userId) {
+        if (!userId || typeof userId !== 'string') {
             throw new Error('User ID is required')
         }
+
+        await assertCanDeleteAuthUser({
+            supabaseUrl,
+            supabaseAnonKey,
+            supabaseServiceKey,
+            token: bearer,
+            targetUserId: userId,
+        })
+
+        const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
 
         console.log(`Eliminando usuario Auth: ${userId}`)
 
@@ -69,18 +91,24 @@ serve(async (req) => {
             JSON.stringify({ success: true, data }),
             {
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-                status: 200
-            }
+                status: 200,
+            },
         )
-
     } catch (error) {
+        if (error instanceof AgencyAccessError) {
+            return new Response(JSON.stringify({ error: error.message }), {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                status: error.status,
+            })
+        }
+
         console.error('Error general en delete-user:', error)
         return new Response(
             JSON.stringify({ error: (error as Error).message }),
             {
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-                status: 400
-            }
+                status: 400,
+            },
         )
     }
 })

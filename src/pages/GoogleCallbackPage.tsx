@@ -8,7 +8,7 @@ import { toast } from '@/lib/notify';
 export default function GoogleCallbackPage() {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
-    const { currentAgency, refreshAgency } = useAgency();
+    const { refreshAgency } = useAgency();
     const processedRef = useRef(false);
     const { t } = useTranslation('app');
 
@@ -48,7 +48,6 @@ export default function GoogleCallbackPage() {
             } catch (_) {
                 // ignore parse error
             }
-            if (!agencyId) agencyId = currentAgency?.id || stateFromUrl || null;
             if (!agencyId) {
                 toast.error(t('app.auth.oauth.google.missingAgency'));
                 navigate('/agency?tab=integrations');
@@ -78,7 +77,7 @@ export default function GoogleCallbackPage() {
         };
 
         handleCallback();
-    }, [searchParams, navigate, currentAgency, refreshAgency, t]);
+    }, [searchParams, navigate, refreshAgency, t]);
 
     return (
         <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">

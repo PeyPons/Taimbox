@@ -90,14 +90,12 @@ Deno.serve(async (req) => {
         }
 
         console.log(`[list-google-accounts] Refresh token source: ${source}`)
-        console.log(`[list-google-accounts] Refresh token found: ${!!refreshToken}, Length: ${refreshToken?.length}`)
 
         if (!refreshToken) {
             throw new Error('La agencia no tiene una cuenta de Google vinculada (falta refresh token)')
         }
 
         // 3. Obtener Access Token
-        console.log('[list-google-accounts] Exchanging refresh token for access token...')
         const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },

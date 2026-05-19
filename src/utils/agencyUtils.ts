@@ -100,11 +100,35 @@ export async function migrateIntegrations(agencyId: string, settings: AgencySett
 }
 
 /** La RPC get_agency_for_app_client ya redacta secretos; esto evita fugas si el payload viniera completo. */
-function redactIntegrationSecrets(settings: AgencySettings): AgencySettings {
+export function redactIntegrationSecrets(settings: AgencySettings): AgencySettings {
   if (!settings.integrations) return settings;
-  const { googleClientSecret: _s, googleAdsDevToken: _d, googleRefreshToken: _r, metaAccessToken: _m, ...safe } =
-    settings.integrations;
+  const {
+    googleClientSecret: _s,
+    googleAdsDevToken: _d,
+    googleRefreshToken: _r,
+    metaAccessToken: _m,
+    metaAdAccountIds: _a,
+    googleAdsCustomerId: _c,
+    ...safe
+  } = settings.integrations;
   return { ...settings, integrations: safe };
+}
+
+/** Antes de guardar settings: no enviar secretos OAuth en JSON (defensa en profundidad; la RPC también filtra). */
+export function sanitizeIntegrationsForSave(
+  integrations: AgencySettings['integrations'] | undefined,
+): AgencySettings['integrations'] | undefined {
+  if (!integrations) return integrations;
+  const {
+    googleClientSecret: _s,
+    googleAdsDevToken: _d,
+    googleRefreshToken: _r,
+    metaAccessToken: _m,
+    metaAdAccountIds: _a,
+    googleAdsCustomerId: _c,
+    ...safe
+  } = integrations;
+  return safe;
 }
 
 export async function mapSupabaseAgency(data: SupabaseAgency): Promise<Agency> {
@@ -114,22 +138,28 @@ export async function mapSupabaseAgency(data: SupabaseAgency): Promise<Agency> {
   const status = (data.status === 'suspended' ? 'suspended' : 'active') as Agency['status'];
   const planId = (data.plan_id === 'pro' || data.plan_id === 'business' ? data.plan_id : 'starter') as Agency['planId'];
 
-  const isIntegrationAdmin =
-    Boolean(data.google_ads_refresh_token) ||
-    Boolean(data.meta_ads_access_token);
+  const canSeeIntegrationSecrets =
+    data.google_ads_refresh_token != null ||
+    data.meta_ads_access_token != null;
 
   return {
     id: data.id,
     name: data.name,
     slug: data.slug,
-    settings: isIntegrationAdmin ? migratedSettings : redactIntegrationSecrets(migratedSettings),
+    settings: canSeeIntegrationSecrets
+      ? migratedSettings
+      : redactIntegrationSecrets(migratedSettings),
     setupCompleted: data.setup_completed ?? true,
     status,
     createdAt: data.created_at,
     updatedAt: data.updated_at,
-    google_ads_refresh_token: isIntegrationAdmin ? (data.google_ads_refresh_token ?? undefined) : undefined,
+    google_ads_refresh_token: canSeeIntegrationSecrets
+      ? (data.google_ads_refresh_token ?? undefined)
+      : undefined,
     google_ads_customer_id: data.google_ads_customer_id ?? undefined,
-    meta_ads_access_token: isIntegrationAdmin ? (data.meta_ads_access_token ?? undefined) : undefined,
+    meta_ads_access_token: canSeeIntegrationSecrets
+      ? (data.meta_ads_access_token ?? undefined)
+      : undefined,
     planId,
     subscriptionStatus: data.subscription_status ?? undefined,
     stripeCustomerId: data.stripe_customer_id ?? undefined,
