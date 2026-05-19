@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -51,6 +51,14 @@ import { useSearchParams, useLocation } from 'react-router-dom';
 import { useDeliverableLifecycleBatch } from '@/hooks/useDeliverableLifecycleBatch';
 import { DeliverableLifecycleBadge } from '@/components/projects/DeliverableLifecycleBadge';
 import { ProjectMutateDialog } from '@/components/clients-projects/ProjectMutateDialog';
+import { ProjectImpactSummary } from '@/components/planner/ProjectImpactSummary';
+import { DependencyPicker, DEPENDENCY_NONE } from '@/components/planner/allocation/DependencyPicker';
+import { ProjectPicker } from '@/components/planner/allocation/ProjectPicker';
+import { WeekPicker } from '@/components/planner/allocation/WeekPicker';
+import { EmployeePicker } from '@/components/planner/allocation/EmployeePicker';
+import { useTasksImpact } from '@/hooks/useTasksImpact';
+import type { ProjectBudgetStatus } from '@/hooks/useAllocationSheet';
+import { buildAllocationEditPreview, createPlannerBatchPreviewContext } from '@/utils/plannerBatchPreview';
 
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
@@ -125,6 +133,7 @@ export default function ClientsAndProjectsPage() {
     getClientTotalHoursForMonth, getProjectHoursForMonth,
     updateAllocation,
     ensureMonthLoaded,
+    getEmployeeLoadForWeek,
   } = useApp();
   const { currentAgency } = useAgency();
   const { selectedDepartmentId } = useDepartmentView();
@@ -174,10 +183,6 @@ export default function ClientsAndProjectsPage() {
     selectedEmployeeId: 'all',
     activeFilter: 'all',
   });
-  const [openEditTaskProject, setOpenEditTaskProject] = useState(false);
-  const [openEditTaskEmployee, setOpenEditTaskEmployee] = useState(false);
-  const [openEditTaskDependency, setOpenEditTaskDependency] = useState(false);
-  const [openEditTaskWeek, setOpenEditTaskWeek] = useState(false);
   const [monthDeadlines, setMonthDeadlines] = useState<Deadline[]>([]);
   const [monthGlobalAssignments, setMonthGlobalAssignments] = useState<GlobalAssignment[]>([]);
 
@@ -212,6 +217,144 @@ export default function ClientsAndProjectsPage() {
   useEffect(() => {
     void ensureMonthLoaded(currentMonth);
   }, [currentMonth, ensureMonthLoaded]);
+
+  const preference = currentAgency?.settings?.hoursTrackingPreference;
+  const activeProjectsForPicker = useMemo(
+    () => projects.filter((p) => p.status === 'active'),
+    [projects],
+  );
+
+  const getProjectBudgetStatus = useCallback(
+    (projectId: string): ProjectBudgetStatus => {
+      const project = projects.find((p) => p.id === projectId);
+      if (!project) {
+        return {
+          totalComputed: 0,
+          totalPlanned: 0,
+          budgetMax: 0,
+          budgetMin: 0,
+          percentage: 0,
+          status: 'healthy',
+          breakdown: [],
+        };
+      }
+
+      const monthAllocations = allocations.filter(
+        (a) => a.projectId === projectId && isAllocationInEffectiveMonth(a.weekStartDate, currentMonth),
+      );
+
+      let totalComputed = 0;
+      let totalPlanned = 0;
+      const breakdownMap: Record<string, { computed: number; planned: number }> = {};
+
+      monthAllocations.forEach((a) => {
+        const computed = getEffectiveCompletedHours(a, preference);
+        const planned = a.status !== 'completed' ? a.hoursAssigned || 0 : 0;
+        totalComputed += computed;
+        totalPlanned += planned;
+        if (!breakdownMap[a.employeeId]) {
+          breakdownMap[a.employeeId] = { computed: 0, planned: 0 };
+        }
+        breakdownMap[a.employeeId].computed += computed;
+        breakdownMap[a.employeeId].planned += planned;
+      });
+
+      const deadline = monthDeadlines.find((d) => d.projectId === projectId);
+      const budgetMax = getEffectiveBudget(project, deadline);
+      const budgetMin = project.minimumHours || 0;
+      const percentage = budgetMax > 0 ? round2((totalComputed / budgetMax) * 100) : 0;
+
+      let status: ProjectBudgetStatus['status'] = 'healthy';
+      if (totalComputed > budgetMax) status = 'overload';
+      else if (budgetMax > 0 && Math.abs(totalComputed - budgetMax) < 0.1) status = 'healthy';
+      else if (percentage >= 80) status = 'warning';
+      else if (budgetMin > 0 && totalComputed < budgetMin && totalPlanned === 0) status = 'under';
+
+      return {
+        totalComputed: round2(totalComputed),
+        totalPlanned: round2(totalPlanned),
+        budgetMax,
+        budgetMin,
+        percentage,
+        status,
+        breakdown: Object.entries(breakdownMap).map(([empId, data]) => {
+          const emp = employees.find((e) => e.id === empId);
+          return { employeeId: empId, employeeName: emp?.name || 'Desconocido', ...data };
+        }),
+      };
+    },
+    [projects, allocations, employees, currentMonth, monthDeadlines, preference],
+  );
+
+  const editTaskWeeks = useMemo(() => getWeeksForMonth(currentMonth), [currentMonth]);
+
+  const editTaskAvailableDependencies = useMemo(() => {
+    if (!editingTask || !editTaskProjectId) return [];
+    return allocations.filter(
+      (a) =>
+        a.projectId === editTaskProjectId &&
+        a.id !== editingTask.id &&
+        a.status !== 'completed',
+    );
+  }, [allocations, editingTask, editTaskProjectId]);
+
+  const clientsEditPreview = useMemo(() => {
+    if (!editingTask) return null;
+    return buildAllocationEditPreview({
+      editingAllocation: editingTask,
+      form: {
+        projectId: editTaskProjectId,
+        taskName: editTaskName,
+        hours: editTaskHours,
+        weekDate: editTaskWeek,
+        dependencyId: editTaskDependencyId,
+        employeeId: editTaskEmployeeId,
+      },
+      allocations,
+      viewDate: currentMonth,
+      defaultEmployeeId: editTaskEmployeeId,
+      weeks: editTaskWeeks,
+      getProjectBudgetStatus,
+      getEmployeeLoadForWeek,
+      preference,
+    });
+  }, [
+    editingTask,
+    editTaskProjectId,
+    editTaskName,
+    editTaskHours,
+    editTaskWeek,
+    editTaskDependencyId,
+    editTaskEmployeeId,
+    allocations,
+    currentMonth,
+    editTaskWeeks,
+    getProjectBudgetStatus,
+    getEmployeeLoadForWeek,
+    preference,
+  ]);
+
+  const emptyBatchPreview = useMemo(
+    () =>
+      createPlannerBatchPreviewContext({
+        allocations,
+        pendingRows: [],
+        viewDate: currentMonth,
+        defaultEmployeeId: editTaskEmployeeId || employees[0]?.id || '',
+      }),
+    [allocations, currentMonth, editTaskEmployeeId, employees],
+  );
+
+  const { getWeekExceedStatus: getEditTaskWeekExceedStatus } = useTasksImpact({
+    newTasks: clientsEditPreview?.previewTasks ?? [],
+    projects: activeProjectsForPicker,
+    weeks: editTaskWeeks,
+    employeeId: editTaskEmployeeId,
+    getEmployeeLoadForWeek: clientsEditPreview?.getEmployeeLoadForWeek ?? getEmployeeLoadForWeek,
+    getProjectBudgetStatus: clientsEditPreview?.getProjectBudgetStatus ?? getProjectBudgetStatus,
+    viewMonth: currentMonth,
+    batchPreview: clientsEditPreview?.batchPreview ?? emptyBatchPreview,
+  });
 
   // Mes anterior para comparación
   const prevMonth = subMonths(currentMonth, 1);
@@ -1762,203 +1905,149 @@ export default function ClientsAndProjectsPage() {
       )}
 
       {/* Diálogo de edición de tarea */}
-      {editingTask && (() => {
-        const weeks = getWeeksForMonth(currentMonth);
-        const availableDependencies = allocations.filter(a =>
-          a.projectId === editTaskProjectId &&
-          a.id !== editingTask.id &&
-          a.status !== 'completed'
-        );
+      {editingTask && clientsEditPreview && (
+        <Dialog open={!!editingTask} onOpenChange={(open) => !open && setEditingTask(null)}>
+          <DialogContent className="flex max-h-[90vh] max-w-[95vw] flex-col gap-0 overflow-hidden p-0 sm:max-w-[1100px]">
+            <DialogHeader className="shrink-0 border-b px-6 py-4 text-left">
+              <DialogTitle>{t('clientsAndProjects.actions.editTask', 'Editar tarea')}</DialogTitle>
+              <DialogDescription>
+                {t('clientsAndProjects.dialogs.editTask.description', 'Modifica todos los detalles de la tarea.')}
+              </DialogDescription>
+            </DialogHeader>
 
-        return (
-          <Dialog open={!!editingTask} onOpenChange={(open) => !open && setEditingTask(null)}>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>{t('clientsAndProjects.actions.editTask', 'Editar tarea')}</DialogTitle>
-                <DialogDescription>
-                  {t('clientsAndProjects.dialogs.editTask.description', 'Modifica todos los detalles de la tarea.')}
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-6 py-4">
-                <div className="space-y-2">
-                  <Label>{t('clientsAndProjects.dialogs.newProject.client', 'Proyecto')}</Label>
-                  <Popover open={openEditTaskProject} onOpenChange={setOpenEditTaskProject}>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" className="w-full justify-between font-normal">
-                        <span className="truncate">
-                          {editTaskProjectId ? (
-                            <SensitiveText kind="project" id={editTaskProjectId}>
-                              {formatProjectName(projects.find(p => p.id === editTaskProjectId)?.name ?? t('clientsAndProjects.dialogs.newProject.selectProject', 'Seleccionar proyecto'))}
-                            </SensitiveText>
-                          ) : (
-                            t('clientsAndProjects.dialogs.newProject.selectProject', 'Seleccionar proyecto')
-                          )}
-                        </span>
-                        <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
-                      <Command>
-                        <CommandList className="max-h-[280px]">
-                          {projects.filter(p => p.status === 'active').map(project => (
-                            <CommandItem key={project.id} value={project.name} onSelect={() => { setEditTaskProjectId(project.id); setOpenEditTaskProject(false); }}>
-                              <Check className={cn('mr-2 h-4 w-4 shrink-0', editTaskProjectId === project.id ? 'opacity-100' : 'opacity-0')} />
-                              <SensitiveText kind="project" id={project.id}>{formatProjectName(project.name)}</SensitiveText>
-                            </CommandItem>
-                          ))}
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>{t('clientsAndProjects.dialogs.newProject.taskName', 'Nombre de la tarea')}</Label>
-                  <Input
-                    value={editTaskName}
-                    onChange={(e) => setEditTaskName(e.target.value)}
-                    placeholder={t('clientsAndProjects.dialogs.newProject.taskName', 'Nombre de la tarea')}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>{t('clientsAndProjects.dialogs.newProject.employee', 'Empleado')}</Label>
-                  <Popover open={openEditTaskEmployee} onOpenChange={setOpenEditTaskEmployee}>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" className="w-full justify-between font-normal">
-                        <span className="truncate">{editTaskEmployeeId ? (employees.find(e => e.id === editTaskEmployeeId)?.name || employees.find(e => e.id === editTaskEmployeeId)?.first_name || t('common.no_name', 'Sin nombre')) : t('clientsAndProjects.dialogs.newProject.selectEmployee', 'Seleccionar empleado')}</span>
-                        <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
-                      <Command>
-                        <CommandList className="max-h-[280px]">
-                          {employeesAssignableInMonth.map(emp => (
-                            <CommandItem key={emp.id} value={emp.name || emp.first_name || 'Sin nombre'} onSelect={() => { setEditTaskEmployeeId(emp.id); setOpenEditTaskEmployee(false); }}>
-                              <Check className={cn('mr-2 h-4 w-4 shrink-0', editTaskEmployeeId === emp.id ? 'opacity-100' : 'opacity-0')} />
-                              {emp.name || emp.first_name || t('common.no_name', 'Sin nombre')}
-                            </CommandItem>
-                          ))}
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2 text-xs text-slate-500">
-                    <LinkIcon className="w-3 h-3" /> {t('clientsAndProjects.dialogs.newProject.dependency', 'Depende de otra tarea')}
-                  </Label>
-                  <Popover open={openEditTaskDependency} onOpenChange={setOpenEditTaskDependency}>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" className="h-9 w-full justify-between font-normal" disabled={!editTaskProjectId}>
-                        <span className="truncate">{editTaskDependencyId === 'none' ? t('common.none', '-- Ninguna --') : (() => { const dep = availableDependencies.find(d => d.id === editTaskDependencyId); const owner = dep ? employees.find(e => e.id === dep.employeeId) : null; return dep ? `${dep.taskName} (${owner?.name || t('common.unknown', 'Desconocido')})` : t('common.no_dependency', 'Sin dependencia'); })()}</span>
-                        <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-max min-w-[var(--radix-popover-trigger-width)] max-w-[min(92vw,560px)] p-0" align="start">
-                      <Command>
-                        <CommandList className="max-h-[280px]">
-                          <CommandGroup>
-                            <CommandItem value="none" className="text-xs py-2 px-3" onSelect={() => { setEditTaskDependencyId('none'); setOpenEditTaskDependency(false); }}>
-                              <Check className={cn('mr-2.5 h-3.5 w-3.5 shrink-0', editTaskDependencyId === 'none' ? 'opacity-100' : 'opacity-0')} />
-                              {t('common.none', '-- Ninguna --')}
-                            </CommandItem>
-                            {availableDependencies.map(dep => {
-                              const owner = employees.find(e => e.id === dep.employeeId);
-                              const name = owner?.name || t('common.unknown', 'Desconocido');
-                              const shortName = name.length > 8 ? name.substring(0, 6) + '..' : name;
-                              const label = `${dep.taskName} (${shortName})`;
-                              return (
-                                <CommandItem key={dep.id} value={label} className="text-xs py-2 px-3 whitespace-nowrap" onSelect={() => { setEditTaskDependencyId(dep.id); setOpenEditTaskDependency(false); }}>
-                                  <Check className={cn('mr-2.5 h-3.5 w-3.5 shrink-0', editTaskDependencyId === dep.id ? 'opacity-100' : 'opacity-0')} />
-                                  <span title={`${dep.taskName} (${name})`}>{label}</span>
-                                </CommandItem>
-                              );
-                            })}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden sm:flex-row">
+              <div className="min-h-0 flex-1 overflow-y-auto border-r border-slate-200 p-6 custom-scrollbar">
+                <div className="grid gap-4">
                   <div className="space-y-2">
-                    <Label>{t('clientsAndProjects.dialogs.newProject.budget', 'Horas estimadas')}</Label>
-                    <Input
-                      type="number"
-                      step="0.5"
-                      value={editTaskHours}
-                      onChange={(e) => setEditTaskHours(e.target.value)}
-                      placeholder="0"
+                    <Label>{t('clientsAndProjects.dialogs.newProject.client', 'Proyecto')}</Label>
+                    <ProjectPicker
+                      value={editTaskProjectId}
+                      onChange={setEditTaskProjectId}
+                      activeProjects={activeProjectsForPicker}
+                      clients={clients}
+                      employees={employees}
+                      deadlines={monthDeadlines}
+                      viewDate={currentMonth}
+                      getProjectBudgetStatus={clientsEditPreview.getProjectBudgetStatus}
+                      batchPreview={clientsEditPreview.batchPreview}
+                      employeeId={editTaskEmployeeId}
+                      contextTaskHours={parseFloat(editTaskHours) || 0}
+                      contextTaskId={editingTask.id}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label>{t('clientsAndProjects.dialogs.newProject.week', 'Semana')}</Label>
-                    <Popover open={openEditTaskWeek} onOpenChange={setOpenEditTaskWeek}>
-                      <PopoverTrigger asChild>
-                        <Button variant="outline" className="w-full justify-between font-normal">
-                          <span className="truncate">{editTaskWeek ? (() => { const idx = weeks.findIndex(w => format(w.weekStart, 'yyyy-MM-dd') === editTaskWeek); return idx >= 0 ? t('clientsAndProjects.dialogs.newProject.week_short', { count: idx + 1, date: format(weeks[idx].weekStart, 'dd/MM'), defaultValue: `Sem ${idx + 1} (${format(weeks[idx].weekStart, 'dd/MM')})` }) : t('clientsAndProjects.dialogs.newProject.selectWeek', 'Seleccionar semana'); })() : t('clientsAndProjects.dialogs.newProject.selectWeek', 'Seleccionar semana')}</span>
-                          <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
-                        <Command>
-                          <CommandList className="max-h-[280px]">
-                            {weeks.map((w, i) => {
-                              const val = format(w.weekStart, 'yyyy-MM-dd');
-                              return (
-                                <CommandItem key={val} value={val} onSelect={() => { setEditTaskWeek(val); setOpenEditTaskWeek(false); }}>
-                                  <Check className={cn('mr-2 h-4 w-4 shrink-0', editTaskWeek === val ? 'opacity-100' : 'opacity-0')} />
-                                  {t('clientsAndProjects.dialogs.newProject.week_short', { count: i + 1, date: format(w.weekStart, 'dd/MM'), defaultValue: `Sem ${i + 1} (${format(w.weekStart, 'dd/MM')})` })}
-                                </CommandItem>
-                              );
-                            })}
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                </div>
 
-                {editingTask.status === 'completed' && (
+                  <div className="space-y-2">
+                    <Label>{t('clientsAndProjects.dialogs.newProject.employee', 'Empleado')}</Label>
+                    <EmployeePicker
+                      value={editTaskEmployeeId}
+                      onChange={setEditTaskEmployeeId}
+                      employees={employeesAssignableInMonth}
+                      placeholder={t('clientsAndProjects.dialogs.newProject.selectEmployee', 'Seleccionar empleado')}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>{t('clientsAndProjects.dialogs.newProject.taskName', 'Nombre de la tarea')}</Label>
+                    <Input
+                      value={editTaskName}
+                      onChange={(e) => setEditTaskName(e.target.value)}
+                      placeholder={t('clientsAndProjects.dialogs.newProject.taskName', 'Nombre de la tarea')}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2 text-xs text-slate-500">
+                      <LinkIcon className="w-3 h-3" /> {t('clientsAndProjects.dialogs.newProject.dependency', 'Depende de otra tarea')}
+                    </Label>
+                    <DependencyPicker
+                      value={editTaskDependencyId || DEPENDENCY_NONE}
+                      onChange={setEditTaskDependencyId}
+                      dependencies={editTaskAvailableDependencies}
+                      employees={employees}
+                      weeks={editTaskWeeks}
+                      disabled={!editTaskProjectId}
+                    />
+                  </div>
+
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>{t('clientsAndProjects.stats.realHours', 'Horas reales')}</Label>
+                      <Label>{t('clientsAndProjects.dialogs.newProject.budget', 'Horas estimadas')}</Label>
                       <Input
                         type="number"
                         step="0.5"
-                        value={editTaskHoursActual}
-                        onChange={(e) => setEditTaskHoursActual(e.target.value)}
+                        value={editTaskHours}
+                        onChange={(e) => setEditTaskHours(e.target.value)}
                         placeholder="0"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>{t('clientsAndProjects.stats.computedHours', 'Horas computadas')}</Label>
-                      <Input
-                        type="number"
-                        step="0.5"
-                        value={editTaskHoursComputed}
-                        onChange={(e) => setEditTaskHoursComputed(e.target.value)}
-                        placeholder="0"
+                      <Label>{t('clientsAndProjects.dialogs.newProject.week', 'Semana')}</Label>
+                      <WeekPicker
+                        value={editTaskWeek}
+                        onChange={setEditTaskWeek}
+                        weeks={editTaskWeeks}
+                        viewDate={currentMonth}
+                        isOverloaded={editTaskWeek ? getEditTaskWeekExceedStatus(editTaskWeek) : false}
+                        placeholder={t('clientsAndProjects.dialogs.newProject.selectWeek', 'Seleccionar semana')}
                       />
                     </div>
                   </div>
-                )}
+
+                  {editingTask.status === 'completed' && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>{t('clientsAndProjects.stats.realHours', 'Horas reales')}</Label>
+                        <Input
+                          type="number"
+                          step="0.5"
+                          value={editTaskHoursActual}
+                          onChange={(e) => setEditTaskHoursActual(e.target.value)}
+                          placeholder="0"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>{t('clientsAndProjects.stats.computedHours', 'Horas computadas')}</Label>
+                        <Input
+                          type="number"
+                          step="0.5"
+                          value={editTaskHoursComputed}
+                          onChange={(e) => setEditTaskHoursComputed(e.target.value)}
+                          placeholder="0"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setEditingTask(null)}>
-                  {t('common.cancel', 'Cancelar')}
-                </Button>
-                <Button onClick={handleSaveTask} className="bg-gradient-to-r from-indigo-500 to-purple-600">
-                  {t('common.saveChanges', 'Guardar cambios')}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        );
-      })()}
+
+              <div className="min-h-0 w-full overflow-y-auto border-t border-slate-200 bg-slate-50 p-6 custom-scrollbar sm:w-1/3 sm:border-t-0 sm:border-l">
+                <ProjectImpactSummary
+                  variant="vertical"
+                  newTasks={clientsEditPreview.previewTasks}
+                  projects={activeProjectsForPicker}
+                  batchPreview={clientsEditPreview.batchPreview}
+                  viewDate={currentMonth}
+                  getProjectBudgetStatus={clientsEditPreview.getProjectBudgetStatus}
+                  getEmployeeLoadForWeek={clientsEditPreview.getEmployeeLoadForWeek}
+                  employeeId={editTaskEmployeeId}
+                  weeks={editTaskWeeks}
+                  deadlines={monthDeadlines}
+                  employees={employees}
+                />
+              </div>
+            </div>
+
+            <DialogFooter className="shrink-0 border-t bg-slate-50/50 px-6 py-4">
+              <Button variant="outline" onClick={() => setEditingTask(null)}>
+                {t('common.cancel', 'Cancelar')}
+              </Button>
+              <Button onClick={handleSaveTask} className="bg-gradient-to-r from-indigo-500 to-purple-600">
+                {t('common.saveChanges', 'Guardar cambios')}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
 
       <AlertDialog open={!!deleteConfirmation} onOpenChange={(open) => !open && setDeleteConfirmation(null)}>
         <AlertDialogContent>

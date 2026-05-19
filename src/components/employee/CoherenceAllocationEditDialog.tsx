@@ -62,6 +62,8 @@ export function CoherenceAllocationEditDialog({
     setEditWeek,
     editDependencyId,
     setEditDependencyId,
+    editEmployeeId,
+    setEditEmployeeId,
     addTaskRow,
     removeTaskRow,
     updateTaskRow,
@@ -161,6 +163,7 @@ export function CoherenceAllocationEditDialog({
       editHours={editHours}
       editWeek={editWeek}
       editDependencyId={editDependencyId}
+      editEmployeeId={editEmployeeId}
       isSaving={isSaving}
       showDeleteConfirm={showDeleteConfirm}
       onClose={handleClose}
@@ -172,6 +175,7 @@ export function CoherenceAllocationEditDialog({
       setEditHours={setEditHours}
       setEditWeek={setEditWeek}
       setEditDependencyId={setEditDependencyId}
+      setEditEmployeeId={setEditEmployeeId}
       setShowDeleteConfirm={setShowDeleteConfirm}
       addTaskRow={addTaskRow}
       updateTaskRow={updateTaskRow}

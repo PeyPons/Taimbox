@@ -22,25 +22,25 @@
     "titleEmphasis": "un solo sistema",
     "cards": [
       {
-        "step": "01 · Capacidad vs. ingreso",
-        "heading": "Estar al 86% de carga no es cobrar el 86%",
-        "body": "El planificador muestra ocupación por semana y persona. Salud financiera cruza esas horas con ingreso devengado, ritmo (pacing) y margen: ves la brecha entre horas y euros antes del cierre, no en una hoja aparte."
+        "step": "01 · Horas vs. ingresos",
+        "heading": "Estar al 86% de ocupación no es cobrar el 86%",
+        "body": "El planificador muestra cuántas horas tiene asignadas cada persona por semana. Rentabilidad cruza eso con lo que llevas ingresando y el margen: ves si trabajas más de lo que facturas antes de cerrar el mes, sin montar otra hoja aparte."
       },
       {
-        "step": "02 · Del grid al cierre",
-        "heading": "El mismo dato recorre la agencia",
-        "body": "Asignas en el planificador, ajustas presupuesto y plazos en Deadlines (con semanas partidas entre meses si hace falta), registras tiempo y lees el resultado en Rentabilidad. Sin reexportar a otro Excel para cuadrar."
+        "step": "02 · Del planificador al cierre",
+        "heading": "Los mismos datos, sin copiar ni pegar",
+        "body": "Asignas en el planificador, ajustas presupuesto y plazos en Deadlines (incluso semanas que caen entre dos meses), registras el tiempo y consultas el resultado en Rentabilidad. Un solo flujo; no hace falta reexportar a Excel para cuadrar."
       },
       {
-        "step": "03 · Unit economics",
-        "heading": "Coste, ingreso, margen y €/h — sin caja negra",
-        "body": "Cuatro métricas encadenadas (F1 coste laboral, F2 ingreso devengado, F3 margen y F4 precio hora efectivo) con la misma base que la app. Mes en curso o cerrado; export a Excel, CSV y API para tu ERP o BI."
+        "step": "03 · Rentabilidad por proyecto",
+        "heading": "Coste, ingreso, margen y euros por hora, con el detalle visible",
+        "body": "Cuatro cifras encadenadas — coste del equipo, ingreso del periodo, margen y precio por hora — con la misma lógica que en la app. Ves de dónde sale cada número, no solo el total. Mes en curso o cerrado; exportas a Excel, CSV o API si lo necesitas."
       }
     ],
     "visual1": {
-      "load": "Carga planificada",
-      "accrued": "Ingreso devengado",
-      "gap": "Brecha horas ↔ ingreso"
+      "load": "Horas planificadas",
+      "accrued": "Ingreso del mes",
+      "gap": "Diferencia horas / ingreso"
     },
     "visual2": {
       "railLabel": "Flujo de datos",
@@ -50,9 +50,9 @@
       "caption": "Rentabilidad · proyecto",
       "rows": [
         { "badge": "F1", "label": "Coste laboral", "value": "1.008 €", "tone": "neutral" },
-        { "badge": "F2", "label": "Ingreso devengado", "value": "1.200 €", "tone": "neutral" },
+        { "badge": "F2", "label": "Ingreso del mes", "value": "1.200 €", "tone": "neutral" },
         { "badge": "F3", "label": "Margen neto", "value": "+16%", "tone": "positive" },
-        { "badge": "F4", "label": "Precio hora (EHR)", "value": "119 €/h", "tone": "positive" }
+        { "badge": "F4", "label": "Precio por hora", "value": "119 €/h", "tone": "positive" }
       ]
     }
   },

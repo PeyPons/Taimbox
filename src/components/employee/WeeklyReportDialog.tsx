@@ -13,7 +13,6 @@ import { format, parseISO, startOfWeek, startOfMonth, addDays, addMonths, isBefo
 import { es } from 'date-fns/locale';
 import { CheckCircle2, AlertCircle, AlertTriangle, Plus, Clock, Trash2, Search } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { TaskNotesPanel } from '@/components/planner/allocation/TaskNotesPanel';
 import { toast } from '@/lib/notify';
 import { getStorageKey, getWeeksForMonth, isAllocationInEffectiveMonth, getWeekEndDate, parseDateStringLocal } from '@/utils/dateUtils';
 import { filterEmployeesForOperationalMonthDate } from '@/utils/employeeAssignmentVisibility';
@@ -787,8 +786,6 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
                           )}
                         </div>
                       </div>
-
-                      <TaskNotesPanel allocationId={selectedTask.id} compact />
 
                       {/* Action selection */}
                       <div className="space-y-2">

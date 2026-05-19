@@ -400,9 +400,11 @@ export function useWeeklyCloseMutations(viewDate: Date): UseWeeklyCloseMutations
         toast.error('Añade al menos una tarea válida');
         return;
       }
+      const alreadyActual = round2(task.hoursActual || 0);
+      const pendingHours = round2(task.hoursAssigned - alreadyActual);
       const totalDistributed = validTasks.reduce((sum, t) => sum + parseHours(t.hours), 0);
-      if (Math.abs(totalDistributed - task.hoursAssigned) > 0.01) {
-        toast.error(`Suma ${totalDistributed.toFixed(2)}h ≠ ${task.hoursAssigned.toFixed(2)}h`);
+      if (Math.abs(totalDistributed - pendingHours) > 0.01) {
+        toast.error(`Suma ${totalDistributed.toFixed(2)}h ≠ ${pendingHours.toFixed(2)}h pendientes`);
         return;
       }
       const projectMonthAllocations = allocations.filter(
@@ -454,6 +456,16 @@ export function useWeeklyCloseMutations(viewDate: Date): UseWeeklyCloseMutations
         comments: userComment?.trim() ? `${baseComment} | Nota: ${userComment.trim()}` : baseComment,
       });
 
+      if (alreadyActual > 0) {
+        await updateAllocation({
+          ...task,
+          hoursAssigned: alreadyActual,
+          hoursActual: alreadyActual,
+          hoursComputed: task.hoursComputed ?? alreadyActual,
+          status: 'completed',
+        });
+      }
+
       for (const distTask of validTasks) {
         const newAllocation = await addAllocation({
           employeeId,
@@ -486,7 +498,10 @@ export function useWeeklyCloseMutations(viewDate: Date): UseWeeklyCloseMutations
           }
         }
       }
-      await deleteAllocation(originalTaskId);
+
+      if (alreadyActual <= 0) {
+        await deleteAllocation(originalTaskId);
+      }
     },
     [
       addAllocation,

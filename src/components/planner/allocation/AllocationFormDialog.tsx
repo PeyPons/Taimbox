@@ -1,5 +1,6 @@
 
-import React from 'react';
+import React, { useMemo } from 'react';
+import { format, startOfMonth } from 'date-fns';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
@@ -15,12 +16,17 @@ import { ProjectImpactSummary } from '../ProjectImpactSummary';
 import { DependencyPicker, DEPENDENCY_NONE } from '@/components/planner/allocation/DependencyPicker';
 import { ProjectPicker } from '@/components/planner/allocation/ProjectPicker';
 import { WeekPicker } from '@/components/planner/allocation/WeekPicker';
+import { EmployeePicker } from '@/components/planner/allocation/EmployeePicker';
 import { TaskNotesTrigger } from '@/components/planner/allocation/TaskNotesTrigger';
+import { useAgency } from '@/contexts/AgencyContext';
 import { useAllocationNoteCounts } from '@/hooks/useAllocationNotes';
 import { ProjectBudgetStatus } from '@/hooks/useAllocationSheet';
 import { useMouseWheelScroll } from '@/hooks/useMouseWheelScroll';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useTasksImpact } from '@/hooks/useTasksImpact';
+import { filterEmployeesForOperationalMonth } from '@/utils/employeeAssignmentVisibility';
 import type { GetEmployeeLoadForWeekFn, PlannerBatchPreviewContext } from '@/utils/plannerBatchPreview';
+import { buildAllocationEditPreview } from '@/utils/plannerBatchPreview';
 
 interface AllocationFormDialogProps {
     isOpen: boolean;
@@ -34,6 +40,7 @@ interface AllocationFormDialogProps {
     editHours: string;
     editWeek: string;
     editDependencyId: string;
+    editEmployeeId: string;
     isSaving: boolean;
     showDeleteConfirm: boolean;
 
@@ -47,6 +54,7 @@ interface AllocationFormDialogProps {
     setEditHours: (hours: string) => void;
     setEditWeek: (week: string) => void;
     setEditDependencyId: (id: string) => void;
+    setEditEmployeeId: (id: string) => void;
     setShowDeleteConfirm: (show: boolean) => void;
 
     // Task Row Actions
@@ -87,6 +95,7 @@ export function AllocationFormDialog({
     editHours,
     editWeek,
     editDependencyId,
+    editEmployeeId,
     isSaving,
     showDeleteConfirm,
     onClose,
@@ -98,6 +107,7 @@ export function AllocationFormDialog({
     setEditHours,
     setEditWeek,
     setEditDependencyId,
+    setEditEmployeeId,
     setShowDeleteConfirm,
     addTaskRow,
     updateTaskRow,
@@ -120,6 +130,8 @@ export function AllocationFormDialog({
     batchAddHint,
     batchPreview,
 }: AllocationFormDialogProps) {
+    const { currentAgency } = useAgency();
+    const preference = currentAgency?.settings?.hoursTrackingPreference;
     const [showConfirmClose, setShowConfirmClose] = React.useState(false);
     const [pendingCloseAction, setPendingCloseAction] = React.useState<'open-change' | 'close-click' | null>(null);
     const isMobile = useIsMobile();
@@ -127,6 +139,63 @@ export function AllocationFormDialog({
     const editAllocationId = editingAllocation?.id;
     const { data: noteCounts = {} } = useAllocationNoteCounts(editAllocationId ? [editAllocationId] : []);
     const editNoteCount = editAllocationId ? noteCounts[editAllocationId] ?? 0 : 0;
+
+    const assignableEmployees = useMemo(() => {
+        const monthKey = format(startOfMonth(viewDate), 'yyyy-MM');
+        return filterEmployeesForOperationalMonth(employees, monthKey, {
+            deadlines,
+            globalAssignments: [],
+            allocations,
+        });
+    }, [employees, viewDate, deadlines, allocations]);
+
+    const editPreview = useMemo(() => {
+        if (!editingAllocation) return null;
+        return buildAllocationEditPreview({
+            editingAllocation,
+            form: {
+                projectId: editProjectId,
+                taskName: editTaskName,
+                hours: editHours,
+                weekDate: editWeek,
+                dependencyId: editDependencyId,
+                employeeId: editEmployeeId || editingAllocation.employeeId,
+            },
+            allocations,
+            viewDate,
+            defaultEmployeeId: currentEmployeeId,
+            weeks,
+            getProjectBudgetStatus,
+            getEmployeeLoadForWeek,
+            preference,
+        });
+    }, [
+        editingAllocation,
+        editProjectId,
+        editTaskName,
+        editHours,
+        editWeek,
+        editDependencyId,
+        editEmployeeId,
+        allocations,
+        viewDate,
+        currentEmployeeId,
+        weeks,
+        getProjectBudgetStatus,
+        getEmployeeLoadForWeek,
+        preference,
+    ]);
+
+    const { getWeekExceedStatus: getEditWeekExceedStatus } = useTasksImpact({
+        newTasks: editPreview?.previewTasks ?? [],
+        projects: activeProjects,
+        weeks,
+        employeeId: editEmployeeId || editingAllocation?.employeeId || currentEmployeeId,
+        getEmployeeLoadForWeek: editPreview?.getEmployeeLoadForWeek ?? getEmployeeLoadForWeek,
+        getProjectBudgetStatus: editPreview?.getProjectBudgetStatus ?? getProjectBudgetStatus,
+        viewMonth: viewDate,
+        batchPreview: editPreview?.batchPreview ?? batchPreview,
+    });
 
     const hasUnsavedChanges = () => {
         if (!editingAllocation) {
@@ -137,7 +206,8 @@ export function AllocationFormDialog({
             editHours !== editingAllocation.hoursAssigned.toString() ||
             (Boolean(editProjectId) && editProjectId !== editingAllocation.projectId) ||
             editWeek !== editingAllocation.weekStartDate ||
-            editDependencyId !== (editingAllocation.dependencyId || 'none')
+            editDependencyId !== (editingAllocation.dependencyId || 'none') ||
+            (canAssignToOthers && editEmployeeId !== editingAllocation.employeeId)
         );
     };
 
@@ -174,11 +244,12 @@ export function AllocationFormDialog({
     );
 
     const bodyContent = (
-        <div className={cn("flex-1 min-h-0 min-w-0 overflow-hidden flex flex-col", !editingAllocation && "sm:flex-row")}>
+        <div className={cn("flex-1 min-h-0 min-w-0 overflow-hidden flex flex-col", "sm:flex-row")}>
                     {editingAllocation ? (
+                        <>
                         <div
                             ref={editScrollRef}
-                            className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain p-4 sm:p-6 pt-2 custom-scrollbar"
+                            className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain border-r border-slate-200 bg-white p-4 sm:p-6 pt-2 custom-scrollbar w-full sm:w-2/3"
                         >
                             <div className="grid gap-4 mt-4">
                                 <div className="space-y-2">
@@ -191,14 +262,25 @@ export function AllocationFormDialog({
                                         employees={employees}
                                         deadlines={deadlines}
                                         viewDate={viewDate}
-                                        getProjectBudgetStatus={getProjectBudgetStatus}
-                                        batchPreview={batchPreview}
-                                        employeeId={editingAllocation.employeeId || currentEmployeeId}
+                                        getProjectBudgetStatus={editPreview?.getProjectBudgetStatus ?? getProjectBudgetStatus}
+                                        batchPreview={editPreview?.batchPreview ?? batchPreview}
+                                        employeeId={editEmployeeId || editingAllocation.employeeId || currentEmployeeId}
                                         contextTaskHours={parseFloat(editHours) || 0}
                                         contextTaskId={editingAllocation.id}
                                         triggerClassName={cn(isMobile ? 'h-11 min-h-[44px]' : 'h-10')}
                                     />
                                 </div>
+                                {canAssignToOthers && (
+                                    <div className="space-y-2">
+                                        <Label>Empleado</Label>
+                                        <EmployeePicker
+                                            value={editEmployeeId}
+                                            onChange={setEditEmployeeId}
+                                            employees={assignableEmployees}
+                                            triggerClassName={cn(isMobile ? 'h-11 min-h-[44px]' : 'h-10')}
+                                        />
+                                    </div>
+                                )}
                                 <div className="space-y-2">
                                     <div className="flex items-center justify-between gap-2">
                                         <Label>Tarea</Label>
@@ -234,13 +316,31 @@ export function AllocationFormDialog({
                                             onChange={setEditWeek}
                                             weeks={weeks}
                                             viewDate={viewDate}
-                                            isOverloaded={editWeek ? getWeekExceedStatus(editWeek) : false}
+                                            isOverloaded={editWeek ? getEditWeekExceedStatus(editWeek) : false}
                                             className={cn(isMobile && 'h-11 min-h-[44px]')}
                                         />
                                     </div>
                                 </div>
                             </div>
                         </div>
+                        <div className="w-full sm:w-1/3 bg-slate-50 border-t sm:border-t-0 sm:border-l border-slate-200 p-4 sm:p-6 overflow-y-auto custom-scrollbar min-h-0">
+                            {editPreview && (
+                                <ProjectImpactSummary
+                                    variant="vertical"
+                                    newTasks={editPreview.previewTasks}
+                                    projects={activeProjects}
+                                    batchPreview={editPreview.batchPreview}
+                                    viewDate={viewDate}
+                                    getProjectBudgetStatus={editPreview.getProjectBudgetStatus}
+                                    getEmployeeLoadForWeek={editPreview.getEmployeeLoadForWeek}
+                                    employeeId={editEmployeeId || editingAllocation.employeeId || currentEmployeeId}
+                                    weeks={weeks}
+                                    deadlines={deadlines}
+                                    employees={employees}
+                                />
+                            )}
+                        </div>
+                        </>
                     ) : (
                         <>
                             {/* Left Column: Task Inputs */}
@@ -409,7 +509,7 @@ export function AllocationFormDialog({
     return (
         <>
         <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-            <DialogContent className={cn("overflow-hidden gap-0 p-0 transition-all duration-300 max-w-[95vw] flex flex-col max-h-[90vh]", editingAllocation ? "sm:max-w-[650px]" : "sm:max-w-[1100px] h-[85vh] sm:h-[80vh]")}>
+            <DialogContent className={cn("overflow-hidden gap-0 p-0 transition-all duration-300 max-w-[95vw] flex flex-col max-h-[90vh] sm:max-w-[1100px] h-[85vh] sm:h-[80vh]")}>
                 {modalContent}
             </DialogContent>
         </Dialog>

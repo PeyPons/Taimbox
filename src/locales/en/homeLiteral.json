@@ -22,25 +22,25 @@
     "titleEmphasis": "one system",
     "cards": [
       {
-        "step": "01 · Capacity vs. revenue",
-        "heading": "86% loaded doesn't mean 86% billed",
-        "body": "The planner shows weekly load per person. Financial Health crosses those hours with accrued revenue, pacing, and margin — you see the gap between hours and money before month-end, not in a separate sheet."
+        "step": "01 · Hours vs. revenue",
+        "heading": "86% booked doesn't mean 86% billed",
+        "body": "The planner shows how many hours each person has assigned per week. Financial Health crosses that with revenue so far and margin — you see if you're working more than you're billing before month-end, without another spreadsheet."
       },
       {
-        "step": "02 · Grid to close",
-        "heading": "The same data flows through the agency",
-        "body": "Assign in the planner, tune budget and deadlines in Deadlines (including split weeks across months), log time, and read the outcome in Financial Health. No re-exporting to another Excel to reconcile."
+        "step": "02 · Planner to month-end close",
+        "heading": "The same data, no copy-paste",
+        "body": "Assign in the planner, tune budget and deadlines in Deadlines (including weeks that span two months), log time, and read the outcome in Financial Health. One flow — no re-exporting to Excel to reconcile."
       },
       {
-        "step": "03 · Unit economics",
-        "heading": "Cost, revenue, margin, and €/h — no black box",
-        "body": "Four linked metrics (F1 labor cost, F2 accrued revenue, F3 margin, F4 effective hourly rate) use the same logic as the app. Open or closed month; export to Excel, CSV, and API for your ERP or BI."
+        "step": "03 · Project profitability",
+        "heading": "Cost, revenue, margin, and hourly rate — with the breakdown visible",
+        "body": "Four linked figures — team cost, period revenue, margin, and hourly rate — using the same logic as in the app. You see where each number comes from, not just the total. Open or closed month; export to Excel, CSV, or API when you need to."
       }
     ],
     "visual1": {
-      "load": "Planned load",
-      "accrued": "Accrued revenue",
-      "gap": "Hours ↔ revenue gap"
+      "load": "Planned hours",
+      "accrued": "Revenue this month",
+      "gap": "Hours vs. revenue gap"
     },
     "visual2": {
       "railLabel": "Data flow",
@@ -50,9 +50,9 @@
       "caption": "Financial Health · project",
       "rows": [
         { "badge": "F1", "label": "Labor cost", "value": "€1,008", "tone": "neutral" },
-        { "badge": "F2", "label": "Accrued revenue", "value": "€1,200", "tone": "neutral" },
+        { "badge": "F2", "label": "Revenue this month", "value": "€1,200", "tone": "neutral" },
         { "badge": "F3", "label": "Net margin", "value": "+16%", "tone": "positive" },
-        { "badge": "F4", "label": "Hourly rate (EHR)", "value": "€119/h", "tone": "positive" }
+        { "badge": "F4", "label": "Hourly rate", "value": "€119/h", "tone": "positive" }
       ]
     }
   },

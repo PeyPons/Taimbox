@@ -3,9 +3,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { Check, Plus, Trash2, AlertTriangle, User, StickyNote } from 'lucide-react';
+import { Trash2, AlertTriangle, StickyNote } from 'lucide-react';
 import { Project, Employee, Allocation, NewTaskRow, Client, Deadline } from '@/types';
 import { ProjectBudgetStatus } from '@/hooks/useAllocationSheet';
 import { useState, useMemo } from 'react';
@@ -20,6 +18,7 @@ import { round2 } from '@/utils/numbers';
 import { DependencyPicker, DEPENDENCY_NONE } from '@/components/planner/allocation/DependencyPicker';
 import { ProjectPicker } from '@/components/planner/allocation/ProjectPicker';
 import { WeekPicker } from '@/components/planner/allocation/WeekPicker';
+import { EmployeePicker } from '@/components/planner/allocation/EmployeePicker';
 
 interface BatchTaskRowProps {
     task: NewTaskRow;
@@ -61,7 +60,6 @@ export function BatchTaskRow({
     viewDate = batchPreview.viewDate,
 }: BatchTaskRowProps) {
     const pendingRows = batchPreview.pendingRows;
-    const [openEmployeeCombobox, setOpenEmployeeCombobox] = useState(false);
     const [showInitialNote, setShowInitialNote] = useState(() => Boolean(task.initialNote?.trim()));
 
     const monthKeyForAssignable = viewDate
@@ -189,55 +187,17 @@ export function BatchTaskRow({
                 {/* Selector de empleado (solo si tiene permiso) */}
                 {canAssignToOthers && (
                     <div className="w-full sm:w-[160px] sm:shrink-0 min-w-0">
-                        <Popover open={openEmployeeCombobox} onOpenChange={setOpenEmployeeCombobox} modal={true}>
-                            <PopoverTrigger asChild>
-                                <Button
-                                    variant="outline"
-                                    role="combobox"
-                                    className={cn(
-                                        "w-full justify-between h-11 sm:h-9 min-h-[44px] sm:min-h-0 px-3 text-left font-normal text-xs",
-                                        !task.employeeId && "text-muted-foreground"
-                                    )}>
-                                    <span className="truncate text-xs flex items-center gap-1.5">
-                                        <User className="h-3 w-3" />
-                                        {task.employeeId
-                                            ? employees.find((e) => e.id === task.employeeId)?.name || 'Empleado...'
-                                            : currentEmployeeId
-                                                ? employees.find((e) => e.id === currentEmployeeId)?.name || 'Yo'
-                                                : 'Asignar a...'}
-                                    </span>
-                                    <Plus className="h-3 w-3 opacity-50" />
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-[calc(100vw-2rem)] max-w-[300px] p-0" align="start">
-                                <Command>
-                                    <CommandInput placeholder="Buscar empleado..." />
-                                    <CommandList>
-                                        <CommandEmpty>No se encontró empleado.</CommandEmpty>
-                                        <CommandGroup>
-                                            {assignableEmployees.map((emp) => (
-                                                <CommandItem
-                                                    key={emp.id}
-                                                    value={`${emp.name} ${emp.first_name || ''} ${emp.last_name || ''}`}
-                                                    onSelect={() => {
-                                                        updateTaskRow(task.id, 'employeeId', emp.id);
-                                                        setOpenEmployeeCombobox(false);
-                                                    }}
-                                                >
-                                                    <Check
-                                                        className={cn(
-                                                            "mr-2 h-4 w-4",
-                                                            task.employeeId === emp.id ? "opacity-100" : "opacity-0"
-                                                        )}
-                                                    />
-                                                    <span className="text-sm">{emp.name || emp.first_name || 'Sin nombre'}</span>
-                                                </CommandItem>
-                                            ))}
-                                        </CommandGroup>
-                                    </CommandList>
-                                </Command>
-                            </PopoverContent>
-                        </Popover>
+                        <EmployeePicker
+                            value={task.employeeId || currentEmployeeId || ''}
+                            onChange={(employeeId) => updateTaskRow(task.id, 'employeeId', employeeId)}
+                            employees={assignableEmployees}
+                            fallbackLabel={
+                                currentEmployeeId
+                                    ? employees.find((e) => e.id === currentEmployeeId)?.name || 'Yo'
+                                    : 'Asignar a...'
+                            }
+                            triggerClassName="h-11 sm:h-9 min-h-[44px] sm:min-h-0 text-xs"
+                        />
                     </div>
                 )}
 

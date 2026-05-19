@@ -100,6 +100,7 @@ export function useAllocationActions(
     const [editHours, setEditHours] = useState('');
     const [editWeek, setEditWeek] = useState('');
     const [editDependencyId, setEditDependencyId] = useState('none');
+    const [editEmployeeId, setEditEmployeeId] = useState('');
 
     const batchCommitPreview = useBatchCommitPreview(
         batchPreviewDeps
@@ -204,7 +205,10 @@ export function useAllocationActions(
                     taskName: editTaskName,
                     weekStartDate: editWeek,
                     hoursAssigned: parseFloat(editHours),
-                    dependencyId: editDependencyId === 'none' ? null : editDependencyId
+                    dependencyId: editDependencyId === 'none' ? null : editDependencyId,
+                    ...(canAssignToOthers && editEmployeeId
+                        ? { employeeId: editEmployeeId }
+                        : {}),
                 });
                 if (editTaskName.trim().length > TASK_NAME_SOFT_LIMIT) {
                     toast.info(
@@ -288,6 +292,7 @@ export function useAllocationActions(
         setEditHours(allocation.hoursAssigned.toString());
         setEditWeek(allocation.weekStartDate);
         setEditDependencyId(allocation.dependencyId || 'none');
+        setEditEmployeeId(allocation.employeeId);
         setIsFormOpen(true);
         return true;
     };
@@ -494,6 +499,8 @@ export function useAllocationActions(
         setEditWeek,
         editDependencyId,
         setEditDependencyId,
+        editEmployeeId,
+        setEditEmployeeId,
         addTaskRow,
         removeTaskRow,
         updateTaskRow,

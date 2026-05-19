@@ -11,6 +11,37 @@ function isInteractiveTarget(target: EventTarget | null): boolean {
   return target instanceof Element && !!target.closest(INTERACTIVE_SELECTOR);
 }
 
+/** Contenedor overflow-y ascendente (p. ej. lista de tareas en columna semanal). */
+function findNestedVerticalScroller(target: EventTarget | null, stopAt: HTMLElement): HTMLElement | null {
+  if (!(target instanceof Element)) return null;
+  let node: Element | null = target;
+  while (node && node !== stopAt) {
+    if (node instanceof HTMLElement) {
+      const { overflowY } = window.getComputedStyle(node);
+      if (
+        (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') &&
+        node.scrollHeight > node.clientHeight + 1
+      ) {
+        return node;
+      }
+    }
+    node = node.parentElement;
+  }
+  return null;
+}
+
+function shouldDeferToVerticalScroll(event: WheelEvent, horizontalEl: HTMLElement): boolean {
+  const verticalScroller = findNestedVerticalScroller(event.target, horizontalEl);
+  if (!verticalScroller || Math.abs(event.deltaY) < Math.abs(event.deltaX)) return false;
+
+  const { scrollTop, scrollHeight, clientHeight } = verticalScroller;
+  const atTop = scrollTop <= 0;
+  const atBottom = scrollTop + clientHeight >= scrollHeight - 1;
+  if (event.deltaY < 0 && !atTop) return true;
+  if (event.deltaY > 0 && !atBottom) return true;
+  return false;
+}
+
 function setupHorizontalPanScroll(el: HTMLElement) {
   let isDragging = false;
   let startX = 0;
@@ -64,6 +95,8 @@ function setupHorizontalPanScroll(el: HTMLElement) {
 
   const onWheel = (event: WheelEvent) => {
     if (!canScroll()) return;
+    if (shouldDeferToVerticalScroll(event, el)) return;
+
     const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
     if (delta === 0) return;
 

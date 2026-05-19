@@ -9,7 +9,8 @@
 import { format, startOfMonth } from 'date-fns';
 import type { Allocation, Deadline, NewTaskRow } from '@/types';
 import type { ProjectBudgetStatus } from '@/hooks/useAllocationSheet';
-import { isAllocationInEffectiveMonth } from '@/utils/dateUtils';
+import { isAllocationInEffectiveMonth, findWeekIndexForTaskWeekDate, type PlannerWeekSlice } from '@/utils/dateUtils';
+import { getEffectiveCompletedHours } from '@/utils/hoursTracking';
 import { round2 } from '@/utils/numbers';
 
 export type PlannerBatchPreviewMode = 'draft' | 'committing';
@@ -309,4 +310,122 @@ export function captureBatchCommitSnapshot(
     budgetByProjectId,
     weekLoadByKey,
   };
+}
+
+export interface AllocationEditPreviewForm {
+  projectId: string;
+  taskName: string;
+  hours: string;
+  weekDate: string;
+  dependencyId: string;
+  employeeId: string;
+}
+
+function allocationMatchesWeekKey(
+  allocation: Allocation,
+  weekStartKey: string,
+  weeks: PlannerWeekSlice[],
+  viewDate: Date,
+): boolean {
+  if (allocation.weekStartDate === weekStartKey) return true;
+  const idx = findWeekIndexForTaskWeekDate(allocation.weekStartDate, weeks, viewDate);
+  return idx >= 0 && format(weeks[idx].weekStart, 'yyyy-MM-dd') === weekStartKey;
+}
+
+function subtractAllocationFromBudgetStatus(
+  status: ProjectBudgetStatus,
+  allocation: Allocation,
+  projectId: string,
+  preference?: 'actual' | 'computed' | null,
+): ProjectBudgetStatus {
+  if (allocation.projectId !== projectId) return status;
+  const computed =
+    allocation.status === 'completed' ? getEffectiveCompletedHours(allocation, preference) : 0;
+  const planned = allocation.status !== 'completed' ? allocation.hoursAssigned || 0 : 0;
+  return {
+    ...status,
+    totalComputed: round2(Math.max(0, status.totalComputed - computed)),
+    totalPlanned: round2(Math.max(0, status.totalPlanned - planned)),
+  };
+}
+
+/** Preview de impacto al editar una allocation existente (excluye la fila original y aplica el borrador). */
+export function buildAllocationEditPreview(params: {
+  editingAllocation: Allocation;
+  form: AllocationEditPreviewForm;
+  allocations: Allocation[];
+  viewDate: Date;
+  defaultEmployeeId: string;
+  weeks: PlannerWeekSlice[];
+  getProjectBudgetStatus: (projectId: string) => ProjectBudgetStatus;
+  getEmployeeLoadForWeek: GetEmployeeLoadForWeekFn;
+  preference?: 'actual' | 'computed' | null;
+}): {
+  batchPreview: PlannerBatchPreviewContext;
+  previewTasks: NewTaskRow[];
+  getProjectBudgetStatus: (projectId: string) => ProjectBudgetStatus;
+  getEmployeeLoadForWeek: GetEmployeeLoadForWeekFn;
+} {
+  const {
+    editingAllocation,
+    form,
+    allocations,
+    viewDate,
+    defaultEmployeeId,
+    weeks,
+    getProjectBudgetStatus: baseProjectBudget,
+    getEmployeeLoadForWeek: baseWeekLoad,
+    preference,
+  } = params;
+
+  const previewTasks: NewTaskRow[] = [
+    {
+      id: editingAllocation.id,
+      projectId: form.projectId,
+      taskName: form.taskName,
+      hours: form.hours,
+      weekDate: form.weekDate,
+      dependencyId: form.dependencyId,
+      employeeId: form.employeeId,
+    },
+  ];
+
+  const batchPreview = createPlannerBatchPreviewContext({
+    allocations: allocations.filter((a) => a.id !== editingAllocation.id),
+    pendingRows: previewTasks,
+    viewDate,
+    defaultEmployeeId: form.employeeId || defaultEmployeeId,
+  });
+
+  const getProjectBudgetStatus = (projectId: string) =>
+    subtractAllocationFromBudgetStatus(
+      baseProjectBudget(projectId),
+      editingAllocation,
+      projectId,
+      preference,
+    );
+
+  const getEmployeeLoadForWeek: GetEmployeeLoadForWeekFn = (
+    employeeId,
+    weekStart,
+    effectiveStart,
+    effectiveEnd,
+    viewMonth,
+  ) => {
+    const load = baseWeekLoad(employeeId, weekStart, effectiveStart, effectiveEnd, viewMonth);
+    const a = editingAllocation;
+    if (
+      a.employeeId === employeeId &&
+      allocationMatchesWeekKey(a, weekStart, weeks, viewDate) &&
+      a.status !== 'completed'
+    ) {
+      return {
+        ...load,
+        hours: round2(Math.max(0, load.hours - (a.hoursAssigned || 0))),
+      };
+    }
+    return load;
+  };
+
+  return { batchPreview, previewTasks, getProjectBudgetStatus, getEmployeeLoadForWeek };
 }

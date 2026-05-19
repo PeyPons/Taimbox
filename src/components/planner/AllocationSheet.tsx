@@ -35,6 +35,7 @@ import { resolveDisplayStatus, weekCardSurfaceClass } from '@/components/planner
 import { AllocationMonthWeekCardHeader } from '@/components/planner/allocation/AllocationMonthWeekCardHeader';
 import { AllocationMonthProjectCardHeader } from '@/components/planner/allocation/AllocationMonthProjectCardHeader';
 import { MonthWeekScrollControls } from '@/components/planner/allocation/MonthWeekScrollControls';
+import { ScrollWheelArea } from '@/components/ui/scroll-wheel-area';
 import { scrollChildIntoHorizontalView, useHorizontalPanScroll } from '@/hooks/useHorizontalPanScroll';
 import { TaskTimer } from '@/components/employee/TaskTimer';
 import { BatchTaskRow } from '@/components/planner/BatchTaskRow';
@@ -276,6 +277,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
     editingAllocation, isFormOpen, setIsFormOpen, isSaving, showDeleteConfirm, setShowDeleteConfirm,
     editProjectId, setEditProjectId, editTaskName, setEditTaskName, editHours, setEditHours,
     editWeek, setEditWeek, editDependencyId, setEditDependencyId,
+    editEmployeeId, setEditEmployeeId,
     addTaskRow, removeTaskRow, updateTaskRow, handleSave, startEditFull, handleDeleteClick,
     confirmDelete, toggleTaskCompletion, startInlineEdit, saveInlineEdit, updateInlineHours, moveTaskToWeek,
     closeForm, recentlyToggled, cancelInlineEdit, clearNewTasks,
@@ -1500,7 +1502,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                           </Button>
 
                           {/* LISTA TAREAS */}
-                          <div className={cn('flex-1 overflow-y-auto space-y-1.5 custom-scrollbar min-h-0', isMobile ? 'pr-2' : 'pr-0.5')}>
+                          <ScrollWheelArea className={cn('flex-1 overflow-y-auto space-y-1.5 custom-scrollbar min-h-0', isMobile ? 'pr-2' : 'pr-0.5')}>
                             {sortedGroups.length === 0 ? (
                               <p className="text-center py-4 text-xs text-slate-400">Sin tareas</p>
                             ) : sortedGroups.map(([projId, projAllocations]) => {
@@ -1617,7 +1619,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                 </Collapsible>
                               );
                             })}
-                          </div>
+                          </ScrollWheelArea>
                         </div>
                       );
                     })}
@@ -1744,6 +1746,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
         editHours={editHours}
         editWeek={editWeek}
         editDependencyId={editDependencyId}
+        editEmployeeId={editEmployeeId}
         isSaving={isSaving}
         showDeleteConfirm={showDeleteConfirm}
         onClose={closeForm}
@@ -1755,6 +1758,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
         setEditHours={setEditHours}
         setEditWeek={setEditWeek}
         setEditDependencyId={setEditDependencyId}
+        setEditEmployeeId={setEditEmployeeId}
         setShowDeleteConfirm={setShowDeleteConfirm}
         addTaskRow={addTaskRow}
         updateTaskRow={updateTaskRow}
