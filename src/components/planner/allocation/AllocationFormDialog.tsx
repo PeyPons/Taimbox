@@ -1,20 +1,20 @@
 
 import React from 'react';
-import { format } from 'date-fns';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
-import { LayoutGrid, Search, Check, Link as LinkIcon, Plus, Trash2, AlertTriangle, ChevronDown } from 'lucide-react';
+import { LayoutGrid, Link as LinkIcon, Plus, Trash2, AlertTriangle } from 'lucide-react';
 import { Allocation, Project, Client, Employee, Deadline } from '@/types';
 import { NewTaskRow } from '@/types';
 import { BatchTaskRow } from '../BatchTaskRow';
 import { ProjectImpactSummary } from '../ProjectImpactSummary';
+import { DependencyPicker, DEPENDENCY_NONE } from '@/components/planner/allocation/DependencyPicker';
+import { ProjectPicker } from '@/components/planner/allocation/ProjectPicker';
+import { WeekPicker } from '@/components/planner/allocation/WeekPicker';
 import { TaskNotesTrigger } from '@/components/planner/allocation/TaskNotesTrigger';
 import { useAllocationNoteCounts } from '@/hooks/useAllocationNotes';
 import { ProjectBudgetStatus } from '@/hooks/useAllocationSheet';
@@ -115,14 +115,11 @@ export function AllocationFormDialog({
     getAvailableDependencies,
     getWeekExceedStatus,
     getEmployeeLoadForWeek,
-    formatProjectName,
+    formatProjectName: _formatProjectName,
     canSubmitBatchAdd,
     batchAddHint,
     batchPreview,
 }: AllocationFormDialogProps) {
-    const [editProjectOpen, setEditProjectOpen] = React.useState(false);
-    const [openDependency, setOpenDependency] = React.useState(false);
-    const [openWeek, setOpenWeek] = React.useState(false);
     const [showConfirmClose, setShowConfirmClose] = React.useState(false);
     const [pendingCloseAction, setPendingCloseAction] = React.useState<'open-change' | 'close-click' | null>(null);
     const isMobile = useIsMobile();
@@ -186,57 +183,21 @@ export function AllocationFormDialog({
                             <div className="grid gap-4 mt-4">
                                 <div className="space-y-2">
                                     <Label>Proyecto</Label>
-                                    <Popover open={editProjectOpen} onOpenChange={setEditProjectOpen} modal={true}>
-                                        <PopoverTrigger asChild>
-                                            <Button
-                                                variant="outline"
-                                                role="combobox"
-                                                className={cn("w-full justify-between px-3 text-left font-normal", isMobile ? "h-11 min-h-[44px]" : "h-10")}
-                                            >
-                                                <span className="truncate">
-                                                    {editProjectId
-                                                        ? formatProjectName(activeProjects.find(p => p.id === editProjectId)?.name || '')
-                                                        : "Seleccionar proyecto..."}
-                                                </span>
-                                                <Search className="h-4 w-4 opacity-50 shrink-0 ml-2" />
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className={cn("p-0", isMobile ? "w-[calc(100vw-2rem)] max-w-[400px]" : "w-[400px]")} align="start">
-                                            <Command
-                                                filter={(value, search) => {
-                                                    if (value.toLowerCase().includes(search.toLowerCase())) return 1;
-                                                    return 0;
-                                                }}
-                                            >
-                                                <CommandInput placeholder="Buscar proyecto..." />
-                                                <CommandList className="max-h-[280px] overflow-y-auto">
-                                                    <CommandEmpty>No se encontró proyecto.</CommandEmpty>
-                                                    <CommandGroup heading="Proyectos">
-                                                        {activeProjects.map((project) => {
-                                                            const client = clients.find(c => c.id === project.clientId);
-                                                            return (
-                                                                <CommandItem
-                                                                    key={project.id}
-                                                                    value={`${project.name} ${client?.name || ''}`}
-                                                                    onSelect={() => {
-                                                                        setEditProjectId(project.id);
-                                                                        setEditProjectOpen(false);
-                                                                    }}
-                                                                >
-                                                                    <Check className={cn("mr-2 h-4 w-4 shrink-0", editProjectId === project.id ? "opacity-100" : "opacity-0")} />
-                                                                    <div className="flex items-center gap-2 min-w-0">
-                                                                        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: client?.color || '#6b7280' }} />
-                                                                        <span className="truncate font-medium">{formatProjectName(project.name)}</span>
-                                                                        {client?.name && <span className="text-xs text-slate-400 truncate">({client.name})</span>}
-                                                                    </div>
-                                                                </CommandItem>
-                                                            );
-                                                        })}
-                                                    </CommandGroup>
-                                                </CommandList>
-                                            </Command>
-                                        </PopoverContent>
-                                    </Popover>
+                                    <ProjectPicker
+                                        value={editProjectId}
+                                        onChange={setEditProjectId}
+                                        activeProjects={activeProjects}
+                                        clients={clients}
+                                        employees={employees}
+                                        deadlines={deadlines}
+                                        viewDate={viewDate}
+                                        getProjectBudgetStatus={getProjectBudgetStatus}
+                                        batchPreview={batchPreview}
+                                        employeeId={editingAllocation.employeeId || currentEmployeeId}
+                                        contextTaskHours={parseFloat(editHours) || 0}
+                                        contextTaskId={editingAllocation.id}
+                                        triggerClassName={cn(isMobile ? 'h-11 min-h-[44px]' : 'h-10')}
+                                    />
                                 </div>
                                 <div className="space-y-2">
                                     <div className="flex items-center justify-between gap-2">
@@ -251,65 +212,31 @@ export function AllocationFormDialog({
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label className="flex items-center gap-2 text-xs text-slate-500"><LinkIcon className="w-3 h-3" /> Depende de otra tarea</Label>
-                                    <Popover open={openDependency} onOpenChange={setOpenDependency}>
-                                        <PopoverTrigger asChild>
-                                            <Button variant="outline" disabled={!editProjectId} className={cn("w-full justify-between font-normal", isMobile ? "h-11 min-h-[44px]" : "h-9")}>
-                                                <span className="truncate">{editDependencyId && editDependencyId !== 'none' ? (() => { const d = getAvailableDependencies(editProjectId, editingAllocation.id).find(x => x.id === editDependencyId); const o = d ? employees.find(e => e.id === d.employeeId) : null; return d ? `${d.taskName} (${o?.name})` : 'Sin dependencia'; })() : '-- Ninguna --'}</span>
-                                                <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-max min-w-[var(--radix-popover-trigger-width)] max-w-[min(92vw,560px)] p-0" align="start">
-                                            <Command>
-                                                <CommandList className="max-h-[280px]">
-                                                    <CommandItem value="none" className="text-xs py-2 px-3" onSelect={() => { setEditDependencyId('none'); setOpenDependency(false); }}>
-                                                        <Check className={cn('mr-2.5 h-3.5 w-3.5 shrink-0', (!editDependencyId || editDependencyId === 'none') ? 'opacity-100' : 'opacity-0')} />
-                                                        -- Ninguna --
-                                                    </CommandItem>
-                                                    {getAvailableDependencies(editProjectId, editingAllocation.id).map(dep => {
-                                                        const owner = employees.find(e => e.id === dep.employeeId);
-                                                        const shortName = owner?.name ? (owner.name.length > 8 ? owner.name.substring(0, 6) + '..' : owner.name) : '';
-                                                        const label = `${dep.taskName} (${shortName})`;
-                                                        return (
-                                                            <CommandItem key={dep.id} value={label} className="text-xs py-2 px-3 whitespace-nowrap" onSelect={() => { setEditDependencyId(dep.id); setOpenDependency(false); }}>
-                                                                <Check className={cn('mr-2.5 h-3.5 w-3.5 shrink-0', editDependencyId === dep.id ? 'opacity-100' : 'opacity-0')} />
-                                                                <span title={`${dep.taskName} (${owner?.name ?? ''})`}>{label}</span>
-                                                            </CommandItem>
-                                                        );
-                                                    })}
-                                                </CommandList>
-                                            </Command>
-                                        </PopoverContent>
-                                    </Popover>
+                                    <Label className="flex items-center gap-2 text-xs text-slate-500">
+                                        <LinkIcon className="w-3 h-3" /> Depende de otra tarea
+                                    </Label>
+                                    <DependencyPicker
+                                        value={editDependencyId || DEPENDENCY_NONE}
+                                        onChange={setEditDependencyId}
+                                        dependencies={getAvailableDependencies(editProjectId, editingAllocation.id)}
+                                        employees={employees}
+                                        weeks={weeks}
+                                        disabled={!editProjectId}
+                                    />
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2"><Label>Horas</Label><Input type="number" value={editHours} onChange={e => setEditHours(e.target.value)} step="0.5" className={cn(isMobile && "h-11 min-h-[44px]")} /></div>
                                     <div className="space-y-2">
                                         <Label>Semana</Label>
-                                        <Popover open={openWeek} onOpenChange={setOpenWeek}>
-                                            <PopoverTrigger asChild>
-                                                <Button variant="outline" className={cn("w-full justify-between font-normal", isMobile && "h-11 min-h-[44px]")}>
-                                                    <span className="truncate">{editWeek ? `Sem ${weeks.findIndex(w => format(w.weekStart, 'yyyy-MM-dd') === editWeek) + 1}` : 'Semana'}</span>
-                                                    <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
-                                                </Button>
-                                            </PopoverTrigger>
-                                            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
-                                                <Command>
-                                                    <CommandList className="max-h-[280px]">
-                                                        {weeks.map((w, i) => {
-                                                            const val = format(w.weekStart, 'yyyy-MM-dd');
-                                                            return (
-                                                                <CommandItem key={val} value={val} onSelect={() => { setEditWeek(val); setOpenWeek(false); }}>
-                                                                    <Check className={cn('mr-2 h-4 w-4 shrink-0', editWeek === val ? 'opacity-100' : 'opacity-0')} />
-                                                                    Sem {i + 1}
-                                                                </CommandItem>
-                                                            );
-                                                        })}
-                                                    </CommandList>
-                                                </Command>
-                                            </PopoverContent>
-                                        </Popover>
+                                        <WeekPicker
+                                            value={editWeek}
+                                            onChange={setEditWeek}
+                                            weeks={weeks}
+                                            viewDate={viewDate}
+                                            isOverloaded={editWeek ? getWeekExceedStatus(editWeek) : false}
+                                            className={cn(isMobile && 'h-11 min-h-[44px]')}
+                                        />
                                     </div>
                                 </div>
                             </div>

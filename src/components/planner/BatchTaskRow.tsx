@@ -5,20 +5,21 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { Check, X, Plus, Trash2, AlertTriangle, Link as LinkIcon, User, ChevronDown, StickyNote } from 'lucide-react';
+import { Check, Plus, Trash2, AlertTriangle, User, StickyNote } from 'lucide-react';
 import { Project, Employee, Allocation, NewTaskRow, Client, Deadline } from '@/types';
 import { ProjectBudgetStatus } from '@/hooks/useAllocationSheet';
 import { useState, useMemo } from 'react';
-import { findWeekIndexForTaskWeekDate, formatPlannerWeekWorkingRangeLabel } from '@/utils/dateUtils';
 import { filterEmployeesForOperationalMonth } from '@/utils/employeeAssignmentVisibility';
-import { useProjectAliasing } from '@/hooks/useProjectAliasing';
 import {
-    computeEmployeeDeadlinePreview,
-    resolveProjectBudgetForPreview,
-    sumPendingHoursForProject,
-    type PlannerBatchPreviewContext,
+  computeEmployeeDeadlinePreview,
+  resolveProjectBudgetForPreview,
+  sumPendingHoursForProject,
+  type PlannerBatchPreviewContext,
 } from '@/utils/plannerBatchPreview';
 import { round2 } from '@/utils/numbers';
+import { DependencyPicker, DEPENDENCY_NONE } from '@/components/planner/allocation/DependencyPicker';
+import { ProjectPicker } from '@/components/planner/allocation/ProjectPicker';
+import { WeekPicker } from '@/components/planner/allocation/WeekPicker';
 
 interface BatchTaskRowProps {
     task: NewTaskRow;
@@ -60,35 +61,8 @@ export function BatchTaskRow({
     viewDate = batchPreview.viewDate,
 }: BatchTaskRowProps) {
     const pendingRows = batchPreview.pendingRows;
-    const [openCombobox, setOpenCombobox] = useState(false);
     const [openEmployeeCombobox, setOpenEmployeeCombobox] = useState(false);
-    const [openDependency, setOpenDependency] = useState(false);
-    const [openWeek, setOpenWeek] = useState(false);
     const [showInitialNote, setShowInitialNote] = useState(() => Boolean(task.initialNote?.trim()));
-    const { formatName: formatProjectName } = useProjectAliasing();
-
-    // Ordenar proyectos: primero los que tienen deadline asignado al empleado de la tarea, luego el resto
-    const taskEmployeeIdForSort = task.employeeId || currentEmployeeId;
-    const { projectsWithDeadline, projectsWithoutDeadline } = useMemo(() => {
-        if (!viewDate || !taskEmployeeIdForSort || deadlines.length === 0) {
-            return { projectsWithDeadline: [], projectsWithoutDeadline: activeProjects };
-        }
-        const monthKey = format(startOfMonth(viewDate), 'yyyy-MM');
-        const withDeadline: Project[] = [];
-        const withoutDeadline: Project[] = [];
-        for (const p of activeProjects) {
-            const d = deadlines.find(d => d.projectId === p.id && d.month === monthKey && !d.isHidden);
-            const hours = d?.employeeHours[taskEmployeeIdForSort] ?? 0;
-            if (hours > 0) withDeadline.push(p);
-            else withoutDeadline.push(p);
-        }
-        return { projectsWithDeadline: withDeadline, projectsWithoutDeadline: withoutDeadline };
-    }, [activeProjects, deadlines, viewDate, taskEmployeeIdForSort]);
-
-    const sortedProjectsForSelector = useMemo(
-        () => [...projectsWithDeadline, ...projectsWithoutDeadline],
-        [projectsWithDeadline, projectsWithoutDeadline]
-    );
 
     const monthKeyForAssignable = viewDate
         ? format(startOfMonth(viewDate), 'yyyy-MM')
@@ -161,155 +135,22 @@ export function BatchTaskRow({
             <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
                 {/* Selector de Proyecto */}
                 <div className="w-full sm:w-[280px] sm:shrink-0 min-w-0">
-                    <Popover open={openCombobox} onOpenChange={setOpenCombobox} modal={true}>
-                        <PopoverTrigger asChild>
-                            <Button
-                                variant="outline"
-                                role="combobox"
-                                className={cn(
-                                    "w-full justify-between h-11 sm:h-9 min-h-[44px] sm:min-h-0 px-3 text-left font-normal text-sm",
-                                    !task.projectId && "text-muted-foreground",
-                                    willExceed && "border-amber-300 bg-amber-50 text-amber-900"
-                                )}>
-                                <span className="truncate text-sm">
-                                    {task.projectId ? formatProjectName(activeProjects.find((p) => p.id === task.projectId)?.name || '') : "Seleccionar proyecto..."}
-                                </span>
-                                <div className="flex items-center gap-2 opacity-50 shrink-0">
-                                    {willExceed && <AlertTriangle className="h-3.5 w-3.5 text-amber-600" />}
-                                    <Plus className="h-3.5 w-3.5" />
-                                </div>
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-[calc(100vw-2rem)] max-w-[450px] p-0" align="start">
-                            <Command
-                                filter={(value, search) => {
-                                    if (value.toLowerCase().includes(search.toLowerCase())) return 1;
-                                    return 0;
-                                }}
-                            >
-                                <CommandInput placeholder="Buscar proyecto..." />
-                                <CommandList className="max-h-[280px] overflow-y-auto overscroll-contain">
-                                    <CommandEmpty>No hay.</CommandEmpty>
-                                    <CommandGroup heading={projectsWithDeadline.length > 0 ? "Proyectos (primero con tu deadline)" : "Proyectos"}>
-                                        {sortedProjectsForSelector.map((project) => {
-                                            const client = clients.find(c => c.id === project.clientId);
-                                            const budgetStatus = resolveProjectBudgetForPreview(
-                                                batchPreview,
-                                                project.id,
-                                                getProjectBudgetStatus
-                                            );
-                                            const totalUsed = budgetStatus.totalComputed + budgetStatus.totalPlanned;
-                                            const remaining = budgetStatus.budgetMax > 0 ? budgetStatus.budgetMax - totalUsed : null;
-
-                                            const computedPct = budgetStatus.budgetMax > 0
-                                                ? Math.round((budgetStatus.totalComputed / budgetStatus.budgetMax) * 100)
-                                                : 0;
-
-                                            const plannedPct = budgetStatus.budgetMax > 0
-                                                ? Math.round((budgetStatus.totalPlanned / budgetStatus.budgetMax) * 100)
-                                                : 0;
-
-                                            // Calcular deadline del empleado para este proyecto
-                                            // En el selector, mostrar el deadline del empleado asignado en la tarea (si existe) o del empleado actual
-                                            const selectorEmployeeId =
-                                                task.employeeId || currentEmployeeId || batchPreview.defaultEmployeeId;
-                                            const selectorTaskHours =
-                                                task.projectId === project.id ? parseFloat(task.hours) || 0 : 0;
-                                            const selectorDeadlinePreview =
-                                                selectorEmployeeId && viewDate
-                                                    ? computeEmployeeDeadlinePreview(batchPreview, {
-                                                          projectId: project.id,
-                                                          employeeId: selectorEmployeeId,
-                                                          deadlines,
-                                                          taskId: task.id,
-                                                          includeTaskHours: selectorTaskHours,
-                                                      })
-                                                    : null;
-                                            const projectDeadlineInfo = selectorDeadlinePreview
-                                                ? {
-                                                      deadlineHours: selectorDeadlinePreview.deadlineHours,
-                                                      totalAssigned: selectorDeadlinePreview.totalAssigned,
-                                                      employeeName: employees.find(e => e.id === selectorEmployeeId)?.name,
-                                                  }
-                                                : null;
-
-                                            // Search value includes client name for better filtering
-                                            const searchValue = `${project.name} ${client?.name || ''}`;
-
-                                            return (
-                                                <CommandItem key={project.id} value={searchValue} onSelect={() => { updateTaskRow(task.id, 'projectId', project.id); setOpenCombobox(false); }}>
-                                                    <Check className={cn("mr-2 h-4 w-4 shrink-0", task.projectId === project.id ? "opacity-100" : "opacity-0")} />
-                                                    <div className="flex flex-col gap-0.5 flex-1 min-w-0">
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: client?.color || '#6b7280' }} />
-                                                            <span className="truncate font-medium">
-                                                                {formatProjectName(project.name)}
-                                                                {client?.name && <span className="ml-1 text-[10px] text-slate-400 font-normal">({client.name})</span>}
-                                                            </span>
-                                                            {budgetStatus.budgetMax > 0 && (
-                                                                <div className="ml-auto flex items-center gap-1 shrink-0">
-                                                                    <span className={cn(
-                                                                        "text-[10px] font-bold px-1.5 py-0.5 rounded-full",
-                                                                        computedPct > 100 ? "bg-red-100 text-red-700" :
-                                                                            computedPct > 85 ? "bg-amber-100 text-amber-700" :
-                                                                                "bg-emerald-100 text-emerald-700"
-                                                                    )}>
-                                                                        {computedPct}%
-                                                                    </span>
-                                                                    {plannedPct > 0 && (
-                                                                        <span className="text-[10px] text-slate-400 font-medium">
-                                                                            (+{plannedPct}% plan.)
-                                                                        </span>
-                                                                    )}
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                        <div className="text-[10px] pl-4 text-slate-500 flex justify-between items-center gap-2">
-                                                            <span className="truncate">
-                                                                {budgetStatus.budgetMax > 0
-                                                                    ? (
-                                                                        <span>
-                                                                            <span className="font-medium text-slate-700">{budgetStatus.totalComputed.toFixed(1)}h</span>
-                                                                            {budgetStatus.totalPlanned > 0 && <span className="text-slate-400"> +{budgetStatus.totalPlanned.toFixed(1)}h</span>}
-                                                                            <span className="text-slate-400"> / {budgetStatus.budgetMax}h</span>
-                                                                        </span>
-                                                                    )
-                                                                    : 'Sin límite'}
-                                                            </span>
-                                                            {remaining !== null && (
-                                                                <span className={cn("shrink-0", remaining < 0 ? "text-red-600 font-bold" : "text-slate-400")}>
-                                                                    {remaining > 0 ? `${remaining.toFixed(1)}h rest.` : `${Math.abs(remaining).toFixed(1)}h ex.`}
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                        {/* Indicador de deadline del empleado */}
-                                                        {projectDeadlineInfo && (
-                                                            <div className="text-[10px] pl-4 flex items-center gap-1.5 mt-0.5">
-                                                                <span className={cn(
-                                                                    "font-medium",
-                                                                    taskEmployeeId === currentEmployeeId ? "text-blue-600" : "text-indigo-600"
-                                                                )}>
-                                                                    {taskEmployeeId === currentEmployeeId ? "Tu deadline:" : `${projectDeadlineInfo.employeeName || 'Su'} deadline:`}
-                                                                </span>
-                                                                <span className={cn(
-                                                                    "font-bold",
-                                                                    projectDeadlineInfo.totalAssigned > projectDeadlineInfo.deadlineHours ? "text-red-600" :
-                                                                        projectDeadlineInfo.totalAssigned >= projectDeadlineInfo.deadlineHours * 0.9 ? "text-amber-600" :
-                                                                            taskEmployeeId === currentEmployeeId ? "text-blue-600" : "text-indigo-600"
-                                                                )}>
-                                                                    {projectDeadlineInfo.totalAssigned.toFixed(1)} / {projectDeadlineInfo.deadlineHours}h
-                                                                </span>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </CommandItem>
-                                            );
-                                        })}
-                                    </CommandGroup>
-                                </CommandList>
-                            </Command>
-                        </PopoverContent>
-                    </Popover>
+                    <ProjectPicker
+                        value={task.projectId}
+                        onChange={(projectId) => updateTaskRow(task.id, 'projectId', projectId)}
+                        activeProjects={activeProjects}
+                        clients={clients}
+                        employees={employees}
+                        deadlines={deadlines}
+                        viewDate={viewDate}
+                        getProjectBudgetStatus={getProjectBudgetStatus}
+                        batchPreview={batchPreview}
+                        employeeId={task.employeeId || currentEmployeeId}
+                        contextTaskHours={taskHours}
+                        contextTaskId={task.id}
+                        budgetExceeded={willExceed}
+                        triggerClassName="h-11 sm:h-9 min-h-[44px] sm:min-h-0 text-sm"
+                    />
                 </div>
 
                 {/* Nombre de la tarea */}
@@ -400,36 +241,16 @@ export function BatchTaskRow({
                     </div>
                 )}
 
-                <div className="w-full sm:w-[140px] min-w-0">
-                    <Popover open={openDependency} onOpenChange={setOpenDependency}>
-                        <PopoverTrigger asChild>
-                            <Button variant="outline" disabled={!task.projectId} className={cn("w-full h-11 sm:h-9 min-h-[44px] sm:min-h-0 text-xs px-2 justify-between font-normal")}>
-                                <span className="truncate">{task.dependencyId && task.dependencyId !== 'none' ? (() => { const d = getAvailableDependencies(task.projectId).find(x => x.id === task.dependencyId); const o = d ? employees.find(e => e.id === d.employeeId) : null; return d ? `${d.taskName} (${o?.name?.substring(0, 6)}..)` : 'Sin dep.'; })() : '-- Sin dependencia --'}</span>
-                                <ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0" />
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-max min-w-[var(--radix-popover-trigger-width)] max-w-[min(92vw,560px)] p-0" align="start">
-                            <Command>
-                                <CommandList className="max-h-[280px]">
-                                    <CommandItem value="none" className="text-xs py-2 px-3" onSelect={() => { updateTaskRow(task.id, 'dependencyId', 'none'); setOpenDependency(false); }}>
-                                        <Check className={cn('mr-2.5 h-3.5 w-3.5 shrink-0', (!task.dependencyId || task.dependencyId === 'none') ? 'opacity-100' : 'opacity-0')} />
-                                        -- Sin dependencia --
-                                    </CommandItem>
-                                    {getAvailableDependencies(task.projectId).map(dep => {
-                                        const owner = employees.find(e => e.id === dep.employeeId);
-                                        const shortName = owner?.name ? (owner.name.length > 8 ? owner.name.substring(0, 6) + '..' : owner.name) : '';
-                                        const label = `${dep.taskName} (${shortName})`;
-                                        return (
-                                            <CommandItem key={dep.id} value={label} className="text-xs py-2 px-3 whitespace-nowrap" onSelect={() => { updateTaskRow(task.id, 'dependencyId', dep.id); setOpenDependency(false); }}>
-                                                <Check className={cn('mr-2.5 h-3.5 w-3.5 shrink-0', task.dependencyId === dep.id ? 'opacity-100' : 'opacity-0')} />
-                                                <span title={`${dep.taskName} (${owner?.name ?? ''})`}>{label}</span>
-                                            </CommandItem>
-                                        );
-                                    })}
-                                </CommandList>
-                            </Command>
-                        </PopoverContent>
-                    </Popover>
+                <div className="w-full sm:w-[180px] min-w-0">
+                    <DependencyPicker
+                        compact
+                        value={task.dependencyId || DEPENDENCY_NONE}
+                        onChange={(id) => updateTaskRow(task.id, 'dependencyId', id)}
+                        dependencies={getAvailableDependencies(task.projectId)}
+                        employees={employees}
+                        weeks={weeks}
+                        disabled={!task.projectId}
+                    />
                 </div>
 
                 <div className="grid grid-cols-2 sm:flex sm:flex-nowrap gap-2 sm:gap-3 items-center">
@@ -442,33 +263,14 @@ export function BatchTaskRow({
                         step="0.5"
                     />
                     <div className="min-w-0 sm:w-32">
-                        <Popover open={openWeek} onOpenChange={setOpenWeek}>
-                            <PopoverTrigger asChild>
-                                <Button variant="outline" className={cn("w-full h-11 sm:h-9 min-h-[44px] sm:min-h-0 text-xs pl-2 pr-1 justify-between font-normal", isWeekOverloaded && "border-red-300 text-red-700 bg-red-50")}>
-                                    <span className="truncate">{task.weekDate ? (() => {
-                                        const idx = viewDate ? findWeekIndexForTaskWeekDate(task.weekDate, weeks, viewDate) : -1;
-                                        const wm = idx >= 0 ? weeks[idx] : weeks.find(w => format(w.weekStart, 'yyyy-MM-dd') === task.weekDate);
-                                        return wm ? formatPlannerWeekWorkingRangeLabel(wm) : 'Semana';
-                                    })() : 'Semana'}</span>
-                                    <ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0" />
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
-                                <Command>
-                                    <CommandList className="max-h-[280px]">
-                                        {weeks.map((w) => {
-                                            const val = format(w.weekStart, 'yyyy-MM-dd');
-                                            return (
-                                                <CommandItem key={val} value={val} onSelect={() => { updateTaskRow(task.id, 'weekDate', val); setOpenWeek(false); }}>
-                                                    <Check className={cn('mr-2 h-4 w-4 shrink-0', task.weekDate === val ? 'opacity-100' : 'opacity-0')} />
-                                                    {formatPlannerWeekWorkingRangeLabel(w)}
-                                                </CommandItem>
-                                            );
-                                        })}
-                                    </CommandList>
-                                </Command>
-                            </PopoverContent>
-                        </Popover>
+                        <WeekPicker
+                            value={task.weekDate}
+                            onChange={(weekDate) => updateTaskRow(task.id, 'weekDate', weekDate)}
+                            weeks={weeks}
+                            viewDate={viewDate}
+                            isOverloaded={Boolean(isWeekOverloaded)}
+                            className="h-11 sm:h-9 min-h-[44px] sm:min-h-0 text-xs pl-2 pr-1"
+                        />
                     </div>
                 </div>
 
