@@ -31,6 +31,7 @@ import {
 import { cn, matchesAliasingRule } from '@/lib/utils';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
 import { toast } from '@/lib/notify';
+import { INPUT_LIMITS } from '@/constants/inputLimits';
 import { format, subMonths, addMonths, isSameMonth, parseISO, getDaysInMonth, getDate, startOfMonth } from 'date-fns';
 import { isAllocationInEffectiveMonth, getWeeksForMonth } from '@/utils/dateUtils';
 import { es } from 'date-fns/locale';
@@ -834,7 +835,7 @@ export default function ClientsAndProjectsPage() {
 
   // Handlers
   const clientFormSchema = z.object({
-    name: z.string().min(1, t('clientsAndProjects.dialogs.newClient.nameRequired', 'El nombre es obligatorio')),
+    name: z.string().min(1, t('clientsAndProjects.dialogs.newClient.nameRequired', 'El nombre es obligatorio')).max(INPUT_LIMITS.clientName),
     color: z.string(),
   });
 
@@ -862,6 +863,10 @@ export default function ClientsAndProjectsPage() {
   const handleUpdateClient = () => {
     if (!editingClient || !editingClient.name.trim()) {
       toast.error(t('clientsAndProjects.dialogs.newClient.nameRequired', 'El nombre es obligatorio'));
+      return;
+    }
+    if (editingClient.name.trim().length > INPUT_LIMITS.clientName) {
+      toast.error(t('clientsAndProjects.dialogs.newClient.nameTooLong', { max: INPUT_LIMITS.clientName, defaultValue: `El nombre no puede superar ${INPUT_LIMITS.clientName} caracteres` }));
       return;
     }
     updateClient(editingClient);
@@ -1832,6 +1837,7 @@ export default function ClientsAndProjectsPage() {
                 <Label>{t('clientsAndProjects.dialogs.newProject.name', 'Nombre')}</Label>
                 <Input
                   value={editingClient.name}
+                  maxLength={INPUT_LIMITS.clientName}
                   onChange={(e) => setEditingClient({ ...editingClient, name: e.target.value })}
                 />
               </div>

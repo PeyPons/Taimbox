@@ -2,6 +2,18 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 import { sendWelcomeOrInvitationEmail } from "../_shared/welcome-and-invitation-email.ts"
+import {
+    INPUT_LIMITS,
+    parseBoundedString,
+    parseEmail,
+    parsePassword,
+} from "../_shared/input-limits.ts"
+import {
+    assertRateLimit,
+    getClientIp,
+    RATE_LIMITS,
+    RateLimitError,
+} from "../_shared/rate-limit.ts"
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -46,24 +58,33 @@ serve(async (req) => {
             throw new Error('Formato de datos inválido.')
         }
 
+        const clientIp = getClientIp(req)
+        await assertRateLimit(
+            supabaseAdmin,
+            `register:ip:${clientIp}`,
+            RATE_LIMITS.registerByIp,
+        )
+
         const { email, password, name, agencyName } = body
 
-        // Validaciones
-        if (!email || typeof email !== 'string' || !email.trim()) {
-            throw new Error('El email es obligatorio')
-        }
+        const cleanEmail = parseEmail(email)
+        await assertRateLimit(
+            supabaseAdmin,
+            `register:email:${cleanEmail}`,
+            RATE_LIMITS.registerByEmail,
+        )
 
-        if (!password || typeof password !== 'string' || password.length < 6) {
-            throw new Error('La contraseña debe tener al menos 6 caracteres')
-        }
-
-        if (!agencyName || typeof agencyName !== 'string' || !agencyName.trim()) {
-            throw new Error('El nombre de la empresa es obligatorio')
-        }
-
-        const cleanEmail = email.trim().toLowerCase()
-        const cleanName = name.trim()
-        const cleanAgencyName = agencyName.trim()
+        const cleanPassword = parsePassword(password)
+        const cleanName = parseBoundedString(name, {
+            min: 2,
+            max: INPUT_LIMITS.personName,
+            fieldName: 'Nombre',
+        })
+        const cleanAgencyName = parseBoundedString(agencyName, {
+            min: 2,
+            max: INPUT_LIMITS.agencyName,
+            fieldName: 'Nombre de la empresa',
+        })
 
         console.log(`Registrando: ${cleanEmail} para agencia "${cleanAgencyName}"`)
 
@@ -87,7 +108,7 @@ serve(async (req) => {
         // 6. Crear usuario en Auth
         const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
             email: cleanEmail,
-            password: password,
+            password: cleanPassword,
             email_confirm: true,
             user_metadata: { full_name: cleanName }
         })
@@ -280,21 +301,24 @@ serve(async (req) => {
             }
         )
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Error general:", error)
-        console.error("Error stack:", error?.stack)
-        console.error("Error details:", JSON.stringify(error, null, 2))
 
-        const errorMessage = error?.message || error?.toString() || 'Error desconocido al registrar'
+        const errorMessage = error instanceof Error ? error.message : 'Error desconocido al registrar'
+        const status = error instanceof RateLimitError
+            ? 429
+            : error instanceof Error && errorMessage.includes('supera')
+                ? 400
+                : 400
 
         return new Response(
             JSON.stringify({
                 error: errorMessage,
-                details: Deno.env.get('NODE_ENV') === 'development' ? error?.stack : undefined
+                details: Deno.env.get('NODE_ENV') === 'development' && error instanceof Error ? error.stack : undefined
             }),
             {
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-                status: 400
+                status
             }
         )
     }

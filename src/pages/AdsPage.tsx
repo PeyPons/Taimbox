@@ -4,6 +4,7 @@ import { useAgency } from '@/contexts/AgencyContext';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { INPUT_LIMITS } from '@/constants/inputLimits';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -146,8 +147,8 @@ export default function AdsPage() {
   // Formulario nueva regla
   const ruleFormSchema = z.object({
     account: z.string().min(1, t('ads.dialogs.splitAccounts.selectAccount', 'Debes seleccionar una cuenta')),
-    keyword: z.string().min(1, t('ads.dialogs.splitAccounts.ifContains', 'La palabra clave es obligatoria')),
-    name: z.string().min(1, t('ads.dialogs.splitAccounts.createAccount', 'El nombre es obligatorio')),
+    keyword: z.string().min(1, t('ads.dialogs.splitAccounts.ifContains', 'La palabra clave es obligatoria')).max(INPUT_LIMITS.keyword),
+    name: z.string().min(1, t('ads.dialogs.splitAccounts.createAccount', 'El nombre es obligatorio')).max(INPUT_LIMITS.clientName),
   });
 
   type RuleFormValues = z.infer<typeof ruleFormSchema>;

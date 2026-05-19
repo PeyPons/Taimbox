@@ -19,6 +19,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { toast } from '@/lib/notify';
+import { INPUT_LIMITS } from '@/constants/inputLimits';
 
 interface ProfessionalGoalsSheetProps {
   open: boolean;
@@ -79,12 +80,12 @@ const calculateProgress = (krs: KeyResult[]): number => {
 };
 
 const goalFormSchema = z.object({
-  title: z.string().min(1, 'El título es obligatorio'),
+  title: z.string().min(1, 'El título es obligatorio').max(INPUT_LIMITS.goalTitle),
   dueDate: z.string().optional(),
-  trainingUrl: z.string().url('URL inválida').optional().or(z.literal('')),
+  trainingUrl: z.string().url('URL inválida').max(INPUT_LIMITS.goalTrainingUrl).optional().or(z.literal('')),
   keyResults: z.array(z.object({
     id: z.string(),
-    text: z.string(),
+    text: z.string().max(INPUT_LIMITS.goalKeyResultText),
     type: z.enum(['check', 'numeric']),
     completed: z.boolean(),
     currentValue: z.number(),

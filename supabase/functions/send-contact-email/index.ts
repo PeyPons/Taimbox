@@ -1,4 +1,16 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 import { sendEmail } from "../_shared/resend.ts"
+import {
+  INPUT_LIMITS,
+  parseBoundedString,
+  parseEmail,
+} from "../_shared/input-limits.ts"
+import {
+  assertRateLimit,
+  getClientIp,
+  RATE_LIMITS,
+  RateLimitError,
+} from "../_shared/rate-limit.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -107,17 +119,31 @@ Deno.serve(async (req) => {
       })
     }
 
-    const name = typeof body?.name === 'string' ? body.name.trim() : ''
-    const email = typeof body?.email === 'string' ? body.email.trim() : ''
-    const subject = typeof body?.subject === 'string' ? body.subject.trim() : ''
-    const message = typeof body?.message === 'string' ? body.message.trim() : ''
-
-    if (!name || !email || !subject || !message) {
-      return new Response(JSON.stringify({ success: false, error: 'Nombre, email, asunto y mensaje son obligatorios.' }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400,
-      })
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    if (supabaseUrl && supabaseServiceKey) {
+      const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
+      const clientIp = getClientIp(req)
+      await assertRateLimit(
+        supabaseAdmin,
+        `contact:ip:${clientIp}`,
+        RATE_LIMITS.contactByIp,
+      )
     }
+
+    const name = parseBoundedString(body?.name, {
+      max: INPUT_LIMITS.personName,
+      fieldName: 'Nombre',
+    })
+    const email = parseEmail(body?.email)
+    const subject = parseBoundedString(body?.subject, {
+      max: INPUT_LIMITS.contactSubject,
+      fieldName: 'Asunto',
+    })
+    const message = parseBoundedString(body?.message, {
+      max: INPUT_LIMITS.contactMessage,
+      fieldName: 'Mensaje',
+    })
 
     const toEmail = Deno.env.get('CONTACT_TO_EMAIL') || 'hello@taimbox.com'
     const contact = contactEmailTemplate(name, email, subject, message)
@@ -140,11 +166,18 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     })
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('[send-contact-email] Error:', err)
-    return new Response(JSON.stringify({ success: false, error: err?.message || 'Error enviando email' }), {
+    const message = err instanceof Error ? err.message : 'Error enviando email'
+    let status = 500
+    if (err instanceof RateLimitError) {
+      status = 429
+    } else if (err instanceof Error) {
+      status = 400
+    }
+    return new Response(JSON.stringify({ success: false, error: message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 500,
+      status,
     })
   }
 })

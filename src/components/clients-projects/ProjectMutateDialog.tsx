@@ -29,12 +29,13 @@ import { PROJECT_TYPE_PRESET_VALUES, PROJECT_TYPE_ENTREGABLE } from '@/config/pr
 import { parseDeliverableContractFeeInput } from '@/utils/deliverableProjectFields';
 import { PhaseDatePickerButton } from '@/components/projects/PhaseDatePickerButton';
 import { toast } from '@/lib/notify';
+import { INPUT_LIMITS } from '@/constants/inputLimits';
 import type { DepartmentDefinition } from '@/types';
 
 function createProjectFormSchema(t: TFunction<'app'>) {
   return z
     .object({
-      name: z.string().min(1, t('clientsAndProjects.dialogs.newProject.nameRequired', 'El nombre es obligatorio')),
+      name: z.string().min(1, t('clientsAndProjects.dialogs.newProject.nameRequired', 'El nombre es obligatorio')).max(INPUT_LIMITS.projectName),
       clientId: z.string().min(1, t('clientsAndProjects.dialogs.newProject.clientRequired', 'Debes seleccionar un cliente')),
       budgetHours: z.coerce.number().min(0, t('clientsAndProjects.dialogs.newProject.budgetNonNegative', 'Las horas asignadas no pueden ser negativas')),
       minimumHours: z.coerce.number().min(0, t('clientsAndProjects.dialogs.newProject.minHoursNonNegative', 'Las horas mínimas no pueden ser negativas')),
@@ -46,13 +47,13 @@ function createProjectFormSchema(t: TFunction<'app'>) {
         .array(
           z.object({
             id: z.string(),
-            title: z.string(),
+            title: z.string().max(INPUT_LIMITS.okrTitle),
             progress: z.number().min(0).max(100),
           })
         )
         .optional()
         .default([]),
-      projectType: z.string().optional().default(''),
+      projectType: z.string().max(INPUT_LIMITS.projectType).optional().default(''),
       deliverableContractFee: z.string().optional().default(''),
       deliverableStartDate: z.string().optional().default(''),
       deliverableDueDate: z.string().optional().default(''),

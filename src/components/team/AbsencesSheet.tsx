@@ -16,6 +16,7 @@ import { es } from 'date-fns/locale';
 import { Trash2, CalendarIcon, Plus, Check, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from '@/lib/notify';
+import { INPUT_LIMITS } from '@/constants/inputLimits';
 import { getAbsenceTypeLabel } from '@/utils/capacityUtils';
 
 interface AbsencesSheetProps {
@@ -28,7 +29,7 @@ const absenceFormSchema = z.object({
   startDate: z.string().min(1, 'La fecha de inicio es obligatoria'),
   endDate: z.string().optional(),
   type: z.enum(['vacation', 'sick_leave', 'personal', 'other']),
-  description: z.string().optional(),
+  description: z.string().max(INPUT_LIMITS.absenceDescription).optional(),
   isFullDay: z.boolean(),
   hours: z.number().min(0.5).max(24).optional(),
 }).refine((data) => {
@@ -215,7 +216,7 @@ export function AbsencesSheet({ open, onOpenChange, employeeId }: AbsencesSheetP
                   <FormItem>
                     <FormLabel>Motivo (opcional)</FormLabel>
                     <FormControl>
-                      <Input placeholder="Ej: Cita médica..." {...field} />
+                      <Input placeholder="Ej: Cita médica..." maxLength={INPUT_LIMITS.absenceDescription} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

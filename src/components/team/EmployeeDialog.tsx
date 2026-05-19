@@ -21,6 +21,7 @@ import { supabase } from '@/lib/supabase';
 import { toast } from '@/lib/notify';
 import { Briefcase, CalendarClock, Target, Lock, Clock, ShieldCheck, Hash, Key } from 'lucide-react';
 import { useIntegration } from '@/hooks/useIntegration';
+import { INPUT_LIMITS } from '@/constants/inputLimits';
 
 import { ScheduleEditor } from './ScheduleEditor';
 import { ProjectsSheet } from './ProjectsSheet';
@@ -39,11 +40,11 @@ const defaultSchedule: WorkSchedule = {
 
 // Schema de validación con Zod
 const employeeFormSchema = z.object({
-  name: z.string().min(1, 'El nombre es obligatorio'),
-  email: z.string().email('Email inválido').optional().or(z.literal('')),
-  password: z.string().optional(),
-  role: z.string().min(1, 'El rol es obligatorio'),
-  department: z.string().min(1, 'El departamento es obligatorio'),
+  name: z.string().min(1, 'El nombre es obligatorio').max(INPUT_LIMITS.personName),
+  email: z.string().email('Email inválido').max(INPUT_LIMITS.email).optional().or(z.literal('')),
+  password: z.string().max(INPUT_LIMITS.password).optional(),
+  role: z.string().min(1, 'El rol es obligatorio').max(INPUT_LIMITS.roleName),
+  department: z.string().min(1, 'El departamento es obligatorio').max(INPUT_LIMITS.departmentName),
   monthlyCost: z.number().min(0, 'El coste mensual no puede ser negativo'),
   crmUserId: z.number().optional().or(z.literal('')),
   workSchedule: z.object({

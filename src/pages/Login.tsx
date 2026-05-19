@@ -13,6 +13,7 @@ import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { Rocket, LogIn } from "lucide-react";
 import { useAppTranslation } from "@/hooks/useAppTranslation";
 import { TaimboxMark } from "@/components/brand/TaimboxLogo";
+import { INPUT_LIMITS } from "@/constants/inputLimits";
 
 type LoginFormValues = {
   email: string;
@@ -43,8 +44,8 @@ export default function Login() {
   const loginFormSchema = useMemo(
     () =>
       z.object({
-        email: z.string().email(t("auth.login.errors.invalidEmail")),
-        password: z.string().min(1, t("auth.login.errors.passwordRequired")),
+        email: z.string().email(t("auth.login.errors.invalidEmail")).max(INPUT_LIMITS.email),
+        password: z.string().min(1, t("auth.login.errors.passwordRequired")).max(INPUT_LIMITS.password),
       }),
     [t]
   );
@@ -53,11 +54,11 @@ export default function Login() {
     () =>
       z
         .object({
-          name: z.string().min(2, t("auth.register.errors.nameTooShort")),
-          email: z.string().email(t("auth.register.errors.invalidEmail")),
-          password: z.string().min(6, t("auth.register.errors.passwordTooShort")),
-          confirmPassword: z.string().min(6, t("auth.register.errors.confirmPasswordRequired")),
-          agencyName: z.string().min(2, t("auth.register.errors.agencyNameRequired")),
+          name: z.string().min(2, t("auth.register.errors.nameTooShort")).max(INPUT_LIMITS.personName),
+          email: z.string().email(t("auth.register.errors.invalidEmail")).max(INPUT_LIMITS.email),
+          password: z.string().min(6, t("auth.register.errors.passwordTooShort")).max(INPUT_LIMITS.password),
+          confirmPassword: z.string().min(6, t("auth.register.errors.confirmPasswordRequired")).max(INPUT_LIMITS.password),
+          agencyName: z.string().min(2, t("auth.register.errors.agencyNameRequired")).max(INPUT_LIMITS.agencyName),
         })
         .refine((data) => data.password === data.confirmPassword, {
           message: t("auth.register.errors.passwordsDontMatch"),
@@ -306,6 +307,7 @@ export default function Login() {
                           <Input
                             type="email"
                             autoComplete="username"
+                            maxLength={INPUT_LIMITS.email}
                             placeholder={t("auth.login.fields.email.placeholder")}
                             className="bg-slate-50 border-slate-200 focus:border-indigo-500"
                             {...field}
@@ -325,6 +327,7 @@ export default function Login() {
                           <Input
                             type="password"
                             autoComplete="current-password"
+                            maxLength={INPUT_LIMITS.password}
                             placeholder={t("auth.login.fields.password.placeholder")}
                             className="bg-slate-50 border-slate-200 focus:border-indigo-500"
                             {...field}
@@ -380,6 +383,7 @@ export default function Login() {
                     <Input
                       type="email"
                       autoComplete="email"
+                      maxLength={INPUT_LIMITS.email}
                       placeholder={t("auth.forgotPassword.emailPlaceholder")}
                       value={forgotEmail}
                       onChange={(e) => setForgotEmail(e.target.value)}
@@ -426,6 +430,7 @@ export default function Login() {
                         <FormControl>
                           <Input
                             autoComplete="name"
+                            maxLength={INPUT_LIMITS.personName}
                             placeholder={t("auth.register.fields.name.placeholder")}
                             className="bg-slate-50 border-slate-200 focus:border-indigo-500"
                             {...field}
@@ -445,6 +450,7 @@ export default function Login() {
                           <Input
                             type="email"
                             autoComplete="email"
+                            maxLength={INPUT_LIMITS.email}
                             placeholder={t("auth.register.fields.email.placeholder")}
                             className="bg-slate-50 border-slate-200 focus:border-indigo-500"
                             {...field}
@@ -466,6 +472,7 @@ export default function Login() {
                             <Input
                               type="password"
                               autoComplete="new-password"
+                              maxLength={INPUT_LIMITS.password}
                               placeholder="••••••••"
                               className="bg-slate-50 border-slate-200 focus:border-indigo-500"
                               {...field}
@@ -485,6 +492,7 @@ export default function Login() {
                             <Input
                               type="password"
                               autoComplete="new-password"
+                              maxLength={INPUT_LIMITS.password}
                               placeholder="••••••••"
                               className="bg-slate-50 border-slate-200 focus:border-indigo-500"
                               {...field}
@@ -504,6 +512,7 @@ export default function Login() {
                         <FormControl>
                           <Input
                             placeholder={t("auth.register.fields.agencyName.placeholder")}
+                            maxLength={INPUT_LIMITS.agencyName}
                             className="bg-slate-50 border-slate-200 focus:border-indigo-500"
                             {...field}
                             onBlur={(e) => checkAvailability('agencyName', e.target.value)}

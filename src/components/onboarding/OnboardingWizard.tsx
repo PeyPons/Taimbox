@@ -15,6 +15,7 @@ import { useAgency } from '@/contexts/AgencyContext';
 import { useApp } from '@/contexts/AppContext';
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/lib/notify';
+import { INPUT_LIMITS } from '@/constants/inputLimits';
 import {
   Users,
   UserCircle,
@@ -262,18 +263,18 @@ function parseDepartmentsFromSettings(raw: AgencySettings['departments']): DeptD
 }
 
 const clientSchema = z.object({
-  name: z.string().min(2, 'El nombre del cliente es obligatorio'),
+  name: z.string().min(2, 'El nombre del cliente es obligatorio').max(INPUT_LIMITS.clientName),
   color: z.string().min(1, 'Selecciona un color'),
 });
 
 const projectSchema = z
   .object({
-    name: z.string().min(2, 'El nombre del proyecto es obligatorio'),
+    name: z.string().min(2, 'El nombre del proyecto es obligatorio').max(INPUT_LIMITS.projectName),
     budgetHours: z.number().min(1, 'El budget debe ser mayor a 0'),
     minHours: z.number().min(0).optional(),
     monthlyFee: z.number().min(0).optional(),
     responsibleDepartmentId: z.string().optional(),
-    projectType: z.string().optional(),
+    projectType: z.string().max(INPUT_LIMITS.projectType).optional(),
     deliverableContractFee: z.string().optional().default(''),
     deliverableStartDate: z.string().optional().default(''),
     deliverableDueDate: z.string().optional().default(''),

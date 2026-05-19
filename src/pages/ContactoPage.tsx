@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/lib/notify';
+import { INPUT_LIMITS } from '@/constants/inputLimits';
 
 export default function ContactoPage() {
     const [formData, setFormData] = useState({
@@ -45,6 +46,18 @@ export default function ContactoPage() {
             setStatus('error');
             setStatusMessage('Revisa los campos: nombre, email válido, asunto y mensaje.');
             toast.error('Faltan datos o el email no es válido');
+            return;
+        }
+
+        if (
+            cleanName.length > INPUT_LIMITS.personName
+            || cleanEmail.length > INPUT_LIMITS.email
+            || cleanSubject.length > INPUT_LIMITS.contactSubject
+            || cleanMessage.length > INPUT_LIMITS.contactMessage
+        ) {
+            setStatus('error');
+            setStatusMessage('Uno o más campos superan la longitud máxima permitida.');
+            toast.error('Revisa la longitud de los campos');
             return;
         }
 
@@ -166,6 +179,7 @@ export default function ContactoPage() {
                                                     value={formData.name}
                                                     onChange={handleChange}
                                                     required
+                                                    maxLength={INPUT_LIMITS.personName}
                                                     placeholder="Tu nombre"
                                                     className="bg-slate-950 border-slate-800 text-white placeholder:text-slate-600 focus-visible:ring-indigo-500"
                                                 />
@@ -179,6 +193,7 @@ export default function ContactoPage() {
                                                     value={formData.email}
                                                     onChange={handleChange}
                                                     required
+                                                    maxLength={INPUT_LIMITS.email}
                                                     placeholder="tu@empresa.com"
                                                     className="bg-slate-950 border-slate-800 text-white placeholder:text-slate-600 focus-visible:ring-indigo-500"
                                                 />
@@ -193,6 +208,7 @@ export default function ContactoPage() {
                                                 value={formData.subject}
                                                 onChange={handleChange}
                                                 required
+                                                maxLength={INPUT_LIMITS.contactSubject}
                                                 placeholder="¿Sobre qué quieres hablarnos?"
                                                 className="bg-slate-950 border-slate-800 text-white placeholder:text-slate-600 focus-visible:ring-indigo-500"
                                             />
@@ -206,6 +222,7 @@ export default function ContactoPage() {
                                                 value={formData.message}
                                                 onChange={handleChange}
                                                 required
+                                                maxLength={INPUT_LIMITS.contactMessage}
                                                 placeholder="Escribe tu mensaje aquí..."
                                                 className="min-h-[150px] bg-slate-950 border-slate-800 text-white placeholder:text-slate-600 focus-visible:ring-indigo-500 resize-y"
                                             />

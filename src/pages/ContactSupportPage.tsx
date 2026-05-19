@@ -27,6 +27,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Loader2, MessageCircle, CheckCircle, Eye, Send } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { SupportMessageContent } from "@/components/support/SupportMessageContent";
+import { INPUT_LIMITS } from "@/constants/inputLimits";
 
 interface MyTicketRow {
   id: string;
@@ -141,8 +142,16 @@ export default function ContactSupportPage() {
       toast.error(t("app.support.contact.toasts.subjectRequired"));
       return;
     }
+    if (subject.trim().length > INPUT_LIMITS.supportSubject) {
+      toast.error(t("app.support.contact.toasts.subjectTooLong", { max: INPUT_LIMITS.supportSubject, defaultValue: `El asunto no puede superar ${INPUT_LIMITS.supportSubject} caracteres` }));
+      return;
+    }
     if (!message.trim()) {
       toast.error(t("app.support.contact.toasts.messageRequired"));
+      return;
+    }
+    if (message.trim().length > INPUT_LIMITS.supportMessage) {
+      toast.error(t("app.support.contact.toasts.messageTooLong", { max: INPUT_LIMITS.supportMessage, defaultValue: `El mensaje no puede superar ${INPUT_LIMITS.supportMessage} caracteres` }));
       return;
     }
     setLoading(true);
@@ -170,6 +179,10 @@ export default function ContactSupportPage() {
   const sendReply = async () => {
     if (!selectedTicketId || !replyText?.trim()) {
       toast.error(t("app.support.contact.toasts.replyRequired"));
+      return;
+    }
+    if (replyText.trim().length > INPUT_LIMITS.supportMessage) {
+      toast.error(t("app.support.contact.toasts.messageTooLong", { max: INPUT_LIMITS.supportMessage, defaultValue: `El mensaje no puede superar ${INPUT_LIMITS.supportMessage} caracteres` }));
       return;
     }
     setSendingReply(true);
@@ -242,7 +255,7 @@ export default function ContactSupportPage() {
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
                   placeholder={t("app.support.contact.form.subjectPlaceholder")}
-                  maxLength={200}
+                  maxLength={INPUT_LIMITS.supportSubject}
                 />
               </div>
               <div className="space-y-2">
@@ -256,6 +269,7 @@ export default function ContactSupportPage() {
                   onChange={setMessage}
                   placeholder={t("app.support.contact.form.messagePlaceholder")}
                   minHeight="140px"
+                  maxLength={INPUT_LIMITS.supportMessage}
                 />
               </div>
               <Button type="submit" disabled={loading}>
@@ -472,6 +486,7 @@ export default function ContactSupportPage() {
                       onChange={setReplyText}
                       placeholder={t("app.support.contact.detail.replyPlaceholder")}
                       minHeight="100px"
+                      maxLength={INPUT_LIMITS.supportMessage}
                     />
                     <Button
                       size="sm"

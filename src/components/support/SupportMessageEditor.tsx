@@ -16,6 +16,7 @@ interface SupportMessageEditorProps {
   minHeight?: string;
   className?: string;
   id?: string;
+  maxLength?: number;
 }
 
 function Toolbar({ editor }: { editor: Editor | null }) {
@@ -63,6 +64,7 @@ export function SupportMessageEditor({
   minHeight = "120px",
   className,
   id,
+  maxLength,
 }: SupportMessageEditorProps) {
   const editor = useEditor({
     extensions: [
@@ -82,7 +84,11 @@ export function SupportMessageEditor({
       const md = "getMarkdown" in ed && typeof (ed as { getMarkdown: () => string }).getMarkdown === "function"
         ? (ed as { getMarkdown: () => string }).getMarkdown()
         : "";
-      onChange(md);
+      const next = maxLength != null && md.length > maxLength ? md.slice(0, maxLength) : md;
+      if (next !== md) {
+        ed.commands.setContent(next || "", { contentType: "markdown", emitUpdate: false });
+      }
+      onChange(next);
     },
     immediatelyRender: false,
   });

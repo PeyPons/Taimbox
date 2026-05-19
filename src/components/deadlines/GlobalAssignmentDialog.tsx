@@ -17,9 +17,10 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Save } from 'lucide-react';
 import type { GlobalAssignment } from '@/types';
 import type { Employee } from '@/types';
+import { INPUT_LIMITS } from '@/constants/inputLimits';
 
 const schema = z.object({
-  name: z.string().min(1, 'El nombre es obligatorio'),
+  name: z.string().min(1, 'El nombre es obligatorio').max(INPUT_LIMITS.assignmentName),
   hours: z.number().min(0.1, 'Las horas deben ser mayores a 0'),
   affectsAll: z.boolean(),
   affectedEmployeeIds: z.array(z.string()).optional().default([]),

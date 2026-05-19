@@ -48,13 +48,13 @@ export function MetricLine({
     <div
       className={cn(
         'flex items-baseline gap-1 w-full leading-tight tabular-nums',
-        size === 'xs' ? 'text-[9px] h-[12px]' : 'text-[10px] sm:text-[11px] h-[14px]'
+        size === 'xs' ? 'text-[10px] h-[13px]' : 'text-[10px] sm:text-[11px] h-[14px]'
       )}
     >
       <span
         className={cn(
           'shrink-0',
-          size === 'xs' ? 'w-[1.9rem]' : 'w-[2.1rem]',
+          size === 'xs' ? 'w-[2rem]' : 'w-[2.1rem]',
           isActive ? 'text-primary-foreground/70' : 'text-slate-500'
         )}
       >
