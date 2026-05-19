@@ -3,7 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
-import { Calendar, Check, ChevronDown, GanttChart, LayoutGrid, Plus, Search, SlidersHorizontal, TrendingUp } from 'lucide-react';
+import { Calendar, Check, ChevronDown, LayoutGrid, Plus, Search, SlidersHorizontal, TrendingUp } from 'lucide-react';
 
 type SortOption = 'budget_desc' | 'budget_asc' | 'my_hours_desc' | 'my_hours_asc' | 'name_asc' | 'name_desc';
 
@@ -13,7 +13,6 @@ interface AllocationToolbarControlsProps {
   onSearchTermChange: (value: string) => void;
   effectiveShowAllWeeks: boolean;
   onToggleShowAllWeeks: () => void;
-  onOpenTimeline: () => void;
   onOpenWeekly: () => void;
   sortButtonLabel: string;
   sortOptionLabel: string;
@@ -30,7 +29,6 @@ export function AllocationToolbarControls({
   onSearchTermChange,
   effectiveShowAllWeeks,
   onToggleShowAllWeeks,
-  onOpenTimeline,
   onOpenWeekly,
   sortButtonLabel,
   sortOptionLabel,
@@ -78,23 +76,6 @@ export function AllocationToolbarControls({
             </Button>
           </TooltipTrigger>
           <TooltipContent side="bottom">Vista: {effectiveShowAllWeeks ? "mes completo (todas las semanas)" : "semana actual"}</TooltipContent>
-        </Tooltip>
-
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              className={cn("h-7 px-2 text-slate-500 hover:text-indigo-600", isMobile && "h-11 min-h-[44px] px-3")}
-              onClick={onOpenTimeline}
-            >
-              <GanttChart className="h-3.5 w-3.5" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom" className="max-w-[220px]">
-            <p className="font-medium">Timeline</p>
-            <p className="text-xs text-muted-foreground mt-0.5">Todas las semanas del mes en una línea para comparar cargas de un vistazo.</p>
-          </TooltipContent>
         </Tooltip>
 
         <Tooltip>

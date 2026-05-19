@@ -1,5 +1,4 @@
-import { useState, useEffect, useMemo, useRef, memo } from 'react';
-import type { ComponentType } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAgency } from '@/contexts/AgencyContext';
 import { useForm } from 'react-hook-form';
@@ -29,6 +28,7 @@ import { formatCurrency, cn } from '@/lib/utils';
 import { toast } from '@/lib/notify';
 import { useAnonymizeAds } from '@/hooks/useAnonymizeAds';
 import { AnonymizedContent } from '@/components/ads/AnonymizedContent';
+import { AdsStatCard } from '@/components/ads/AdsStatCard';
 
 const GoogleIcon = () => (
   <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="currentColor">
@@ -118,36 +118,6 @@ const getStatusConfig = (status: string, t: any) => {
     default: return { color: 'bg-emerald-500', text: t('ads.status.ok', 'OK'), icon: CheckCircle2, badgeClass: 'bg-emerald-100 text-emerald-700 border-emerald-200' };
   }
 };
-
-// Componente de stat card para el header
-interface StatCardProps {
-  icon: ComponentType<{ className?: string }>;
-  label: string;
-  value: string;
-  subValue?: string;
-  color?: string;
-}
-
-const StatCard = memo(function StatCard({ icon: Icon, label, value, subValue, color = 'slate' }: StatCardProps) {
-  const colorClasses: Record<string, string> = {
-    slate: 'bg-slate-50 border-slate-200',
-    blue: 'bg-blue-50 border-blue-200',
-    emerald: 'bg-emerald-50 border-emerald-200',
-    amber: 'bg-amber-50 border-amber-200',
-    red: 'bg-red-50 border-red-200',
-  };
-
-  return (
-    <div className={cn("rounded-xl border p-4", colorClasses[color])}>
-      <div className="flex items-center gap-2 text-slate-500 mb-2">
-        <Icon className="h-4 w-4" />
-        <span className="text-xs font-medium uppercase">{label}</span>
-      </div>
-      <p className="text-2xl font-bold text-slate-900">{value}</p>
-      {subValue && <p className="text-xs text-slate-500 mt-1">{subValue}</p>}
-    </div>
-  );
-});
 
 export default function AdsPage() {
   const { t } = useTranslation('app');
@@ -605,7 +575,7 @@ export default function AdsPage() {
   return (
     <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6 pb-20">
       {/* Header */}
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-4 min-w-0">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div className="flex items-center gap-3">
             <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg shadow-blue-500/20">
@@ -638,43 +608,43 @@ export default function AdsPage() {
         </div>
 
         {/* Stats Cards - Reorganized for PPC */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-          <StatCard
+        <div className="grid grid-cols-1 min-[400px]:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-2 sm:gap-3 min-w-0">
+          <AdsStatCard
             icon={Target}
             label={t('ads.stats.investment', 'Inversión')}
             value={formatCurrency(globalStats.totalSpent)}
             subValue={`${t('ads.stats.of', 'de')} ${formatCurrency(globalStats.totalBudget)}`}
             color="blue"
           />
-          <StatCard
+          <AdsStatCard
             icon={ArrowUpRight}
             label={t('ads.stats.clicks', 'Clicks')}
             value={globalStats.totalClicks.toLocaleString('es-ES')}
             subValue={`CTR ${globalStats.globalCtr.toFixed(2)}%`}
             color="slate"
           />
-          <StatCard
+          <AdsStatCard
             icon={TrendingUp}
             label={t('ads.stats.conversions', 'Conversiones')}
             value={globalStats.totalConversions.toFixed(0)}
             subValue={`CPA ${formatCurrency(globalStats.globalCpa)}`}
             color="emerald"
           />
-          <StatCard
+          <AdsStatCard
             icon={Target}
             label={t('ads.stats.roas', 'ROAS')}
             value={`${globalStats.globalRoas.toFixed(2)}x`}
             subValue={`CPC ${formatCurrency(globalStats.globalCpc)}`}
             color={globalStats.globalRoas >= 2 ? 'emerald' : globalStats.globalRoas >= 1 ? 'amber' : 'red'}
           />
-          <StatCard
+          <AdsStatCard
             icon={ArrowDownRight}
             label={t('ads.stats.dailyRecommended', 'Diario recomendado')}
             value={formatCurrency(globalStats.totalRecommendedDaily)}
             subValue={`${t('common.actual', 'Actual')}: ${formatCurrency(globalStats.totalCurrentDaily)}`}
             color={globalStats.totalRecommendedDaily < globalStats.totalCurrentDaily ? 'amber' : 'emerald'}
           />
-          <StatCard
+          <AdsStatCard
             icon={AlertTriangle}
             label={t('ads.stats.atRisk', 'En riesgo')}
             value={globalStats.atRisk.toString()}

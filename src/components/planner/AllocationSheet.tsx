@@ -1,6 +1,5 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
-import { TimelineSheet } from '@/components/shared/TimelineSheet';
 import { WeeklyReportDialog } from '@/components/employee/WeeklyReportDialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from '@/components/ui/button';
@@ -14,7 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAppAllocationActions, useAppAllocations, useAppEmployees, useAppProjects, useAppWeeklyFeedback } from '@/contexts/AppContext';
 import { useAgency } from '@/contexts/AgencyContext';
 import { Allocation, Project } from '@/types';
-import { CalendarDays, X, ChevronLeft, ChevronRight, MoreHorizontal, ArrowRightCircle, Search, TrendingUp, TrendingDown, CheckCircle2, Users, ChevronDown, Palmtree, Zap, Clock, LayoutGrid, Calendar, FoldVertical, UnfoldVertical, ArrowUpDown, SortAsc, SortDesc, GanttChart, Filter, SlidersHorizontal, ArrowRightLeft, Lock, Check, Plus, Link as LinkIcon, AlertTriangle, AlertOctagon } from 'lucide-react';
+import { CalendarDays, X, ChevronLeft, ChevronRight, MoreHorizontal, ArrowRightCircle, Search, TrendingUp, TrendingDown, CheckCircle2, Users, ChevronDown, Palmtree, Zap, Clock, LayoutGrid, Calendar, FoldVertical, UnfoldVertical, ArrowUpDown, SortAsc, SortDesc, Filter, SlidersHorizontal, ArrowRightLeft, Lock, Check, Plus, Link as LinkIcon, AlertTriangle, AlertOctagon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getWeeksForMonth, getStorageKey, isAllocationInEffectiveMonth, getWeekEndDate } from '@/utils/dateUtils';
 import { useWeeklyCloseDay } from '@/hooks/useWeeklyCloseDay';
@@ -89,8 +88,6 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
   const isTimeTrackerEnabled = (currentAgency?.settings?.modules?.timeTracker ?? false) && currentUser?.id === employeeId && currentUser?.user_id != null;
   const preference = currentAgency?.settings?.hoursTrackingPreference;
 
-  // Estados para los sheets de Timeline y Weekly
-  const [timelineOpen, setTimelineOpen] = useState(false);
   const [weeklyOpen, setWeeklyOpen] = useState(false);
   const [weeklyFocusAllocationId, setWeeklyFocusAllocationId] = useState<string | null>(null);
 
@@ -710,7 +707,6 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
               searchTerm={searchTerm}
               onSearchTermChange={setSearchTerm}
               onToggleShowAllWeeks={() => setShowAllWeeks(!showAllWeeks)}
-              onOpenTimeline={() => setTimelineOpen(true)}
               onOpenWeekly={() => {
                 setWeeklyFocusAllocationId(null);
                 setWeeklyOpen(true);
@@ -1802,12 +1798,6 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Sheets de Timeline y Weekly */}
-      <TimelineSheet
-        open={timelineOpen}
-        onOpenChange={setTimelineOpen}
-        initialViewDate={viewDate}
-      />
       <WeeklyReportDialog
         open={weeklyOpen}
         onOpenChange={(o) => {

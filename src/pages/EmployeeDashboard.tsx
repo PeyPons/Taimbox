@@ -620,9 +620,12 @@ export default function EmployeeDashboard() {
     );
   }
 
-  // Columnas de semana: ancho mínimo para que el contenido quepa sin truncar (experiencia premium, scroll horizontal si hace falta)
-  const weekColMin = 140;
-  const gridTemplate = `${isMobile ? '100px' : '200px'} repeat(${weeks.length}, minmax(${weekColMin}px, 1fr)) 100px`;
+  // Columnas de semana: ancho fijo para que el contenido detallado no se comprima (scroll horizontal si hace falta)
+  const calendarColWidth = 200;
+  const weekColWidth = 152;
+  const totalColWidth = 100;
+  const gridMinWidth = calendarColWidth + weeks.length * weekColWidth + totalColWidth;
+  const gridTemplate = `${calendarColWidth}px repeat(${weeks.length}, ${weekColWidth}px) ${totalColWidth}px`;
   const monthlyLoad = getEmployeeMonthlyLoad(myEmployeeProfile.id, currentMonth.getFullYear(), currentMonth.getMonth());
 
   return (
@@ -905,6 +908,7 @@ export default function EmployeeDashboard() {
           ) : (
             <Card className="border-indigo-100 shadow-sm overflow-hidden" data-tour="calendar">
               <div className="overflow-x-auto custom-scrollbar w-full">
+                <div style={{ minWidth: gridMinWidth }}>
                 <div className="grid bg-slate-50/50 border-b" style={{ gridTemplateColumns: gridTemplate }}>
                   <div className="px-4 py-3 font-bold text-sm text-slate-700 flex items-center border-r sticky left-0 z-20 bg-slate-50">{t('team.dashboard.calendar', 'Calendario')}</div>
                   {weeks.map((week, index) => {
@@ -948,6 +952,7 @@ export default function EmployeeDashboard() {
                       )}>{monthlyLoad.percentage.toFixed(1)}%</span>
                     </div>
                   </div>
+                </div>
                 </div>
               </div>
             </Card>

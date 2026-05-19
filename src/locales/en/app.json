@@ -664,8 +664,8 @@
           "recommendedDaily": "Avg daily target",
           "avgDailySub": "so far this month",
           "recommendedDailySub": "to close the month on budget",
-          "googleNote": "Taimbox calculates the monthly budget by summing the daily limits (x30.4) of your active campaigns in Google Ads. You can <strong class=\"text-slate-600\">override this budget</strong> manually here to compare against a different target.",
-          "metaNote": "The spending limit in Meta Ads is configured in Facebook (campaign, set or shared budget). Here you define the <strong class=\"text-slate-600\">monthly target budget</strong> in Taimbox to compare real pace vs. target.",
+          "googleNote": "Taimbox calculates the monthly budget by summing the daily limits (x30.4) of your active campaigns in Google Ads. You can <strong>override this budget</strong> manually here to compare against a different target.",
+          "metaNote": "The spending limit in Meta Ads is configured in Facebook (campaign, set or shared budget). Here you define the <strong>monthly target budget</strong> in Taimbox to compare real pace vs. target.",
           "paceWarningGoogle": "Spending pace is above the target to not exceed the monthly budget. Review campaigns in Google Ads, this usually happens if daily budgets sum more than the monthly target divided by 30.",
           "paceWarningMeta": "Spending pace is above the target to not exceed the monthly budget. Review and adjust limits in Meta Ads according to your structure (campaign, set or ad account).",
           "forecastTooltip": "Uses the average daily spend of the month (spent ÷ days elapsed) projected to the full calendar. If you recently changed the pace, it may not match the average daily target; that value is the pace to close within Taimbox's target budget."
@@ -1978,8 +1978,8 @@
       "recommendedDaily": "Avg daily target",
       "avgDailySub": "so far this month",
       "recommendedDailySub": "to close the month on budget",
-      "googleNote": "Taimbox calculates the monthly budget by summing the daily limits (x30.4) of your active campaigns in Google Ads. You can <strong class=\"text-slate-600\">override this budget</strong> manually here to compare against a different target.",
-      "metaNote": "The spending limit in Meta Ads is configured in Facebook (campaign, set or shared budget). Here you define the <strong class=\"text-slate-600\">monthly target budget</strong> in Taimbox to compare real pace vs. target.",
+      "googleNote": "Taimbox calculates the monthly budget by summing the daily limits (x30.4) of your active campaigns in Google Ads. You can <strong>override this budget</strong> manually here to compare against a different target.",
+      "metaNote": "The spending limit in Meta Ads is configured in Facebook (campaign, set or shared budget). Here you define the <strong>monthly target budget</strong> in Taimbox to compare real pace vs. target.",
       "paceWarningGoogle": "Spending pace is above the target to not exceed the monthly budget. Review campaigns in Google Ads, this usually happens if daily budgets sum more than the monthly target divided by 30.",
       "paceWarningMeta": "Spending pace is above the target to not exceed the monthly budget. Review and adjust limits in Meta Ads according to your structure (campaign, set or ad account).",
       "forecastTooltip": "Uses the average daily spend of the month (spent ÷ days elapsed) projected to the full calendar. If you recently changed the pace, it may not match the average daily target; that value is the pace to close within Taimbox's target budget."

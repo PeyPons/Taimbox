@@ -131,6 +131,20 @@ export function AllocationWeekMetricsDisplay({
   );
 }
 
+export function weekCellSurfaceClass(displayStatus: LoadStatus, isCurrentWeek?: boolean) {
+  if (isCurrentWeek) return 'border-indigo-300 bg-indigo-50/30 ring-1 ring-indigo-200/80';
+  switch (displayStatus) {
+    case 'overload':
+      return 'border-red-200 bg-red-50/60';
+    case 'warning':
+      return 'border-amber-200 bg-amber-50/40';
+    case 'healthy':
+      return 'border-emerald-200 bg-emerald-50/35';
+    default:
+      return 'border-slate-200 bg-slate-50/40';
+  }
+}
+
 export function weekCardSurfaceClass(displayStatus: LoadStatus, isActive?: boolean) {
   if (isActive) return 'border-indigo-400 bg-indigo-50/40 ring-1 ring-indigo-200';
   switch (displayStatus) {

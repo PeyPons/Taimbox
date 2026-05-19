@@ -27,6 +27,7 @@ interface MobilePlannerViewProps {
   viewDate: Date;
   getEmployeeMonthlyLoad: (employeeId: string, year: number, month: number) => { hours: number; capacity: number; status: LoadStatus; percentage: number };
   onOpenSheet: (employeeId: string, weekStart: Date, autoAdd?: boolean) => void;
+  cellVariant?: 'compact' | 'detailed';
 }
 
 export function MobilePlannerView({
@@ -36,6 +37,7 @@ export function MobilePlannerView({
   viewDate,
   getEmployeeMonthlyLoad,
   onOpenSheet,
+  cellVariant = 'detailed',
 }: MobilePlannerViewProps) {
   const { getEmployeeLoadForWeek } = useAppOrDemo();
   const { currentAgency } = useAgency();
@@ -54,6 +56,7 @@ export function MobilePlannerView({
           getEmployeeMonthlyLoad={getEmployeeMonthlyLoad}
           onOpenSheet={onOpenSheet}
           availableRoles={availableRoles}
+          cellVariant={cellVariant}
         />
       ))}
     </div>
@@ -69,6 +72,7 @@ interface MobileEmployeeCardProps {
   getEmployeeMonthlyLoad: (employeeId: string, year: number, month: number) => { hours: number; capacity: number; status: LoadStatus; percentage: number };
   onOpenSheet: (employeeId: string, weekStart: Date, autoAdd?: boolean) => void;
   availableRoles: { name: string }[];
+  cellVariant?: 'compact' | 'detailed';
 }
 
 function MobileEmployeeCard({
@@ -80,6 +84,7 @@ function MobileEmployeeCard({
   getEmployeeMonthlyLoad,
   onOpenSheet,
   availableRoles,
+  cellVariant = 'detailed',
 }: MobileEmployeeCardProps) {
   const displayRole = getValidRole(employee, availableRoles);
   const year = viewDate.getFullYear();
@@ -202,6 +207,7 @@ function MobileEmployeeCard({
             breakdown={load.breakdown}
             onClick={() => onOpenSheet(employee.id, week.weekStart)}
             touchTarget
+            variant={cellVariant}
           />
         </div>
       </CardContent>

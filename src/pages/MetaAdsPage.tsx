@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useTranslation, Trans } from 'react-i18next';
 import { useAgency } from '@/contexts/AgencyContext';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,6 +18,7 @@ import { formatCurrency, cn } from '@/lib/utils';
 import { toast } from '@/lib/notify';
 import { useAnonymizeAds } from '@/hooks/useAnonymizeAds';
 import { AnonymizedContent } from '@/components/ads/AnonymizedContent';
+import { AdsStatCard } from '@/components/ads/AdsStatCard';
 
 interface MetaCampaignData { campaign_id: string; campaign_name: string; status: string; cost: number; conversions_value?: number; conversions?: number; clicks?: number; impressions?: number; daily_budget?: number; original_client_name?: string; original_client_id?: string; date?: string; client_id?: string; client_name?: string; created_at?: string; }
 interface SegmentationRule { id: string; account_id: string; keyword: string; virtual_name: string; platform: string; }
@@ -34,13 +35,6 @@ const getStatusConfig = (status: string, t: any) => {
     default: return { color: 'bg-emerald-500', text: t('ads.status.ok', 'OK'), badgeClass: 'bg-emerald-100 text-emerald-700 border-emerald-200' };
   }
 };
-
-import { LucideIcon } from 'lucide-react';
-
-function StatCard({ icon: Icon, label, value, subValue, color = 'slate' }: { icon: LucideIcon; label: string; value: string; subValue?: string; color?: string; }) {
-  const colorClasses: Record<string, string> = { slate: 'bg-slate-50 border-slate-200', blue: 'bg-blue-50 border-blue-200', emerald: 'bg-emerald-50 border-emerald-200', amber: 'bg-amber-50 border-amber-200', red: 'bg-red-50 border-red-200' };
-  return (<div className={cn("rounded-xl border p-4", colorClasses[color])}><div className="flex items-center gap-2 text-slate-500 mb-2"><Icon className="h-4 w-4" /><span className="text-xs font-medium uppercase">{label}</span></div><p className="text-2xl font-bold text-slate-900">{value}</p>{subValue && <p className="text-xs text-slate-500 mt-1">{subValue}</p>}</div>);
-}
 
 interface ClientSettingsMap {
   [key: string]: {
@@ -290,7 +284,7 @@ export default function MetaAdsPage() {
 
   return (
     <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6 pb-20">
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-4 min-w-0">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div className="flex items-center gap-3">
             <div className="p-3 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl shadow-lg shadow-blue-500/20"><Facebook className="w-6 h-6 text-white" /></div>
@@ -320,12 +314,12 @@ export default function MetaAdsPage() {
         </div>
 
         {/* Ritmo vs objetivo: el presupuesto mensual lo define el usuario en Taimbox; la API de Meta no aporta un “presupuesto diario” equivalente al de Google Ads en esta integración */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          <StatCard icon={Target} label={t('ads.stats.investment', 'Inversión')} value={formatCurrency(globalStats.totalSpent)} subValue={t('ads.stats.ofBudget', { amount: formatCurrency(globalStats.totalBudget), defaultValue: `de ${formatCurrency(globalStats.totalBudget)}` })} color="blue" />
-          <StatCard icon={TrendingUp} label={t('ads.stats.conversions', 'Conversiones')} value={reportData.reduce((acc, r) => acc + r.campaigns.reduce((a, c) => a + (c.conversions || 0), 0), 0).toFixed(0)} subValue={t('ads.stats.value', { amount: formatCurrency(globalStats.totalRevenue), defaultValue: `Valor ${formatCurrency(globalStats.totalRevenue)}` })} color="emerald" />
-          <StatCard icon={Target} label={t('ads.table.roas', 'ROAS')} value={`${globalStats.globalRoas.toFixed(2)}x`} subValue={globalStats.globalRoas >= 2 ? `✓ ${t('ads.status.goal', 'Objetivo')}` : globalStats.globalRoas >= 1 ? t('ads.status.acceptable', 'Aceptable') : t('ads.status.below', 'Por debajo')} color={globalStats.globalRoas >= 2 ? 'emerald' : globalStats.globalRoas >= 1 ? 'amber' : 'red'} />
-          <StatCard icon={Calendar} label={t('ads.stats.daysRemaining', 'Días restantes')} value={daysRemaining.toString()} subValue={t('ads.stats.monthProgress', { percent: Math.round((currentDay / daysInMonth) * 100), defaultValue: `${Math.round((currentDay / daysInMonth) * 100)}% del mes` })} color="slate" />
-          <StatCard icon={AlertTriangle} label={t('ads.stats.atRisk', 'En riesgo')} value={globalStats.atRisk.toString()} subValue={t('ads.stats.accountsCount', { count: globalStats.atRisk, defaultValue: 'cuentas' })} color={globalStats.atRisk > 0 ? 'red' : 'slate'} />
+        <div className="grid grid-cols-1 min-[400px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-2 sm:gap-3 min-w-0">
+          <AdsStatCard icon={Target} label={t('ads.stats.investment', 'Inversión')} value={formatCurrency(globalStats.totalSpent)} subValue={t('ads.stats.ofBudget', { amount: formatCurrency(globalStats.totalBudget), defaultValue: `de ${formatCurrency(globalStats.totalBudget)}` })} color="blue" />
+          <AdsStatCard icon={TrendingUp} label={t('ads.stats.conversions', 'Conversiones')} value={reportData.reduce((acc, r) => acc + r.campaigns.reduce((a, c) => a + (c.conversions || 0), 0), 0).toFixed(0)} subValue={t('ads.stats.value', { amount: formatCurrency(globalStats.totalRevenue), defaultValue: `Valor ${formatCurrency(globalStats.totalRevenue)}` })} color="emerald" />
+          <AdsStatCard icon={Target} label={t('ads.table.roas', 'ROAS')} value={`${globalStats.globalRoas.toFixed(2)}x`} subValue={globalStats.globalRoas >= 2 ? `✓ ${t('ads.status.goal', 'Objetivo')}` : globalStats.globalRoas >= 1 ? t('ads.status.acceptable', 'Aceptable') : t('ads.status.below', 'Por debajo')} color={globalStats.globalRoas >= 2 ? 'emerald' : globalStats.globalRoas >= 1 ? 'amber' : 'red'} />
+          <AdsStatCard icon={Calendar} label={t('ads.stats.daysRemaining', 'Días restantes')} value={daysRemaining.toString()} subValue={t('ads.stats.monthProgress', { percent: Math.round((currentDay / daysInMonth) * 100), defaultValue: `${Math.round((currentDay / daysInMonth) * 100)}% del mes` })} color="slate" />
+          <AdsStatCard icon={AlertTriangle} label={t('ads.stats.atRisk', 'En riesgo')} value={globalStats.atRisk.toString()} subValue={t('ads.stats.accountsCount', { count: globalStats.atRisk, defaultValue: 'cuentas' })} color={globalStats.atRisk > 0 ? 'red' : 'slate'} />
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3 items-center bg-white p-3 rounded-xl border shadow-sm">
@@ -446,7 +440,11 @@ export default function MetaAdsPage() {
                           </div>
                         </div>
                         <p className="text-[11px] text-slate-500 leading-snug">
-                          {t('ads.pacing.metaNote', 'El límite de gasto en Meta Ads se configura en Facebook (campaña, conjunto o presupuesto compartido). Aquí defines el presupuesto mensual objetivo en Taimbox para comparar ritmo real vs. objetivo.')}
+                          <Trans
+                            i18nKey="ads.pacing.metaNote"
+                            t={t}
+                            components={{ strong: <strong className="text-slate-600" /> }}
+                          />
                         </p>
                         {isPaceTooHigh && paceDiff > 1 && (
                           <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">

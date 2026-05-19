@@ -30,7 +30,6 @@ interface AllocationSheetHeaderProps {
   searchTerm: string;
   onSearchTermChange: (value: string) => void;
   onToggleShowAllWeeks: () => void;
-  onOpenTimeline: () => void;
   onOpenWeekly: () => void;
   sortButtonLabel: string;
   sortOptionLabel: string;
@@ -57,7 +56,6 @@ export function AllocationSheetHeader({
   searchTerm,
   onSearchTermChange,
   onToggleShowAllWeeks,
-  onOpenTimeline,
   onOpenWeekly,
   sortButtonLabel,
   sortOptionLabel,
@@ -111,7 +109,6 @@ export function AllocationSheetHeader({
             onSearchTermChange={onSearchTermChange}
             effectiveShowAllWeeks={effectiveShowAllWeeks}
             onToggleShowAllWeeks={onToggleShowAllWeeks}
-            onOpenTimeline={onOpenTimeline}
             onOpenWeekly={onOpenWeekly}
             sortButtonLabel={sortButtonLabel}
             sortOptionLabel={sortOptionLabel}

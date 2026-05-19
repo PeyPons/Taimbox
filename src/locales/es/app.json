@@ -682,8 +682,8 @@
           "recommendedDaily": "Objetivo medio diario",
           "avgDailySub": "en lo que va de mes",
           "recommendedDailySub": "para cerrar el mes en el presupuesto",
-          "googleNote": "Taimbox calcula el presupuesto mensual sumando los límites diarios (x30.4) de tus campañas activas en Google Ads. Puedes <strong class=\"text-slate-600\">sobrescribir este presupuesto</strong> manualmente aquí para comparar con un objetivo distinto al de Google.",
-          "metaNote": "El límite de gasto en Meta Ads se configura en Facebook (campaña, conjunto o presupuesto compartido). Aquí defines el <strong class=\"text-slate-600\">presupuesto mensual objetivo</strong> en Taimbox para comparar ritmo real vs. objetivo.",
+          "googleNote": "Taimbox calcula el presupuesto mensual sumando los límites diarios (x30.4) de tus campañas activas en Google Ads. Puedes <strong>sobrescribir este presupuesto</strong> manualmente aquí para comparar con un objetivo distinto al de Google.",
+          "metaNote": "El límite de gasto en Meta Ads se configura en Facebook (campaña, conjunto o presupuesto compartido). Aquí defines el <strong>presupuesto mensual objetivo</strong> en Taimbox para comparar ritmo real vs. objetivo.",
           "paceWarningGoogle": "El ritmo de gasto va por encima del objetivo para no superar el presupuesto mensual. Revisa las campañas en Google Ads, esto suele ocurrir si los presupuestos diarios suman más que el objetivo mensual dividido por 30.",
           "paceWarningMeta": "El ritmo de gasto va por encima del objetivo para no superar el presupuesto mensual. Revisa y ajusta los límites en Meta Ads según tu estructura (campaña, conjunto o cuenta publicitaria).",
           "forecastTooltip": "Usa el gasto medio diario del mes (invertido ÷ días transcurridos) proyectado al calendario completo. Si cambiaste el ritmo recientemente, puede no coincidir con el objetivo medio diario; ese valor es el ritmo para cerrar en el presupuesto objetivo de Taimbox."
@@ -1167,8 +1167,8 @@
       "recommendedDaily": "Objetivo medio diario",
       "avgDailySub": "en lo que va de mes",
       "recommendedDailySub": "para cerrar el mes en el presupuesto",
-      "googleNote": "Taimbox calcula el presupuesto mensual sumando los límites diarios (x30.4) de tus campañas activas en Google Ads. Puedes <strong class=\"text-slate-600\">sobrescribir este presupuesto</strong> manualmente aquí para comparar con un objetivo distinto al de Google.",
-      "metaNote": "El límite de gasto en Meta Ads se configura en Facebook (campaña, conjunto o presupuesto compartido). Aquí defines el <strong class=\"text-slate-600\">presupuesto mensual objetivo</strong> en Taimbox para comparar ritmo real vs. objetivo.",
+      "googleNote": "Taimbox calcula el presupuesto mensual sumando los límites diarios (x30.4) de tus campañas activas en Google Ads. Puedes <strong>sobrescribir este presupuesto</strong> manualmente aquí para comparar con un objetivo distinto al de Google.",
+      "metaNote": "El límite de gasto en Meta Ads se configura en Facebook (campaña, conjunto o presupuesto compartido). Aquí defines el <strong>presupuesto mensual objetivo</strong> en Taimbox para comparar ritmo real vs. objetivo.",
       "paceWarningGoogle": "El ritmo de gasto va por encima del objetivo para no superar el presupuesto mensual. Revisa las campañas en Google Ads, esto suele ocurrir si los presupuestos diarios suman más que el objetivo mensual dividido por 30.",
       "paceWarningMeta": "El ritmo de gasto va por encima del objetivo para no superar el presupuesto mensual. Revisa y ajusta los límites en Meta Ads según tu estructura (campaña, conjunto o cuenta publicitaria).",
       "forecastTooltip": "Usa el gasto medio diario del mes (invertido ÷ días transcurridos) proyectado al calendario completo. Si cambiaste el ritmo recientemente, puede no coincidir con el objetivo medio diario; ese valor es el ritmo para cerrar en el presupuesto objetivo de Taimbox."
