@@ -31,12 +31,17 @@ import { AllocationProjectHeader } from '@/components/planner/allocation/Allocat
 import { AllocationTaskRow } from '@/components/planner/allocation/AllocationTaskRow';
 import { PlannerTaskContextMenu } from '@/components/planner/allocation/PlannerTaskContextMenu';
 import { AllocationSheetHeader } from '@/components/planner/allocation/AllocationSheetHeader';
-import type { WeekStripItemSummary } from '@/components/planner/allocation/AllocationWeekStrip';
+import type { WeekStripItemSummary } from '@/components/planner/allocation/allocationWeekMetrics';
+import { resolveDisplayStatus, weekCardSurfaceClass } from '@/components/planner/allocation/allocationWeekMetrics';
+import { AllocationMonthWeekCardHeader } from '@/components/planner/allocation/AllocationMonthWeekCardHeader';
+import { AllocationMonthProjectCardHeader } from '@/components/planner/allocation/AllocationMonthProjectCardHeader';
+import { MonthWeekScrollControls } from '@/components/planner/allocation/MonthWeekScrollControls';
+import { scrollChildIntoHorizontalView, useHorizontalPanScroll } from '@/hooks/useHorizontalPanScroll';
 import { TaskTimer } from '@/components/employee/TaskTimer';
 import { BatchTaskRow } from '@/components/planner/BatchTaskRow';
 import { AllocationFormDialog } from '@/components/planner/allocation/AllocationFormDialog';
 import { useTasksImpact } from '@/hooks/useTasksImpact';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsMobile, useIsWideLayout } from '@/hooks/use-mobile';
 import { usePermissions } from '@/hooks/usePermissions';
 import { NewTaskRow } from '@/types';
 import { supabase } from '@/lib/supabase';
@@ -60,6 +65,10 @@ interface AllocationSheetProps {
 }
 
 type SortOption = 'budget_desc' | 'budget_asc' | 'my_hours_desc' | 'my_hours_asc' | 'name_asc' | 'name_desc';
+
+/** Ancho fijo por columna en vista mes con scroll horizontal (evita que semanas vacías queden más estrechas). */
+const MONTH_SCROLL_WEEK_COL_CLASS =
+  'flex-none w-[280px] sm:w-[300px] snap-center';
 
 export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, viewDateContext }: AllocationSheetProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -206,7 +215,11 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
   const [transferTask, setTransferTask] = useState<Allocation | null>(null);
 
   const isMobile = useIsMobile();
-  const effectiveShowAllWeeks = showAllWeeks; // Permitir vista mensual en móvil si el usuario lo activa
+  const isWideLayout = useIsWideLayout();
+  const effectiveShowAllWeeks = showAllWeeks;
+  const isMonthGridLayout = effectiveShowAllWeeks && isWideLayout && !isMobile;
+  const isMonthScrollLayout = effectiveShowAllWeeks && !isMonthGridLayout;
+  const showProjectInline = !isMobile && isWideLayout && !effectiveShowAllWeeks;
   const [selectedWeekIndex, setSelectedWeekIndex] = useState<number | null>(null);
 
   // Preferencia de visualización: auto-expandir o colapsar proyectos
@@ -247,6 +260,9 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
     isGlobalLoading,
     loadDataForMonth,
   });
+
+  const monthScrollReady = open && isMonthScrollLayout && !isLoadingTasks;
+  useHorizontalPanScroll(scrollContainerRef, { enabled: monthScrollReady });
 
   // Usar hook personalizado para lógica de negocio
   const {
@@ -347,7 +363,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
   }, [weeks, showAllWeeks, activeWeekIndex]);
 
   const weekStripSummaries = useMemo((): WeekStripItemSummary[] => {
-    if (effectiveShowAllWeeks || weeks.length === 0) return [];
+    if (weeks.length === 0) return [];
     return weeks.map((week) => {
       const weekStartDate = format(week.weekStart, 'yyyy-MM-dd');
       const load = getEmployeeLoadForWeek(
@@ -377,7 +393,6 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
       };
     });
   }, [
-    effectiveShowAllWeeks,
     weeks,
     employeeId,
     getEmployeeLoadForWeek,
@@ -385,6 +400,24 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
     viewDate,
     preference,
   ]);
+
+  const handleWeekNavSelect = useCallback((index: number) => {
+    if (showAllWeeks) {
+      scrollChildIntoHorizontalView(scrollContainerRef.current, `[data-week-index="${index}"]`);
+      return;
+    }
+    setSelectedWeekIndex(index);
+  }, [showAllWeeks]);
+
+  const monthViewActiveWeekIndex = showAllWeeks ? -1 : activeWeekIndex;
+
+  const weekStripVariant = effectiveShowAllWeeks
+    ? isMonthScrollLayout
+      ? 'compact'
+      : 'hidden'
+    : isWideLayout
+      ? 'full'
+      : 'compact';
 
   const monthName = format(viewDate, 'MMMM', { locale: es });
   const monthLabel = `${monthName.charAt(0).toUpperCase() + monthName.slice(1)} - ${format(viewDate, 'yyyy')}`;
@@ -639,7 +672,10 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
     <>
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent
-          className="w-full sm:max-w-[95vw] overflow-y-auto overflow-x-hidden px-3 sm:px-6 bg-slate-50/95 dark:bg-slate-950/95 backdrop-blur-xl border-l shadow-2xl pt-10"
+          className={cn(
+            'w-full sm:max-w-[95vw] overflow-x-hidden px-3 sm:px-6 bg-slate-50/95 dark:bg-slate-950/95 backdrop-blur-xl border-l shadow-2xl pt-10',
+            effectiveShowAllWeeks ? 'flex h-full flex-col overflow-hidden' : 'overflow-y-auto'
+          )}
           onInteractOutside={(e) => {
             // Prevenir cierre del Sheet cuando el tour está activo
             if (isTourActive) {
@@ -661,11 +697,11 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
               effectiveShowAllWeeks={effectiveShowAllWeeks}
               weeks={weeks}
               weekSummaries={weekStripSummaries}
-              activeWeekIndex={activeWeekIndex}
+              activeWeekIndex={monthViewActiveWeekIndex}
               currentWeekIndex={hookCurrentWeekIndex ?? null}
               onPrevMonth={handlePrevMonth}
               onNextMonth={handleNextMonth}
-              onSelectWeek={setSelectedWeekIndex}
+              onSelectWeek={handleWeekNavSelect}
               onAddTask={
                 !effectiveShowAllWeeks && weeks[activeWeekIndex]
                   ? () => startAdd(weeks[activeWeekIndex].weekStart)
@@ -685,11 +721,12 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
               onToggleAutoExpand={() => setAutoExpand(!autoExpand)}
               sortOption={sortOption}
               onSetSortOption={setSortOption}
+              weekStripVariant={weekStripVariant}
             />
           </TooltipProvider>
 
           {isLoadingTasks ? (
-            <div className="min-h-[400px] flex items-center justify-center">
+            <div className={cn('flex items-center justify-center', effectiveShowAllWeeks ? 'flex-1 min-h-0' : 'min-h-[400px]')}>
               <div className="text-slate-400 flex flex-col items-center gap-2">
                 <div className="h-8 w-8 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
                 <span>Cargando tareas...</span>
@@ -698,43 +735,34 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
           ) : (
             <TooltipProvider delayDuration={300}>
               {/* Contenedor relativo para posicionar flechas de navegación */}
-              <div className="relative group">
-                {showAllWeeks && (
-                  <>
-                    <Button
-                      variant="secondary"
-                      size="icon"
-                      className="absolute left-1 top-1/2 -translate-y-1/2 z-10 h-9 w-9 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity hidden sm:flex"
-                      onClick={() => scrollContainerRef.current?.scrollBy({ left: -420, behavior: 'smooth' })}
-                      aria-label="Desplazar semanas hacia la izquierda"
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      size="icon"
-                      className="absolute right-1 sm:right-[240px] top-1/2 -translate-y-1/2 z-10 h-9 w-9 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity hidden sm:flex"
-                      onClick={() => scrollContainerRef.current?.scrollBy({ left: 420, behavior: 'smooth' })}
-                      aria-label="Desplazar semanas hacia la derecha"
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </>
+              <div
+                className={cn(
+                  'relative group flex gap-4 min-w-0',
+                  effectiveShowAllWeeks && 'flex-1 min-h-0',
+                  isMonthGridLayout && (effectiveShowAllWeeks ? 'items-stretch' : 'items-start')
+                )}
+              >
+                {isMonthScrollLayout && (
+                  <MonthWeekScrollControls containerRef={scrollContainerRef} active={monthScrollReady} />
                 )}
                 <div
                   ref={scrollContainerRef}
                   className={cn(
-                    "gap-4 pb-20",
-                    showAllWeeks
-                      ? "flex overflow-x-auto gap-5 pb-8 snap-x snap-mandatory scroll-smooth px-2 sm:px-4 no-scrollbar pr-4 sm:pr-[250px]"
-                      : "flex gap-6 min-w-0 overflow-x-hidden"
+                    'flex-1 min-w-0',
+                    effectiveShowAllWeeks ? 'pb-3 min-h-0' : 'pb-8',
+                    isMonthGridLayout
+                      ? cn('grid gap-3 w-full', effectiveShowAllWeeks ? 'h-full min-h-0 items-stretch' : 'items-start')
+                      : isMonthScrollLayout
+                        ? 'flex h-full min-h-0 overflow-x-auto gap-3 snap-x snap-mandatory px-1 no-scrollbar overscroll-x-contain items-stretch'
+                        : 'flex min-w-0 overflow-x-hidden justify-center'
                   )}
+                  style={
+                    isMonthGridLayout && weeks.length > 0
+                      ? { gridTemplateColumns: `repeat(${weeks.length}, minmax(0, 1fr))` }
+                      : undefined
+                  }
                 >
-                  {/* Contenido principal de semanas */}
-                  <div className={cn(
-                    showAllWeeks ? "contents" : "flex-1 flex justify-center min-w-0 w-full"
-                  )}>
-                    {visibleWeeks.map((week, idx) => {
+                  {visibleWeeks.map((week, idx) => {
                       const index = showAllWeeks ? idx : activeWeekIndex;
                       // Usar el weekStartDate real para buscar allocations (las allocations se guardan con el lunes completo)
                       const weekStartDate = format(week.weekStart, 'yyyy-MM-dd');
@@ -1413,159 +1441,74 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                       // Mostrar loading si está cargando
                       if (isGlobalLoading || isLoadingTasks) {
                         return (
-                          <div key={weekStr} className="flex flex-col gap-3 p-5 rounded-2xl border bg-gradient-to-br from-white to-slate-50/80 min-h-[400px] min-w-0 sm:min-w-[340px] max-w-full sm:max-w-[380px] w-[85vw] sm:w-auto flex-shrink-0 snap-center shadow-sm">
-                            <div className="text-center py-12 text-slate-400">
-                              <Calendar className="w-10 h-10 mx-auto mb-3 opacity-50 animate-pulse" />
-                              <p className="text-sm font-medium mb-1">Cargando tareas...</p>
-                            </div>
+                          <div
+                            key={weekStr}
+                            data-week-index={index}
+                            className={cn(
+                              'flex flex-col gap-2 p-3 rounded-xl border bg-white min-h-[280px] animate-pulse',
+                              effectiveShowAllWeeks && 'h-full min-h-0',
+                              isMonthScrollLayout
+                                ? MONTH_SCROLL_WEEK_COL_CLASS
+                                : 'min-w-0 w-full'
+                            )}
+                          >
+                            <div className="h-16 bg-slate-100 rounded-lg" />
+                            <div className="flex-1 bg-slate-50 rounded-lg min-h-[180px]" />
                           </div>
                         );
                       }
 
+                      const weekSummary: WeekStripItemSummary = weekStripSummaries[index] ?? {
+                        planHours: weekEst,
+                        loadHours: round2(load.hours),
+                        capacity: load.capacity,
+                        status: load.status,
+                        weekReal,
+                        weekComp,
+                        showComp: preference !== 'actual',
+                      };
+                      const cardStatus = resolveDisplayStatus(weekSummary);
+
                       return (
-                        <div key={weekStr} className="flex flex-col gap-3 p-3 sm:p-5 rounded-2xl border bg-gradient-to-br from-white to-slate-50/80 min-h-[400px] min-w-0 sm:min-w-[340px] max-w-full sm:max-w-[380px] w-[85vw] sm:w-auto flex-shrink-0 snap-center shadow-sm hover:shadow-md transition-shadow duration-300">
-                          {/* HEADER SEMANA MEJORADO */}
-                          <div className="flex flex-col gap-3 pb-3 border-b border-slate-100">
-                            <div className="flex items-center justify-between">
-                              {!showAllWeeks ? (
-                                <div className="min-w-0">
-                                  <div className="font-bold text-sm text-foreground/80 uppercase tracking-wider">
-                                    Semana {activeWeekIndex + 1}
-                                  </div>
-                                  <div className="text-[10px] text-slate-400 tabular-nums">
-                                    {weekDateLabel}
-                                  </div>
-                                </div>
-                              ) : (
-                                <div className="flex items-center gap-3">
-                                  <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-bold text-lg shadow-sm">
-                                    {index + 1}
-                                  </div>
-                                  <div>
-                                    <span className="font-bold text-base text-slate-800">Semana {index + 1}</span>
-                                    <div className="text-xs text-slate-500">{weekDateLabel}</div>
-                                  </div>
-                                </div>
-                              )}
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0 hover:bg-indigo-100 hover:text-indigo-700 rounded-full transition-colors shrink-0"
-                                onClick={() => startAdd(week.weekStart)}
-                                aria-label="Añadir tarea"
-                              >
-                                <Plus className="h-4 w-4" />
-                              </Button>
-                            </div>
+                        <div
+                          key={weekStr}
+                          data-week-index={index}
+                          className={cn(
+                            'flex flex-col gap-2 p-2.5 sm:p-3 rounded-xl border min-h-[280px]',
+                            effectiveShowAllWeeks && 'h-full min-h-0',
+                            weekCardSurfaceClass(cardStatus),
+                            isMonthScrollLayout &&
+                              cn(MONTH_SCROLL_WEEK_COL_CLASS, 'shadow-sm'),
+                            isMonthGridLayout &&
+                              'min-w-0 w-full shadow-sm hover:shadow-md transition-shadow'
+                          )}
+                        >
+                          <AllocationMonthWeekCardHeader
+                            weekIndex={index}
+                            weekDateLabel={weekDateLabel}
+                            summary={weekSummary}
+                            loadPercentage={load.percentage}
+                            breakdown={load.breakdown}
+                            compactMetrics={false}
+                          />
 
-                            {/* Barra de carga con marca de capacidad - Rediseñada */}
-                            <div className="relative mt-1">
-                              <div className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden shadow-inner">
-                                <div
-                                  className={cn(
-                                    "h-full transition-all duration-700 ease-out rounded-full",
-                                    load.percentage > 110 ? "bg-gradient-to-r from-red-400 to-red-500" :
-                                      load.percentage < 90 ? "bg-gradient-to-r from-amber-400 to-amber-500" :
-                                        "bg-gradient-to-r from-emerald-400 to-emerald-500"
-                                  )}
-                                  style={{ width: `${Math.min(load.percentage, 100)}%` }}
-                                />
-                              </div>
-                              {/* Porcentaje a la derecha (leyenda: verde 90-110%, amarillo <90%, rojo >110%) */}
-                              <div className={cn(
-                                "absolute right-0 -top-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full",
-                                load.percentage > 110
-                                  ? "text-white bg-red-500"
-                                  : load.percentage < 90
-                                    ? "text-amber-900 bg-amber-400"
-                                    : "text-white bg-emerald-500"
-                              )}>
-                                {Math.round(load.percentage)}%
-                              </div>
-                            </div>
-
-                            {/* Planificación: Est vs Capacidad */}
-                            <div className="flex items-center justify-between text-xs mt-2">
-                              <div className="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-lg">
-                                <span className="text-slate-500">Plan:</span>
-                                <span className="font-bold tabular-nums text-slate-700">{weekEst}h</span>
-                                <span className="text-slate-400">/</span>
-                                <span className="text-slate-500 font-medium">{load.capacity}h</span>
-                              </div>
-                              {weekEst !== load.capacity && (
-                                <div className={cn(
-                                  "font-bold tabular-nums px-2 py-1 rounded-lg text-xs",
-                                  weekEst > load.capacity
-                                    ? "text-red-700 bg-red-50 border border-red-100"
-                                    : "text-emerald-700 bg-emerald-50 border border-emerald-100"
-                                )}>
-                                  {weekEst > load.capacity ? '+' : ''}{round2(weekEst - load.capacity)}h
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Ejecución: Real (+ Comp si aplica). Delta = suma por tareas completadas (no mezcla cronómetro pendiente). */}
-                            {(weekReal > 0 || weekComp > 0 || completedTasks.length > 0) && (
-                              <div className="flex items-center justify-between text-[11px] pt-1 border-t border-dashed">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-blue-600 tabular-nums">
-                                    <span className="text-slate-400 text-[10px]">Real</span> {weekReal}h
-                                  </span>
-                                  {preference !== 'actual' && (
-                                    <>
-                                      <span className="text-slate-300">→</span>
-                                      <span className="text-emerald-600 tabular-nums">
-                                        <span className="text-slate-400 text-[10px]">Comp</span> {weekComp}h
-                                      </span>
-                                    </>
-                                  )}
-                                </div>
-                                {weekPlanDelta !== 0 ? (
-                                  <div className={cn(
-                                    "flex items-center gap-1 font-bold tabular-nums px-1.5 py-0.5 rounded text-[10px]",
-                                    weekPlanDelta >= 0 ? "text-emerald-700 bg-emerald-50" : "text-amber-700 bg-amber-50"
-                                  )}>
-                                    {weekPlanDelta >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                                    {weekPlanDelta >= 0 ? '+' : ''}{weekPlanDelta}h
-                                  </div>
-                                ) : (
-                                  completedTasks.length > 0 && (
-                                    <span className="text-slate-400 text-[10px] font-medium tabular-nums">Exacto</span>
-                                  )
-                                )}
-                              </div>
-                            )}
-
-                            {/* Ausencias/Eventos (si hay) */}
-                            {load.breakdown && load.breakdown.length > 0 && (
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <div className="flex items-center gap-1.5 text-[10px] text-orange-600 bg-orange-50 px-2 py-1 rounded cursor-help border border-orange-100">
-                                    {load.breakdown.some(b => b.type === 'absence') && <Palmtree className="w-3 h-3" />}
-                                    {load.breakdown.some(b => b.type === 'event') && <Zap className="w-3 h-3" />}
-                                    <span className="font-medium">-{round2(load.breakdown.reduce((s, b) => s + b.hours, 0))}h capacidad</span>
-                                  </div>
-                                </TooltipTrigger>
-                                <TooltipContent side="bottom" className="text-xs">
-                                  {load.breakdown.map((b, i) => (
-                                    <div key={i}>{b.reason}: -{b.hours}h</div>
-                                  ))}
-                                </TooltipContent>
-                              </Tooltip>
-                            )}
-                          </div>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="w-full shrink-0 gap-1.5 border-dashed border-indigo-200 text-indigo-700 hover:bg-indigo-50 hover:text-indigo-800 hover:border-indigo-300"
+                            onClick={() => startAdd(week.weekStart)}
+                          >
+                            <Plus className="h-3.5 w-3.5" />
+                            Añadir tarea
+                          </Button>
 
                           {/* LISTA TAREAS */}
-                          <div className={cn("flex-1 overflow-y-auto max-h-[50vh] space-y-2 custom-scrollbar", isMobile ? "pr-3" : "pr-1")}>
+                          <div className={cn('flex-1 overflow-y-auto space-y-1.5 custom-scrollbar min-h-0', isMobile ? 'pr-2' : 'pr-0.5')}>
                             {sortedGroups.length === 0 ? (
-                              <div className="text-center py-8 text-slate-400">
-                                <Calendar className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                                <p className="text-sm font-medium">Sin tareas</p>
-                                <p className="text-xs mt-1">Haz click en + para añadir</p>
-                              </div>
+                              <p className="text-center py-4 text-xs text-slate-400">Sin tareas</p>
                             ) : sortedGroups.map(([projId, projAllocations]) => {
                               const project = getProjectById(projId);
-                              const budgetStatus = getProjectBudgetStatus(projId);
                               const allCompleted = projAllocations.every(a => a.status === 'completed') && !projAllocations.some(a => recentlyToggled.has(a.id));
                               const isCollapsed = autoExpand ? collapsedProjects.has(projId) : !collapsedProjects.has(projId);
                               const sortedTasks = sortTasks(projAllocations);
@@ -1580,86 +1523,58 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                               };
 
                               const isSelected = selectedProjectId === projId;
-                              const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
                               return (
-                                <Collapsible key={projId} open={!isCollapsed} onOpenChange={() => {
-                                  toggleProjectCollapse(projId);
-                                  // Al hacer clic en el proyecto, seleccionar para mostrar desglose (semanal y mensual)
-                                  setSelectedProjectId(projId);
-                                }}>
+                                <Collapsible key={projId} open={!isCollapsed} onOpenChange={() => toggleProjectCollapse(projId)}>
                                   <div className={cn(
-                                    "bg-white border rounded-xl shadow-sm overflow-hidden transition-all duration-200",
-                                    allCompleted && "opacity-70 hover:opacity-100",
+                                    "bg-white border rounded-lg overflow-hidden transition-all duration-200",
+                                    allCompleted && "opacity-75 hover:opacity-100",
                                     isSelected && "ring-2 ring-indigo-400 border-indigo-300",
-                                    !isCollapsed && "shadow-md"
+                                    !isCollapsed && "shadow-sm"
                                   )}>
-                                    <CollapsibleTrigger asChild>
-                                      <div className="cursor-pointer relative group">
-                                        {/* Header compacto para vista mensual */}
-                                        {showAllWeeks ? (
-                                          <div className={cn(
-                                            "px-3 py-2.5 flex items-center gap-2 transition-colors",
-                                            allCompleted ? "bg-emerald-50" : "hover:bg-slate-50"
-                                          )}>
-                                            {/* Indicador de estado */}
-                                            <div className={cn(
-                                              "flex-shrink-0 w-2 h-2 rounded-full",
-                                              allCompleted ? "bg-emerald-500" :
-                                                completedCount > 0 ? "bg-amber-400" : "bg-slate-300"
-                                            )} />
-                                            {/* Nombre del proyecto */}
-                                            <div className="flex-1 min-w-0">
-                                              <div className={cn(
-                                                "font-medium text-sm truncate",
-                                                allCompleted ? "text-emerald-700" : "text-slate-700"
-                                              )}>
-                                                <SensitiveText kind="project" id={projId}>
-                                                  {formatProjectName(project?.name || 'Proyecto')}
-                                                </SensitiveText>
-                                              </div>
-                                              <div className="flex items-center gap-2 text-[10px] text-slate-500 mt-0.5">
-                                                <span className="flex items-center gap-0.5">
-                                                  {allCompleted ? <CheckCircle2 className="w-3 h-3 text-emerald-500" /> : null}
-                                                  {completedCount}/{totalCount} tareas
-                                                </span>
-                                                <span>•</span>
-                                                <span className="font-medium">{myHoursInProject.estimated}h</span>
-                                              </div>
-                                            </div>
-                                            {/* Mini barra de progreso */}
-                                            <div className="flex-shrink-0 w-12 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                              <div
-                                                className={cn(
-                                                  "h-full rounded-full transition-all",
-                                                  progressPercent === 100 ? "bg-emerald-500" : "bg-indigo-400"
-                                                )}
-                                                style={{ width: `${progressPercent}%` }}
-                                              />
-                                            </div>
-                                            <ChevronDown className={cn(
-                                              "w-4 h-4 text-slate-400 transition-transform flex-shrink-0",
-                                              !isCollapsed && "rotate-180"
-                                            )} />
-                                          </div>
-                                        ) : (
-                                          <>
-                                            <AllocationProjectHeader
-                                              project={project}
-                                              budgetStatus={budgetStatus}
-                                              allCompleted={allCompleted}
-                                              taskCount={projAllocations.length}
-                                              myHoursInProject={myHoursInProject}
-                                              currentEmployeeId={employeeId}
-                                            />
-                                            <ChevronDown className={cn(
-                                              "w-4 h-4 text-slate-400 transition-transform absolute right-3 top-1/2 -translate-y-1/2",
-                                              !isCollapsed && "rotate-180"
-                                            )} />
-                                          </>
-                                        )}
-                                      </div>
-                                    </CollapsibleTrigger>
+                                    <div className="relative group flex items-stretch">
+                                      <CollapsibleTrigger asChild>
+                                        <button
+                                          type="button"
+                                          className={cn(
+                                            'flex-1 min-w-0 text-left cursor-pointer',
+                                            allCompleted ? 'bg-emerald-50/60' : 'hover:bg-slate-50'
+                                          )}
+                                        >
+                                          <AllocationMonthProjectCardHeader
+                                            projectId={projId}
+                                            projectName={formatProjectName(project?.name || 'Proyecto')}
+                                            allCompleted={allCompleted}
+                                            completedCount={completedCount}
+                                            totalCount={totalCount}
+                                            estimatedHours={myHoursInProject.estimated}
+                                            isCollapsed={isCollapsed}
+                                          />
+                                        </button>
+                                      </CollapsibleTrigger>
+                                      {showAllWeeks && (
+                                        <Tooltip>
+                                          <TooltipTrigger asChild>
+                                            <Button
+                                              type="button"
+                                              variant="ghost"
+                                              size="sm"
+                                              className={cn(
+                                                'h-auto self-stretch rounded-none border-l px-2.5 shrink-0 hover:bg-indigo-50 hover:text-indigo-700',
+                                                isSelected && 'bg-indigo-50 text-indigo-700'
+                                              )}
+                                              aria-label="Ver equipo y presupuesto del proyecto"
+                                              onClick={() => setSelectedProjectId(isSelected ? null : projId)}
+                                            >
+                                              <Users className="w-3.5 h-3.5" />
+                                            </Button>
+                                          </TooltipTrigger>
+                                          <TooltipContent side="left" className="text-xs">
+                                            Equipo y presupuesto
+                                          </TooltipContent>
+                                        </Tooltip>
+                                      )}
+                                    </div>
                                     <CollapsibleContent>
                                       <div className="divide-y divide-slate-100 border-t">
                                         {sortedTasks.map(alloc => (
@@ -1710,10 +1625,9 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                         </div>
                       );
                     })}
-                  </div>
+                </div>
 
-                  {/* Panel lateral derecho - Detalles del proyecto seleccionado (vista semanal y mensual, solo desktop) */}
-                  {selectedProjectId && !isMobile && (
+                {selectedProjectId && showProjectInline && (
                     <div className="w-80 flex-shrink-0">
                       <div className="sticky top-4 space-y-3">
                         {/* Contenido dinámico: proyecto seleccionado o resumen */}
@@ -1803,7 +1717,6 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                     </div>
                   )}
                 </div>
-              </div>
             </TooltipProvider>
           )}
 
@@ -1811,11 +1724,16 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
         </SheetContent>
       </Sheet>
 
-      {/* Sheet móvil: desglose del proyecto al hacer clic (vista semanal o mensual) */}
-      {isMobile && (
+      {/* Panel proyecto: sheet fuera del layout (vista mes y pantallas estrechas) */}
+      {selectedProjectId && !showProjectInline && (
         <Sheet open={!!selectedProjectId} onOpenChange={(open) => !open && setSelectedProjectId(null)}>
-          <SheetContent side="bottom" className="h-[85vh] rounded-t-2xl pt-6 pb-8 px-4">
-            {selectedProjectId && renderProjectDetail(selectedProjectId, () => setSelectedProjectId(null))}
+          <SheetContent
+            side={isMobile ? 'bottom' : 'right'}
+            className={cn(
+              isMobile ? 'h-[85vh] rounded-t-2xl pt-6 pb-8 px-4' : 'w-full sm:max-w-md pt-10'
+            )}
+          >
+            {renderProjectDetail(selectedProjectId, () => setSelectedProjectId(null))}
           </SheetContent>
         </Sheet>
       )}

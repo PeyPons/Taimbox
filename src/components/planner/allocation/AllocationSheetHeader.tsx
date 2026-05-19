@@ -38,6 +38,7 @@ interface AllocationSheetHeaderProps {
   onToggleAutoExpand: () => void;
   sortOption: SortOption;
   onSetSortOption: (option: SortOption) => void;
+  weekStripVariant?: 'full' | 'compact' | 'hidden';
 }
 
 export function AllocationSheetHeader({
@@ -64,9 +65,10 @@ export function AllocationSheetHeader({
   onToggleAutoExpand,
   sortOption,
   onSetSortOption,
+  weekStripVariant = 'full',
 }: AllocationSheetHeaderProps) {
   return (
-    <SheetHeader className="pb-3 border-b mb-4 space-y-2.5">
+    <SheetHeader className="pb-3 border-b mb-4 space-y-2.5 shrink-0">
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,auto)] gap-x-4 gap-y-2.5 items-center">
         <div className="flex items-center gap-3 min-w-0 order-1">
           {employee.avatarUrl ? (
@@ -122,7 +124,7 @@ export function AllocationSheetHeader({
         </div>
       </div>
 
-      {!effectiveShowAllWeeks && weeks.length > 0 && (
+      {weeks.length > 0 && (
         <AllocationWeekStrip
           weeks={weeks}
           weekSummaries={weekSummaries}
@@ -130,13 +132,9 @@ export function AllocationSheetHeader({
           currentWeekIndex={currentWeekIndex}
           onSelectWeek={onSelectWeek}
           isMobile={isMobile}
+          overviewMode={effectiveShowAllWeeks}
+          variant={weekStripVariant}
         />
-      )}
-
-      {effectiveShowAllWeeks && weeks.length > 0 && (
-        <p className="text-[11px] text-slate-400 px-0.5">
-          Desliza horizontalmente para ver las {weeks.length} semanas del mes
-        </p>
       )}
     </SheetHeader>
   );

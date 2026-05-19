@@ -96,6 +96,10 @@ export function AllocationTaskRow({
         showTaskTimer && timeEntriesSum !== undefined ? round2(timeEntriesSum) : null;
 
     const isCardLayout = showAllWeeks || isMobile;
+    const isMonthCompact = showAllWeeks && !isMobile;
+
+    const monthHourInputClass =
+        'min-w-[2.75rem] w-[4.5ch] max-w-[3.25rem] text-center bg-transparent border-0 border-b border-slate-200 focus:outline-none font-medium font-mono text-slate-700 text-[10px] py-0.5 leading-normal [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none';
 
     const displayTaskName = (() => {
         let cleanName = alloc.taskName || 'Tarea';
@@ -114,7 +118,7 @@ export function AllocationTaskRow({
     return (
         <div className={cn(
             "group flex items-start transition-all touch-manipulation",
-            isCardLayout ? "gap-2.5 p-3" : "gap-2 p-2.5",
+            isMonthCompact ? "gap-2 p-2" : isCardLayout ? "gap-2.5 p-3" : "gap-2 p-2.5",
             isCompleted
                 ? "bg-slate-50/50 hover:bg-slate-100/50"
                 : "hover:bg-primary/10/30"
@@ -129,7 +133,7 @@ export function AllocationTaskRow({
                     isCompleted && "data-[state=checked]:bg-emerald-600"
                 )}
             />
-            <div className={cn("flex-1 min-w-0 flex flex-col", isCardLayout ? "gap-1.5" : "gap-2.5")}>
+            <div className={cn("flex-1 min-w-0 flex flex-col", isMonthCompact ? "gap-1" : isCardLayout ? "gap-1.5" : "gap-2.5")}>
                 <div className="flex items-start gap-2 min-w-0">
                     <div className="flex-1 min-w-0" onDoubleClick={() => onStartInlineEdit()}>
                         {isInlineEditing ? (
@@ -153,7 +157,7 @@ export function AllocationTaskRow({
                                 <p
                                     className={cn(
                                         "font-medium leading-snug min-w-0",
-                                        isCardLayout ? "text-sm line-clamp-2 flex-[1_1_8rem]" : "text-xs line-clamp-2 flex-1",
+                                        isCardLayout ? (isMonthCompact ? "text-xs line-clamp-2 flex-[1_1_8rem]" : "text-sm line-clamp-2 flex-[1_1_8rem]") : "text-xs line-clamp-2 flex-1",
                                         isCompleted && "line-through text-slate-400"
                                     )}
                                     title={displayTaskName}
@@ -174,7 +178,7 @@ export function AllocationTaskRow({
                             allocationId={alloc.id}
                             noteCount={noteCount}
                             className={cn(
-                                isCardLayout ? 'h-8 w-8' : isMobile ? 'h-11 w-11 min-h-[44px] min-w-[44px]' : 'h-6 w-6',
+                                isMonthCompact ? 'h-7 w-7' : isCardLayout ? 'h-8 w-8' : isMobile ? 'h-11 w-11 min-h-[44px] min-w-[44px]' : 'h-6 w-6',
                                 noteCount === 0 && 'opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity',
                                 noteCount > 0 && 'opacity-100'
                             )}
@@ -193,9 +197,9 @@ export function AllocationTaskRow({
                             onMoveTask={onMoveTask}
                             onOpenWeeklyForTask={onOpenWeeklyForTask}
                             triggerClassName={cn(
-                                isCardLayout ? 'h-8 w-8' : isMobile ? 'h-11 w-11 min-h-[44px] min-w-[44px]' : 'h-5 w-5'
+                                isMonthCompact ? 'h-7 w-7' : isCardLayout ? 'h-8 w-8' : isMobile ? 'h-11 w-11 min-h-[44px] min-w-[44px]' : 'h-5 w-5'
                             )}
-                            iconClassName={isCardLayout ? 'h-4 w-4' : isMobile ? 'h-4 w-4' : 'h-3 w-3'}
+                            iconClassName={isMonthCompact ? 'h-3.5 w-3.5' : isCardLayout ? 'h-4 w-4' : isMobile ? 'h-4 w-4' : 'h-3 w-3'}
                         />
                     </div>
                 </div>
@@ -264,9 +268,15 @@ export function AllocationTaskRow({
                     </div>
                 )}
 
-                {/* MÉTRICAS — una sola fila compacta */}
-                <div className={cn(isCardLayout ? "mt-0.5" : "mt-1")}>
+                {/* MÉTRICAS */}
+                <div className={cn(isMonthCompact ? "mt-0" : isCardLayout ? "mt-0.5" : "mt-1")}>
                     {!isCompleted && (
+                        isMonthCompact ? (
+                            <p className="text-[10px] text-slate-500 tabular-nums">
+                                Est.{' '}
+                                <span className="font-medium text-slate-700">{alloc.hoursAssigned}h</span>
+                            </p>
+                        ) : (
                         <div className="flex items-center gap-2 flex-wrap">
                             <div className={cn(
                                 "inline-flex items-center gap-1 text-slate-600 bg-slate-100 rounded-md tabular-nums",
@@ -285,9 +295,62 @@ export function AllocationTaskRow({
                                 />
                             )}
                         </div>
+                        )
                     )}
 
                     {isCompleted && (
+                        isMonthCompact ? (
+                            <div className="flex flex-wrap items-center gap-x-1 gap-y-0.5 text-[10px] text-slate-500 tabular-nums">
+                                <span>Est. {alloc.hoursAssigned}h</span>
+                                <span className="text-slate-300" aria-hidden>·</span>
+                                <span className="inline-flex items-center gap-0.5">
+                                    Real
+                                    <input
+                                        key={`${alloc.id}-hoursActual-${alloc.hoursActual ?? 0}`}
+                                        type="number"
+                                        step="0.5"
+                                        min="0"
+                                        defaultValue={alloc.hoursActual || 0}
+                                        onBlur={(e) => onUpdateInlineHours('hoursActual', e.target.value)}
+                                        className={cn(monthHourInputClass, 'focus:border-blue-400')}
+                                    />
+                                    h
+                                </span>
+                                {preference !== 'actual' && (
+                                    <>
+                                        <span className="text-slate-300" aria-hidden>·</span>
+                                        <span className="inline-flex items-center gap-0.5">
+                                            Comp
+                                            <input
+                                                type="number"
+                                                step="0.5"
+                                                min="0"
+                                                disabled={preference === 'actual'}
+                                                defaultValue={alloc.hoursComputed || 0}
+                                                onBlur={(e) => onUpdateInlineHours('hoursComputed', e.target.value)}
+                                                className={cn(monthHourInputClass, 'focus:border-emerald-400')}
+                                            />
+                                            h
+                                        </span>
+                                    </>
+                                )}
+                                {taskDelta !== null && (
+                                    <>
+                                        <span className="text-slate-300" aria-hidden>·</span>
+                                        {Math.abs(taskDelta) > 0.01 ? (
+                                            <span className={cn(
+                                                'font-medium',
+                                                taskDelta >= 0 ? 'text-emerald-600' : 'text-red-600'
+                                            )}>
+                                                {taskDelta > 0 ? '+' : ''}{taskDelta}h
+                                            </span>
+                                        ) : (
+                                            <span className="text-slate-400">Exacto</span>
+                                        )}
+                                    </>
+                                )}
+                            </div>
+                        ) : (
                         <div className="flex flex-wrap items-center gap-1.5">
                             <div className={cn(
                                 "inline-flex items-center gap-1 text-slate-400 bg-slate-100 rounded-md tabular-nums",
@@ -371,6 +434,7 @@ export function AllocationTaskRow({
                                 </Badge>
                             )}
                         </div>
+                        )
                     )}
                 </div>
             </div>
