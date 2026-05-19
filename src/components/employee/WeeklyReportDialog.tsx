@@ -1,8 +1,18 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,21 +32,117 @@ import {
   parseWeeklyCloseHours,
   normalizeWeeklyHourInput,
 } from '@/hooks/useWeeklyCloseMutations';
+import { getWeeklyProcessedAllocationIds, validateKeepHours } from '@/utils/weeklyCloseShared';
 import { cn } from '@/lib/utils';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
+import type { Allocation } from '@/types';
+
+type WeeklyActionId = 'postpone' | 'moveToEmployee' | 'justify' | 'distribute' | 'keep' | 'cancel';
+type WeeklyOutcomeId = 'done' | 'continue' | 'handoff' | 'blocked';
+
+const WEEKLY_ACTION_META: Record<WeeklyActionId, { label: string; hint: string }> = {
+  keep: { label: 'Cerrar tarea', hint: 'Registrar horas y finalizar' },
+  postpone: { label: 'Continuar en otra semana', hint: 'Registrar lo hecho y mover el saldo' },
+  distribute: { label: 'Dividir en entregas', hint: 'Varias tareas en tu planificación' },
+  moveToEmployee: { label: 'Reasignar a compañero', hint: 'Solo las horas pendientes' },
+  cancel: { label: 'Anular / no se hará', hint: 'Cierra la tarea y elimina el saldo pendiente del plan' },
+  justify: { label: 'Solo dejar nota', hint: 'Explicación sin cambiar horas ni planificación' },
+};
+
+const WEEKLY_OUTCOME_GROUPS: Array<{
+  id: WeeklyOutcomeId;
+  label: string;
+  hint: string;
+  actions: WeeklyActionId[];
+}> = [
+  { id: 'done', label: 'Terminé', hint: 'Registrar horas y cerrar', actions: ['keep'] },
+  { id: 'continue', label: 'Sigo después', hint: 'Mover saldo o dividir', actions: ['postpone', 'distribute'] },
+  { id: 'handoff', label: 'Otro lo hará', hint: 'Pasar lo pendiente', actions: ['moveToEmployee'] },
+  { id: 'blocked', label: 'No aplica', hint: 'Anular o dejar nota', actions: ['cancel', 'justify'] },
+];
+
+function getOutcomeForAction(action: WeeklyActionId | null | undefined): WeeklyOutcomeId | null {
+  if (!action) return null;
+  for (const group of WEEKLY_OUTCOME_GROUPS) {
+    if (group.actions.includes(action)) return group.id;
+  }
+  return null;
+}
+
+function isWeeklyActionDisabledForTask(
+  action: WeeklyActionId,
+  task: Pick<Allocation, 'hoursAssigned' | 'hoursActual'>
+): boolean {
+  const pending = getTaskPendingHours(task);
+  if (action === 'postpone' || action === 'distribute' || action === 'moveToEmployee') return pending <= 0;
+  return false;
+}
+
+function isWeeklyOutcomeDisabled(
+  outcomeId: WeeklyOutcomeId,
+  task: Pick<Allocation, 'hoursAssigned' | 'hoursActual'>
+): boolean {
+  const group = WEEKLY_OUTCOME_GROUPS.find((g) => g.id === outcomeId);
+  if (!group) return true;
+  return group.actions.every((action) => isWeeklyActionDisabledForTask(action, task));
+}
+
+function getEnabledActionsForOutcome(
+  outcomeId: WeeklyOutcomeId,
+  task: Pick<Allocation, 'hoursAssigned' | 'hoursActual'>
+): WeeklyActionId[] {
+  const group = WEEKLY_OUTCOME_GROUPS.find((g) => g.id === outcomeId);
+  if (!group) return [];
+  return group.actions.filter((action) => !isWeeklyActionDisabledForTask(action, task));
+}
+
+function roundTaskHours(num: number) {
+  return Math.round((num + Number.EPSILON) * 100) / 100;
+}
+
+function getTaskPendingHours(task: Pick<Allocation, 'hoursAssigned' | 'hoursActual'>) {
+  return roundTaskHours(Math.max(0, task.hoursAssigned - (task.hoursActual || 0)));
+}
+
 function WeeklyOptionalNote({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
-    <div className="space-y-1.5 border-t pt-4">
-      <Label className="text-sm font-medium text-muted-foreground">Nota (opcional)</Label>
+    <div className="space-y-1 border-t pt-3">
+      <Label className="text-xs font-medium text-muted-foreground">Nota (opcional)</Label>
       <Textarea
         value={value}
         onChange={(e) => onChange(e.target.value)}
         rows={2}
-        className="min-h-[56px] max-h-28 resize-y text-sm"
+        className="min-h-[48px] max-h-24 resize-y text-sm"
         placeholder="Visible en el historial de la agencia."
       />
+    </div>
+  );
+}
+
+function WeeklyRequiredNote({
+  value,
+  onChange,
+  placeholder = 'Explica qué pasó con la tarea. Visible en el historial de la agencia.',
+  helperText = 'La tarea sigue en el planificador; solo queda la nota en el historial.',
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  helperText?: string;
+}) {
+  return (
+    <div className="space-y-1">
+      <Label className="text-xs font-medium">Explicación *</Label>
+      <Textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        rows={2}
+        className="min-h-[48px] max-h-24 resize-y text-sm"
+        placeholder={placeholder}
+      />
+      <p className="text-[11px] text-muted-foreground">{helperText}</p>
     </div>
   );
 }
@@ -73,6 +179,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
     preference,
     applyMoveToEmployee,
     applyJustify,
+    applyCancel,
     applyKeep,
     applyRollover,
     applyDistribute,
@@ -81,7 +188,8 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
 
   const parseHours = parseWeeklyCloseHours;
 
-  const [taskActions, setTaskActions] = useState<Record<string, 'postpone' | 'moveToEmployee' | 'justify' | 'distribute' | 'keep' | null>>({});
+  const [taskActions, setTaskActions] = useState<Record<string, WeeklyActionId | null>>({});
+  const [taskOutcomes, setTaskOutcomes] = useState<Record<string, WeeklyOutcomeId>>({});
   const [taskComments, setTaskComments] = useState<Record<string, string>>({});
   const [distributionTasks, setDistributionTasks] = useState<Record<string, Array<{ id: string; taskName: string; hours: string; weekDate: string }>>>({});
   const [moveToEmployee, setMoveToEmployee] = useState<Record<string, string>>({});
@@ -92,6 +200,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
   const [modalSearch, setModalSearch] = useState('');
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [keepConfirmOpen, setKeepConfirmOpen] = useState(false);
   const [weeklyTab, setWeeklyTab] = useState<'past' | 'current'>('past');
 
   const taskMatchesSearch = useCallback(
@@ -128,19 +237,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
 
   const { openTasks, transferredTasks } = useMemo(() => {
     const today = new Date();
-    const processedByWeeklyIds = new Set(
-      weeklyFeedback
-        .filter(fb => fb.allocationId && (
-          fb.comments?.includes('Tarea completada:') ||
-          fb.comments?.includes('Tarea movida a semana futura') ||
-          fb.comments?.includes('Tarea transferida a') ||
-          fb.comments?.includes('Distribuidas en') ||
-          fb.comments?.includes('Tarea distribuida desde') ||
-          fb.comments?.includes('Tarea con rollover:') ||
-          fb.comments?.includes('Tarea mantenida tal cual')
-        ))
-        .map(fb => fb.allocationId!)
-    );
+    const processedByWeeklyIds = getWeeklyProcessedAllocationIds(weeklyFeedback);
 
     const open: typeof allocations = [];
     const transferred: typeof allocations = [];
@@ -229,6 +326,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
       setModalSearch('');
       setSelectedTaskId(null);
       setWeeklyTab('past');
+      setKeepConfirmOpen(false);
       weeklyTabInitForSessionRef.current = false;
     }
   }, [open]);
@@ -294,7 +392,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
   const selectedTask = allTasks.find(t => t.id === selectedTaskId) || null;
   const selectedProject = selectedTask ? projects.find(p => p.id === selectedTask.projectId) : null;
   const selectedClient = selectedProject ? clients.find(c => c.id === selectedProject?.clientId) : null;
-  const selectedMissingHours = selectedTask ? selectedTask.hoursAssigned - (selectedTask.hoursActual || 0) : 0;
+  const selectedMissingHours = selectedTask ? getTaskPendingHours(selectedTask) : 0;
   const selectedIsTransferred = selectedTask?.taskName?.includes('(transferida de') || false;
   const selectedTransferMatch = selectedTask?.taskName?.match(/\(transferida de (.+)\)/);
   const selectedTransferName = selectedTransferMatch ? selectedTransferMatch[1] : null;
@@ -307,7 +405,8 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
     if (!task) return 'pending';
     if (action === 'keep') {
       const h = keepTaskHours[taskId];
-      if (h && parseHours(h.actual) <= 0) return 'error';
+      const actual = h ? parseHours(h.actual) : (task.hoursActual || task.hoursAssigned);
+      if (validateKeepHours(actual, task.hoursAssigned)) return 'error';
     } else if (action === 'postpone') {
       if (!rolloverTargetWeek[taskId]) return 'error';
       const h = rolloverHours[taskId];
@@ -320,30 +419,40 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
       if (rem <= 0) return 'error';
     } else if (action === 'moveToEmployee') {
       if (!moveToEmployee[taskId] || !moveToWeek[taskId]) return 'error';
+      if (getTaskPendingHours(task) <= 0) return 'error';
     } else if (action === 'distribute') {
       const dt = distributionTasks[taskId] || [];
       const valid = dt.filter(t => t.taskName.trim() && parseHours(t.hours) > 0);
       if (valid.length === 0) return 'error';
-      if (Math.abs(valid.reduce((s, t) => s + parseHours(t.hours), 0) - task.hoursAssigned) > 0.01) return 'error';
+      const pending = getTaskPendingHours(task);
+      if (Math.abs(valid.reduce((s, t) => s + parseHours(t.hours), 0) - pending) > 0.01) return 'error';
+    } else if (action === 'justify' || action === 'cancel') {
+      if (!taskComments[taskId]?.trim()) return 'error';
     }
     return 'configured';
   };
 
   // ── Validation (extracted from footer) ──
-  let canSubmit = true;
+  let canSubmit = allTasks.length > 0 && resolvedCount === allTasks.length;
   const validationErrors: string[] = [];
+  if (allTasks.length > 0 && resolvedCount < allTasks.length) {
+    validationErrors.push(`Faltan ${allTasks.length - resolvedCount} tarea(s) por configurar`);
+  }
   const capacityWarnings: string[] = [];
   for (const task of allTasks) {
     const action = taskActions[task.id];
+    if (!action) continue;
+    const pendingHours = getTaskPendingHours(task);
     if (action === 'distribute') {
       const distTasks = distributionTasks[task.id] || [];
       const validTasks = distTasks.filter(t => t.taskName.trim() && parseHours(t.hours) > 0);
-      if (validTasks.length === 0) { canSubmit = false; validationErrors.push(`"${task.taskName}" necesita al menos una subtarea válida`); continue; }
+      if (validTasks.length === 0) { canSubmit = false; validationErrors.push(`"${task.taskName}" necesita al menos una entrega válida`); continue; }
       const totalDistributed = validTasks.reduce((sum, t) => sum + parseHours(t.hours), 0);
-      if (Math.abs(totalDistributed - task.hoursAssigned) > 0.01) { canSubmit = false; validationErrors.push(`"${task.taskName}": suma ${totalDistributed.toFixed(2)}h ≠ ${task.hoursAssigned.toFixed(2)}h`); }
+      if (Math.abs(totalDistributed - pendingHours) > 0.01) { canSubmit = false; validationErrors.push(`"${task.taskName}": suma ${totalDistributed.toFixed(2)}h ≠ ${pendingHours.toFixed(2)}h pendientes`); }
       const projectMonthAllocations = allocations.filter(a => a.projectId === task.projectId && isAllocationInEffectiveMonth(a.weekStartDate, viewDate) && a.id !== task.id);
       const projectBudget = projects.find(p => p.id === task.projectId)?.budgetHours || 0;
-      const newTotal = projectMonthAllocations.reduce((s, a) => s + a.hoursAssigned, 0) + totalDistributed;
+      const alreadyActual = task.hoursActual || 0;
+      const newTotal = projectMonthAllocations.reduce((s, a) => s + a.hoursAssigned, 0) + alreadyActual + totalDistributed;
       if (projectBudget > 0 && newTotal > projectBudget) { canSubmit = false; validationErrors.push(`"${task.taskName}": excede presupuesto (${newTotal.toFixed(1)}h/${projectBudget.toFixed(1)}h)`); }
       const valSlots = getSlotsForTaskWeek(task.weekStartDate);
       for (const dt of validTasks) {
@@ -354,7 +463,8 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
       }
     } else if (action === 'keep') {
       const h = keepTaskHours[task.id]; const actual = h ? parseHours(h.actual) : (task.hoursActual || task.hoursAssigned);
-      if (!actual || actual <= 0) { canSubmit = false; validationErrors.push(`"${task.taskName}": horas reales > 0`); }
+      const keepErr = validateKeepHours(actual, task.hoursAssigned);
+      if (keepErr) { canSubmit = false; validationErrors.push(`"${task.taskName}": ${keepErr}`); }
     } else if (action === 'postpone') {
       const rSlots = getSlotsForTaskWeek(task.weekStartDate);
       if (rSlots.length === 0) { canSubmit = false; validationErrors.push(`"${task.taskName}": sin semanas futuras`); }
@@ -374,10 +484,15 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
       const teSlots = getSlotsForTaskWeek(task.weekStartDate);
       if (teSlots.length === 0) { canSubmit = false; validationErrors.push(`"${task.taskName}": sin semanas para transferir`); }
       else if (!moveToEmployee[task.id] || !moveToWeek[task.id]) { canSubmit = false; validationErrors.push(`"${task.taskName}": selecciona compañero y semana`); }
+      else if (pendingHours <= 0) { canSubmit = false; validationErrors.push(`"${task.taskName}": no hay horas pendientes para transferir`); }
       else {
-        const rem = task.hoursAssigned - (task.hoursActual || 0);
+        const rem = pendingHours;
         if (rem > 0) { const ts = teSlots.find(s => s.storageKey === moveToWeek[task.id]); const wl = getEmployeeLoadForWeek(moveToEmployee[task.id], moveToWeek[task.id], undefined, undefined, ts?.viewMonth ?? viewDate); const te = employees.find(e => e.id === moveToEmployee[task.id]); if (te && (wl?.hours || 0) + rem > (wl?.capacity || 0)) capacityWarnings.push(`"${task.taskName}": ${te.name} sobre capacidad`); }
       }
+    } else if (action === 'justify') {
+      if (!taskComments[task.id]?.trim()) { canSubmit = false; validationErrors.push(`"${task.taskName}": escribe una explicación`); }
+    } else if (action === 'cancel') {
+      if (!taskComments[task.id]?.trim()) { canSubmit = false; validationErrors.push(`"${task.taskName}": indica el motivo de la anulación`); }
     }
   }
 
@@ -460,17 +575,25 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
 
   // ── Action change handler (extracted) ──
   const handleActionChange = (task: typeof allTasks[0], value: string) => {
-    const action = value as any;
-    setTaskActions(prev => ({ ...prev, [task.id]: action }));
-    const missingHours = task.hoursAssigned - (task.hoursActual || 0);
-    const isDistributionTask = task.taskName?.includes('[Distribuir]');
-    const isTransferredTask = task.taskName?.includes('(transferida de');
+    const action = value as WeeklyActionId;
+    setTaskActions((prev) => ({ ...prev, [task.id]: action }));
+    const outcome = getOutcomeForAction(action);
+    if (outcome) {
+      setTaskOutcomes((prev) => ({ ...prev, [task.id]: outcome }));
+    }
     if (action === 'distribute') {
-      if (isDistributionTask || isTransferredTask) initializeDistribution(task.id, task.hoursAssigned, task.weekStartDate);
-      else if (!distributionTasks[task.id]?.length) initializeDistribution(task.id, missingHours, task.weekStartDate);
+      if (!distributionTasks[task.id]?.length) {
+        initializeDistribution(task.id, Math.max(getTaskPendingHours(task), 0.01), task.weekStartDate);
+      }
     }
     if (action === 'keep' && !keepTaskHours[task.id]) {
-      setKeepTaskHours(prev => ({ ...prev, [task.id]: { actual: (task.hoursActual || task.hoursAssigned || 0).toFixed(2), computed: (task.hoursComputed || task.hoursActual || task.hoursAssigned || 0).toFixed(2) } }));
+      setKeepTaskHours(prev => ({
+        ...prev,
+        [task.id]: {
+          actual: (task.hoursActual ?? task.hoursAssigned).toFixed(2),
+          computed: (task.hoursComputed ?? task.hoursActual ?? task.hoursAssigned).toFixed(2),
+        },
+      }));
     }
     if (action === 'postpone' && !rolloverHours[task.id]) {
       const rSlots = weekSlotsFor(task.weekStartDate);
@@ -489,17 +612,121 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
     }
   };
 
+  const handleOutcomeSelect = (task: typeof allTasks[0], outcomeId: WeeklyOutcomeId) => {
+    if (isWeeklyOutcomeDisabled(outcomeId, task)) return;
+    setTaskOutcomes((prev) => ({ ...prev, [task.id]: outcomeId }));
+    const enabled = getEnabledActionsForOutcome(outcomeId, task);
+    if (enabled.length === 1) {
+      handleActionChange(task, enabled[0]);
+      return;
+    }
+    const current = taskActions[task.id];
+    if (!current || !enabled.includes(current)) {
+      setTaskActions((prev) => {
+        const next = { ...prev };
+        delete next[task.id];
+        return next;
+      });
+    }
+  };
+
   // ── Submit handler ──
-  const handleCloseWeek = async () => {
+  const incompleteKeepTasks = useMemo(
+    () =>
+      allTasks.filter((t) => {
+        if (taskActions[t.id] !== 'keep') return false;
+        const h = keepTaskHours[t.id];
+        const actual = h ? parseHours(h.actual) : (t.hoursActual ?? t.hoursAssigned);
+        return actual < t.hoursAssigned - 0.01;
+      }),
+    [allTasks, taskActions, keepTaskHours]
+  );
+
+  const getActionConsequence = useCallback(
+    (task: (typeof allTasks)[0], action: WeeklyActionId): string => {
+      const pending = getTaskPendingHours(task);
+      const destWeekKey = rolloverTargetWeek[task.id] || moveToWeek[task.id];
+      const destSlot = destWeekKey
+        ? getSlotsForTaskWeek(task.weekStartDate).find((s) => s.storageKey === destWeekKey)
+        : undefined;
+      const destLabel = destSlot
+        ? `${format(destSlot.weekStart, 'd', { locale: es })}–${format(addDays(destSlot.weekStart, 4), 'd MMM', { locale: es })}`
+        : 'la semana elegida';
+      const targetEmployee = moveToEmployee[task.id]
+        ? employees.find((e) => e.id === moveToEmployee[task.id])
+        : undefined;
+      const distCount = (distributionTasks[task.id] || []).filter(
+        (t) => t.taskName.trim() && parseHours(t.hours) > 0
+      ).length;
+
+      switch (action) {
+        case 'keep': {
+          const h = keepTaskHours[task.id];
+          const actual = h ? parseHours(h.actual) : (task.hoursActual ?? task.hoursAssigned);
+          const unplanned = roundTaskHours(Math.max(0, task.hoursAssigned - actual));
+          if (unplanned > 0.01) {
+            return `Se cerrará la tarea con ${actual.toFixed(2)}h registradas. ${unplanned.toFixed(2)}h quedarán sin planificar si confirmas el cierre.`;
+          }
+          return 'La tarea se marcará como completada y desaparecerá del planificador de esta semana.';
+        }
+        case 'postpone': {
+          const h = rolloverHours[task.id];
+          const act = h ? parseHours(h.actual) : (task.hoursActual ?? 0);
+          const rollover = roundTaskHours(Math.max(0, task.hoursAssigned - act));
+          return `Esta semana se cierra con ${act.toFixed(2)}h hechas. ${rollover.toFixed(2)}h quedarán planificadas en tu semana del ${destLabel}.`;
+        }
+        case 'distribute':
+          return distCount > 0
+            ? `La tarea original se sustituirá por ${distCount} entrega(s) en tu plan (${pending.toFixed(2)}h en total).`
+            : `Sustituirás esta tarea por varias entregas con nombre, horas y semana (${pending.toFixed(2)}h pendientes).`;
+        case 'moveToEmployee':
+          return targetEmployee
+            ? `${pending.toFixed(2)}h pendientes pasarán a ${targetEmployee.name} en la semana del ${destLabel}. Tu parte quedará cerrada.`
+            : `Las ${pending.toFixed(2)}h pendientes pasarán a otro compañero. Tu parte de la tarea quedará cerrada.`;
+        case 'justify':
+          return 'La planificación no cambia. Solo quedará registrada tu explicación en el historial de la agencia.';
+        case 'cancel': {
+          const alreadyActual = task.hoursActual || 0;
+          const dropped = getTaskPendingHours(task);
+          if (alreadyActual > 0 && dropped > 0) {
+            return `Se cerrará con ${alreadyActual.toFixed(2)}h registradas; ${dropped.toFixed(2)}h pendientes saldrán del plan.`;
+          }
+          if (alreadyActual > 0) {
+            return `Se cerrará con ${alreadyActual.toFixed(2)}h registradas.`;
+          }
+          return 'La tarea se cerrará a 0h y desaparecerá del planificador.';
+        }
+        default:
+          return '';
+      }
+    },
+    [
+      distributionTasks,
+      employees,
+      getSlotsForTaskWeek,
+      keepTaskHours,
+      moveToEmployee,
+      moveToWeek,
+      rolloverHours,
+      rolloverTargetWeek,
+    ]
+  );
+
+  const executeCloseWeek = async () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
     try {
+      const failures: { taskId: string; taskName: string; message: string }[] = [];
+      let processedCount = 0;
+
       for (const task of allTasks) {
         const action = taskActions[task.id];
         if (!action) continue;
 
+        let result: { ok: true } | { ok: false; message: string };
+
         if (action === 'moveToEmployee') {
-          await applyMoveToEmployee(
+          result = await applyMoveToEmployee(
             task,
             employeeId,
             moveToEmployee[task.id] || '',
@@ -507,36 +734,61 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
             taskComments[task.id]
           );
         } else if (action === 'justify') {
-          await applyJustify(task, employeeId, taskComments[task.id]);
+          result = await applyJustify(task, employeeId, taskComments[task.id]);
+        } else if (action === 'cancel') {
+          result = await applyCancel(task, employeeId, taskComments[task.id]);
         } else if (action === 'keep') {
           const hours = keepTaskHours[task.id];
           const actual = hours ? parseHours(hours.actual) : (task.hoursActual || task.hoursAssigned);
-          // Modo agencia "solo reales": computed = actual a propósito (no es bug). Ver getPlanningDeltaHours para desviación est. vs real en UI.
           const computed = preference === 'actual' ? actual : (hours ? parseHours(hours.computed) : (task.hoursComputed || actual));
-          await applyKeep(task, employeeId, actual, computed, taskComments[task.id]);
+          result = await applyKeep(task, employeeId, actual, computed, taskComments[task.id]);
         } else if (action === 'postpone') {
           const hours = rolloverHours[task.id];
           const destWeekStr = rolloverTargetWeek[task.id] || '';
           const actual = hours ? parseHours(hours.actual) : 0;
-          // Igual que en 'keep': en modo actual persistimos computed === actual a propósito.
           const computed =
             preference === 'actual' ? actual : hours ? parseHours(hours.computed) || actual : actual;
           const newEstimate = round2(task.hoursAssigned - actual);
           if (newEstimate <= 0) {
-            toast.error(`"${task.taskName}": debe quedar saldo para posponer`);
-            continue;
+            result = { ok: false, message: `"${task.taskName}": debe quedar saldo para posponer` };
+          } else {
+            result = await applyRollover(task, employeeId, actual, computed, newEstimate, destWeekStr, taskComments[task.id]);
           }
-          await applyRollover(task, employeeId, actual, computed, newEstimate, destWeekStr, taskComments[task.id]);
         } else if (action === 'distribute') {
           const distTasks = distributionTasks[task.id] || [];
           const validTasks = distTasks.filter(t => t.taskName.trim() && parseHours(t.hours) > 0);
-          await applyDistribute(task, employeeId, validTasks, taskComments[task.id]);
+          result = await applyDistribute(task, employeeId, validTasks, taskComments[task.id]);
+        } else {
+          continue;
         }
+
+        if (!result.ok) {
+          failures.push({ taskId: task.id, taskName: task.taskName || 'Sin nombre', message: result.message });
+        } else {
+          processedCount += 1;
+        }
+      }
+
+      if (failures.length > 0) {
+        setSelectedTaskId(failures[0].taskId);
+        const names = failures.slice(0, 3).map((f) => f.taskName).join(', ');
+        const suffix = failures.length > 3 ? ` y ${failures.length - 3} más` : '';
+        toast.error(
+          failures.length === 1
+            ? failures[0].message
+            : `${failures.length} tareas fallaron (${names}${suffix}). ${failures[0].message}`
+        );
+        return;
+      }
+
+      if (processedCount === 0) {
+        toast.error('No hay tareas configuradas para cerrar');
+        return;
       }
 
       toast.success('Weekly actualizado correctamente');
       onOpenChange(false);
-      setTaskActions({}); setTaskComments({}); setMoveToEmployee({}); setMoveToWeek({});
+      setTaskActions({}); setTaskComments({}); setTaskOutcomes({}); setMoveToEmployee({}); setMoveToWeek({});
       setDistributionTasks({}); setKeepTaskHours({}); setRolloverHours({}); setRolloverTargetWeek({});
     } catch (error) {
       console.error('Error actualizando weekly:', error);
@@ -546,42 +798,59 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
     }
   };
 
+  const handleCloseWeek = async () => {
+    if (isSubmitting || !canSubmit) return;
+    if (incompleteKeepTasks.length > 0) {
+      setKeepConfirmOpen(true);
+      return;
+    }
+    await executeCloseWeek();
+  };
+
   // ── Safety: initialize distribution for selected task if needed ──
   if (selectedTask && taskActions[selectedTask.id] === 'distribute') {
     const isDist = selectedTask.taskName?.includes('[Distribuir]');
     const isTrans = selectedTask.taskName?.includes('(transferida de');
     if ((isDist || isTrans) && (!distributionTasks[selectedTask.id] || distributionTasks[selectedTask.id].length === 0)) {
-      initializeDistribution(selectedTask.id, selectedTask.hoursAssigned, selectedTask.weekStartDate);
+      initializeDistribution(selectedTask.id, getTaskPendingHours(selectedTask), selectedTask.weekStartDate);
     }
   }
 
-  const actionOptions: Array<[string, string]> = [
-    ['keep', 'Completar'],
-    ['postpone', 'Posponer lo pendiente'],
-    ['distribute', 'Desglosar en subtareas'],
-    ['moveToEmployee', 'Transferir a compañero'],
-  ];
+  const selectedAction = selectedTask ? taskActions[selectedTask.id] : null;
+  const selectedOutcome: WeeklyOutcomeId | null = selectedTask
+    ? taskOutcomes[selectedTask.id] ?? getOutcomeForAction(selectedAction)
+    : null;
+  const selectedSubActions = selectedTask && selectedOutcome
+    ? getEnabledActionsForOutcome(selectedOutcome, selectedTask)
+    : [];
+  const showSubActionPicker = selectedSubActions.length > 1;
+  const selectedOutcomeGroup = selectedOutcome
+    ? WEEKLY_OUTCOME_GROUPS.find((g) => g.id === selectedOutcome)
+    : null;
 
   // ── RENDER ──
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="flex max-h-[85vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-4xl"
-        aria-describedby="weekly-desc"
+        className={cn(
+          'flex max-h-[85vh] flex-col gap-0 overflow-hidden p-0',
+          singleTaskFromPlanner ? 'sm:max-w-2xl' : 'sm:max-w-4xl'
+        )}
       >
         {/* ── HEADER ── */}
-        <div className="space-y-3 border-b px-6 pb-4 pt-5">
-          <DialogHeader className="space-y-1">
-            <DialogTitle className="text-lg font-semibold tracking-tight">
+        <div className="space-y-2 border-b px-4 pb-3 pt-4 sm:px-5">
+          <DialogHeader className="space-y-0.5">
+            <DialogTitle className="text-base font-semibold tracking-tight sm:text-lg">
               {singleTaskFromPlanner ? 'Opciones Weekly' : 'Cierre semanal'}
             </DialogTitle>
-            <DialogDescription id="weekly-desc" className="text-sm text-muted-foreground">
+            <DialogDescription className="text-xs text-muted-foreground sm:text-sm">
               {singleTaskFromPlanner
-                ? 'Completa, posponer, desglosar o transferir con el mismo flujo que en la previsión semanal.'
-                : `${resolvedCount} de ${allTasks.length} ${allTasks.length === 1 ? 'tarea resuelta' : 'tareas resueltas'}`}
+                ? 'Elige qué hacer con la tarea y confirma.'
+                : `${resolvedCount}/${allTasks.length} configuradas`}
             </DialogDescription>
           </DialogHeader>
-          <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+          {!singleTaskFromPlanner && (
+            <div className="h-1 overflow-hidden rounded-full bg-muted">
             <div
               className={cn(
                 "h-full rounded-full transition-all duration-500 ease-out",
@@ -590,6 +859,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
               style={{ width: `${progress}%` }}
             />
           </div>
+          )}
         </div>
 
         {allTasks.length === 0 ? (
@@ -730,7 +1000,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
               <div className="flex min-w-0 flex-1 flex-col">
                 {/* Mobile: task selector */}
                 <div className={cn('border-b p-3 md:hidden', singleTaskFromPlanner && 'hidden')}>
-                  <Select value={selectedTaskId || ''} onValueChange={(val) => setSelectedTaskId(val)}>
+                  <Select value={selectedTaskId ?? ''} onValueChange={(val) => setSelectedTaskId(val)}>
                     <SelectTrigger className="h-10">
                       <SelectValue placeholder="Seleccionar tarea" />
                     </SelectTrigger>
@@ -761,73 +1031,157 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
                 {/* Detail content */}
                 <div className="flex-1 overflow-y-auto">
                   {selectedTask ? (
-                    <div className="space-y-6 p-6">
-                      {/* Task header */}
-                      <div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <span className="h-2 w-2 rounded-full" style={{ backgroundColor: selectedClient?.color || '#94a3b8' }} />
-                          {selectedProject?.name || 'Sin proyecto'}
-                        </div>
-                        <h3 className="mt-1 text-lg font-semibold tracking-tight">
-                          {selectedTask.taskName?.replace(/\(transferida de .+\)/, '').trim() || 'Sin nombre'}
-                        </h3>
-                        <div className="mt-3 flex flex-wrap items-center gap-3">
-                          <Badge variant="secondary" className="font-mono">{round2(selectedMissingHours)}h pendientes</Badge>
+                    <div className="space-y-4 p-4 sm:p-5">
+                      {/* Task header — compacto */}
+                      <div className="space-y-1">
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                          <span className="inline-flex items-center gap-1.5">
+                            <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: selectedClient?.color || '#94a3b8' }} />
+                            {selectedProject?.name || 'Sin proyecto'}
+                          </span>
+                          <span aria-hidden>·</span>
+                          <Badge variant="secondary" className="h-5 px-1.5 font-mono text-[11px]">
+                            {round2(selectedMissingHours)}h pend.
+                          </Badge>
                           {selectedIsTransferred && selectedTransferFrom && (
-                            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                              <Avatar className="h-5 w-5">
-                                <AvatarImage src={selectedTransferFrom.avatarUrl} />
-                                <AvatarFallback className="text-[9px]">
-                                  {(selectedTransferFrom.first_name || selectedTransferFrom.name)[0]}
-                                </AvatarFallback>
-                              </Avatar>
-                              <span>Transferida de {selectedTransferFrom.first_name || selectedTransferFrom.name}</span>
-                            </div>
+                            <>
+                              <span aria-hidden>·</span>
+                              <span className="inline-flex items-center gap-1">
+                                <Avatar className="h-4 w-4">
+                                  <AvatarImage src={selectedTransferFrom.avatarUrl} />
+                                  <AvatarFallback className="text-[8px]">
+                                    {(selectedTransferFrom.first_name || selectedTransferFrom.name)[0]}
+                                  </AvatarFallback>
+                                </Avatar>
+                                de {selectedTransferFrom.first_name || selectedTransferFrom.name}
+                              </span>
+                            </>
                           )}
                         </div>
+                        <h3 className="text-base font-semibold leading-snug tracking-tight">
+                          {selectedTask.taskName?.replace(/\(transferida de .+\)/, '').trim() || 'Sin nombre'}
+                        </h3>
                       </div>
 
-                      {/* Action selection */}
+                      {/* Paso 1: resultado + paso 2: acción concreta */}
                       <div className="space-y-2">
-                        <Label className="text-sm font-medium">Acción</Label>
-                        <RadioGroup
-                          value={taskActions[selectedTask.id] || ''}
-                          onValueChange={(v) => handleActionChange(selectedTask, v)}
-                          className="space-y-1"
-                        >
-                          {actionOptions.map(([val, label]) => (
-                            <label
-                              key={val}
-                              htmlFor={`${selectedTask.id}-${val}`}
-                              className={cn(
-                                "flex cursor-pointer items-center gap-3 rounded-md px-3 py-2.5 transition-colors",
-                                taskActions[selectedTask.id] === val
-                                  ? "bg-accent text-accent-foreground"
-                                  : "hover:bg-muted"
+                        <Label className="text-xs font-medium text-muted-foreground">
+                          {selectedMissingHours > 0.01
+                            ? `${selectedMissingHours.toFixed(2)}h pendientes · estimado ${selectedTask.hoursAssigned.toFixed(2)}h`
+                            : 'Horas registradas — elige cómo cerrar'}
+                        </Label>
+                        <div className="grid grid-cols-2 gap-1.5">
+                          {WEEKLY_OUTCOME_GROUPS.map(({ id, label, hint }) => {
+                            const disabled = isWeeklyOutcomeDisabled(id, selectedTask);
+                            const isSelected = selectedOutcome === id;
+                            return (
+                              <button
+                                key={id}
+                                type="button"
+                                disabled={disabled}
+                                onClick={() => handleOutcomeSelect(selectedTask, id)}
+                                className={cn(
+                                  'rounded-md border px-2.5 py-2 text-left transition-colors',
+                                  disabled && 'cursor-not-allowed opacity-45',
+                                  isSelected
+                                    ? 'border-primary/40 bg-accent text-accent-foreground'
+                                    : 'border-border/60 bg-background hover:bg-muted/50'
+                                )}
+                              >
+                                <span className="block text-sm font-medium leading-tight">{label}</span>
+                                <span className="mt-0.5 block truncate text-[11px] text-muted-foreground">{hint}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        {showSubActionPicker && selectedOutcomeGroup && (
+                          <div
+                            className="space-y-2 rounded-md border border-dashed border-primary/30 bg-muted/40 px-3 py-2.5"
+                            role="group"
+                            aria-label={`Opciones para ${selectedOutcomeGroup.label}`}
+                          >
+                            <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5">
+                              <p className="text-xs">
+                                <span className="font-medium text-foreground">{selectedOutcomeGroup.label}</span>
+                                <span className="mx-1.5 text-muted-foreground" aria-hidden>→</span>
+                                <span className="text-muted-foreground">elige una opción</span>
+                              </p>
+                              {!selectedAction && (
+                                <span className="text-[10px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-400">
+                                  Obligatorio
+                                </span>
                               )}
+                            </div>
+                            <RadioGroup
+                              value={selectedAction || ''}
+                              onValueChange={(v) => handleActionChange(selectedTask, v)}
+                              className="space-y-1"
                             >
-                              <RadioGroupItem value={val} id={`${selectedTask.id}-${val}`} />
-                              <span className="text-sm font-medium">{label}</span>
-                            </label>
-                          ))}
-                        </RadioGroup>
+                              {selectedSubActions.map((actionId) => {
+                                const meta = WEEKLY_ACTION_META[actionId];
+                                const isActive = selectedAction === actionId;
+                                return (
+                                  <label
+                                    key={actionId}
+                                    htmlFor={`${selectedTask.id}-sub-${actionId}`}
+                                    className={cn(
+                                      'flex cursor-pointer items-start gap-2.5 rounded-md border px-2.5 py-2 transition-colors',
+                                      isActive
+                                        ? 'border-primary/45 bg-background shadow-sm ring-1 ring-primary/15'
+                                        : 'border-border/50 bg-background/70 hover:border-border hover:bg-background'
+                                    )}
+                                  >
+                                    <RadioGroupItem
+                                      value={actionId}
+                                      id={`${selectedTask.id}-sub-${actionId}`}
+                                      className="mt-0.5 shrink-0"
+                                    />
+                                    <span className="min-w-0">
+                                      <span className="block text-sm font-medium leading-tight">{meta.label}</span>
+                                      <span className="mt-0.5 block text-[11px] leading-snug text-muted-foreground">
+                                        {meta.hint}
+                                      </span>
+                                    </span>
+                                  </label>
+                                );
+                              })}
+                            </RadioGroup>
+                          </div>
+                        )}
+
+                        {selectedAction && (
+                          <p className="rounded-md bg-muted/60 px-2.5 py-2 text-[11px] leading-relaxed text-muted-foreground">
+                            {getActionConsequence(selectedTask, selectedAction)}
+                          </p>
+                        )}
                       </div>
 
                       {/* Action detail forms */}
-                      {taskActions[selectedTask.id] && (
-                        <div className="rounded-lg border bg-muted/30 p-4">
+                      {selectedAction && (
+                        <div className="rounded-lg border bg-muted/20 p-3 sm:p-3.5">
                           {/* KEEP */}
-                          {taskActions[selectedTask.id] === 'keep' && (() => {
+                          {selectedAction === 'keep' && (() => {
                             const hours = keepTaskHours[selectedTask.id] || {
-                              actual: (selectedTask.hoursActual || selectedTask.hoursAssigned || 0).toFixed(2),
-                              computed: (selectedTask.hoursComputed || selectedTask.hoursActual || selectedTask.hoursAssigned || 0).toFixed(2)
+                              actual: (selectedTask.hoursActual ?? selectedTask.hoursAssigned).toFixed(2),
+                              computed: (selectedTask.hoursComputed ?? selectedTask.hoursActual ?? selectedTask.hoursAssigned).toFixed(2)
                             };
+                            const actualNum = parseHours(hours.actual);
+                            const unplannedKeep = roundTaskHours(Math.max(0, selectedTask.hoursAssigned - actualNum));
                             return (
-                              <div className="space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div className="space-y-1.5">
-                                    <Label className="text-sm font-medium">Horas reales *</Label>
-                                    <Input type="text" inputMode="decimal" className="h-10 font-mono text-sm" value={hours.actual}
+                              <div className="space-y-3">
+                                {unplannedKeep > 0.01 && (
+                                  <p className="flex items-start gap-1.5 rounded-md border border-amber-200/80 bg-amber-50/80 px-2 py-1.5 text-[11px] leading-snug text-amber-950 dark:border-amber-900/40 dark:bg-amber-950/25 dark:text-amber-100">
+                                    <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" aria-hidden />
+                                    <span>
+                                      {unplannedKeep.toFixed(2)}h sin planificar — elige <strong>Sigo después</strong> si el trabajo continúa.
+                                    </span>
+                                  </p>
+                                )}
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div className="space-y-1">
+                                    <Label className="text-xs font-medium">Horas reales *</Label>
+                                    <Input type="text" inputMode="decimal" className="h-8 font-mono text-sm" value={hours.actual}
                                       onChange={(e) => { 
                                         const v = normalizeWeeklyHourInput(e.target.value); 
                                         setKeepTaskHours(prev => ({ 
@@ -840,16 +1194,14 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
                                         })); 
                                       }}
                                       placeholder="0.00" />
-                                    <p className="text-xs text-muted-foreground">Trabajo efectuado</p>
                                   </div>
                                   {preference !== 'actual' && (
-                                  <div className="space-y-1.5">
-                                    <Label className="text-sm font-medium">Horas computadas</Label>
-                                    <Input type="text" inputMode="decimal" className="h-10 font-mono text-sm" value={hours.computed}
+                                  <div className="space-y-1">
+                                    <Label className="text-xs font-medium">Facturación</Label>
+                                    <Input type="text" inputMode="decimal" className="h-8 font-mono text-sm" value={hours.computed}
                                       disabled={preference === 'actual'}
                                       onChange={(e) => { const v = normalizeWeeklyHourInput(e.target.value); setKeepTaskHours(prev => ({ ...prev, [selectedTask.id]: { ...prev[selectedTask.id], computed: v } })); }}
                                       placeholder="0.00" />
-                                    <p className="text-xs text-muted-foreground">Criterio de facturación</p>
                                   </div>
                                   )}
                                 </div>
@@ -858,8 +1210,8 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
                             );
                           })()}
 
-                          {/* POSTPONE: mismo criterio que cierre parcial (saldo = estimado − realizadas → rollover) */}
-                          {taskActions[selectedTask.id] === 'postpone' && (() => {
+                          {/* POSTPONE */}
+                          {selectedAction === 'postpone' && (() => {
                             const hours = rolloverHours[selectedTask.id] || {
                               actual: (selectedTask.hoursActual ?? 0).toFixed(2),
                               computed: (selectedTask.hoursComputed ?? selectedTask.hoursActual ?? 0).toFixed(2)
@@ -867,11 +1219,11 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
                             const rSlots = weekSlotsFor(selectedTask.weekStartDate);
                             const pendNext = Math.max(0, round2(selectedTask.hoursAssigned - parseHours(hours.actual)));
                             return (
-                              <div className="space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div className="space-y-1.5">
-                                    <Label className="text-sm font-medium">Horas realizadas *</Label>
-                                    <Input type="text" inputMode="decimal" className="h-10 font-mono text-sm" value={hours.actual}
+                              <div className="space-y-3">
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div className="space-y-1">
+                                    <Label className="text-xs font-medium">Realizadas *</Label>
+                                    <Input type="text" inputMode="decimal" className="h-8 font-mono text-sm" value={hours.actual}
                                       onChange={(e) => { 
                                         const v = normalizeWeeklyHourInput(e.target.value); 
                                         setRolloverHours(prev => ({ 
@@ -884,31 +1236,27 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
                                         })); 
                                       }}
                                       placeholder="0.00" />
-                                    <p className="text-xs text-muted-foreground">
-                                      Pendiente para la otra semana:{' '}
-                                      <span className="font-mono font-semibold text-foreground">
-                                        {pendNext.toFixed(2)}h
-                                      </span>{' '}
-                                      (con 0h realizadas se mueve todo el estimado; se planificará al cerrar)
+                                    <p className="text-[11px] text-muted-foreground">
+                                      Saldo → <span className="font-mono font-medium text-foreground">{pendNext.toFixed(2)}h</span>
                                     </p>
                                   </div>
                                   {preference !== 'actual' && (
-                                  <div className="space-y-1.5">
-                                    <Label className="text-sm font-medium">Horas computadas</Label>
-                                    <Input type="text" inputMode="decimal" className="h-10 font-mono text-sm" value={hours.computed}
+                                  <div className="space-y-1">
+                                    <Label className="text-xs font-medium">Facturación</Label>
+                                    <Input type="text" inputMode="decimal" className="h-8 font-mono text-sm" value={hours.computed}
                                       disabled={preference === 'actual'}
                                       onChange={(e) => { const v = normalizeWeeklyHourInput(e.target.value); setRolloverHours(prev => ({ ...prev, [selectedTask.id]: { ...prev[selectedTask.id], computed: v } })); }}
                                       placeholder="0.00" />
                                   </div>
                                   )}
                                 </div>
-                                <div className="space-y-1.5 border-t pt-4">
-                                  <Label className="text-sm font-medium">Semana destino *</Label>
+                                <div className="space-y-1">
+                                  <Label className="text-xs font-medium">Semana destino *</Label>
                                   {rSlots.length === 0 ? (
                                     <p className="text-xs text-destructive">No hay semanas disponibles.</p>
                                   ) : (
-                                    <Select value={rolloverTargetWeek[selectedTask.id] || rSlots[0]?.storageKey} onValueChange={(val) => setRolloverTargetWeek(prev => ({ ...prev, [selectedTask.id]: val }))}>
-                                      <SelectTrigger className="h-10 text-sm"><SelectValue placeholder="Elige semana" /></SelectTrigger>
+                                    <Select value={rolloverTargetWeek[selectedTask.id] ?? rSlots[0]?.storageKey ?? ''} onValueChange={(val) => setRolloverTargetWeek(prev => ({ ...prev, [selectedTask.id]: val }))}>
+                                      <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Elige semana" /></SelectTrigger>
                                       <SelectContent className="max-h-[min(280px,60vh)]">{weekSelectGroups(selectedTask.weekStartDate, employeeId)}</SelectContent>
                                     </Select>
                                   )}
@@ -919,66 +1267,70 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
                           })()}
 
                           {/* DISTRIBUTE */}
-                          {taskActions[selectedTask.id] === 'distribute' && (
-                            <div className="space-y-4">
-                              <div className="flex items-center justify-between rounded-md border bg-background px-3 py-2 text-sm">
-                                <span className="font-medium">Total: <span className="font-mono">{round2(selectedMissingHours).toFixed(2)}h</span></span>
+                          {selectedAction === 'distribute' && (
+                            <div className="space-y-3">
+                              <div className="flex items-center justify-between text-xs">
+                                <span>A repartir: <span className="font-mono font-medium">{round2(selectedMissingHours).toFixed(2)}h</span></span>
                                 <span className={cn("font-mono", round2(selectedMissingHours - (distributionTasks[selectedTask.id]?.reduce((a, d) => a + parseHours(d.hours), 0) || 0)) === 0 ? "font-medium" : "text-muted-foreground")}>
                                   Saldo: {round2(selectedMissingHours - (distributionTasks[selectedTask.id]?.reduce((a, d) => a + parseHours(d.hours), 0) || 0)).toFixed(2)}h
                                 </span>
                               </div>
-                              <div className="space-y-2">
+                              <div className="space-y-1.5">
                                 {(distributionTasks[selectedTask.id] || []).map((dist) => {
                                   const distSlot = weekSlotsFor(selectedTask.weekStartDate).find(s => s.storageKey === dist.weekDate);
                                   const weekLoad = dist.weekDate ? getEmployeeLoadForWeek(employeeId, dist.weekDate, undefined, undefined, distSlot?.viewMonth ?? viewDate) : null;
                                   const isOverCap = weekLoad && (weekLoad.hours || 0) + parseHours(dist.hours) > (weekLoad.capacity || 0);
                                   return (
-                                    <div key={dist.id} className="space-y-2 rounded-md border bg-background p-3">
-                                      <div className="flex items-center gap-2">
-                                        <Input type="text" className="h-9 min-w-[120px] flex-1 text-sm" value={dist.taskName}
-                                          onChange={(e) => updateDistributionRow(selectedTask.id, dist.id, 'taskName', e.target.value)} placeholder="Nombre subtarea" />
-                                        <Input type="text" inputMode="decimal" className={cn("h-9 w-[4.5rem] font-mono text-sm", isOverCap && "border-destructive/60")} value={dist.hours}
+                                    <div key={dist.id} className="space-y-1.5 rounded-md border bg-background p-2">
+                                      <div className="flex items-center gap-1.5">
+                                        <Input type="text" className="h-8 min-w-0 flex-1 text-sm" value={dist.taskName}
+                                          onChange={(e) => updateDistributionRow(selectedTask.id, dist.id, 'taskName', e.target.value)} placeholder="Entrega" />
+                                        <Input type="text" inputMode="decimal" className={cn("h-8 w-14 shrink-0 font-mono text-sm", isOverCap && "border-destructive/60")} value={dist.hours}
                                           onChange={(e) => updateDistributionHours(selectedTask.id, dist.id, normalizeWeeklyHourInput(e.target.value))} placeholder="h" />
-                                        <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0 text-muted-foreground hover:text-destructive" onClick={() => removeDistributionRow(selectedTask.id, dist.id)}>
-                                          <Trash2 className="h-4 w-4" />
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive" onClick={() => removeDistributionRow(selectedTask.id, dist.id)}>
+                                          <Trash2 className="h-3.5 w-3.5" />
                                         </Button>
                                       </div>
-                                      <Select value={dist.weekDate} onValueChange={(val) => updateDistributionRow(selectedTask.id, dist.id, 'weekDate', val)}>
-                                        <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Semana" /></SelectTrigger>
+                                      <Select value={dist.weekDate ?? ''} onValueChange={(val) => updateDistributionRow(selectedTask.id, dist.id, 'weekDate', val)}>
+                                        <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Semana" /></SelectTrigger>
                                         <SelectContent className="max-h-[min(280px,60vh)]">{weekSelectGroups(selectedTask.weekStartDate, employeeId)}</SelectContent>
                                       </Select>
-                                      {isOverCap && <p className="text-xs text-destructive">Superaría la capacidad de esa semana.</p>}
+                                      {isOverCap && <p className="text-[11px] text-destructive">Supera capacidad.</p>}
                                     </div>
                                   );
                                 })}
                               </div>
-                              <Button variant="outline" size="sm" className="w-full border-dashed" onClick={() => addDistributionRow(selectedTask.id, selectedTask.weekStartDate)}>
-                                <Plus className="mr-1.5 h-3.5 w-3.5" /> Añadir línea
+                              <Button variant="outline" size="sm" className="h-8 w-full border-dashed text-xs" onClick={() => addDistributionRow(selectedTask.id, selectedTask.weekStartDate)}>
+                                <Plus className="mr-1 h-3.5 w-3.5" /> Añadir entrega
                               </Button>
                               <WeeklyOptionalNote value={taskComments[selectedTask.id] || ''} onChange={(v) => setTaskComments(prev => ({ ...prev, [selectedTask.id]: v }))} />
                             </div>
                           )}
 
                           {/* TRANSFER TO EMPLOYEE */}
-                          {taskActions[selectedTask.id] === 'moveToEmployee' && (() => {
+                          {selectedAction === 'moveToEmployee' && (() => {
                             const selEmpId = moveToEmployee[selectedTask.id];
                             const tSlots = weekSlotsFor(selectedTask.weekStartDate);
+                            const transferPending = getTaskPendingHours(selectedTask);
                             return (
-                              <div className="space-y-4">
-                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                  <div className="space-y-1.5">
-                                    <Label className="text-sm font-medium">Compañero *</Label>
-                                    <Select value={moveToEmployee[selectedTask.id]} onValueChange={(val) => setMoveToEmployee(prev => ({ ...prev, [selectedTask.id]: val }))}>
-                                      <SelectTrigger className="h-10 text-sm"><SelectValue placeholder="Seleccionar persona" /></SelectTrigger>
+                              <div className="space-y-3">
+                                <p className="text-[11px] text-muted-foreground">
+                                  <span className="font-mono font-medium text-foreground">{transferPending.toFixed(2)}h</span> al compañero · aparece en su plan sin aceptación
+                                </p>
+                                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                  <div className="space-y-1">
+                                    <Label className="text-xs font-medium">Compañero *</Label>
+                                    <Select value={moveToEmployee[selectedTask.id] ?? ''} onValueChange={(val) => setMoveToEmployee(prev => ({ ...prev, [selectedTask.id]: val }))}>
+                                      <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Persona" /></SelectTrigger>
                                       <SelectContent className="max-h-[min(240px,50vh)]">
                                         {employeesForWeeklyTransfer.filter(e => e.id !== employeeId).map(e => {
                                           const loads = tSlots.map(slot => getEmployeeLoadForWeek(e.id, slot.storageKey, undefined, undefined, slot.viewMonth));
                                           const avail = round2(loads.reduce((s, l) => s + (l?.capacity || 0), 0) - loads.reduce((s, l) => s + (l?.hours || 0), 0));
                                           return (
-                                            <SelectItem key={e.id} value={e.id} className="py-2">
-                                              <span className="text-sm">{e.name}</span>
-                                              <span className={cn("ml-2 text-xs", avail >= 0 ? "text-muted-foreground" : "text-destructive")}>
-                                                · {avail >= 0 ? `${avail.toFixed(0)}h libres` : 'Sobre cap.'}
+                                            <SelectItem key={e.id} value={e.id} className="py-1.5 text-sm">
+                                              {e.name}
+                                              <span className={cn("ml-1.5 text-xs", avail >= 0 ? "text-muted-foreground" : "text-destructive")}>
+                                                · {avail >= 0 ? `${avail.toFixed(0)}h` : 'Sobre cap.'}
                                               </span>
                                             </SelectItem>
                                           );
@@ -986,10 +1338,10 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
                                       </SelectContent>
                                     </Select>
                                   </div>
-                                  <div className="space-y-1.5">
-                                    <Label className="text-sm font-medium">Semana *</Label>
-                                    <Select value={moveToWeek[selectedTask.id]} onValueChange={(val) => setMoveToWeek(prev => ({ ...prev, [selectedTask.id]: val }))}>
-                                      <SelectTrigger className="h-10 text-sm"><SelectValue placeholder="Seleccionar semana" /></SelectTrigger>
+                                  <div className="space-y-1">
+                                    <Label className="text-xs font-medium">Semana *</Label>
+                                    <Select value={moveToWeek[selectedTask.id] ?? ''} onValueChange={(val) => setMoveToWeek(prev => ({ ...prev, [selectedTask.id]: val }))}>
+                                      <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Semana" /></SelectTrigger>
                                       <SelectContent className="max-h-[min(280px,60vh)]">{weekSelectGroups(selectedTask.weekStartDate, selEmpId || null)}</SelectContent>
                                     </Select>
                                   </div>
@@ -998,6 +1350,24 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
                               </div>
                             );
                           })()}
+
+                          {/* CANCEL */}
+                          {selectedAction === 'cancel' && (
+                            <WeeklyRequiredNote
+                              value={taskComments[selectedTask.id] || ''}
+                              onChange={(v) => setTaskComments(prev => ({ ...prev, [selectedTask.id]: v }))}
+                              placeholder="Ej.: cliente canceló el entregable, tarea duplicada, scope eliminado…"
+                              helperText="La tarea se cerrará y el saldo pendiente saldrá del planificador."
+                            />
+                          )}
+
+                          {/* JUSTIFY */}
+                          {selectedAction === 'justify' && (
+                            <WeeklyRequiredNote
+                              value={taskComments[selectedTask.id] || ''}
+                              onChange={(v) => setTaskComments(prev => ({ ...prev, [selectedTask.id]: v }))}
+                            />
+                          )}
                         </div>
                       )}
                     </div>
@@ -1013,15 +1383,17 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
             })()}
 
             {/* ── FOOTER ── */}
-            <DialogFooter className="shrink-0 items-center border-t px-6 py-4 sm:justify-between">
-              <p className="hidden text-sm text-muted-foreground sm:block">
+            <DialogFooter className="shrink-0 items-center border-t px-4 py-3 sm:justify-between sm:px-5">
+              <p className="hidden text-xs text-muted-foreground sm:block">
                 {resolvedCount}/{allTasks.length} configuradas
               </p>
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={() => onOpenChange(false)}>
+              <div className="flex w-full gap-2 sm:w-auto">
+                <Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={() => onOpenChange(false)}>
                   Cancelar
                 </Button>
                 <Button
+                  size="sm"
+                  className="flex-1 sm:flex-none"
                   onClick={handleCloseWeek}
                   disabled={!canSubmit || isSubmitting}
                   title={!canSubmit ? validationErrors.join(' · ') : capacityWarnings.length > 0 ? `Aviso: ${capacityWarnings.join(' · ')}` : undefined}
@@ -1040,6 +1412,48 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
           </Tabs>
         )}
       </DialogContent>
+
+      <AlertDialog open={keepConfirmOpen} onOpenChange={setKeepConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Cerrar con horas sin planificar?</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 text-sm text-muted-foreground">
+                <p>
+                  {incompleteKeepTasks.length === 1
+                    ? 'Una tarea se cerrará con menos horas de las estimadas:'
+                    : `${incompleteKeepTasks.length} tareas se cerrarán con horas sin planificar:`}
+                </p>
+                <ul className="list-disc space-y-1 pl-5">
+                  {incompleteKeepTasks.map((task) => {
+                    const h = keepTaskHours[task.id];
+                    const actual = h ? parseHours(h.actual) : (task.hoursActual ?? task.hoursAssigned);
+                    const gap = roundTaskHours(Math.max(0, task.hoursAssigned - actual));
+                    return (
+                      <li key={task.id}>
+                        <span className="font-medium text-foreground">{task.taskName?.replace(/\(transferida de .+\)/, '').trim() || 'Sin nombre'}</span>
+                        {' '}— {gap.toFixed(2)}h quedarán fuera del plan
+                      </li>
+                    );
+                  })}
+                </ul>
+                <p>Si el trabajo continúa, elige <strong>Sigo después</strong> en lugar de cerrar con horas de menos.</p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Revisar tareas</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setKeepConfirmOpen(false);
+                void executeCloseWeek();
+              }}
+            >
+              Sí, cerrar igualmente
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }

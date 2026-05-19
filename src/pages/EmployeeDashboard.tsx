@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
+import { getWeeklyProcessedAllocationIds } from '@/utils/weeklyCloseShared';
 import { useApp } from '@/contexts/AppContext';
 import { useAgency } from '@/contexts/AgencyContext';
 import { MyWeekView } from '@/components/employee/MyWeekView';
@@ -123,16 +124,7 @@ export default function EmployeeDashboard() {
     if (!myEmployeeProfile) return false;
     const today = new Date();
 
-    const processedTaskIds = new Set(
-      weeklyFeedback
-        .filter(fb => fb.allocationId && (
-          fb.comments?.includes('Tarea mantenida tal cual') ||
-          fb.comments?.includes('Tarea movida a semana futura') ||
-          fb.comments?.includes('Tarea transferida a') ||
-          fb.comments?.includes('Distribuidas en')
-        ))
-        .map(fb => fb.allocationId!)
-    );
+    const processedTaskIds = getWeeklyProcessedAllocationIds(weeklyFeedback);
 
     const distributedFromTransferIds = new Set(
       weeklyFeedback

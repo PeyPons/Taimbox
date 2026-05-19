@@ -9,7 +9,7 @@ import { logCreate, logUpdate } from '@/services/auditService';
 import { round2 } from '@/utils/numbers';
 import { useWeeklyCloseDay } from '@/hooks/useWeeklyCloseDay';
 import { collectSelectableFutureWeekSlots, isAllocationInEffectiveMonth } from '@/utils/dateUtils';
-import { normalizeWeeklyHourInput, parseWeeklyCloseHours } from '@/utils/weeklyCloseShared';
+import { normalizeWeeklyHourInput, parseWeeklyCloseHours, weeklyCloseOk, weeklyCloseFail, validateKeepHours, type WeeklyCloseApplyResult } from '@/utils/weeklyCloseShared';
 import { copyAllocationNotes } from '@/services/allocationNotesService';
 import type { Allocation } from '@/types';
 
@@ -62,22 +62,23 @@ export interface UseWeeklyCloseMutationsResult {
     comment?: string,
     /** Si se indica, sustituye `task.hoursActual` al calcular el remanente y al cerrar la tarea. */
     hoursActualOverride?: number
-  ) => Promise<boolean>;
+  ) => Promise<WeeklyCloseApplyResult>;
   applyMoveToEmployee: (
     task: Allocation,
     employeeId: string,
     targetEmployeeId: string,
     targetWeekVal: string,
     transferComment?: string
-  ) => Promise<void>;
-  applyJustify: (task: Allocation, employeeId: string, comment?: string) => Promise<void>;
+  ) => Promise<WeeklyCloseApplyResult>;
+  applyJustify: (task: Allocation, employeeId: string, comment?: string) => Promise<WeeklyCloseApplyResult>;
+  applyCancel: (task: Allocation, employeeId: string, comment?: string) => Promise<WeeklyCloseApplyResult>;
   applyKeep: (
     task: Allocation,
     employeeId: string,
     actual: number,
     computed: number,
     comment?: string
-  ) => Promise<boolean>;
+  ) => Promise<WeeklyCloseApplyResult>;
   applyRollover: (
     task: Allocation,
     employeeId: string,
@@ -86,13 +87,13 @@ export interface UseWeeklyCloseMutationsResult {
     newEstimate: number,
     destWeekStr: string,
     comment?: string
-  ) => Promise<boolean>;
+  ) => Promise<WeeklyCloseApplyResult>;
   applyDistribute: (
     task: Allocation,
     employeeId: string,
     validTasks: DistributionRowInput[],
     userComment?: string
-  ) => Promise<void>;
+  ) => Promise<WeeklyCloseApplyResult>;
   getSlotsForTaskWeek: (taskWeekStartStr: string) => ReturnType<typeof collectSelectableFutureWeekSlots>;
 }
 
@@ -131,13 +132,12 @@ export function useWeeklyCloseMutations(viewDate: Date): UseWeeklyCloseMutations
       const taskWeekDate = parseISO(task.weekStartDate);
       const taskWeekStr = format(taskWeekDate, 'yyyy-MM-dd');
       if (!targetWeekVal) {
-        toast.error('Selecciona una semana destino');
-        return false;
+        return weeklyCloseFail('Selecciona una semana destino');
       }
       const effectiveActual =
         hoursActualOverride !== undefined ? hoursActualOverride : (task.hoursActual || 0);
       const remainingHours = task.hoursAssigned - effectiveActual;
-      if (remainingHours <= 0) return true;
+      if (remainingHours <= 0) return weeklyCloseOk();
 
       const snapshotTask: Allocation = { ...task };
       const existing = allocations.find(
@@ -165,28 +165,33 @@ export function useWeeklyCloseMutations(viewDate: Date): UseWeeklyCloseMutations
           });
           if (created) await copyAllocationNotes(task.id, created.id);
         }
-        await addWeeklyFeedback({
+        const fbOk = await addWeeklyFeedback({
           employeeId,
           weekStartDate: taskWeekStr,
           projectId: task.projectId,
           allocationId: task.id,
           reason: 'other',
+          weeklyAction: 'move',
           comments: comment?.trim()
             ? `Tarea movida a semana futura. Nota: ${comment.trim()}`
             : 'Tarea movida a semana futura',
         });
+        if (!fbOk) {
+          await updateAllocation(snapshotTask);
+          if (snapshotExisting) await updateAllocation(snapshotExisting);
+          return weeklyCloseFail('No se pudo registrar el cierre de la tarea');
+        }
       } catch (err) {
         await updateAllocation(snapshotTask);
         if (snapshotExisting) await updateAllocation(snapshotExisting);
-        toast.error(
+        return weeklyCloseFail(
           err instanceof Error ? err.message : 'Error al mover la tarea; se revirtió el cambio.'
         );
-        return false;
       }
 
       const mvSlot = getSlotsForTaskWeek(task.weekStartDate).find(s => s.storageKey === targetWeekVal);
       if (mvSlot) await loadDataForMonth(mvSlot.viewMonth);
-      return true;
+      return weeklyCloseOk();
     },
     [addAllocation, addWeeklyFeedback, allocations, getSlotsForTaskWeek, loadDataForMonth, updateAllocation]
   );
@@ -202,11 +207,10 @@ export function useWeeklyCloseMutations(viewDate: Date): UseWeeklyCloseMutations
       const taskWeekDate = parseISO(task.weekStartDate);
       const taskWeekStr = format(taskWeekDate, 'yyyy-MM-dd');
       if (!targetEmployeeId || !targetWeekVal) {
-        toast.error('Selecciona compañero y semana destino');
-        return;
+        return weeklyCloseFail('Selecciona compañero y semana destino');
       }
       const remainingHours = task.hoursAssigned - (task.hoursActual || 0);
-      if (remainingHours <= 0) return;
+      if (remainingHours <= 0) return weeklyCloseOk();
       const targetEmployee = employees.find(e => e.id === targetEmployeeId);
       if (targetEmployee) {
         const twSlot = getSlotsForTaskWeek(task.weekStartDate).find(s => s.storageKey === targetWeekVal);
@@ -240,24 +244,29 @@ export function useWeeklyCloseMutations(viewDate: Date): UseWeeklyCloseMutations
         });
         if (created) await copyAllocationNotes(task.id, created.id);
         const transferBase = `Tarea transferida a ${employees.find(e => e.id === targetEmployeeId)?.name || 'otro empleado'} (${remainingHours}h restantes) | Nombre: ${task.taskName || 'Sin nombre'}`;
-        await addWeeklyFeedback({
+        const fbOk = await addWeeklyFeedback({
           employeeId,
           weekStartDate: taskWeekStr,
           projectId: task.projectId,
           allocationId: task.id,
           reason: 'other',
+          weeklyAction: 'transfer',
           comments: transferComment?.trim() ? `${transferBase} | Nota: ${transferComment.trim()}` : transferBase,
         });
+        if (!fbOk) {
+          await updateAllocation(snapshotTask);
+          return weeklyCloseFail('No se pudo registrar la transferencia');
+        }
       } catch (err) {
         await updateAllocation(snapshotTask);
-        toast.error(
+        return weeklyCloseFail(
           err instanceof Error ? err.message : 'Error en la transferencia; se revirtió el cambio.'
         );
-        return;
       }
 
       const transferSlot = getSlotsForTaskWeek(task.weekStartDate).find(s => s.storageKey === targetWeekVal);
       if (transferSlot) await loadDataForMonth(transferSlot.viewMonth);
+      return weeklyCloseOk();
     },
     [
       addAllocation,
@@ -275,41 +284,85 @@ export function useWeeklyCloseMutations(viewDate: Date): UseWeeklyCloseMutations
     async (task: Allocation, employeeId: string, comment?: string) => {
       const taskWeekDate = parseISO(task.weekStartDate);
       const taskWeekStr = format(taskWeekDate, 'yyyy-MM-dd');
-      if (comment?.trim()) {
-        await addWeeklyFeedback({
-          employeeId,
-          weekStartDate: taskWeekStr,
-          projectId: task.projectId,
-          allocationId: task.id,
-          reason: 'other',
-          comments: comment,
-        });
+      const trimmed = comment?.trim();
+      if (!trimmed) {
+        return weeklyCloseFail('Escribe una explicación para justificar la tarea');
       }
+      const fbOk = await addWeeklyFeedback({
+        employeeId,
+        weekStartDate: taskWeekStr,
+        projectId: task.projectId,
+        allocationId: task.id,
+        reason: 'other',
+        weeklyAction: 'justify',
+        comments: `Tarea justificada: ${trimmed}`,
+      });
+      return fbOk ? weeklyCloseOk() : weeklyCloseFail('No se pudo registrar la justificación');
     },
     [addWeeklyFeedback]
+  );
+
+  const applyCancel = useCallback(
+    async (task: Allocation, employeeId: string, comment?: string) => {
+      const trimmed = comment?.trim();
+      if (!trimmed) {
+        return weeklyCloseFail('Indica el motivo de la anulación');
+      }
+      const taskWeekDate = parseISO(task.weekStartDate);
+      const taskWeekStr = format(taskWeekDate, 'yyyy-MM-dd');
+      const alreadyActual = round2(task.hoursActual || 0);
+      const computed = round2(task.hoursComputed ?? alreadyActual);
+      const pendingDropped = round2(Math.max(0, task.hoursAssigned - alreadyActual));
+
+      await updateAllocation({
+        ...task,
+        hoursAssigned: alreadyActual,
+        hoursActual: alreadyActual,
+        hoursComputed: computed,
+        status: 'completed',
+      });
+
+      const fb =
+        pendingDropped > 0
+          ? `Tarea anulada: ${trimmed} (${pendingDropped.toFixed(2)}h eliminadas del plan)`
+          : `Tarea anulada: ${trimmed}`;
+
+      const fbOk = await addWeeklyFeedback({
+        employeeId,
+        weekStartDate: taskWeekStr,
+        projectId: task.projectId,
+        allocationId: task.id,
+        reason: 'other',
+        weeklyAction: 'cancel',
+        comments: fb,
+      });
+      return fbOk ? weeklyCloseOk() : weeklyCloseFail('No se pudo registrar la anulación');
+    },
+    [addWeeklyFeedback, updateAllocation]
   );
 
   const applyKeep = useCallback(
     async (task: Allocation, employeeId: string, actual: number, computed: number, comment?: string) => {
       const taskWeekDate = parseISO(task.weekStartDate);
       const taskWeekStr = format(taskWeekDate, 'yyyy-MM-dd');
-      if (actual <= 0) {
-        toast.error(`"${task.taskName}" necesita horas reales mayores a 0`);
-        return false;
+      const keepErr = validateKeepHours(actual, task.hoursAssigned);
+      if (keepErr) {
+        return weeklyCloseFail(`"${task.taskName}": ${keepErr}`);
       }
       await updateAllocation({ ...task, hoursActual: actual, hoursComputed: computed, status: 'completed' });
       const fb =
         comment ||
         `Tarea completada: ${actual.toFixed(2)}h reales, ${computed.toFixed(2)}h computadas`;
-      await addWeeklyFeedback({
+      const fbOk = await addWeeklyFeedback({
         employeeId,
         weekStartDate: taskWeekStr,
         projectId: task.projectId,
         allocationId: task.id,
         reason: 'other',
+        weeklyAction: 'keep',
         comments: fb,
       });
-      return true;
+      return fbOk ? weeklyCloseOk() : weeklyCloseFail('No se pudo registrar el cierre de la tarea');
     },
     [addWeeklyFeedback, updateAllocation]
   );
@@ -327,16 +380,13 @@ export function useWeeklyCloseMutations(viewDate: Date): UseWeeklyCloseMutations
       const slots = getSlotsForTaskWeek(task.weekStartDate);
       const destSlot = slots.find(s => s.storageKey === destWeekStr);
       if (!destWeekStr || !destSlot) {
-        toast.error(`"${task.taskName}": elige semana destino`);
-        return false;
+        return weeklyCloseFail(`"${task.taskName}": elige semana destino`);
       }
       if (actual < 0) {
-        toast.error(`"${task.taskName}": las horas reales no pueden ser negativas`);
-        return false;
+        return weeklyCloseFail(`"${task.taskName}": las horas reales no pueden ser negativas`);
       }
       if (newEstimate <= 0) {
-        toast.error(`"${task.taskName}" necesita horas planificadas > 0`);
-        return false;
+        return weeklyCloseFail(`"${task.taskName}" necesita horas planificadas > 0`);
       }
       const destLabel = format(destSlot.weekStart, 'd MMM yyyy', { locale: es });
       const fb =
@@ -351,11 +401,13 @@ export function useWeeklyCloseMutations(viewDate: Date): UseWeeklyCloseMutations
         p_new_hours_assigned: newEstimate,
         p_feedback_employee_id: employeeId,
         p_feedback_comments: fb,
+        p_feedback_weekly_action: 'postpone',
       });
 
       if (rpcError) {
-        toast.error(rpcError.message || 'No se pudo completar el cierre parcial (¿migración aplicada en Supabase?)');
-        return false;
+        return weeklyCloseFail(
+          rpcError.message || 'No se pudo completar el cierre parcial (¿migración aplicada en Supabase?)'
+        );
       }
 
       // La RPC no pasa por addAllocation/updateAllocation: sin esto el historial (audit_logs) pierde la continuación semanal.
@@ -386,7 +438,7 @@ export function useWeeklyCloseMutations(viewDate: Date): UseWeeklyCloseMutations
 
       await loadDataForMonth(startOfMonth(parseISO(task.weekStartDate)));
       await loadDataForMonth(destSlot.viewMonth);
-      return true;
+      return weeklyCloseOk();
     },
     [currentAgency?.id, getSlotsForTaskWeek, loadDataForMonth]
   );
@@ -397,22 +449,20 @@ export function useWeeklyCloseMutations(viewDate: Date): UseWeeklyCloseMutations
       const taskWeekDate = parseISO(task.weekStartDate);
       const taskWeekStr = format(taskWeekDate, 'yyyy-MM-dd');
       if (validTasks.length === 0) {
-        toast.error('Añade al menos una tarea válida');
-        return;
+        return weeklyCloseFail('Añade al menos una tarea válida');
       }
       const alreadyActual = round2(task.hoursActual || 0);
       const pendingHours = round2(task.hoursAssigned - alreadyActual);
       const totalDistributed = validTasks.reduce((sum, t) => sum + parseHours(t.hours), 0);
       if (Math.abs(totalDistributed - pendingHours) > 0.01) {
-        toast.error(`Suma ${totalDistributed.toFixed(2)}h ≠ ${pendingHours.toFixed(2)}h pendientes`);
-        return;
+        return weeklyCloseFail(`Suma ${totalDistributed.toFixed(2)}h ≠ ${pendingHours.toFixed(2)}h pendientes`);
       }
       const projectMonthAllocations = allocations.filter(
         a => a.projectId === task.projectId && isAllocationInEffectiveMonth(a.weekStartDate, viewDate) && a.id !== task.id
       );
       const projectBudget = projects.find(p => p.id === task.projectId)?.budgetHours || 0;
       const newProjectMonthTotal =
-        projectMonthAllocations.reduce((s, a) => s + a.hoursAssigned, 0) + totalDistributed;
+        projectMonthAllocations.reduce((s, a) => s + a.hoursAssigned, 0) + alreadyActual + totalDistributed;
       if (projectBudget > 0 && newProjectMonthTotal > projectBudget) {
         toast.warning(
           `Proyecto excede presupuesto (${newProjectMonthTotal.toFixed(1)}h/${projectBudget.toFixed(1)}h). Se creará igualmente.`
@@ -447,14 +497,18 @@ export function useWeeklyCloseMutations(viewDate: Date): UseWeeklyCloseMutations
       const originalTaskName =
         task.taskName?.replace(/\(transferida de .+\)/, '').trim() || task.taskName || 'Tarea';
       const baseComment = `Distribuidas en ${validTasks.length} tarea(s): ${validTasks.map(t => `${t.taskName} (${t.hours}h)`).join(', ')} | Nombre original: ${originalTaskName}`;
-      await addWeeklyFeedback({
+      const fbOk = await addWeeklyFeedback({
         employeeId,
         weekStartDate: taskWeekStr,
         projectId: task.projectId,
         allocationId: originalTaskId,
         reason: 'other',
+        weeklyAction: 'distribute',
         comments: userComment?.trim() ? `${baseComment} | Nota: ${userComment.trim()}` : baseComment,
       });
+      if (!fbOk) {
+        return weeklyCloseFail('No se pudo registrar la distribución');
+      }
 
       if (alreadyActual > 0) {
         await updateAllocation({
@@ -502,6 +556,7 @@ export function useWeeklyCloseMutations(viewDate: Date): UseWeeklyCloseMutations
       if (alreadyActual <= 0) {
         await deleteAllocation(originalTaskId);
       }
+      return weeklyCloseOk();
     },
     [
       addAllocation,
@@ -512,6 +567,7 @@ export function useWeeklyCloseMutations(viewDate: Date): UseWeeklyCloseMutations
       getEmployeeLoadForWeek,
       getSlotsForTaskWeek,
       projects,
+      updateAllocation,
       viewDate,
     ]
   );
@@ -522,6 +578,7 @@ export function useWeeklyCloseMutations(viewDate: Date): UseWeeklyCloseMutations
       applyMove,
       applyMoveToEmployee,
       applyJustify,
+      applyCancel,
       applyKeep,
       applyRollover,
       applyDistribute,
@@ -532,6 +589,7 @@ export function useWeeklyCloseMutations(viewDate: Date): UseWeeklyCloseMutations
       applyMove,
       applyMoveToEmployee,
       applyJustify,
+      applyCancel,
       applyKeep,
       applyRollover,
       applyDistribute,

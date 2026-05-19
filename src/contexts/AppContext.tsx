@@ -118,6 +118,7 @@ interface SupabaseWeeklyFeedback {
   project_id?: string;
   allocation_id?: string;
   reason?: string;
+  weekly_action?: string;
   comments?: string;
   created_at: string;
 }
@@ -178,7 +179,7 @@ interface AppContextType {
   refetchMonthData: (date: Date) => Promise<boolean>;
   /** Precarga todos los meses del rango inclusive (inicio/fin normalizados a inicio de mes). */
   ensureMonthsLoadedInRange: (start: Date, end: Date) => Promise<void>;
-  addWeeklyFeedback: (feedback: Omit<WeeklyFeedback, 'id' | 'createdAt'>) => void;
+  addWeeklyFeedback: (feedback: Omit<WeeklyFeedback, 'id' | 'createdAt'>) => Promise<boolean>;
   refreshData: (skipLoading?: boolean) => Promise<void>;
   userRoutines: UserRoutine[];
   addRoutine: (routine: Omit<UserRoutine, 'id'>) => Promise<void>;
@@ -1134,23 +1135,34 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // --- WEEKLY FEEDBACK ---
-  const addWeeklyFeedback = useCallback(async (feedback: Omit<WeeklyFeedback, 'id' | 'createdAt'>) => {
-    const { data } = await supabase.from('weekly_feedback').insert({
+  const addWeeklyFeedback = useCallback(async (feedback: Omit<WeeklyFeedback, 'id' | 'createdAt'>): Promise<boolean> => {
+    const { data, error } = await supabase.from('weekly_feedback').insert({
       employee_id: feedback.employeeId,
       week_start_date: feedback.weekStartDate,
       project_id: feedback.projectId || null,
       allocation_id: feedback.allocationId || null,
       reason: feedback.reason || null,
+      weekly_action: feedback.weeklyAction || null,
       comments: feedback.comments || null
     }).select().single();
-    if (data) setWeeklyFeedback(prev => [...prev, {
-      ...data,
+
+    if (error || !data) {
+      console.error('Error adding weekly feedback:', error);
+      return false;
+    }
+
+    setWeeklyFeedback(prev => [...prev, {
+      id: data.id,
       employeeId: data.employee_id,
       weekStartDate: data.week_start_date,
-      projectId: data.project_id,
-      allocationId: data.allocation_id,
+      projectId: data.project_id ?? undefined,
+      allocationId: data.allocation_id ?? undefined,
+      reason: data.reason as WeeklyFeedback['reason'] | undefined,
+      weeklyAction: data.weekly_action as WeeklyFeedback['weeklyAction'] | undefined,
+      comments: data.comments ?? undefined,
       createdAt: data.created_at
     }]);
+    return true;
   }, []);
 
   // --- QUERIES ---

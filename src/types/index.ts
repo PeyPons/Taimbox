@@ -430,6 +430,8 @@ export interface WeeklyFeedback {
   projectId?: string;
   allocationId?: string;
   reason?: 'technical_issue' | 'client_blocker' | 'bad_estimation' | 'personal_absence' | 'other';
+  /** Acción de cierre weekly (`weekly_feedback.weekly_action`). */
+  weeklyAction?: 'keep' | 'postpone' | 'distribute' | 'transfer' | 'justify' | 'cancel' | 'move';
   comments?: string;
   createdAt: string;
 }

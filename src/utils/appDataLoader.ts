@@ -115,6 +115,7 @@ interface SupabaseWeeklyFeedback {
   project_id?: string;
   allocation_id?: string;
   reason?: string;
+  weekly_action?: string;
   comments?: string;
   created_at: string;
 }
@@ -393,6 +394,7 @@ export async function fetchInitialAppData({
             projectId: fb.project_id,
             allocationId: fb.allocation_id,
             reason: fb.reason as WeeklyFeedback['reason'],
+            weeklyAction: fb.weekly_action as WeeklyFeedback['weeklyAction'],
             comments: fb.comments,
             createdAt: fb.created_at,
           })
@@ -620,6 +622,7 @@ export async function loadMonthData({
           projectId: fb.project_id,
           allocationId: fb.allocation_id,
           reason: fb.reason as WeeklyFeedback['reason'],
+          weeklyAction: fb.weekly_action as WeeklyFeedback['weeklyAction'],
           comments: fb.comments,
           createdAt: fb.created_at,
         })
