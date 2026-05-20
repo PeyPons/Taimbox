@@ -3,7 +3,7 @@ import { AllocationFormDialog } from '@/components/planner/allocation/Allocation
 import { useAppAllocations, useAppEmployees, useAppProjects } from '@/contexts/AppContext';
 import { useAllocationActions } from '@/hooks/useAllocationActions';
 import { useAllocationSheet } from '@/hooks/useAllocationSheet';
-import { useIntegration } from '@/hooks/useIntegration';
+import { useWeeklyModuleEnabled } from '@/hooks/useIntegration';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
 import { useTasksImpact } from '@/hooks/useTasksImpact';
@@ -31,7 +31,7 @@ export function CoherenceAllocationEditDialog({
   const employeeId = allocation.employeeId;
   const { hasPermission } = usePermissions();
   const canAssignToOthers = hasPermission('can_assign_tasks_to_others');
-  const isWeeklyEnabled = useIntegration('weekly_feedback');
+  const isWeeklyEnabled = useWeeklyModuleEnabled();
 
   const { weeks, activeProjects, getProjectBudgetStatus } = useAllocationSheet(
     employeeId,

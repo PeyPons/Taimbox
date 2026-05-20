@@ -14,14 +14,11 @@ export const RESTRICTED_PERMISSIONS: UserPermissions = {
   can_access_reports: false,
   can_access_operations_radar: false,
   can_access_financial_health: false,
-  can_access_client_reports: false,
   can_access_google_ads: false,
   can_access_meta_ads: false,
-  can_access_ads_reports: false,
   can_access_deadlines: true,
   can_access_okrs: false,
   can_access_weekly_forecast: false,
-  can_access_weekly: true,
   can_access_settings: true,
   can_access_agency_settings: false,
   can_access_api_keys: false,
@@ -98,4 +95,3 @@ export function canAccessRoute(
 export function hasPermissionFlag(permissions: UserPermissions, permission: keyof UserPermissions): boolean {
   return permissions[permission] !== false;
 }
-

@@ -48,7 +48,7 @@ import { supabase } from '@/lib/supabase';
 import { TransferRequestDialog } from '@/components/transfers/TaskTransferComponents';
 import { useTaskTransfers } from '@/hooks/useTaskTransfers';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
-import { useIntegration } from '@/hooks/useIntegration';
+import { useWeeklyModuleEnabled } from '@/hooks/useIntegration';
 import { getEffectiveCompletedHours, getPlanningDeltaHours } from '@/utils/hoursTracking';
 import { formatDecimalHoursAsHm } from '@/utils/timerDisplay';
 import { SensitiveText } from '@/components/privacy/SensitiveText';
@@ -85,7 +85,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
   const canAssignToOthers = hasPermission('can_assign_tasks_to_others');
   const weeklyCloseDay = useWeeklyCloseDay();
   const { formatName: formatProjectName } = useProjectAliasing();
-  const isWeeklyEnabled = useIntegration('weekly_feedback');
+  const isWeeklyEnabled = useWeeklyModuleEnabled();
   const isTimeTrackerEnabled = (currentAgency?.settings?.modules?.timeTracker ?? false) && currentUser?.id === employeeId && currentUser?.user_id != null;
   const preference = currentAgency?.settings?.hoursTrackingPreference;
 

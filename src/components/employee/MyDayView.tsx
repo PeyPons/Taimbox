@@ -28,7 +28,7 @@ export interface MyDayViewProps {
   employeeId: string;
   /** Mes de contexto para precarga de allocations (además del mes actual). */
   viewDate: Date;
-  /** Integración weekly_feedback: muestra acceso al mismo modal que el planificador (posponer, distribuir, etc.). */
+  /** Módulo Weekly activo: acceso al mismo modal que el planificador (posponer, distribuir, etc.). */
   weeklyEnabled?: boolean;
   /** Abre `WeeklyReportDialog` centrado en esta allocation (mismo flujo que «Opciones Weekly…» en el planner). */
   onOpenWeeklyForAllocation?: (allocationId: string) => void;

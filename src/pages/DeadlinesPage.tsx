@@ -58,7 +58,7 @@ export default function DeadlinesPage() {
   const { allocations } = useAppAllocations();
   const { absences, teamEvents } = useAppAbsencesAndEvents();
   const { canAccess } = usePermissions();
-  const isManager = canAccess('/planner') || canAccess('/reports') || canAccess('/operaciones') || canAccess('/finanzas');
+  const isManager = canAccess('/planner') || canAccess('/operaciones') || canAccess('/finanzas');
   const canEditDeadlines = isManager || canAccess('/deadlines');
   const { currentAgency } = useAgency();
   const { isSupportView } = useSupportAgencyView();

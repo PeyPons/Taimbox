@@ -1447,15 +1447,13 @@
     },
     "modules": {
       "title": "Funcionalidades activas",
-      "description": "Activa o desactiva áreas del producto visibles en el menú. Las conexiones con terceros están en Conexiones.",
-      "seoReservedNote": "El antiguo interruptor «SEO» de agencia no está enlazado a ninguna pantalla en esta versión; el valor se conserva en datos por compatibilidad.",
-      "seo": "Módulo SEO",
-      "seoDesc": "Auditorías, rankings y kpis de posicionamiento orgánico.",
+      "description": "Activa o desactiva funcionalidades del producto. Weekly no añade una entrada de menú: controla el cierre semanal en Mi espacio y el planificador. CRM y ads están en Conexiones.",
       "ppc": "PPC (Ads)",
       "ppcDesc": "Google/Meta Ads e informes de inversión.",
       "ppcEffect": "Afecta a: entradas Google Ads / Meta Ads y rutas /ads, /meta-ads (además de permisos de rol).",
-      "weeklyFeedback": "Weekly Feedback",
-      "weeklyFeedbackDesc": "Previsión semanal y cierre en planificador; con la integración Weekly activa en Conexiones, las semanas ya cerradas no se retocan a mano en el calendario.",
+      "weeklyFeedback": "Weekly",
+      "weeklyFeedbackDesc": "Cierre semanal del equipo: bloquea la edición directa en el planificador cuando la semana ya ha cerrado; los pendientes se resuelven desde Weekly.",
+      "weeklyFeedbackEffect": "Afecta a: botón Weekly en Mi espacio, bloqueo de semanas pasadas en el planificador y modal de cierre semanal.",
       "professionalGoals": "Objetivos profesionales (OKRs)",
       "professionalGoalsDesc": "Metas por empleado en la vista Objetivos.",
       "professionalGoalsEffect": "Afecta a: entrada Objetivos y ruta /okrs (además del permiso de rol).",
@@ -1640,12 +1638,12 @@
     },
     "integrations": {
       "title": "Conexiones",
-      "description": "Funciones opcionales (Weekly, CRM, demo) y cuentas publicitarias. El módulo PPC controla si se muestran las rutas de anuncios.",
-      "optionalFeaturesTitle": "Funciones opcionales",
-      "optionalFeaturesDesc": "Activar o desactivar flujos (Weekly, CRM, privacidad en demo). No sustituyen al módulo PPC: las cuentas publicitarias van más abajo.",
+      "description": "Enlaces con sistemas externos y cuentas publicitarias. El módulo PPC controla si se muestran las rutas de anuncios.",
+      "externalLinksTitle": "Enlaces con sistemas externos",
+      "externalLinksDesc": "Exportación CSV e IDs en perfiles y proyectos para cruzar datos con tu CRM u otro sistema.",
+      "externalBadge": "Externo",
       "adsPlatformsTitle": "Cuentas publicitarias",
       "adsPlatformsDesc": "OAuth y cuentas Meta / Google Ads. Requiere tener activado el módulo PPC y permisos de rol para ver las pantallas de anuncios.",
-      "workflow": "Workflow",
       "crm": "CRM",
       "other": "Privacidad y demostración",
       "weeklyCloseDay": "Día de cierre semanal",
@@ -1658,10 +1656,6 @@
       "crmPackDescription": "Activa el enlace con tu CRM u otro sistema: cada miembro puede indicar su ID de usuario en su perfil y, en cada proyecto, el ID externo del proyecto. Quien tenga permiso podrá exportar las tareas del mes a CSV (tarea, ID de usuario CRM, ID de proyecto externo y horas).",
       "crmPackLegacyHint": "Solo tenías activado el ID de usuario en perfiles. Activa el interruptor para completar la integración (exportación e ID de proyecto en fichas).",
       "items": {
-        "weekly_feedback": {
-          "name": "Weekly",
-          "description": "Bloquea la edición directa en el planificador cuando la semana ya ha cerrado; el equipo resuelve pendientes desde Weekly (completar horas, posponer, transferir, desglosar…)."
-        },
         "crm_export": {
           "name": "Exportación de Tareas al CRM",
           "description": "Exporta la planificación a CSV y activa en cada proyecto el campo de ID externo del proyecto (CRM) para cruzarlo con tu sistema."
@@ -1755,8 +1749,8 @@
         "desc": "Define tu referencia económica, cómo contáis el tiempo y qué partes de Taimbox queréis usar."
       },
       "integrations": {
-        "title": "Conexiones con tu forma de trabajar",
-        "desc": "Opcional: integración Weekly (bloqueo de semanas pasadas en el planificador + cierre desde Weekly), CRM y más. Puedes dejarlo apagado y configurarlo luego en Conexiones."
+        "title": "Enlaces externos (opcional)",
+        "desc": "Opcional: enlace CRM para exportación CSV. Weekly se configura en el paso anterior (Funciones del producto)."
       },
       "departments": {
         "title": "Departamentos",
@@ -1810,7 +1804,9 @@
     },
     "modules": {
       "title": "Funciones del producto",
-      "sectionIntroShort": "Cada interruptor muestra u oculta una entrada del menú. Podrás cambiarlo después en Configuración de agencia.",
+      "sectionIntroShort": "Cada interruptor activa una función del producto. Weekly controla el cierre semanal; el resto muestra u oculta entradas del menú.",
+      "weeklySummary": "Cierre semanal: bloquea retoques manuales en semanas ya cerradas en el planificador.",
+      "weeklyHelp": "Con Weekly activo, las semanas pasadas no se reescriben a mano en el calendario: los cambios pasan por el flujo Weekly. Si preferís libertad total, déjalo apagado.",
       "sectionIntro": "Cada opción activa una sección en el menú. Si desactivas algo, el equipo no lo verá hasta que lo enciendas en Configuración de agencia.",
       "deadlinesTitle": "Deadlines (entregas con fecha)",
       "deadlinesSummary": "Tareas con fecha límite y seguimiento por cliente o proyecto (en paralelo al planificador).",
@@ -1836,17 +1832,17 @@
     "integrations": {
       "needsDeps": "Activa antes: {{list}}",
       "deps": "Requiere dependencias activas",
-      "calloutTitle": "Conexiones opcionales",
+      "calloutTitle": "Enlaces externos opcionales",
       "calloutBullets": [
         "Todo es opcional; lo mismo está en Configuración de agencia → Conexiones.",
-        "Weekly: al cerrar la semana, el planificador deja de admitir retoques manuales en esa semana.",
-        "CRM: un interruptor para IDs en perfiles y proyectos más exportación CSV mensual."
+        "CRM: un interruptor para IDs en perfiles y proyectos más exportación CSV mensual.",
+        "Weekly (cierre semanal) se activa en Funcionalidades, no aquí."
       ],
       "weeklyCardHelp": "Con Weekly activo, las semanas cerradas no se reescriben a mano en el calendario: los cambios pasan por el flujo Weekly. Si preferís libertad total, déjalo apagado.",
       "weeklyCloseHelpShort": "Último día de la semana operativa (desde el lunes). Pasada esa fecha, esa semana queda cerrada para edición directa en el planificador.",
       "crmPackShort": "Un interruptor: ID de usuario en perfiles, ID externo en proyectos y exportación CSV mensual (tarea, IDs y horas).",
-      "intro": "Puedes dejarlo para más adelante: en Conexiones (configuración de agencia) lo activarás cuando conozcas mejor el flujo.",
-      "introAccordion": "Conexiones opcionales",
+      "intro": "Puedes dejarlo para más adelante: en Conexiones (configuración de agencia) lo activarás cuando conozcas mejor el flujo de cierre semanal.",
+      "introAccordion": "Funciones opcionales",
       "weeklyExtra": "Activa un modo más disciplinado: el planificador no permite reescribir a mano semanas ya cerradas; los movimientos pasan por el cierre Weekly. Si preferís editar el pasado con libertad, déjalo apagado.",
       "crmGroup": "CRM",
       "skip": "Omitir y continuar sin cambios",

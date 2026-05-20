@@ -40,7 +40,6 @@ import { UserPermissions } from './permissions';
 // ============================================
 
 export interface AgencyModules {
-  seo?: boolean;
   ppc?: boolean;
   weeklyFeedback?: boolean;
   professionalGoals?: boolean;
@@ -152,10 +151,9 @@ export interface AgencySettings {
     googleClientSecret?: string;
   };
   enabledIntegrations?: {
-    weekly_feedback?: boolean;       // Cierre semanal: bloquea edición directa de semanas pasadas en planificador; cambios vía WeeklyReportDialog
-    crm_export?: boolean;            // CSV export + project external_id (CRM project ID) in project forms
-    crm_user_id?: boolean;           // Employee profile field for external / CRM user id
-    anonymize_ads_for_video?: boolean; // Modo demostración: oculta nombres en Ads
+    crm_export?: boolean;
+    crm_user_id?: boolean;
+    anonymize_ads_for_video?: boolean;
   };
   // Weekly system configuration
   weeklyCloseDay?: number; // Days from week start for weekly close (0-6, default 4 = Friday)

@@ -2,8 +2,7 @@ import { Navigate, Outlet } from 'react-router-dom';
 import { useAgency } from '@/contexts/AgencyContext';
 import { AgencyModules } from '@/types';
 
-const MODULE_DEFAULTS: Required<Pick<AgencyModules, 'seo' | 'ppc' | 'weeklyFeedback' | 'professionalGoals' | 'deadlines' | 'timeTracker'>> = {
-    seo: true,
+const MODULE_DEFAULTS: Required<Pick<AgencyModules, 'ppc' | 'weeklyFeedback' | 'professionalGoals' | 'deadlines' | 'timeTracker'>> = {
     ppc: true,
     weeklyFeedback: true,
     professionalGoals: true,

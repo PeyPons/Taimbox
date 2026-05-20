@@ -92,6 +92,59 @@ export function validateKeepHours(actual: number, hoursAssigned?: number): strin
   return null;
 }
 
+/** Saldo pendiente según horas ya registradas en la allocation (no el valor del formulario). */
+export function getWeeklyTaskPendingHours(task: {
+  hoursAssigned: number;
+  hoursActual?: number | null;
+}): number {
+  const assigned = Number(task.hoursAssigned) || 0;
+  const actual = Number(task.hoursActual) || 0;
+  return Math.round(Math.max(0, assigned - actual) * 100) / 100;
+}
+
+/** Posponer: basta con estimado > 0; el usuario puede registrar 0h realizadas y mover todo el saldo. */
+export function canPostponeTaskInWeekly(task: { hoursAssigned: number }): boolean {
+  return (Number(task.hoursAssigned) || 0) > 0;
+}
+
+export function formatWeeklyTaskHoursSummary(task: {
+  hoursAssigned: number;
+  hoursActual?: number | null;
+}): string {
+  const assigned = roundWeeklyHours(Number(task.hoursAssigned) || 0);
+  const actual = roundWeeklyHours(Number(task.hoursActual) || 0);
+  const pending = getWeeklyTaskPendingHours(task);
+  if (assigned <= 0) return 'Sin horas planificadas';
+  if (actual <= 0) return `${assigned.toFixed(2)}h planificadas · sin registrar esta semana`;
+  if (pending <= 0) {
+    return `${assigned.toFixed(2)}h planificadas · ${actual.toFixed(2)}h registradas`;
+  }
+  return `${pending.toFixed(2)}h pendientes · ${assigned.toFixed(2)}h planificadas`;
+}
+
+/** Texto breve en pantalla; evita explicar el flujo tarea a tarea. */
+export function getWeeklyTaskGuidance(task: {
+  hoursAssigned: number;
+  hoursActual?: number | null;
+}): string | null {
+  const assigned = Number(task.hoursAssigned) || 0;
+  if (assigned <= 0) return null;
+  const actual = Number(task.hoursActual) || 0;
+  const pending = getWeeklyTaskPendingHours(task);
+
+  if (actual <= 0) {
+    return '¿No avanzaste? Elige «Sigo después», deja 0 en horas de esta semana y elige la semana destino.';
+  }
+  if (pending <= 0 && canPostponeTaskInWeekly(task)) {
+    return 'Para pasar el trabajo a otra semana, elige «Sigo después» e indica cuánto hiciste esta semana (0 si quieres moverlo entero).';
+  }
+  return null;
+}
+
+function roundWeeklyHours(n: number): number {
+  return Math.round((n + Number.EPSILON) * 100) / 100;
+}
+
 export function validatePostponeRemaining(
   actual: number,
   hoursAssigned: number,

@@ -137,7 +137,9 @@ export function useWeeklyCloseMutations(viewDate: Date): UseWeeklyCloseMutations
       const effectiveActual =
         hoursActualOverride !== undefined ? hoursActualOverride : (task.hoursActual || 0);
       const remainingHours = task.hoursAssigned - effectiveActual;
-      if (remainingHours <= 0) return weeklyCloseOk();
+      if (remainingHours <= 0) {
+        return weeklyCloseFail('No queda saldo para mover a otra semana');
+      }
 
       const snapshotTask: Allocation = { ...task };
       const existing = allocations.find(
@@ -210,7 +212,9 @@ export function useWeeklyCloseMutations(viewDate: Date): UseWeeklyCloseMutations
         return weeklyCloseFail('Selecciona compañero y semana destino');
       }
       const remainingHours = task.hoursAssigned - (task.hoursActual || 0);
-      if (remainingHours <= 0) return weeklyCloseOk();
+      if (remainingHours <= 0) {
+        return weeklyCloseFail('No hay horas pendientes para transferir a otro compañero');
+      }
       const targetEmployee = employees.find(e => e.id === targetEmployeeId);
       if (targetEmployee) {
         const twSlot = getSlotsForTaskWeek(task.weekStartDate).find(s => s.storageKey === targetWeekVal);

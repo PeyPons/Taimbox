@@ -964,15 +964,13 @@
     },
     "modules": {
       "title": "Active features",
-      "description": "Turn product areas in the menu on or off. Third-party connections are under Connections.",
-      "seoReservedNote": "The legacy agency “SEO” toggle is not wired to any screen in this version; the value is kept in data for compatibility.",
-      "seo": "SEO Module",
-      "seoDesc": "Audits, rankings and organic positioning KPIs.",
+      "description": "Turn product features on or off. Weekly does not add a menu entry—it controls weekly close in My space and the planner. CRM and ads are under Connections.",
       "ppc": "PPC (Ads)",
       "ppcDesc": "Google/Meta Ads and spend reporting.",
       "ppcEffect": "Affects: Google Ads / Meta Ads menu entries and /ads, /meta-ads routes (plus role permissions).",
-      "weeklyFeedback": "Weekly Feedback",
-      "weeklyFeedbackDesc": "Weekly forecast and planner close flow; with the Weekly integration enabled under Connections, closed weeks can’t be tweaked manually on the calendar.",
+      "weeklyFeedback": "Weekly",
+      "weeklyFeedbackDesc": "Team weekly close: stops direct planner edits once a week is closed; carry-over is handled through Weekly.",
+      "weeklyFeedbackEffect": "Affects: Weekly button in My space, lock on past weeks in the planner, and the weekly close modal.",
       "professionalGoals": "Professional goals (OKRs)",
       "professionalGoalsDesc": "Per-employee goals in the Objectives view.",
       "professionalGoalsEffect": "Affects: Objectives menu entry and /okrs route (plus role permission).",
@@ -1157,12 +1155,12 @@
     },
     "integrations": {
       "title": "Connections",
-      "description": "Optional features (Weekly, CRM, demo) and ad accounts. The PPC module controls whether ad routes appear.",
-      "optionalFeaturesTitle": "Optional features",
-      "optionalFeaturesDesc": "Enable or disable flows (Weekly, CRM, privacy in demo). These do not replace the PPC module: ad accounts are below.",
+      "description": "External system links and ad accounts. The PPC module controls whether ad routes appear.",
+      "externalLinksTitle": "External system links",
+      "externalLinksDesc": "CSV export and IDs on profiles and projects to sync with your CRM or another system.",
+      "externalBadge": "External",
       "adsPlatformsTitle": "Ad accounts",
       "adsPlatformsDesc": "OAuth and Meta / Google Ads accounts. Requires PPC module on and role permissions to see ad screens.",
-      "workflow": "Workflow",
       "crm": "CRM",
       "other": "Privacy & Demo",
       "weeklyCloseDay": "Weekly close day",
@@ -1175,10 +1173,6 @@
       "crmPackDescription": "Links your agency to your CRM or another system: each member can set their CRM user ID on their profile, and each project can have an external project ID. Users with permission can export the month’s tasks to CSV (task name, CRM user ID, external project ID, and hours).",
       "crmPackLegacyHint": "You only had the user ID field on profiles enabled. Turn the switch on to complete the integration (export and external project ID on project records).",
       "items": {
-        "weekly_feedback": {
-          "name": "Weekly",
-          "description": "Stops direct planner edits once a week is closed; the team resolves carry-over through Weekly (log hours, postpone, transfer, split tasks, etc.)."
-        },
         "crm_export": {
           "name": "CRM Task Export",
           "description": "Exports planning to CSV and enables a per-project external project ID (CRM) field so records match your external system."
@@ -1693,8 +1687,8 @@
         "desc": "Set your financial reference, how you count time, and which parts of Taimbox you want to use."
       },
       "integrations": {
-        "title": "Connections to how you work",
-        "desc": "Optional: Weekly integration (lock past weeks in the planner + close via Weekly), CRM, and more. You can leave everything off and configure it later under Connections."
+        "title": "External links (optional)",
+        "desc": "Optional: CRM link for CSV export. Weekly is configured in the previous step (Product features)."
       },
       "departments": {
         "title": "Departments",
@@ -1748,7 +1742,9 @@
     },
     "modules": {
       "title": "Product features",
-      "sectionIntroShort": "Each switch shows or hides a menu entry. You can change this later in Agency settings.",
+      "sectionIntroShort": "Each switch turns on a product feature. Weekly controls the weekly close; the rest show or hide menu entries.",
+      "weeklySummary": "Weekly close: stops manual edits on weeks that are already closed in the planner.",
+      "weeklyHelp": "With Weekly on, closed weeks are not rewritten by hand in the calendar—changes go through the Weekly flow. Turn it off if you prefer full freedom.",
       "sectionIntro": "Each option turns on a section in the menu. If you turn something off, the team will not see it until you enable it again in Agency settings.",
       "deadlinesTitle": "Deadlines (due dates)",
       "deadlinesSummary": "Tasks with due dates tracked by client or project (alongside the planner).",
@@ -1774,17 +1770,17 @@
     "integrations": {
       "needsDeps": "Enable first: {{list}}",
       "deps": "Requires active dependencies",
-      "calloutTitle": "Optional connections",
+      "calloutTitle": "Optional external links",
       "calloutBullets": [
         "Everything here is optional; the same toggles live under Agency settings → Connections.",
-        "Weekly: once a week is closed, the planner stops manual edits for that week.",
-        "CRM: one switch for IDs on profiles and projects plus monthly CSV export."
+        "CRM: one switch for IDs on profiles and projects plus monthly CSV export.",
+        "Weekly (weekly close) is enabled under Features, not here."
       ],
       "weeklyCardHelp": "With Weekly on, closed weeks are not rewritten by hand in the calendar—changes go through the Weekly flow. Turn it off if you prefer full freedom.",
       "weeklyCloseHelpShort": "Last day of the operational week (from Monday). After that day, that week is locked for direct planner edits.",
       "crmPackShort": "One switch: CRM user ID on profiles, external project ID, and monthly CSV export (task, IDs, hours).",
-      "intro": "You can skip this for now and turn features on later in Connections (agency settings) once you know your workflow.",
-      "introAccordion": "Optional connections",
+      "intro": "You can skip this for now and turn features on later in Connections (agency settings) once you know your weekly close rhythm.",
+      "introAccordion": "Optional features",
       "weeklyExtra": "Enables stricter history: the planner won’t let you rewrite weeks that are already closed; changes go through the Weekly close. Leave it off if you prefer to edit the past freely.",
       "crmGroup": "CRM",
       "skip": "Skip and continue without changes",

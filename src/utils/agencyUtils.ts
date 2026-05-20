@@ -66,37 +66,64 @@ const checkAdminPermission = (roleName: string | null, settings: AgencySettings)
   return false;
 };
 
-export async function migrateIntegrations(agencyId: string, settings: AgencySettings): Promise<AgencySettings> {
-  if (settings.enabledIntegrations) {
-    return settings;
-  }
+/** Weekly: fuente de verdad en `modules.weeklyFeedback` (legacy: `enabledIntegrations.weekly_feedback` al cargar). */
+export function resolveWeeklyEnabled(settings: AgencySettings | undefined): boolean {
+  if (!settings) return true;
+  if (settings.modules?.weeklyFeedback === false) return false;
+  if (settings.modules?.weeklyFeedback === true) return true;
+  if (settings.enabledIntegrations?.weekly_feedback === false) return false;
+  if (settings.enabledIntegrations?.weekly_feedback === true) return true;
+  return true;
+}
 
-  const enabledIntegrations: AgencySettings['enabledIntegrations'] = {};
+function stripLegacyWeeklyIntegration(
+  enabled: AgencySettings['enabledIntegrations'] | undefined,
+): AgencySettings['enabledIntegrations'] | undefined {
+  if (!enabled) return enabled;
+  const { weekly_feedback: _legacy, ...rest } = enabled;
+  return Object.keys(rest).length > 0 ? rest : undefined;
+}
 
-  if (settings.modules?.weeklyFeedback === true) {
-    enabledIntegrations.weekly_feedback = true;
-  }
-
-  try {
-    const { data: employeesWithCrm, error: employeesError } = await supabase
-      .from('employees')
-      .select('crm_user_id')
-      .eq('agency_id', agencyId)
-      .not('crm_user_id', 'is', null)
-      .limit(1);
-
-    if (!employeesError && employeesWithCrm && employeesWithCrm.length > 0) {
-      enabledIntegrations.crm_user_id = true;
-      enabledIntegrations.crm_export = true;
-    }
-  } catch (err) {
-    console.debug('[AgencyUtils] No se pudo verificar empleados con CRM (opcional):', err);
-  }
-
+/** Normaliza settings al leer o antes de guardar: Weekly en modules, sin flag legacy en integraciones. */
+export function normalizeAgencySettings(settings: AgencySettings): AgencySettings {
+  const weeklyOn = resolveWeeklyEnabled(settings);
+  const { seo: _legacySeo, ...modulesRest } = settings.modules ?? {};
   return {
     ...settings,
-    enabledIntegrations,
+    modules: { ...modulesRest, weeklyFeedback: weeklyOn },
+    enabledIntegrations: stripLegacyWeeklyIntegration(settings.enabledIntegrations),
   };
+}
+
+export async function migrateIntegrations(agencyId: string, settings: AgencySettings): Promise<AgencySettings> {
+  let next = settings;
+
+  if (!settings.enabledIntegrations) {
+    const enabledIntegrations: AgencySettings['enabledIntegrations'] = {};
+
+    try {
+      const { data: employeesWithCrm, error: employeesError } = await supabase
+        .from('employees')
+        .select('crm_user_id')
+        .eq('agency_id', agencyId)
+        .not('crm_user_id', 'is', null)
+        .limit(1);
+
+      if (!employeesError && employeesWithCrm && employeesWithCrm.length > 0) {
+        enabledIntegrations.crm_user_id = true;
+        enabledIntegrations.crm_export = true;
+      }
+    } catch (err) {
+      console.debug('[AgencyUtils] No se pudo verificar empleados con CRM (opcional):', err);
+    }
+
+    next = {
+      ...settings,
+      enabledIntegrations,
+    };
+  }
+
+  return normalizeAgencySettings(next);
 }
 
 /** La RPC get_agency_for_app_client ya redacta secretos; esto evita fugas si el payload viniera completo. */
@@ -399,4 +426,3 @@ export async function transferAgencyOwnershipUtil(newOwnerId: string, agencyId: 
     }
   }
 }
-

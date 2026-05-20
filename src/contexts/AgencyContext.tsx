@@ -9,6 +9,7 @@ import {
   listMyAgenciesDirectory,
   removeUserFromAgencyUtil,
   transferAgencyOwnershipUtil,
+  normalizeAgencySettings,
 } from '@/utils/agencyUtils';
 
 // Tipos para respuestas de Supabase (snake_case)
@@ -653,7 +654,7 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
     updateSettings: async (settings: Partial<AgencySettings>) => {
       if (!currentAgency?.id) return;
 
-      const newSettings = { ...currentAgency.settings, ...settings };
+      const newSettings = normalizeAgencySettings({ ...currentAgency.settings, ...settings });
 
       const { data: savedSettings, error: rpcError } = await supabase.rpc(
         'update_agency_settings_for_client',

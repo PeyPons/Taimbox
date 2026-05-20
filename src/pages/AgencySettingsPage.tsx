@@ -221,12 +221,11 @@ export default function AgencySettingsPage() {
   // Estado local para edición
   const [agencyName, setAgencyName] = useState(currentAgency?.name || '');
   const [modules, setModules] = useState(currentAgency?.settings?.modules || {
-    seo: true,
     ppc: true,
     weeklyFeedback: true,
     professionalGoals: true,
     deadlines: true,
-    timeTracker: false
+    timeTracker: false,
   });
   const [timeTrackerMaxHours, setTimeTrackerMaxHours] = useState(
     currentAgency?.settings?.timeTrackerMaxHours ?? 12
@@ -324,12 +323,13 @@ export default function AgencySettingsPage() {
     if (!currentAgency || saving) return;
 
     setAgencyName(currentAgency.name || '');
-      setModules(currentAgency.settings?.modules || {
-        seo: true,
+      setModules({
         ppc: true,
+        weeklyFeedback: true,
         professionalGoals: true,
         deadlines: true,
-        timeTracker: false
+        timeTracker: false,
+        ...currentAgency.settings?.modules,
       });
       setTimeTrackerMaxHours(currentAgency.settings?.timeTrackerMaxHours ?? 12);
       setPrimaryColor(currentAgency.settings?.branding?.primaryColor || '#6366f1');
@@ -449,8 +449,10 @@ export default function AgencySettingsPage() {
     try {
       const rolesToSave = normalizeRolesForSave(roles);
 
+      const weeklyOn = Boolean(modules.weeklyFeedback);
+
       await updateSettings({
-        modules,
+        modules: { ...modules, weeklyFeedback: weeklyOn },
         roles: rolesToSave,
         departments,
         branding: {
@@ -461,7 +463,7 @@ export default function AgencySettingsPage() {
         projectAliasingRules,
         integrations: sanitizeIntegrationsForSave(integrations),
         enabledIntegrations,
-        weeklyCloseDay,
+        weeklyCloseDay: weeklyOn ? weeklyCloseDay : undefined,
         planningPrecisionExclusions,
         timeTrackerMaxHours,
         hoursTrackingPreference,
@@ -1047,10 +1049,63 @@ export default function AgencySettingsPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50/80 p-3 text-sm text-slate-600">
-                  {t('agency.modules.seoReservedNote', 'El antiguo interruptor «SEO» de agencia no está enlazado a ninguna pantalla en esta versión; el valor se conserva en datos por compatibilidad.')}
-                </div>
                 <div className="grid gap-4 grid-cols-1">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 p-3 rounded-lg border">
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <Label className="font-medium">{t('agency.modules.weeklyFeedback', 'Weekly')}</Label>
+                      <p className="text-xs text-slate-500">{t('agency.modules.weeklyFeedbackDesc', 'Cierre semanal del equipo: bloquea la edición directa en el planificador cuando la semana ya ha cerrado; los pendientes se resuelven desde Weekly.')}</p>
+                      <p className="text-xs text-slate-500 pt-0.5">{t('agency.modules.weeklyFeedbackEffect', 'Afecta a: botón Weekly en Mi espacio, bloqueo de semanas pasadas en el planificador y modal de cierre semanal.')}</p>
+                    </div>
+                    <Switch
+                      checked={modules.weeklyFeedback ?? false}
+                      onCheckedChange={() => toggleModule('weeklyFeedback')}
+                      className="shrink-0"
+                    />
+                  </div>
+                  {modules.weeklyFeedback && (
+                    <div className="flex flex-col gap-3 p-3 rounded-lg border border-dashed border-violet-200 bg-violet-50/30 ml-0 sm:ml-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="weekly-close-day-modules" className="text-sm font-medium text-slate-800">
+                          {t('agency.integrations.weeklyCloseDay', 'Día de cierre semanal')}
+                        </Label>
+                        <Popover open={openWeeklyCloseDay} onOpenChange={setOpenWeeklyCloseDay}>
+                          <PopoverTrigger asChild>
+                            <Button id="weekly-close-day-modules" variant="outline" className="h-9 text-sm bg-white justify-between font-normal w-full sm:max-w-xs">
+                              <span className="truncate">
+                                {[0, 1, 2, 3, 4, 5, 6].indexOf(weeklyCloseDay) >= 0
+                                  ? t(`common.days.${['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][weeklyCloseDay]}`,
+                                    ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes (Recomendado)', 'Sábado'][weeklyCloseDay])
+                                  : t('agency.integrations.selectDay', 'Selecciona un día')}
+                              </span>
+                              <ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                            <Command>
+                              <CommandList>
+                                <CommandGroup>
+                                  {['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].map((dayKey, i) => {
+                                    const dayIndex = (i + 1) % 7;
+                                    const label = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes (Recomendado)', 'Sábado', 'Domingo'][i];
+                                    return (
+                                      <CommandItem key={dayIndex} value={label} onSelect={() => { setWeeklyCloseDay(dayIndex); setOpenWeeklyCloseDay(false); }}>
+                                        <Check className={cn('mr-2 h-4 w-4 shrink-0', weeklyCloseDay === dayIndex ? 'opacity-100' : 'opacity-0')} />
+                                        {t(`common.days.${dayKey}`, label)}
+                                      </CommandItem>
+                                    );
+                                  })}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                        <p className="text-xs text-slate-500">
+                          {t('agency.integrations.weeklyCloseDayDesc', 'Último día de la semana operativa (desde el lunes de cada semana). Pasada esa fecha, esa semana queda cerrada para edición directa en el planificador.')}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 p-3 rounded-lg border">
                     <div className="min-w-0 flex-1 space-y-1">
                       <Label className="font-medium">{t('agency.modules.ppc', 'PPC (Ads)')}</Label>
@@ -1612,111 +1667,20 @@ export default function AgencySettingsPage() {
                   {t('agency.integrations.title', 'Integraciones')}
                 </CardTitle>
                 <CardDescription>
-                  {t('agency.integrations.description', 'Conecta tu agencia con herramientas externas y configura funcionalidades avanzadas')}
+                  {t('agency.integrations.description', 'Enlaces con sistemas externos y cuentas publicitarias. El módulo PPC controla si se muestran las rutas de anuncios. Weekly está en Funcionalidades.')}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="space-y-1 pb-2 border-b border-slate-100">
-                  <p className="text-sm font-medium text-slate-800">{t('agency.integrations.optionalFeaturesTitle', 'Funciones opcionales')}</p>
-                  <p className="text-xs text-slate-500">{t('agency.integrations.optionalFeaturesDesc', 'Activar o desactivar flujos (Weekly, CRM, privacidad en demo). No sustituyen al módulo PPC: las cuentas publicitarias van más abajo.')}</p>
-                </div>
-
-                {/* Workflow Integrations */}
+                {/* Enlaces con sistemas externos */}
                 <div className="space-y-3">
-                  <div className="flex items-center gap-2 mb-3">
-                    <GitBranch className="h-4 w-4 text-purple-600" />
-                    <h3 className="font-semibold text-sm text-slate-700 uppercase">{t('agency.integrations.workflow', 'Workflow')}</h3>
+                  <div className="space-y-1 pb-2 border-b border-slate-100">
+                    <div className="flex items-center gap-2">
+                      <Database className="h-4 w-4 text-blue-600" />
+                      <h3 className="font-semibold text-sm text-slate-800">{t('agency.integrations.externalLinksTitle', 'Enlaces con sistemas externos')}</h3>
+                    </div>
+                    <p className="text-xs text-slate-500 pl-6">{t('agency.integrations.externalLinksDesc', 'Exportación CSV e IDs en perfiles y proyectos para cruzar datos con tu CRM u otro sistema.')}</p>
                   </div>
-                  {Object.values(AVAILABLE_INTEGRATIONS)
-                    .filter(integration => integration.category === 'workflow')
-                    .map(integration => {
-                      const isEnabled = enabledIntegrations[integration.id] ?? false;
-                      return (
-                        <div key={integration.id} className="p-4 rounded-lg border bg-white">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1 space-y-1">
-                              <div className="flex items-center gap-2">
-                                <Label className="font-medium text-slate-900">
-                                  {t(`agency.integrations.items.${integration.id}.name`, integration.name)}
-                                </Label>
-                                <Badge variant="outline" className="text-xs">
-                                  {integration.category}
-                                </Badge>
-                              </div>
-                              <p className="text-sm text-slate-600">
-                                {t(`agency.integrations.items.${integration.id}.description`, integration.description)}
-                              </p>
-                            </div>
-                            <Switch
-                              checked={isEnabled}
-                              onCheckedChange={(checked) => {
-                                setEnabledIntegrations(prev => ({
-                                  ...prev,
-                                  [integration.id]: checked
-                                }));
-                              }}
-                              className="ml-4"
-                            />
-                          </div>
-
-                          {/* Weekly System Config embedded in Workflow item */}
-                          {integration.id === 'weekly_feedback' && isEnabled && (
-                            <div className="mt-4 pt-4 border-t">
-                              <div className="grid gap-4 md:grid-cols-2">
-                                <div className="space-y-2">
-                                  <Label htmlFor="weekly-close-day" className="text-xs font-semibold text-slate-700">
-                                    {t('agency.integrations.weeklyCloseDay', 'Día de cierre semanal')}
-                                  </Label>
-                                  <Popover open={openWeeklyCloseDay} onOpenChange={setOpenWeeklyCloseDay}>
-                                    <PopoverTrigger asChild>
-                                      <Button id="weekly-close-day" variant="outline" className="h-8 text-sm bg-slate-50 justify-between font-normal w-full">
-                                        <span className="truncate">
-                                          {[0, 1, 2, 3, 4, 5, 6].indexOf(weeklyCloseDay) >= 0
-                                            ? t(`common.days.${['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][weeklyCloseDay]}`,
-                                              ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes (Recomendado)', 'Sábado'][weeklyCloseDay])
-                                            : t('agency.integrations.selectDay', 'Selecciona un día')}
-                                        </span>
-                                        <ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0" />
-                                      </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
-                                      <Command>
-                                        <CommandList>
-                                          <CommandGroup>
-                                            {['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].map((dayKey, i) => {
-                                              const dayIndex = (i + 1) % 7; // Monday is 1, Sunday is 0 in the list above
-                                              const label = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes (Recomendado)', 'Sábado', 'Domingo'][i];
-                                              return (
-                                                <CommandItem key={dayIndex} value={label} onSelect={() => { setWeeklyCloseDay(dayIndex); setOpenWeeklyCloseDay(false); }}>
-                                                  <Check className={cn('mr-2 h-4 w-4 shrink-0', weeklyCloseDay === dayIndex ? 'opacity-100' : 'opacity-0')} />
-                                                  {t(`common.days.${dayKey}`, label)}
-                                                </CommandItem>
-                                              );
-                                            })}
-                                          </CommandGroup>
-                                        </CommandList>
-                                      </Command>
-                                    </PopoverContent>
-                                  </Popover>
-                                  <p className="text-[10px] text-slate-500">
-                                    {t('agency.integrations.weeklyCloseDayDesc', 'Determina qué tareas se consideran "de esta semana".')}
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                </div>
-                <Separator />
-
-                {/* CRM Integrations */}
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Database className="h-4 w-4 text-blue-600" />
-                    <h3 className="font-semibold text-sm text-slate-700 uppercase">{t('agency.integrations.crm', 'CRM')}</h3>
-                  </div>
+                  <h4 className="font-medium text-xs text-slate-600 uppercase tracking-wide pl-1">{t('agency.integrations.crm', 'CRM')}</h4>
                   {(() => {
                     const crmPackOn =
                       Boolean(enabledIntegrations.crm_user_id) && Boolean(enabledIntegrations.crm_export);
@@ -1729,8 +1693,8 @@ export default function AgencySettingsPage() {
                             <Label htmlFor="crm-pack-switch" className="font-medium text-slate-900">
                               {t('agency.integrations.crmPackTitle', 'Integración CRM (exportación CSV)')}
                             </Label>
-                            <Badge variant="outline" className="text-xs">
-                              crm
+                            <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                              {t('agency.integrations.externalBadge', 'Externo')}
                             </Badge>
                           </div>
                           <p className="text-sm text-slate-600">

@@ -346,10 +346,10 @@ export default function OnboardingWizard() {
       },
       {
         id: 'integrations',
-        title: t('onboarding.steps.integrations.title', 'Conexiones con tu forma de trabajar'),
+        title: t('onboarding.steps.integrations.title', 'Enlaces externos (opcional)'),
         description: t(
           'onboarding.steps.integrations.desc',
-          'Opcional: enlaces con cierre semanal y CRM. Puedes dejarlo todo apagado y configurarlo luego en Conexiones.'
+          'Opcional: enlace CRM para exportación CSV. Weekly se configura en el paso anterior (Funciones del producto).'
         ),
         icon: <Plug className="h-5 w-5" />,
       },
@@ -420,6 +420,7 @@ export default function OnboardingWizard() {
   const [modGoals, setModGoals] = useState(() => s?.modules?.professionalGoals ?? false);
   const [modDeadlines, setModDeadlines] = useState(() => s?.modules?.deadlines ?? true);
   const [modTracker, setModTracker] = useState(() => s?.modules?.timeTracker ?? true);
+  const [modWeekly, setModWeekly] = useState(() => s?.modules?.weeklyFeedback ?? false);
   const [timeTrackerMaxHours, setTimeTrackerMaxHours] = useState(() => s?.timeTrackerMaxHours ?? 12);
 
   const [enabledIntegrations, setEnabledIntegrations] = useState<AgencySettings['enabledIntegrations']>(
@@ -429,7 +430,6 @@ export default function OnboardingWizard() {
 
   const integrationsSnapRef = useRef<{
     enabledIntegrations: NonNullable<AgencySettings['enabledIntegrations']>;
-    weeklyCloseDay: number;
   } | null>(null);
 
   useEffect(() => {
@@ -443,13 +443,8 @@ export default function OnboardingWizard() {
   useEffect(() => {
     if (currentStep !== 'integrations' || !currentAgency?.id) return;
     const en = { ...(currentAgency.settings?.enabledIntegrations ?? {}) };
-    const wcd =
-      typeof currentAgency.settings?.weeklyCloseDay === 'number'
-        ? currentAgency.settings.weeklyCloseDay
-        : 4;
-    integrationsSnapRef.current = { enabledIntegrations: en, weeklyCloseDay: wcd };
+    integrationsSnapRef.current = { enabledIntegrations: en };
     setEnabledIntegrations(en);
-    setWeeklyCloseDay(wcd);
   }, [currentStep, currentAgency?.id]);
 
   const [deptDrafts, setDeptDrafts] = useState<DeptDraft[]>(() => {
@@ -565,9 +560,11 @@ export default function OnboardingWizard() {
         DEFAULT_EHR_SUGGESTION,
         1
       );
+      const weeklyOn = modWeekly && moduleAllowed(planId, 'weeklyFeedback');
       const modules: AgencyModules = {
         // PPC no se activa en onboarding: requiere OAuth en Conexiones (panel de agencia).
         ppc: moduleAllowed(planId, 'ppc') ? (currentAgency?.settings?.modules?.ppc ?? false) : false,
+        weeklyFeedback: weeklyOn,
         professionalGoals: modGoals && moduleAllowed(planId, 'professionalGoals'),
         deadlines: modDeadlines && moduleAllowed(planId, 'deadlines'),
         timeTracker: modTracker && moduleAllowed(planId, 'timeTracker'),
@@ -576,6 +573,7 @@ export default function OnboardingWizard() {
         ehrTarget,
         hoursTrackingPreference: hoursPref,
         modules,
+        weeklyCloseDay: weeklyOn ? weeklyCloseDay : undefined,
         timeTrackerMaxHours: modTracker ? timeTrackerMaxHours : undefined,
       });
       goToNextStep();
@@ -610,7 +608,6 @@ export default function OnboardingWizard() {
     try {
       await updateSettings({
         enabledIntegrations,
-        weeklyCloseDay: enabledIntegrations?.weekly_feedback ? weeklyCloseDay : undefined,
       });
       goToNextStep();
     } catch (e) {
@@ -626,13 +623,10 @@ export default function OnboardingWizard() {
     try {
       const snap = integrationsSnapRef.current;
       const en = { ...(snap?.enabledIntegrations ?? {}) };
-      const wcd = snap?.weeklyCloseDay ?? 4;
       await updateSettings({
         enabledIntegrations: en,
-        weeklyCloseDay: en.weekly_feedback ? wcd : undefined,
       });
       setEnabledIntegrations(en);
-      setWeeklyCloseDay(wcd);
       toast.info(t('onboarding.integrations.skipToast', 'Podrás configurar esto en Conexiones cuando quieras.'));
       goToNextStep();
     } catch (e) {
@@ -1084,6 +1078,52 @@ export default function OnboardingWizard() {
 
                     <div className="space-y-3">
                       <OnboardingModuleCard
+                        title={t('agency.modules.weeklyFeedback', 'Weekly')}
+                        summary={t(
+                          'onboarding.modules.weeklySummary',
+                          'Cierre semanal: bloquea retoques manuales en semanas ya cerradas en el planificador.'
+                        )}
+                        detail={t(
+                          'onboarding.modules.weeklyHelp',
+                          'Con Weekly activo, las semanas pasadas no se reescriben a mano en el calendario: los cambios pasan por el flujo Weekly (completar horas, posponer, transferir…). Si preferís libertad total, déjalo apagado.'
+                        )}
+                        checked={modWeekly && moduleAllowed(planId, 'weeklyFeedback')}
+                        disabled={!moduleAllowed(planId, 'weeklyFeedback')}
+                        onCheckedChange={(c) => moduleAllowed(planId, 'weeklyFeedback') && setModWeekly(c)}
+                        footer={
+                          modWeekly && moduleAllowed(planId, 'weeklyFeedback') ? (
+                            <div className="mt-1 space-y-2 border-t border-slate-200/80 pt-2">
+                              <Label className="text-xs font-normal text-slate-700">
+                                {t('agency.integrations.weeklyCloseDay', 'Día de cierre semanal')}
+                              </Label>
+                              <p className="text-[11px] text-slate-600 leading-snug">
+                                {t('onboarding.integrations.weeklyCloseHelpShort')}
+                              </p>
+                              <Select value={String(weeklyCloseDay)} onValueChange={(v) => setWeeklyCloseDay(Number(v))}>
+                                <SelectTrigger className="h-9">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {[
+                                    { v: 1, l: 'Lunes' },
+                                    { v: 2, l: 'Martes' },
+                                    { v: 3, l: 'Miércoles' },
+                                    { v: 4, l: 'Jueves' },
+                                    { v: 5, l: 'Viernes' },
+                                    { v: 6, l: 'Sábado' },
+                                    { v: 0, l: 'Domingo' },
+                                  ].map((d) => (
+                                    <SelectItem key={d.v} value={String(d.v)}>
+                                      {d.l}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          ) : undefined
+                        }
+                      />
+                      <OnboardingModuleCard
                         title={t('onboarding.modules.deadlinesTitle', 'Deadlines (entregas con fecha)')}
                         summary={t(
                           'onboarding.modules.deadlinesSummary',
@@ -1244,7 +1284,7 @@ export default function OnboardingWizard() {
             {currentStep === 'integrations' && (
               <div className="space-y-4">
                 <OnboardingCallout
-                  title={t('onboarding.integrations.calloutTitle', 'Conexiones opcionales')}
+                  title={t('onboarding.integrations.calloutTitle', 'Enlaces externos opcionales')}
                   bullets={
                     Array.isArray(integrationsCalloutBullets)
                       ? (integrationsCalloutBullets as string[])
@@ -1253,52 +1293,9 @@ export default function OnboardingWizard() {
                 />
 
                 <div className={cn(obModuleRow, 'space-y-3 p-3 sm:p-4')}>
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="font-medium text-sm">
-                        {t('agency.integrations.items.weekly_feedback.name', AVAILABLE_INTEGRATIONS.weekly_feedback.name)}
-                      </p>
-                      <p className="mt-1 text-xs text-slate-600 leading-snug">
-                        {t('onboarding.integrations.weeklyCardHelp')}
-                      </p>
-                    </div>
-                    <Switch
-                      checked={enabledIntegrations?.weekly_feedback ?? false}
-                      onCheckedChange={(c) => toggleIntegration('weekly_feedback', c)}
-                      className="shrink-0"
-                    />
-                  </div>
-                  {enabledIntegrations?.weekly_feedback ? (
-                    <div className="space-y-2 border-t border-dashed border-slate-200/90 pt-3">
-                      <Label className="text-sm">{t('agency.integrations.weeklyCloseDay', 'Día de cierre semanal')}</Label>
-                      <p className="text-[11px] text-slate-600 leading-snug">
-                        {t('onboarding.integrations.weeklyCloseHelpShort')}
-                      </p>
-                      <Select value={String(weeklyCloseDay)} onValueChange={(v) => setWeeklyCloseDay(Number(v))}>
-                        <SelectTrigger className="h-9">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {[
-                            { v: 1, l: 'Lunes' },
-                            { v: 2, l: 'Martes' },
-                            { v: 3, l: 'Miércoles' },
-                            { v: 4, l: 'Jueves' },
-                            { v: 5, l: 'Viernes' },
-                            { v: 6, l: 'Sábado' },
-                            { v: 0, l: 'Domingo' },
-                          ].map((d) => (
-                            <SelectItem key={d.v} value={String(d.v)}>
-                              {d.l}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  ) : null}
-                </div>
-
-                <div className={cn(obModuleRow, 'space-y-3 p-3 sm:p-4')}>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
+                    {t('agency.integrations.externalLinksTitle', 'Enlaces con sistemas externos')}
+                  </p>
                   <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">
                     {t('onboarding.integrations.crmGroup', 'CRM')}
                   </p>

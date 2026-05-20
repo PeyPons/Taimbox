@@ -58,7 +58,7 @@ import { toast } from '@/lib/notify';
 import { cn } from '@/lib/utils';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useIntegration } from '@/hooks/useIntegration';
+import { useIntegration, useWeeklyModuleEnabled } from '@/hooks/useIntegration';
 import { PendingTransfersPanel } from '@/components/transfers/TaskTransferComponents';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
 import { usePlatformAdmin } from '@/hooks/usePlatformAdmin';
@@ -79,7 +79,7 @@ export default function EmployeeDashboard() {
   const isLoadingProfile = isGlobalLoading;
   const { canAccess } = usePermissions();
   const { isPlatformAdmin, isLoading: isPlatformAdminLoading } = usePlatformAdmin();
-  const isManager = canAccess('/planner') || canAccess('/reports') || canAccess('/operaciones') || canAccess('/finanzas');
+  const isManager = canAccess('/planner') || canAccess('/operaciones') || canAccess('/finanzas');
 
   const { activeView, showToggle, setView, isSaving: isSavingViewPref } = useDashboardView();
 
@@ -112,7 +112,7 @@ export default function EmployeeDashboard() {
 
   const { showTour, resetTour } = useWelcomeTour();
   const isMobile = useIsMobile();
-  const isWeeklyFeedbackEnabled = useIntegration('weekly_feedback');
+  const isWeeklyFeedbackEnabled = useWeeklyModuleEnabled();
   const isCrmExportEnabled = useIntegration('crm_export');
   const { hasPermission } = usePermissions();
   const canAssignToOthers = hasPermission('can_assign_tasks_to_others');

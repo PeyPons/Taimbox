@@ -32,7 +32,14 @@ import {
   parseWeeklyCloseHours,
   normalizeWeeklyHourInput,
 } from '@/hooks/useWeeklyCloseMutations';
-import { getWeeklyProcessedAllocationIds, validateKeepHours } from '@/utils/weeklyCloseShared';
+import {
+  getWeeklyProcessedAllocationIds,
+  getWeeklyTaskPendingHours,
+  canPostponeTaskInWeekly,
+  formatWeeklyTaskHoursSummary,
+  getWeeklyTaskGuidance,
+  validateKeepHours,
+} from '@/utils/weeklyCloseShared';
 import { cn } from '@/lib/utils';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -44,9 +51,9 @@ type WeeklyOutcomeId = 'done' | 'continue' | 'handoff' | 'blocked';
 
 const WEEKLY_ACTION_META: Record<WeeklyActionId, { label: string; hint: string }> = {
   keep: { label: 'Cerrar tarea', hint: 'Registrar horas y finalizar' },
-  postpone: { label: 'Continuar en otra semana', hint: 'Registrar lo hecho y mover el saldo' },
-  distribute: { label: 'Dividir en entregas', hint: 'Varias tareas en tu planificación' },
-  moveToEmployee: { label: 'Reasignar a compañero', hint: 'Solo las horas pendientes' },
+  postpone: { label: 'Continuar en otra semana', hint: 'Indica lo hecho aquí; el resto va a la semana que elijas (0 si no avanzaste)' },
+  distribute: { label: 'Distribuir en tareas', hint: 'Partir en varias tareas en tu planificación' },
+  moveToEmployee: { label: 'Reasignar a compañero', hint: 'Pasa las horas pendientes a otra persona' },
   cancel: { label: 'Anular / no se hará', hint: 'Cierra la tarea y elimina el saldo pendiente del plan' },
   justify: { label: 'Solo dejar nota', hint: 'Explicación sin cambiar horas ni planificación' },
 };
@@ -58,8 +65,8 @@ const WEEKLY_OUTCOME_GROUPS: Array<{
   actions: WeeklyActionId[];
 }> = [
   { id: 'done', label: 'Terminé', hint: 'Registrar horas y cerrar', actions: ['keep'] },
-  { id: 'continue', label: 'Sigo después', hint: 'Mover saldo o dividir', actions: ['postpone', 'distribute'] },
-  { id: 'handoff', label: 'Otro lo hará', hint: 'Pasar lo pendiente', actions: ['moveToEmployee'] },
+  { id: 'continue', label: 'Sigo después', hint: 'Pasar a otra semana (0 h si no avanzaste) o distribuir en tareas', actions: ['postpone', 'distribute'] },
+  { id: 'handoff', label: 'Otro lo hará', hint: 'Pasar lo pendiente a un compañero', actions: ['moveToEmployee'] },
   { id: 'blocked', label: 'No aplica', hint: 'Anular o dejar nota', actions: ['cancel', 'justify'] },
 ];
 
@@ -76,7 +83,8 @@ function isWeeklyActionDisabledForTask(
   task: Pick<Allocation, 'hoursAssigned' | 'hoursActual'>
 ): boolean {
   const pending = getTaskPendingHours(task);
-  if (action === 'postpone' || action === 'distribute' || action === 'moveToEmployee') return pending <= 0;
+  if (action === 'postpone') return !canPostponeTaskInWeekly(task);
+  if (action === 'distribute' || action === 'moveToEmployee') return pending <= 0;
   return false;
 }
 
@@ -103,7 +111,7 @@ function roundTaskHours(num: number) {
 }
 
 function getTaskPendingHours(task: Pick<Allocation, 'hoursAssigned' | 'hoursActual'>) {
-  return roundTaskHours(Math.max(0, task.hoursAssigned - (task.hoursActual || 0)));
+  return roundTaskHours(getWeeklyTaskPendingHours(task));
 }
 
 function WeeklyOptionalNote({ value, onChange }: { value: string; onChange: (v: string) => void }) {
@@ -446,7 +454,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
     if (action === 'distribute') {
       const distTasks = distributionTasks[task.id] || [];
       const validTasks = distTasks.filter(t => t.taskName.trim() && parseHours(t.hours) > 0);
-      if (validTasks.length === 0) { canSubmit = false; validationErrors.push(`"${task.taskName}" necesita al menos una entrega válida`); continue; }
+      if (validTasks.length === 0) { canSubmit = false; validationErrors.push(`"${task.taskName}" necesita al menos una tarea válida`); continue; }
       const totalDistributed = validTasks.reduce((sum, t) => sum + parseHours(t.hours), 0);
       if (Math.abs(totalDistributed - pendingHours) > 0.01) { canSubmit = false; validationErrors.push(`"${task.taskName}": suma ${totalDistributed.toFixed(2)}h ≠ ${pendingHours.toFixed(2)}h pendientes`); }
       const projectMonthAllocations = allocations.filter(a => a.projectId === task.projectId && isAllocationInEffectiveMonth(a.weekStartDate, viewDate) && a.id !== task.id);
@@ -677,8 +685,8 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
         }
         case 'distribute':
           return distCount > 0
-            ? `La tarea original se sustituirá por ${distCount} entrega(s) en tu plan (${pending.toFixed(2)}h en total).`
-            : `Sustituirás esta tarea por varias entregas con nombre, horas y semana (${pending.toFixed(2)}h pendientes).`;
+            ? `La tarea original se sustituirá por ${distCount} tarea(s) en tu plan (${pending.toFixed(2)}h en total).`
+            : `Sustituirás esta tarea por varias tareas con nombre, horas y semana (${pending.toFixed(2)}h pendientes).`;
         case 'moveToEmployee':
           return targetEmployee
             ? `${pending.toFixed(2)}h pendientes pasarán a ${targetEmployee.name} en la semana del ${destLabel}. Tu parte quedará cerrada.`
@@ -1040,8 +1048,8 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
                             {selectedProject?.name || 'Sin proyecto'}
                           </span>
                           <span aria-hidden>·</span>
-                          <Badge variant="secondary" className="h-5 px-1.5 font-mono text-[11px]">
-                            {round2(selectedMissingHours)}h pend.
+                          <Badge variant="secondary" className="h-5 max-w-[min(100%,14rem)] truncate px-1.5 font-mono text-[11px]">
+                            {formatWeeklyTaskHoursSummary(selectedTask)}
                           </Badge>
                           {selectedIsTransferred && selectedTransferFrom && (
                             <>
@@ -1063,12 +1071,17 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
                         </h3>
                       </div>
 
+                      {getWeeklyTaskGuidance(selectedTask) && (
+                        <p className="flex items-start gap-1.5 rounded-md border border-sky-200/80 bg-sky-50/80 px-2.5 py-2 text-[11px] leading-snug text-sky-950 dark:border-sky-900/40 dark:bg-sky-950/25 dark:text-sky-100">
+                          <Clock className="mt-0.5 h-3 w-3 shrink-0" aria-hidden />
+                          <span>{getWeeklyTaskGuidance(selectedTask)}</span>
+                        </p>
+                      )}
+
                       {/* Paso 1: resultado + paso 2: acción concreta */}
                       <div className="space-y-2">
                         <Label className="text-xs font-medium text-muted-foreground">
-                          {selectedMissingHours > 0.01
-                            ? `${selectedMissingHours.toFixed(2)}h pendientes · estimado ${selectedTask.hoursAssigned.toFixed(2)}h`
-                            : 'Horas registradas — elige cómo cerrar'}
+                          {formatWeeklyTaskHoursSummary(selectedTask)}
                         </Label>
                         <div className="grid grid-cols-2 gap-1.5">
                           {WEEKLY_OUTCOME_GROUPS.map(({ id, label, hint }) => {
@@ -1094,6 +1107,12 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
                             );
                           })}
                         </div>
+
+                        {isWeeklyOutcomeDisabled('handoff', selectedTask) && canPostponeTaskInWeekly(selectedTask) && (
+                          <p className="text-[11px] text-muted-foreground">
+                            «Otro lo hará» solo aparece cuando hay horas pendientes sin registrar en el planificador.
+                          </p>
+                        )}
 
                         {showSubActionPicker && selectedOutcomeGroup && (
                           <div
@@ -1222,7 +1241,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
                               <div className="space-y-3">
                                 <div className="grid grid-cols-2 gap-3">
                                   <div className="space-y-1">
-                                    <Label className="text-xs font-medium">Realizadas *</Label>
+                                    <Label className="text-xs font-medium">Horas de esta semana *</Label>
                                     <Input type="text" inputMode="decimal" className="h-8 font-mono text-sm" value={hours.actual}
                                       onChange={(e) => { 
                                         const v = normalizeWeeklyHourInput(e.target.value); 
@@ -1235,9 +1254,11 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
                                           } 
                                         })); 
                                       }}
-                                      placeholder="0.00" />
+                                      placeholder="0" />
                                     <p className="text-[11px] text-muted-foreground">
-                                      Saldo → <span className="font-mono font-medium text-foreground">{pendNext.toFixed(2)}h</span>
+                                      0 si no avanzaste · pasan{' '}
+                                      <span className="font-mono font-medium text-foreground">{pendNext.toFixed(2)}h</span>{' '}
+                                      a la semana destino
                                     </p>
                                   </div>
                                   {preference !== 'actual' && (
@@ -1270,7 +1291,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
                           {selectedAction === 'distribute' && (
                             <div className="space-y-3">
                               <div className="flex items-center justify-between text-xs">
-                                <span>A repartir: <span className="font-mono font-medium">{round2(selectedMissingHours).toFixed(2)}h</span></span>
+                                <span>A distribuir: <span className="font-mono font-medium">{round2(selectedMissingHours).toFixed(2)}h</span></span>
                                 <span className={cn("font-mono", round2(selectedMissingHours - (distributionTasks[selectedTask.id]?.reduce((a, d) => a + parseHours(d.hours), 0) || 0)) === 0 ? "font-medium" : "text-muted-foreground")}>
                                   Saldo: {round2(selectedMissingHours - (distributionTasks[selectedTask.id]?.reduce((a, d) => a + parseHours(d.hours), 0) || 0)).toFixed(2)}h
                                 </span>
@@ -1284,7 +1305,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
                                     <div key={dist.id} className="space-y-1.5 rounded-md border bg-background p-2">
                                       <div className="flex items-center gap-1.5">
                                         <Input type="text" className="h-8 min-w-0 flex-1 text-sm" value={dist.taskName}
-                                          onChange={(e) => updateDistributionRow(selectedTask.id, dist.id, 'taskName', e.target.value)} placeholder="Entrega" />
+                                          onChange={(e) => updateDistributionRow(selectedTask.id, dist.id, 'taskName', e.target.value)} placeholder="Nombre de la tarea" />
                                         <Input type="text" inputMode="decimal" className={cn("h-8 w-14 shrink-0 font-mono text-sm", isOverCap && "border-destructive/60")} value={dist.hours}
                                           onChange={(e) => updateDistributionHours(selectedTask.id, dist.id, normalizeWeeklyHourInput(e.target.value))} placeholder="h" />
                                         <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive" onClick={() => removeDistributionRow(selectedTask.id, dist.id)}>
@@ -1301,7 +1322,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
                                 })}
                               </div>
                               <Button variant="outline" size="sm" className="h-8 w-full border-dashed text-xs" onClick={() => addDistributionRow(selectedTask.id, selectedTask.weekStartDate)}>
-                                <Plus className="mr-1 h-3.5 w-3.5" /> Añadir entrega
+                                <Plus className="mr-1 h-3.5 w-3.5" /> Añadir tarea
                               </Button>
                               <WeeklyOptionalNote value={taskComments[selectedTask.id] || ''} onChange={(v) => setTaskComments(prev => ({ ...prev, [selectedTask.id]: v }))} />
                             </div>

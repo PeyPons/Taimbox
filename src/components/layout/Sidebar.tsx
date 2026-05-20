@@ -152,12 +152,11 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   };
 
   const modules = currentAgency?.settings?.modules || {
-    seo: true,
     ppc: true,
     weeklyFeedback: true,
     professionalGoals: true,
     deadlines: true,
-    timeTracker: false
+    timeTracker: false,
   };
 
   const isTimeTrackerEnabled = modules.timeTracker === true;

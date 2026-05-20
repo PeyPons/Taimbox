@@ -2,20 +2,12 @@ export interface IntegrationDefinition {
   id: string;                    // Identificador único (ej: 'crm_export')
   name: string;                  // Nombre para mostrar (ej: 'Exportación CRM')
   description: string;           // Descripción de la funcionalidad
-  category: 'workflow' | 'crm' | 'ads' | 'other';
+  category: 'crm' | 'ads' | 'other';
   requiresConfig?: boolean;       // Si requiere configuración adicional
   dependencies?: string[];       // IDs de integraciones requeridas
 }
 
 export const AVAILABLE_INTEGRATIONS: Record<string, IntegrationDefinition> = {
-  weekly_feedback: {
-    id: 'weekly_feedback',
-    name: 'Weekly',
-    description:
-      'Tras el día de cierre, las semanas pasadas no se editan en el planificador: el equipo cierra pendientes desde Weekly (horas, posponer, transferir, desglosar…).',
-    category: 'workflow',
-    requiresConfig: false,
-  },
   crm_export: {
     id: 'crm_export',
     name: 'Exportación de tareas al CRM',

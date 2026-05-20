@@ -37,7 +37,6 @@ export default function TiemposPage() {
   const [, setTick] = useState(0);
   // Misma regla que Sidebar + ModuleGuard: solo el flag de agencia (el menú / ruta ya exigen módulo activo).
   const modules = currentAgency?.settings?.modules || {
-    seo: true,
     ppc: true,
     weeklyFeedback: true,
     professionalGoals: true,
