@@ -21,7 +21,11 @@ import { isAllocationWeekPastForWeekly } from '@/utils/dateUtils';
 
 export interface PlannerTaskContextMenuProps {
   alloc: Allocation;
-  pendingTransfer: boolean;
+  /** Solicitud pendiente o cascarón tras aceptación (solo lectura). */
+  transferReadOnly?: boolean;
+  /** @deprecated Usar transferReadOnly */
+  pendingTransfer?: boolean;
+  transferReadOnlyLabel?: string;
   isWeeklyEnabled: boolean;
   weeklyCloseDay: number;
   /** Siguiente semana en el mes (para «Mover sem.»); si no hay, no se muestra la opción */
@@ -49,7 +53,9 @@ export interface PlannerTaskContextMenuProps {
  */
 export function PlannerTaskContextMenu({
   alloc,
-  pendingTransfer,
+  transferReadOnly: transferReadOnlyProp,
+  pendingTransfer: pendingTransferLegacy,
+  transferReadOnlyLabel = 'Transferencia pendiente',
   isWeeklyEnabled,
   weeklyCloseDay,
   nextWeekStart,
@@ -61,16 +67,17 @@ export function PlannerTaskContextMenu({
   iconClassName = 'h-3 w-3',
   menuTriggerMode = 'hover',
 }: PlannerTaskContextMenuProps) {
+  const transferReadOnly = transferReadOnlyProp ?? !!pendingTransferLegacy;
   const isCompleted = alloc.status === 'completed';
   const weeklyPastLock = isWeeklyEnabled && isAllocationWeekPastForWeekly(alloc.weekStartDate, weeklyCloseDay);
-  const editDisabled = pendingTransfer || weeklyPastLock;
+  const editDisabled = transferReadOnly || weeklyPastLock;
 
   const useWeeklyModal = Boolean(isWeeklyEnabled && onOpenWeeklyForTask);
-  const weeklyEntryDisabled = pendingTransfer || isCompleted;
+  const weeklyEntryDisabled = transferReadOnly || isCompleted;
   const showWeeklyEntry = useWeeklyModal && !isCompleted;
 
-  const transferDisabled = pendingTransfer || weeklyPastLock;
-  const moveDisabled = pendingTransfer || weeklyPastLock;
+  const transferDisabled = transferReadOnly || weeklyPastLock;
+  const moveDisabled = transferReadOnly || weeklyPastLock;
 
   return (
     <DropdownMenu>
@@ -96,12 +103,12 @@ export function PlannerTaskContextMenu({
             onStartEditFull();
           }}
         >
-          {pendingTransfer ? (
+          {transferReadOnly ? (
             <Lock className="mr-2 h-3.5 w-3.5" />
           ) : (
             <Pencil className="mr-2 h-3.5 w-3.5" />
           )}
-          {pendingTransfer ? 'Transferencia pendiente' : 'Editar'}
+          {transferReadOnly ? transferReadOnlyLabel : 'Editar'}
         </DropdownMenuItem>
 
         {showWeeklyEntry && (
@@ -129,7 +136,7 @@ export function PlannerTaskContextMenu({
                 onTransfer();
               }}
             >
-              {weeklyPastLock && !pendingTransfer ? (
+              {weeklyPastLock && !transferReadOnly ? (
                 <Lock className="mr-2 h-3.5 w-3.5 text-amber-600" />
               ) : (
                 <ArrowRightLeft className="mr-2 h-3.5 w-3.5" />
@@ -159,7 +166,7 @@ export function PlannerTaskContextMenu({
           </>
         )}
 
-        {useWeeklyModal && weeklyPastLock && !pendingTransfer && (
+        {useWeeklyModal && weeklyPastLock && !transferReadOnly && (
           <DropdownMenuItem disabled className="text-xs text-amber-600">
             <AlertTriangle className="mr-2 h-3.5 w-3.5" />
             Edición bloqueada: usa «Opciones Weekly»

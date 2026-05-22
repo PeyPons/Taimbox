@@ -54,6 +54,11 @@ import { formatDecimalHoursAsHm } from '@/utils/timerDisplay';
 import { SensitiveText } from '@/components/privacy/SensitiveText';
 import { useAllocationSheetMonthData } from '@/hooks/useAllocationSheetMonthData';
 import { round2 } from '@/utils/numbers';
+import { AllocationTransferBadge } from '@/components/planner/allocation/AllocationTransferBadge';
+import {
+  cleanTransferredTaskName,
+  getAllocationTransferUiState,
+} from '@/utils/allocationTransferUtils';
 
 interface AllocationSheetProps {
   open: boolean;
@@ -893,11 +898,18 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                         {sortedTasks.map((alloc) => {
                                           const isCompleted = alloc.status === 'completed';
                                           const taskDelta = getPlanningDeltaHours(alloc, preference);
-                                          const pendingTransferMobile = (outgoingTransfers || []).find(t => t.allocationId === alloc.id && t.status === 'pending');
-
-                                          // Limpieza de nombre simplificada para móvil
-                                          let cleanName = alloc.taskName || 'Tarea';
-                                          cleanName = cleanName.replace(/\s*\(transferida de .+?(?:, original: .+?)?\)/g, '').trim();
+                                          const transferUiMobile = getAllocationTransferUiState(
+                                            alloc,
+                                            employeeId,
+                                            outgoingTransfers,
+                                            weeklyFeedback,
+                                            employees
+                                          );
+                                          const transferReadOnlyMobile = transferUiMobile.isReadOnly;
+                                          const cleanName = cleanTransferredTaskName(alloc.taskName);
+                                          const transferMenuLabelMobile = transferUiMobile.pendingTransfer
+                                            ? 'Transferencia pendiente'
+                                            : 'Tarea transferida';
 
                                           return (
                                             <div key={alloc.id} className={cn("group flex flex-col gap-2 p-3 bg-white touch-manipulation", isCompleted && "bg-slate-50/50")}>
@@ -906,14 +918,15 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                   <Checkbox
                                                     checked={isCompleted}
                                                     onCheckedChange={() => toggleTaskCompletionWithSums(alloc)}
-                                                    disabled={!!pendingTransferMobile}
-                                                    className={cn("mt-1 shrink-0", isCompleted && "data-[state=checked]:bg-emerald-600", pendingTransferMobile && "opacity-50")}
+                                                    disabled={transferReadOnlyMobile}
+                                                    className={cn("mt-1 shrink-0", isCompleted && "data-[state=checked]:bg-emerald-600", transferReadOnlyMobile && "opacity-50")}
                                                   />
                                                   <div className="flex flex-col gap-1 min-w-0 flex-1">
+                                                    <div className="flex flex-wrap items-center gap-1.5 min-w-0">
                                                     <span
-                                                      className={cn("font-medium text-sm leading-tight break-words cursor-pointer", isCompleted && "line-through text-slate-400", pendingTransferMobile && "cursor-not-allowed opacity-70")}
+                                                      className={cn("font-medium text-sm leading-tight break-words cursor-pointer", isCompleted && "line-through text-slate-400", transferReadOnlyMobile && "cursor-not-allowed opacity-70")}
                                                       onClick={() => {
-                                                        if (pendingTransferMobile) return;
+                                                        if (transferReadOnlyMobile) return;
                                                         startEditFull(alloc);
                                                       }}
                                                     >
@@ -921,6 +934,14 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                         {formatProjectName(cleanName)}
                                                       </SensitiveText>
                                                     </span>
+                                                    {transferUiMobile.showTransferBadge && (
+                                                      <AllocationTransferBadge
+                                                        label={transferUiMobile.pendingTransfer ? 'Pendiente' : 'Transferida'}
+                                                        tooltip={transferUiMobile.transferBadgeTooltip}
+                                                        compact
+                                                      />
+                                                    )}
+                                                    </div>
                                                     <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-500">
                                                       <span className="shrink-0 font-mono text-base">{alloc.hoursAssigned}h</span>
                                                       <span className="shrink-0 text-slate-400">est</span>
@@ -928,6 +949,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                         <TaskTimer
                                                           employeeId={alloc.employeeId}
                                                           allocationId={alloc.id}
+                                                          disabled={transferReadOnlyMobile}
                                                           onTimeLogged={handleTimeLogged}
                                                         />
                                                       )}
@@ -950,12 +972,13 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                 </div>
                                                 <PlannerTaskContextMenu
                                                   alloc={alloc}
-                                                  pendingTransfer={!!pendingTransferMobile}
+                                                  transferReadOnly={transferReadOnlyMobile}
+                                                  transferReadOnlyLabel={transferMenuLabelMobile}
                                                   isWeeklyEnabled={isWeeklyEnabled}
                                                   weeklyCloseDay={weeklyCloseDay}
                                                   nextWeekStart={nextWeekNavStart}
                                                   onStartEditFull={() => {
-                                                    if (pendingTransferMobile) return;
+                                                    if (transferReadOnlyMobile) return;
                                                     startEditFull(alloc);
                                                   }}
                                                   onTransfer={() => {
@@ -1011,8 +1034,17 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                               const blockingTasks = (allocations || []).filter(a => a.dependencyId === alloc.id && a.status !== 'completed');
                                               const isFirstTask = taskIndex === 0;
 
-                                              // Verificar si hay transferencia pendiente (Bloqueo de edición)
-                                              const pendingTransfer = (outgoingTransfers || []).find(t => t.allocationId === alloc.id && t.status === 'pending');
+                                              const transferUi = getAllocationTransferUiState(
+                                                alloc,
+                                                employeeId,
+                                                outgoingTransfers,
+                                                weeklyFeedback,
+                                                employees
+                                              );
+                                              const transferReadOnly = transferUi.isReadOnly;
+                                              const transferMenuLabel = transferUi.pendingTransfer
+                                                ? 'Transferencia pendiente'
+                                                : 'Tarea transferida';
 
                                               return (
                                                 <tr
@@ -1028,10 +1060,10 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                     <Checkbox
                                                       checked={isCompleted}
                                                       onCheckedChange={() => toggleTaskCompletionWithSums(alloc)}
-                                                      disabled={!!pendingTransfer}
+                                                      disabled={transferReadOnly}
                                                       className={cn(
                                                         isCompleted && "data-[state=checked]:bg-emerald-600",
-                                                        pendingTransfer && "opacity-50 cursor-not-allowed"
+                                                        transferReadOnly && "opacity-50 cursor-not-allowed"
                                                       )}
                                                     />
                                                   </td>
@@ -1042,9 +1074,9 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                           className={cn(
                                                             "font-medium rounded px-1 -mx-1 min-w-0 flex-1",
                                                             isCompleted && "line-through text-slate-400",
-                                                            pendingTransfer ? "cursor-not-allowed opacity-70" : "cursor-pointer hover:bg-slate-100"
+                                                            transferReadOnly ? "cursor-not-allowed opacity-70" : "cursor-pointer hover:bg-slate-100"
                                                           )}
-                                                          onDoubleClick={() => !pendingTransfer && startInlineEdit(alloc)}
+                                                          onDoubleClick={() => !transferReadOnly && startInlineEdit(alloc)}
                                                           {...(isFirstTask && { 'data-tour': 'planner-task-name' })}
                                                         >
                                                           {inlineEditingId === alloc.id ? (
@@ -1064,100 +1096,23 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                             // Limpiar nombre de tarea removiendo información de transferencia
                                                             <div className="flex items-center gap-2 min-w-0">
                                                               <span className="truncate">
-                                                                {(() => {
-                                                                  let cleanName = alloc.taskName || 'Tarea';
-                                                                  // Remover "(transferida de X, original: Y)" o "(transferida de X)"
-                                                                  cleanName = cleanName.replace(/\s*\(transferida de .+?(?:, original: .+?)?\)/g, '').trim();
-                                                                  return cleanName || 'Tarea';
-                                                                })()}
+                                                                {cleanTransferredTaskName(alloc.taskName)}
                                                               </span>
                                                             </div>
                                                           )}
                                                         </div>
-                                                        {/* Badge Weekly si la tarea fue ajustada vía Weekly (horas=0 o transferida) */}
-                                                        {(() => {
-                                                          const isTransferred = alloc.transferSourceEmployeeId || alloc.taskName?.includes('(transferida de') || alloc.transferredFromAllocationId;
-                                                          const isDistributed = alloc.distributionSourceAllocationId;
-                                                          const hasWeeklyFeedback = weeklyFeedback.some(fb => fb.allocationId === alloc.id);
-                                                          const wasAdjustedViaWeekly = hasWeeklyFeedback || isTransferred || isDistributed ||
-                                                            (alloc.hoursAssigned === 0 && alloc.hoursActual === 0 && alloc.hoursComputed === 0 && alloc.status === 'completed');
-
-                                                          if (!wasAdjustedViaWeekly) return null;
-
-                                                          // Extraer información de transferencia/distribución para el tooltip
-                                                          let transferInfo: string | null = null;
-
-                                                          // Caso 0: Nuevas columnas (Tracking Robusto)
-                                                          if (alloc.transferSourceEmployeeId) {
-                                                            const sourceEmployee = (employees || []).find(e => e.id === alloc.transferSourceEmployeeId);
-                                                            const originalName = alloc.originalTransferredTaskName || alloc.taskName || 'Tarea';
-                                                            if (isDistributed) {
-                                                              transferInfo = `Distribuida (origen genérico)\nFuente original: ${sourceEmployee?.name || 'compañero'}\nTarea original: ${originalName}`;
-                                                            } else {
-                                                              transferInfo = `Transferida de ${sourceEmployee?.name || 'compañero'}\nTarea original: ${originalName}`;
-                                                            }
-                                                          }
-                                                          // Caso 1: Tarea distribuida desde una transferencia (Legacy)
-                                                          else if (isDistributed && alloc.distributionSourceAllocationId) {
-                                                            const sourceTask = (allocations || []).find(a => a.id === alloc.distributionSourceAllocationId);
-                                                            if (sourceTask) {
-                                                              const sourceEmployee = (employees || []).find(e => e.id === sourceTask.employeeId);
-                                                              // Buscar la tarea original de la que proviene la transferencia
-                                                              if (sourceTask.transferredFromAllocationId) {
-                                                                const originalTask = sourceTask.transferredFromAllocationId
-                                                                  ? (allocations || []).find(a => a.id === sourceTask.transferredFromAllocationId)
-                                                                  : null;
-                                                                const originalEmployee = originalTask ? (employees || []).find(e => e.id === originalTask.employeeId) : null;
-                                                                // Limpiar el nombre original (sin el sufijo de transferencia)
-                                                                const cleanOriginalName = originalTask?.taskName?.replace(/\(transferida de .+?\)/g, '').trim() || originalTask?.taskName || 'Sin nombre';
-                                                                transferInfo = `Distribuida desde transferencia de ${sourceEmployee?.name || 'compañero'}\nTarea original: ${cleanOriginalName} (de ${originalEmployee?.name || 'compañero'})`;
-                                                              } else {
-                                                                transferInfo = `Distribuida desde tarea de ${sourceEmployee?.name || 'compañero'}`;
-                                                              }
-                                                            }
-                                                          }
-                                                          // Caso 2: Tarea transferida directamente
-                                                          else if (isTransferred) {
-                                                            const transferMatch = alloc.taskName?.match(/\(transferida de (.+?)(?:, original: (.+?))?\)/);
-                                                            if (transferMatch) {
-                                                              const fromEmployee = transferMatch[1];
-                                                              const originalName = transferMatch[2];
-                                                              if (originalName) {
-                                                                transferInfo = `Transferida de ${fromEmployee}\nTarea original: ${originalName}`;
-                                                              } else {
-                                                                transferInfo = `Transferida de ${fromEmployee}`;
-                                                              }
-                                                            } else if (alloc.transferredFromAllocationId) {
-                                                              // Si tiene el campo de BD, buscar información
-                                                              const originalTask = alloc.transferredFromAllocationId
-                                                                ? (allocations || []).find(a => a.id === alloc.transferredFromAllocationId)
-                                                                : null;
-                                                              const fromEmployee = originalTask ? (employees || []).find(e => e.id === originalTask.employeeId) : null;
-                                                              // Limpiar el nombre original (sin el sufijo de transferencia)
-                                                              const cleanOriginalName = originalTask?.taskName?.replace(/\(transferida de .+?\)/g, '').trim() || originalTask?.taskName || 'Sin nombre';
-                                                              transferInfo = `Transferida de ${fromEmployee?.name || 'compañero'}\nTarea original: ${cleanOriginalName}`;
-                                                            }
-                                                          }
-
-                                                          return (
-                                                            <Tooltip>
-                                                              <TooltipTrigger asChild>
-                                                                <Badge variant="outline" className="h-4 px-1.5 text-[9px] bg-primary/10 text-indigo-700 border-indigo-200 cursor-help shrink-0">
-                                                                  Weekly
-                                                                </Badge>
-                                                              </TooltipTrigger>
-                                                              <TooltipContent className="max-w-xs z-[9999]" side="top">
-                                                                <div className="space-y-1 text-xs">
-                                                                  {transferInfo ? (
-                                                                    <div className="whitespace-pre-line">{transferInfo}</div>
-                                                                  ) : (
-                                                                    <div>Tarea gestionada vía Weekly</div>
-                                                                  )}
-                                                                </div>
-                                                              </TooltipContent>
-                                                            </Tooltip>
-                                                          );
-                                                        })()}
+                                                        {transferUi.showTransferBadge && (
+                                                          <AllocationTransferBadge
+                                                            label={transferUi.pendingTransfer ? 'Pendiente' : 'Transferida'}
+                                                            tooltip={transferUi.transferBadgeTooltip}
+                                                            compact
+                                                          />
+                                                        )}
+                                                        {transferUi.showWeeklyBadge && (
+                                                          <Badge variant="outline" className="h-4 px-1.5 text-[9px] bg-primary/10 text-indigo-700 border-indigo-200 shrink-0">
+                                                            Weekly
+                                                          </Badge>
+                                                        )}
                                                         <TaskNotesTrigger
                                                           allocationId={alloc.id}
                                                           noteCount={noteCounts[alloc.id] ?? 0}
@@ -1198,18 +1153,11 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                     <div className="flex items-center justify-center gap-1">
                                                       <span className="font-mono text-xs">{alloc.hoursAssigned || 0}</span>
                                                       {/* Badge Weekly si horas=0 por ajuste de weekly */}
-                                                      {(() => {
-                                                        const isTransferred = alloc.taskName?.includes('(transferida de');
-                                                        const hasWeeklyFeedback = weeklyFeedback.some(fb => fb.allocationId === alloc.id);
-                                                        const wasAdjustedViaWeekly = hasWeeklyFeedback || isTransferred;
-                                                        const isZeroDueToWeekly = (alloc.hoursAssigned === 0 && alloc.hoursActual === 0 && alloc.hoursComputed === 0) && wasAdjustedViaWeekly;
-
-                                                        return isZeroDueToWeekly ? (
-                                                          <Badge variant="outline" className="h-3.5 px-1 text-[8px] bg-primary/10 text-indigo-700 border-indigo-200">
-                                                            Weekly
-                                                          </Badge>
-                                                        ) : null;
-                                                      })()}
+                                                      {transferUi.showWeeklyBadge && (
+                                                        <Badge variant="outline" className="h-3.5 px-1 text-[8px] bg-primary/10 text-indigo-700 border-indigo-200">
+                                                          Weekly
+                                                        </Badge>
+                                                      )}
                                                     </div>
                                                   </td>
                                                   {isTimeTrackerEnabled && (
@@ -1246,12 +1194,12 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                         type="number"
                                                         step="0.25"
                                                         min="0"
-                                                        disabled={!!pendingTransfer}
+                                                        disabled={transferReadOnly}
                                                         defaultValue={alloc.hoursActual || 0}
                                                         onBlur={(e) => updateInlineHours(alloc, 'hoursActual', e.target.value)}
                                                         className={cn(
                                                           "w-12 px-1 py-0.5 text-[10px] text-center border rounded font-mono",
-                                                          pendingTransfer ? "bg-slate-100 text-slate-400 cursor-not-allowed" : "bg-blue-50 text-blue-700"
+                                                          transferReadOnly ? "bg-slate-100 text-slate-400 cursor-not-allowed" : "bg-blue-50 text-blue-700"
                                                         )}
                                                       />
                                                     ) : (
@@ -1265,12 +1213,12 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                           type="number"
                                                           step="0.25"
                                                           min="0"
-                                                          disabled={!!pendingTransfer}
+                                                          disabled={transferReadOnly}
                                                           defaultValue={alloc.hoursComputed || 0}
                                                           onBlur={(e) => updateInlineHours(alloc, 'hoursComputed', e.target.value)}
                                                           className={cn(
                                                             "w-12 px-1 py-0.5 text-[10px] text-center border rounded font-mono",
-                                                            pendingTransfer ? "bg-slate-100 text-slate-400 cursor-not-allowed" : "bg-emerald-50 text-emerald-700"
+                                                            transferReadOnly ? "bg-slate-100 text-slate-400 cursor-not-allowed" : "bg-emerald-50 text-emerald-700"
                                                           )}
                                                         />
                                                       ) : (
@@ -1301,12 +1249,13 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                     <div className="flex justify-center">
                                                       <PlannerTaskContextMenu
                                                         alloc={alloc}
-                                                        pendingTransfer={!!pendingTransfer}
+                                                        transferReadOnly={transferReadOnly}
+                                                        transferReadOnlyLabel={transferMenuLabel}
                                                         isWeeklyEnabled={isWeeklyEnabled}
                                                         weeklyCloseDay={weeklyCloseDay}
                                                         nextWeekStart={nextWeekNavStart}
                                                         onStartEditFull={() => {
-                                                          if (pendingTransfer) return;
+                                                          if (transferReadOnly) return;
                                                           startEditFull(alloc);
                                                         }}
                                                         onTransfer={() => {
@@ -1603,6 +1552,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                             onTimeLogged={handleTimeLogged}
                                             timeEntriesSum={timeEntrySumsByAllocationId[alloc.id]}
                                             noteCount={noteCounts[alloc.id] ?? 0}
+                                            ownerEmployeeId={employeeId}
                                             onOpenWeeklyForTask={
                                               isWeeklyEnabled
                                                 ? (a) => {

@@ -1304,6 +1304,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           requestedAt: t.requested_at,
           respondedAt: t.responded_at,
           agencyId: t.agency_id,
+          acceptanceMode: t.acceptance_mode,
           fromEmployeeName: t.from_employee?.name,
           toEmployeeName: t.to_employee?.name,
           taskName: t.allocation?.task_name,
@@ -1334,6 +1335,31 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       fetchTransfers();
     }
   }, [fetchTransfers, currentUser?.id]); // Also depends on fetchTransfers which depends on projects
+
+  // Realtime: actualizar bloqueos y badges cuando alguien acepta/rechaza una transferencia
+  useEffect(() => {
+    if (!currentAgency?.id) return;
+
+    const channel = supabase
+      .channel(`task-transfers-${currentAgency.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'task_transfers',
+          filter: `agency_id=eq.${currentAgency.id}`,
+        },
+        () => {
+          void fetchTransfers();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [currentAgency?.id, fetchTransfers]);
 
   const deleteRoutine = async (id: string) => {
     setUserRoutines(prev => prev.filter(r => r.id !== id));
