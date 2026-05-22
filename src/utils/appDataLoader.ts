@@ -48,6 +48,76 @@ interface SupabaseClient {
   color: string;
 }
 
+export function mapSupabaseProjectRow(p: SupabaseProject): Project {
+  return {
+    id: p.id,
+    agencyId: p.agency_id,
+    clientId: p.client_id,
+    name: p.name,
+    status: (p.status || 'active') as 'active' | 'archived' | 'completed',
+    budgetHours: round2(p.budget_hours),
+    minimumHours: round2(p.minimum_hours || 0),
+    monthlyFee: p.monthly_fee,
+    externalId: p.external_id ? Number(p.external_id) : undefined,
+    projectType: p.project_type?.trim() || undefined,
+    deliverableContractFee: p.deliverable_contract_fee ?? undefined,
+    deliverableStartDate: p.deliverable_start_date ?? undefined,
+    deliverableDueDate: p.deliverable_due_date ?? undefined,
+    isHidden: p.is_hidden || false,
+    responsibleDepartmentId: p.responsible_department_id ?? undefined,
+    okrs: p.okrs,
+    deliverables_log: p.deliverables_log,
+  };
+}
+
+/**
+ * Incluye proyectos archivados/completados referenciados por allocations (u otros FK)
+ * para que el planificador siga mostrando el nombre real tras marcar el proyecto como completado.
+ */
+export async function mergeReferencedProjects(
+  agencyId: string,
+  current: Project[],
+  referencedIds: Iterable<string>
+): Promise<Project[]> {
+  const unique = [...new Set(referencedIds)].filter((id): id is string => Boolean(id));
+  if (unique.length === 0) return current;
+
+  const known = new Set(current.map((p) => p.id));
+  const missing = unique.filter((id) => !known.has(id));
+  if (missing.length === 0) return current;
+
+  const { data, error } = await supabase
+    .from('projects')
+    .select('*')
+    .eq('agency_id', agencyId)
+    .in('id', missing);
+
+  if (error) {
+    console.error('Error cargando proyectos referenciados por allocations:', error);
+    return current;
+  }
+  if (!data?.length) return current;
+
+  return [...current, ...data.map((p: SupabaseProject) => mapSupabaseProjectRow(p))];
+}
+
+/** Añade al catálogo en memoria los proyectos referenciados que aún no están cargados. */
+export async function ensureProjectsLoaded(
+  agencyId: string,
+  referencedIds: Iterable<string>,
+  setProjects: (value: Project[] | ((prev: Project[]) => Project[])) => void
+): Promise<void> {
+  let snapshot: Project[] = [];
+  setProjects((prev) => {
+    snapshot = prev;
+    return prev;
+  });
+  const merged = await mergeReferencedProjects(agencyId, snapshot, referencedIds);
+  if (merged.length !== snapshot.length) {
+    setProjects(merged);
+  }
+}
+
 interface SupabaseProject {
   id: string;
   agency_id: string;
@@ -233,31 +303,10 @@ export async function fetchInitialAppData({
       );
     }
 
-    if (projRes.data) {
-      setProjects(
-        projRes.data.map(
-          (p: SupabaseProject): Project => ({
-            id: p.id,
-            agencyId: p.agency_id,
-            clientId: p.client_id,
-            name: p.name,
-            status: (p.status || 'active') as 'active' | 'archived' | 'completed',
-            budgetHours: round2(p.budget_hours),
-            minimumHours: round2(p.minimum_hours || 0),
-            monthlyFee: p.monthly_fee,
-            externalId: p.external_id ? Number(p.external_id) : undefined,
-            projectType: p.project_type?.trim() || undefined,
-            deliverableContractFee: p.deliverable_contract_fee ?? undefined,
-            deliverableStartDate: p.deliverable_start_date ?? undefined,
-            deliverableDueDate: p.deliverable_due_date ?? undefined,
-            isHidden: p.is_hidden || false,
-            responsibleDepartmentId: p.responsible_department_id ?? undefined,
-            okrs: p.okrs,
-            deliverables_log: p.deliverables_log,
-          })
-        )
-      );
-    }
+    let projectsCatalog: Project[] = projRes.data
+      ? projRes.data.map((p: SupabaseProject) => mapSupabaseProjectRow(p))
+      : [];
+    setProjects(projectsCatalog);
 
     if (!skipLoading) {
       setIsLoading(false);
@@ -314,6 +363,8 @@ export async function fetchInitialAppData({
       );
     }
 
+    const referencedProjectIds: string[] = [];
+
     if (allocRes.data) {
       const mappedAllocations: Allocation[] = allocRes.data.map(
         (a: SupabaseAllocation): Allocation => ({
@@ -339,6 +390,8 @@ export async function fetchInitialAppData({
         })
       );
 
+      referencedProjectIds.push(...mappedAllocations.map((a) => a.projectId));
+
       if (skipLoading) {
         setAllocations(prev => {
           const incomingMap = new Map(mappedAllocations.map(a => [a.id, a]));
@@ -353,6 +406,20 @@ export async function fetchInitialAppData({
         setAllocations(mappedAllocations);
       }
     }
+
+    if (routinesRes.data) {
+      for (const r of routinesRes.data) {
+        if (r.project_id) referencedProjectIds.push(r.project_id);
+      }
+    }
+    if (feedbackRes.data) {
+      for (const fb of feedbackRes.data) {
+        if (fb.project_id) referencedProjectIds.push(fb.project_id);
+      }
+    }
+
+    projectsCatalog = await mergeReferencedProjects(agencyId, projectsCatalog, referencedProjectIds);
+    setProjects(projectsCatalog);
 
     if (absRes.data) {
       setAbsences(
@@ -457,6 +524,7 @@ export interface LoadMonthDataDeps {
   setAbsences: (value: Absence[] | ((prev: Absence[]) => Absence[])) => void;
   setTeamEvents: (value: TeamEvent[] | ((prev: TeamEvent[]) => TeamEvent[])) => void;
   setWeeklyFeedback: (value: WeeklyFeedback[] | ((prev: WeeklyFeedback[]) => WeeklyFeedback[])) => void;
+  setProjects?: (value: Project[] | ((prev: Project[]) => Project[])) => void;
 }
 
 export async function loadMonthData({
@@ -466,6 +534,7 @@ export async function loadMonthData({
   setAbsences,
   setTeamEvents,
   setWeeklyFeedback,
+  setProjects,
 }: LoadMonthDataDeps): Promise<boolean> {
   const monthStart = new Date(month.getFullYear(), month.getMonth(), 1);
   const monthEnd = new Date(month.getFullYear(), month.getMonth() + 1, 0);
@@ -566,6 +635,14 @@ export async function loadMonthData({
       );
       return [...updatedPrev, ...newItems];
     });
+
+    if (setProjects && mappedAllocations.length > 0) {
+      await ensureProjectsLoaded(
+        agencyId,
+        mappedAllocations.map((a) => a.projectId),
+        setProjects
+      );
+    }
 
     if (absRes.data) {
       const mappedAbsences: Absence[] = absRes.data.map(
