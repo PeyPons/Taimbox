@@ -12,7 +12,7 @@ import {
   computeEmployeeMonthlyLoad,
   computeProjectHoursForMonth,
 } from '@/utils/appMetrics';
-import { fetchInitialAppData, loadMonthData } from '@/utils/appDataLoader';
+import { fetchInitialAppData, loadMonthData, mapSupabaseProjectRow } from '@/utils/appDataLoader';
 import { round2 } from '@/utils/numbers';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAgency } from '@/contexts/AgencyContext';
@@ -266,6 +266,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setAbsences,
         setTeamEvents,
         setWeeklyFeedback,
+        setProjects,
       });
     },
     [currentAgency?.id]
@@ -338,25 +339,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
 
     if (data) {
-      const mappedProjects = data.map((p: SupabaseProject): Project => ({
-        id: p.id,
-        agencyId: p.agency_id,
-        clientId: p.client_id,
-        name: p.name,
-        status: (p.status || 'active') as 'active' | 'archived' | 'completed',
-        budgetHours: round2(p.budget_hours),
-        minimumHours: round2(p.minimum_hours || 0),
-        monthlyFee: p.monthly_fee,
-        externalId: p.external_id ? Number(p.external_id) : undefined,
-        projectType: p.project_type?.trim() || undefined,
-        deliverableContractFee: p.deliverable_contract_fee ?? undefined,
-        deliverableStartDate: p.deliverable_start_date ?? undefined,
-        deliverableDueDate: p.deliverable_due_date ?? undefined,
-        isHidden: p.is_hidden || false,
-        responsibleDepartmentId: p.responsible_department_id ?? undefined,
-        okrs: p.okrs,
-        deliverables_log: p.deliverables_log
-      }));
+      const mappedProjects = data.map((p: SupabaseProject) => mapSupabaseProjectRow(p));
 
       setProjects(prev => {
         const existingIds = new Set(prev.map(p => p.id));
@@ -489,7 +472,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             setProjects(prev => (prev.some(p => p.id === (payload.new as SupabaseProject).id) ? prev : [...prev, mapProject(payload.new as SupabaseProject)]));
           } else if (payload.eventType === 'UPDATE') {
             const updated = mapProject(payload.new as SupabaseProject);
-            setProjects(prev => prev.map(p => (p.id === updated.id ? updated : p)));
+            setProjects((prev) => {
+              const exists = prev.some((p) => p.id === updated.id);
+              if (exists) return prev.map((p) => (p.id === updated.id ? updated : p));
+              return [...prev, updated];
+            });
           } else if (payload.eventType === 'DELETE') {
             const id = (payload.old as { id: string }).id;
             setProjects(prev => prev.filter(p => p.id !== id));
