@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Allocation, TaskTransfer } from '@/types';
 import {
+  filterAllocationsForPlannerDisplay,
   getAllocationTransferUiState,
   isSenderTransferShell,
   shouldShowWeeklyBadge,
@@ -66,5 +67,26 @@ describe('allocationTransferUtils', () => {
   it('muestra badge Weekly solo con feedback weekly', () => {
     const alloc = baseAlloc({ hoursAssigned: 0, hoursActual: 0, hoursComputed: 0, status: 'completed' });
     expect(shouldShowWeeklyBadge(alloc, 'emp-sender', [{ allocationId: 'alloc-1' } as never])).toBe(true);
+  });
+
+  it('oculta cascarón distribute del listado del planificador', () => {
+    const accepted: TaskTransfer = {
+      ...pendingTransfer,
+      status: 'accepted',
+      acceptanceMode: 'distribute',
+      respondedAt: '2026-05-20T11:00:00Z',
+    };
+    const shell = baseAlloc({
+      hoursAssigned: 0,
+      isLocked: true,
+      originalTransferredTaskName: 'Diseño landing',
+    });
+    const normal = baseAlloc({ id: 'alloc-2' });
+    const visible = filterAllocationsForPlannerDisplay(
+      [shell, normal],
+      'emp-sender',
+      [accepted]
+    );
+    expect(visible).toEqual([normal]);
   });
 });

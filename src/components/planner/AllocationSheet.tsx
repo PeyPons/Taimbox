@@ -57,6 +57,7 @@ import { round2 } from '@/utils/numbers';
 import { AllocationTransferBadge } from '@/components/planner/allocation/AllocationTransferBadge';
 import {
   cleanTransferredTaskName,
+  filterAllocationsForPlannerDisplay,
   getAllocationTransferUiState,
 } from '@/utils/allocationTransferUtils';
 
@@ -85,6 +86,12 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
 
   const { currentAgency } = useAgency();
   const { outgoingTransfers } = useTaskTransfers();
+
+  const applyPlannerAllocationFilter = useCallback(
+    (allocs: Allocation[]) =>
+      filterAllocationsForPlannerDisplay(allocs, employeeId, outgoingTransfers),
+    [employeeId, outgoingTransfers]
+  );
 
   const { hasPermission } = usePermissions();
   const canAssignToOthers = hasPermission('can_assign_tasks_to_others');
@@ -378,8 +385,10 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
         viewDate
       );
 
-      const weekAllocations = getEmployeeAllocationsForWeek(employeeId, weekStartDate).filter((a) =>
-        isAllocationInEffectiveMonth(a.weekStartDate, viewDate)
+      const weekAllocations = applyPlannerAllocationFilter(
+        getEmployeeAllocationsForWeek(employeeId, weekStartDate).filter((a) =>
+          isAllocationInEffectiveMonth(a.weekStartDate, viewDate)
+        )
       );
       const weekReal = round2(weekAllocations.reduce((sum, a) => sum + (a.hoursActual || 0), 0));
       const weekComp = round2(weekAllocations.reduce((sum, a) => sum + (a.hoursComputed || 0), 0));
@@ -401,6 +410,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
     employeeId,
     getEmployeeLoadForWeek,
     getEmployeeAllocationsForWeek,
+    applyPlannerAllocationFilter,
     viewDate,
     preference,
   ]);
@@ -772,7 +782,9 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                       const weekStr = weekStartDate; // Alias para usar como key en JSX
 
                       // Buscar allocations por el weekStartDate real, pero filtrar por mes efectivo
-                      let weekAllocations = getEmployeeAllocationsForWeek(employeeId, weekStartDate);
+                      let weekAllocations = applyPlannerAllocationFilter(
+                        getEmployeeAllocationsForWeek(employeeId, weekStartDate)
+                      );
 
                       // Filtrar por mes efectivo: solo mostrar allocations que tienen días en el mes visible
                       weekAllocations = weekAllocations.filter(a => isAllocationInEffectiveMonth(a.weekStartDate, viewDate));
@@ -1599,7 +1611,9 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                               }
                               // Usar el weekStartDate real para buscar allocations
                               const weekStartDate = format(weeks[activeWeekIndex].weekStart, 'yyyy-MM-dd');
-                              const weekAllocs = getEmployeeAllocationsForWeek(employeeId, weekStartDate);
+                              const weekAllocs = applyPlannerAllocationFilter(
+                                getEmployeeAllocationsForWeek(employeeId, weekStartDate)
+                              );
 
                               // Filtrar por mes efectivo: solo mostrar allocations que tienen días en el mes visible
                               const filteredWeekAllocs = weekAllocs.filter(a => isAllocationInEffectiveMonth(a.weekStartDate, viewDate));

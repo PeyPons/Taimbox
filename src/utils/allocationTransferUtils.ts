@@ -57,6 +57,28 @@ export function isReceivedTransferredAllocation(
 }
 
 /** Cascarón en panel del emisor tras aceptar (distribute u otro modo con fila residual). */
+/**
+ * Cascarón del emisor tras distribute aceptado (0h, bloqueado).
+ * No se muestra en el planificador: la trazabilidad queda en historial de transferencias.
+ */
+export function shouldHideSenderTransferShellInPlanner(
+  alloc: Allocation,
+  ownerEmployeeId: string,
+  outgoingTransfers: TaskTransfer[] | undefined
+): boolean {
+  return isSenderTransferShell(alloc, ownerEmployeeId, outgoingTransfers);
+}
+
+export function filterAllocationsForPlannerDisplay(
+  allocations: Allocation[],
+  ownerEmployeeId: string,
+  outgoingTransfers: TaskTransfer[] | undefined
+): Allocation[] {
+  return allocations.filter(
+    (a) => !shouldHideSenderTransferShellInPlanner(a, ownerEmployeeId, outgoingTransfers)
+  );
+}
+
 export function isSenderTransferShell(
   alloc: Allocation,
   ownerEmployeeId: string,
