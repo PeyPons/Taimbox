@@ -15,6 +15,11 @@ import { getPlanningDeltaHours } from '@/utils/hoursTracking';
 import { formatDecimalHoursAsHm } from '@/utils/timerDisplay';
 import { round2 } from '@/utils/numbers';
 import { SensitiveText } from '@/components/privacy/SensitiveText';
+import { AllocationTransferBadge } from '@/components/planner/allocation/AllocationTransferBadge';
+import {
+  cleanTransferredTaskName,
+  getAllocationTransferUiState,
+} from '@/utils/allocationTransferUtils';
 
 interface AllocationTaskRowProps {
     alloc: Allocation;
@@ -48,6 +53,8 @@ interface AllocationTaskRowProps {
     /** Suma de time_entries para esta allocation (mismo empleado); alinea UI si Real en BD está desfasado */
     timeEntriesSum?: number;
     noteCount?: number;
+    /** Empleado dueño de la fila del planificador (para bloqueos y badges de transferencia). */
+    ownerEmployeeId: string;
 }
 
 export function AllocationTaskRow({
@@ -77,6 +84,7 @@ export function AllocationTaskRow({
     onTimeLogged,
     timeEntriesSum,
     noteCount = 0,
+    ownerEmployeeId,
 }: AllocationTaskRowProps) {
     const weeklyCloseDay = useWeeklyCloseDay();
     const { currentAgency } = useAgency();
@@ -85,7 +93,14 @@ export function AllocationTaskRow({
     const isFocusToday = alloc.focusDate === todayIso;
 
     const isCompleted = alloc.status === 'completed';
-    const pendingTransfer = (outgoingTransfers || []).find(t => t.allocationId === alloc.id && t.status === 'pending');
+    const transferUi = getAllocationTransferUiState(
+        alloc,
+        ownerEmployeeId,
+        outgoingTransfers,
+        weeklyFeedback,
+        employees
+    );
+    const { pendingTransfer, isReadOnly: transferReadOnly } = transferUi;
     const depTask = alloc.dependencyId ? allocations.find(a => a.id === alloc.dependencyId) : null;
     const depOwner = depTask ? employees.find(e => e.id === depTask.employeeId) : null;
     const isDepReady = depTask?.status === 'completed';
@@ -101,19 +116,13 @@ export function AllocationTaskRow({
     const monthHourInputClass =
         'min-w-[2.75rem] w-[4.5ch] max-w-[3.25rem] text-center bg-transparent border-0 border-b border-slate-200 focus:outline-none font-medium font-mono text-slate-700 text-[10px] py-0.5 leading-normal [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none';
 
-    const displayTaskName = (() => {
-        let cleanName = alloc.taskName || 'Tarea';
-        cleanName = cleanName.replace(/\s*\(transferida de .+?(?:, original: .+?)?\)/g, '').trim();
-        return cleanName || 'Tarea';
-    })();
+    const displayTaskName = cleanTransferredTaskName(alloc.taskName);
 
-    const isTransferred = alloc.transferSourceEmployeeId || alloc.taskName?.includes('(transferida de') || alloc.transferredFromAllocationId;
-    const isDistributed = alloc.distributionSourceAllocationId;
-    const hasWeeklyFeedback = weeklyFeedback.some(fb => fb.allocationId === alloc.id);
-    const wasAdjustedViaWeekly = hasWeeklyFeedback || isTransferred || isDistributed ||
-        (alloc.hoursAssigned === 0 && alloc.hoursActual === 0 && alloc.hoursComputed === 0 && alloc.status === 'completed');
-    const isZeroDueToWeekly = (alloc.hoursAssigned === 0 && alloc.hoursActual === 0 && alloc.hoursComputed === 0) &&
-        (hasWeeklyFeedback || alloc.taskName?.includes('(transferida de'));
+    const transferMenuLabel = pendingTransfer
+        ? 'Transferencia pendiente'
+        : transferUi.isSenderShell
+          ? 'Tarea transferida'
+          : 'Transferencia pendiente';
 
     return (
         <div className={cn(
@@ -126,16 +135,27 @@ export function AllocationTaskRow({
             <Checkbox
                 checked={isCompleted}
                 onCheckedChange={() => onToggleCompletion()}
+                disabled={transferReadOnly}
                 className={cn(
                     "shrink-0",
                     isCardLayout ? "mt-1 scale-110" : "mt-1",
                     isMobile && !isCardLayout && "scale-110",
-                    isCompleted && "data-[state=checked]:bg-emerald-600"
+                    isCompleted && "data-[state=checked]:bg-emerald-600",
+                    transferReadOnly && "opacity-50 cursor-not-allowed"
                 )}
             />
             <div className={cn("flex-1 min-w-0 flex flex-col", isMonthCompact ? "gap-1" : isCardLayout ? "gap-1.5" : "gap-2.5")}>
                 <div className="flex items-start gap-2 min-w-0">
-                    <div className="flex-1 min-w-0" onDoubleClick={() => onStartInlineEdit()}>
+                    <div
+                        className={cn(
+                            "flex-1 min-w-0",
+                            transferReadOnly ? "cursor-not-allowed opacity-80" : ""
+                        )}
+                        onDoubleClick={() => {
+                            if (transferReadOnly) return;
+                            onStartInlineEdit();
+                        }}
+                    >
                         {isInlineEditing ? (
                             <Input
                                 autoFocus
@@ -164,7 +184,13 @@ export function AllocationTaskRow({
                                 >
                                     <SensitiveText kind="task" id={alloc.id}>{displayTaskName}</SensitiveText>
                                 </p>
-                                {wasAdjustedViaWeekly && (
+                                {transferUi.showTransferBadge && (
+                                    <AllocationTransferBadge
+                                        label={pendingTransfer ? 'Pendiente' : 'Transferida'}
+                                        tooltip={transferUi.transferBadgeTooltip}
+                                    />
+                                )}
+                                {transferUi.showWeeklyBadge && (
                                     <Badge variant="outline" className="h-5 px-1.5 text-[9px] bg-primary/10 text-indigo-700 border-indigo-200 shrink-0">
                                         Weekly
                                     </Badge>
@@ -185,7 +211,8 @@ export function AllocationTaskRow({
                         />
                         <PlannerTaskContextMenu
                             alloc={alloc}
-                            pendingTransfer={!!pendingTransfer}
+                            transferReadOnly={transferReadOnly}
+                            transferReadOnlyLabel={transferMenuLabel}
                             isWeeklyEnabled={isWeeklyEnabled}
                             weeklyCloseDay={weeklyCloseDay}
                             nextWeekStart={nextWeekStart}
@@ -290,7 +317,7 @@ export function AllocationTaskRow({
                                 <TaskTimer
                                     employeeId={alloc.employeeId}
                                     allocationId={alloc.id}
-                                    disabled={false}
+                                    disabled={transferReadOnly}
                                     onTimeLogged={onTimeLogged}
                                 />
                             )}
@@ -311,8 +338,13 @@ export function AllocationTaskRow({
                                         step="0.5"
                                         min="0"
                                         defaultValue={alloc.hoursActual || 0}
+                                        disabled={transferReadOnly}
                                         onBlur={(e) => onUpdateInlineHours('hoursActual', e.target.value)}
-                                        className={cn(monthHourInputClass, 'focus:border-blue-400')}
+                                        className={cn(
+                                            monthHourInputClass,
+                                            'focus:border-blue-400',
+                                            transferReadOnly && 'cursor-not-allowed opacity-60'
+                                        )}
                                     />
                                     h
                                 </span>
@@ -325,10 +357,14 @@ export function AllocationTaskRow({
                                                 type="number"
                                                 step="0.5"
                                                 min="0"
-                                                disabled={preference === 'actual'}
+                                                disabled={preference === 'actual' || transferReadOnly}
                                                 defaultValue={alloc.hoursComputed || 0}
                                                 onBlur={(e) => onUpdateInlineHours('hoursComputed', e.target.value)}
-                                                className={cn(monthHourInputClass, 'focus:border-emerald-400')}
+                                                className={cn(
+                                                    monthHourInputClass,
+                                                    'focus:border-emerald-400',
+                                                    transferReadOnly && 'cursor-not-allowed opacity-60'
+                                                )}
                                             />
                                             h
                                         </span>
@@ -370,11 +406,13 @@ export function AllocationTaskRow({
                                     type="number"
                                     step="0.5"
                                     min="0"
+                                    disabled={transferReadOnly}
                                     defaultValue={alloc.hoursActual || 0}
                                     onBlur={(e) => onUpdateInlineHours('hoursActual', e.target.value)}
                                     className={cn(
                                         "w-9 text-center bg-transparent border-0 focus:outline-none focus:bg-white focus:ring-1 focus:ring-blue-400 rounded font-bold font-mono",
-                                        isCardLayout ? "text-xs" : "text-[11px]"
+                                        isCardLayout ? "text-xs" : "text-[11px]",
+                                        transferReadOnly && "cursor-not-allowed opacity-60"
                                     )}
                                 />
                             </div>
@@ -389,13 +427,15 @@ export function AllocationTaskRow({
                                         type="number"
                                         step="0.5"
                                         min="0"
-                                        disabled={preference === 'actual'}
+                                        disabled={preference === 'actual' || transferReadOnly}
                                         defaultValue={alloc.hoursComputed || 0}
                                         onBlur={(e) => onUpdateInlineHours('hoursComputed', e.target.value)}
                                         className={cn(
                                             "w-9 text-center bg-transparent border-0 focus:outline-none focus:bg-white rounded font-bold font-mono",
                                             isCardLayout ? "text-xs" : "text-[11px]",
-                                            preference === 'actual' ? "cursor-not-allowed opacity-50" : "focus:ring-1 focus:ring-emerald-400"
+                                            preference === 'actual' || transferReadOnly
+                                                ? "cursor-not-allowed opacity-50"
+                                                : "focus:ring-1 focus:ring-emerald-400"
                                         )}
                                     />
                                 </div>
@@ -428,7 +468,7 @@ export function AllocationTaskRow({
                                 <span className={cn("text-slate-400", isCardLayout ? "text-[11px]" : "text-[10px]")}>Exacto</span>
                             ) : null}
 
-                            {isZeroDueToWeekly && (
+                            {transferUi.showWeeklyBadge && (
                                 <Badge variant="outline" className="h-5 px-1.5 text-[9px] bg-primary/10 text-indigo-700 border-indigo-200">
                                     Weekly
                                 </Badge>
