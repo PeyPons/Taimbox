@@ -12,7 +12,12 @@ import {
   computeEmployeeMonthlyLoad,
   computeProjectHoursForMonth,
 } from '@/utils/appMetrics';
-import { fetchInitialAppData, loadMonthData, mapSupabaseProjectRow } from '@/utils/appDataLoader';
+import {
+  ensureProjectsLoaded,
+  fetchInitialAppData,
+  loadMonthData,
+  mapSupabaseProjectRow,
+} from '@/utils/appDataLoader';
 import { round2 } from '@/utils/numbers';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAgency } from '@/contexts/AgencyContext';
@@ -455,9 +460,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           if (payload.eventType === 'INSERT') {
             const newAllocation = mapAllocation(payload.new as SupabaseAllocation);
             setAllocations(prev => (prev.some(a => a.id === newAllocation.id) ? prev : [...prev, newAllocation]));
+            if (newAllocation.projectId) {
+              void ensureProjectsLoaded(currentAgency.id, [newAllocation.projectId], setProjects);
+            }
           } else if (payload.eventType === 'UPDATE') {
             const updated = mapAllocation(payload.new as SupabaseAllocation);
             setAllocations(prev => prev.map(a => (a.id === updated.id ? updated : a)));
+            if (updated.projectId) {
+              void ensureProjectsLoaded(currentAgency.id, [updated.projectId], setProjects);
+            }
           } else if (payload.eventType === 'DELETE') {
             const id = (payload.old as { id: string }).id;
             setAllocations(prev => prev.filter(a => a.id !== id));

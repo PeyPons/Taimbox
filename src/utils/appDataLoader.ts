@@ -107,15 +107,37 @@ export async function ensureProjectsLoaded(
   referencedIds: Iterable<string>,
   setProjects: (value: Project[] | ((prev: Project[]) => Project[])) => void
 ): Promise<void> {
-  let snapshot: Project[] = [];
+  const unique = [...new Set(referencedIds)].filter((id): id is string => Boolean(id));
+  if (unique.length === 0) return;
+
+  let missing: string[] = [];
   setProjects((prev) => {
-    snapshot = prev;
+    const known = new Set(prev.map((p) => p.id));
+    missing = unique.filter((id) => !known.has(id));
     return prev;
   });
-  const merged = await mergeReferencedProjects(agencyId, snapshot, referencedIds);
-  if (merged.length !== snapshot.length) {
-    setProjects(merged);
+
+  if (missing.length === 0) return;
+
+  const { data, error } = await supabase
+    .from('projects')
+    .select('*')
+    .eq('agency_id', agencyId)
+    .in('id', missing);
+
+  if (error) {
+    console.error('Error cargando proyectos referenciados por allocations:', error);
+    return;
   }
+  if (!data?.length) return;
+
+  const added = data.map((p: SupabaseProject) => mapSupabaseProjectRow(p));
+  setProjects((prev) => {
+    const known = new Set(prev.map((p) => p.id));
+    const newOnes = added.filter((p) => !known.has(p.id));
+    if (newOnes.length === 0) return prev;
+    return [...prev, ...newOnes];
+  });
 }
 
 interface SupabaseProject {
@@ -246,11 +268,12 @@ export async function fetchInitialAppData({
     const startStr = format(startDate, 'yyyy-MM-dd');
     const endStr = format(endDate, 'yyyy-MM-dd');
 
-    // Phase 1: empleados, clientes, proyectos activos
+    // Phase 1: empleados, clientes y catálogo completo de proyectos (active/archived/completed)
+    // para que el planificador resuelva nombres aunque el proyecto ya no esté activo.
     const [empRes, cliRes, projRes] = await Promise.all([
       supabase.from('employees').select('*').eq('agency_id', agencyId),
       supabase.from('clients').select('*').eq('agency_id', agencyId),
-      supabase.from('projects').select('*').eq('agency_id', agencyId).eq('status', 'active'),
+      supabase.from('projects').select('*').eq('agency_id', agencyId),
     ]);
 
     if (empRes.data) {
@@ -306,7 +329,6 @@ export async function fetchInitialAppData({
     let projectsCatalog: Project[] = projRes.data
       ? projRes.data.map((p: SupabaseProject) => mapSupabaseProjectRow(p))
       : [];
-    setProjects(projectsCatalog);
 
     if (!skipLoading) {
       setIsLoading(false);
