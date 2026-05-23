@@ -1,10 +1,9 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { apiGet, apiPost } from '../lib/api';
 import { supabase } from '../lib/supabase';
-import { useAgency } from '../hooks/useAgency';
 
 interface Job {
   id: string;
@@ -13,6 +12,9 @@ interface Job {
   progress_message: string | null;
   result_markdown: string | null;
   error_message: string | null;
+  live_preview: string | null;
+  live_phase: string | null;
+  live_updated_at: string | null;
 }
 
 interface Event {
@@ -21,11 +23,13 @@ interface Event {
   created_at: string;
 }
 
+const ACTIVE_STATUSES = ['queued', 'preprocessing', 'chunking', 'mapping', 'reducing'];
+
 export default function JobPage() {
   const { id } = useParams<{ id: string }>();
-  const { agencyId } = useAgency();
   const [job, setJob] = useState<Job | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
+  const liveRef = useRef<HTMLDivElement>(null);
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -37,7 +41,7 @@ export default function JobPage() {
 
   useEffect(() => {
     load();
-    const t = setInterval(load, 10_000);
+    const t = setInterval(load, 3000);
     return () => clearInterval(t);
   }, [load]);
 
@@ -48,7 +52,10 @@ export default function JobPage() {
       .on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'review_jobs', filter: `id=eq.${id}` },
-        () => load(),
+        (payload) => {
+          const row = payload.new as Job;
+          setJob((prev) => (prev ? { ...prev, ...row } : row));
+        },
       )
       .on(
         'postgres_changes',
@@ -61,6 +68,12 @@ export default function JobPage() {
     };
   }, [id, load]);
 
+  useEffect(() => {
+    if (liveRef.current) {
+      liveRef.current.scrollTop = liveRef.current.scrollHeight;
+    }
+  }, [job?.live_preview]);
+
   async function cancel() {
     if (!id) return;
     await apiPost(`/api/jobs/${id}/cancel`, {});
@@ -69,12 +82,22 @@ export default function JobPage() {
 
   if (!job) return <p>Cargando…</p>;
 
+  const isActive = ACTIVE_STATUSES.includes(job.status);
+  const showLive = isActive && Boolean(job.live_preview?.trim());
+  const livePhaseLabel =
+    job.live_phase === 'reducing'
+      ? 'Redactando informe final'
+      : job.live_phase === 'mapping'
+        ? 'Analizando contenido'
+        : 'Procesando';
+
   return (
     <div>
       <h1>Revisión</h1>
       <div className="card">
         <p>
           <strong>Estado:</strong> {job.status}
+          {isActive && <span className="live-pulse"> · en curso</span>}
         </p>
         <div className="progress" style={{ margin: '0.75rem 0' }}>
           <div style={{ width: `${job.progress_pct}%` }} />
@@ -87,6 +110,29 @@ export default function JobPage() {
           </button>
         )}
       </div>
+
+      {(showLive || (isActive && ['mapping', 'reducing'].includes(job.status))) && (
+        <div className="card live-panel">
+          <div className="live-panel-header">
+            <span className="live-dot" aria-hidden />
+            <strong>{livePhaseLabel}</strong>
+            <span className="live-hint">respuesta de Ollama en directo</span>
+          </div>
+          <div ref={liveRef} className="live-preview">
+            {showLive ? (
+              <>
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{job.live_preview ?? ''}</ReactMarkdown>
+                <span className="live-cursor" aria-hidden />
+              </>
+            ) : (
+              <p className="live-waiting">
+                <span className="live-dot" aria-hidden /> Esperando respuesta del modelo…
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="card">
         <h3>Actividad</h3>
         <ul className="timeline">

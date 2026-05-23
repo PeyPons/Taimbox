@@ -4,6 +4,7 @@ import { ollamaChat } from './ollama.js';
 import { sendCompletionEmail } from './notify.js';
 import { normalizeReportMarkdown } from './markdownNormalize.js';
 import { formatReviewSourceLabels } from './markdownEmail.js';
+import { createLivePreviewUpdater } from './livePreview.js';
 import { LIMITS } from '@taimbox/review-shared';
 import type { ReviewJobStatus } from '@taimbox/review-shared';
 
@@ -120,6 +121,11 @@ export async function processReviewJob(jobId: string): Promise<void> {
   const partials: Record<string, unknown>[] = [];
   for (let i = 0; i < chunks.length; i++) {
     if (await isCancelled(jobId)) return;
+    await updateJob(jobId, {
+      progress_message: `Analizando fragmento ${i + 1}/${chunks.length}…`,
+      live_preview: null,
+      live_phase: 'mapping',
+    });
     await supabase
       .from('review_job_chunks')
       .update({ status: 'processing', updated_at: new Date().toISOString() })
@@ -128,10 +134,15 @@ export async function processReviewJob(jobId: string): Promise<void> {
 
     const userMsg = `Fragmento ${i + 1} de ${chunks.length} (job ${jobId}):\n\n${chunks[i]}`;
     let partial: Record<string, unknown>;
+    const live = createLivePreviewUpdater(jobId, 'mapping');
     try {
-      const raw = await ollamaChat(systemBase, userMsg);
+      const raw = await ollamaChat(systemBase, userMsg, LIMITS.chunkRetries, {
+        onToken: (t) => live.push(t),
+      });
+      await live.flush();
       partial = parsePartialJson(raw);
     } catch (e) {
+      await live.clear();
       partial = { error: e instanceof Error ? e.message : 'chunk failed' };
       await supabase
         .from('review_job_chunks')
@@ -171,7 +182,12 @@ Reglas técnicas obligatorias:
   let resultJson: Record<string, unknown> = {};
 
   try {
-    const raw = await ollamaChat(reduceSystem, reduceUser);
+    const live = createLivePreviewUpdater(jobId, 'reducing');
+    const raw = await ollamaChat(reduceSystem, reduceUser, LIMITS.chunkRetries, {
+      onToken: (t) => live.push(t),
+    });
+    await live.flush();
+    await live.clear();
     const mdSplit = raw.split('---MARKDOWN---');
     const body = mdSplit.length >= 2 ? mdSplit.slice(1).join('---MARKDOWN---') : raw;
     resultMarkdown = normalizeReportMarkdown(body);
@@ -185,6 +201,7 @@ Reglas técnicas obligatorias:
       summary: summaryMatch?.[1]?.trim() ?? resultMarkdown.slice(0, 200),
     };
   } catch (e) {
+    await createLivePreviewUpdater(jobId, 'reducing').clear();
     await updateJob(jobId, {
       status: 'failed',
       error_message: e instanceof Error ? e.message : 'Reduce failed',
@@ -199,6 +216,8 @@ Reglas técnicas obligatorias:
     progress_message: 'Completado',
     result_markdown: resultMarkdown,
     result_json: resultJson,
+    live_preview: null,
+    live_phase: null,
     finished_at: new Date().toISOString(),
   });
   await logEvent(jobId, 'completed', 'Trabajo finalizado');
