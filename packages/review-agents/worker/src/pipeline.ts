@@ -4,7 +4,7 @@ import { ollamaChat } from './ollama.js';
 import { sendCompletionEmail } from './notify.js';
 import { normalizeReportMarkdown } from './markdownNormalize.js';
 import { formatReviewSourceLabels } from './markdownEmail.js';
-import { createLivePreviewUpdater } from './livePreview.js';
+import { createLivePreviewUpdater, startModelWaitTicker } from './livePreview.js';
 import { LIMITS } from '@taimbox/review-shared';
 import type { ReviewJobStatus } from '@taimbox/review-shared';
 
@@ -39,6 +39,62 @@ function parsePartialJson(raw: string): Record<string, unknown> {
     return JSON.parse(match[0]) as Record<string, unknown>;
   } catch {
     return { raw };
+  }
+}
+
+function buildReduceUserMessage(partials: Record<string, unknown>[]): string {
+  const blocks = partials.map((partial, i) => {
+    const findings = partial.findings;
+    if (Array.isArray(findings)) {
+      const lines = findings.map((f) => `- ${JSON.stringify(f)}`).join('\n');
+      return `## Fragmento ${i + 1}\n${lines}`;
+    }
+    const raw = typeof partial.raw === 'string' ? partial.raw : JSON.stringify(partial);
+    return `## Fragmento ${i + 1}\n${raw.slice(0, 12_000)}`;
+  });
+  return `Hallazgos parciales (${partials.length} fragmentos). Integra y redacta el informe final:\n\n${blocks.join('\n\n')}`.slice(
+    0,
+    80_000,
+  );
+}
+
+async function runOllamaWithLiveFeedback(
+  jobId: string,
+  phase: 'mapping' | 'reducing',
+  baseProgressMessage: string,
+  system: string,
+  user: string,
+  onProgress?: (chars: number) => void | Promise<void>,
+): Promise<string> {
+  const live = createLivePreviewUpdater(jobId, phase);
+  let gotFirstToken = false;
+  let streamedChars = 0;
+
+  const stopTicker = startModelWaitTicker(jobId, phase, baseProgressMessage, (patch) =>
+    updateJob(jobId, patch),
+  );
+
+  try {
+    const raw = await ollamaChat(system, user, LIMITS.chunkRetries, {
+      onToken: (token) => {
+        if (!gotFirstToken) {
+          gotFirstToken = true;
+          stopTicker();
+          void updateJob(jobId, {
+            progress_message:
+              phase === 'reducing' ? 'Redactando informe final…' : baseProgressMessage,
+            live_phase: phase,
+          });
+        }
+        streamedChars += token.length;
+        live.push(token);
+        void onProgress?.(streamedChars);
+      },
+    });
+    await live.flush();
+    return raw;
+  } finally {
+    stopTicker();
   }
 }
 
@@ -134,15 +190,17 @@ export async function processReviewJob(jobId: string): Promise<void> {
 
     const userMsg = `Fragmento ${i + 1} de ${chunks.length} (job ${jobId}):\n\n${chunks[i]}`;
     let partial: Record<string, unknown>;
-    const live = createLivePreviewUpdater(jobId, 'mapping');
     try {
-      const raw = await ollamaChat(systemBase, userMsg, LIMITS.chunkRetries, {
-        onToken: (t) => live.push(t),
-      });
-      await live.flush();
+      const raw = await runOllamaWithLiveFeedback(
+        jobId,
+        'mapping',
+        `Analizando fragmento ${i + 1}/${chunks.length}…`,
+        systemBase,
+        userMsg,
+      );
       partial = parsePartialJson(raw);
     } catch (e) {
-      await live.clear();
+      await createLivePreviewUpdater(jobId, 'mapping').clear();
       partial = { error: e instanceof Error ? e.message : 'chunk failed' };
       await supabase
         .from('review_job_chunks')
@@ -164,7 +222,13 @@ export async function processReviewJob(jobId: string): Promise<void> {
     await updateJob(jobId, { progress_pct: pct, progress_message: `Fragmento ${i + 1}/${chunks.length}` });
   }
 
-  await updateJob(jobId, { status: 'reducing', progress_pct: 80, progress_message: 'Sintetizando informe…' });
+  await updateJob(jobId, {
+    status: 'reducing',
+    progress_pct: 80,
+    progress_message: 'Sintetizando informe…',
+    live_preview: null,
+    live_phase: 'reducing',
+  });
   await logEvent(jobId, 'reducing', 'Reduce final');
 
   const reduceSystem = `${skill.system_prompt}
@@ -176,18 +240,28 @@ Reglas técnicas obligatorias:
 - Cada fila de tabla en su propia línea; línea en blanco antes y después de cada tabla.
 - Usa # para el título principal y ## para secciones.
 - No concatenes varias filas de tabla en una sola línea.`;
-  const reduceUser = `Análisis parciales (${partials.length} fragmentos):\n${JSON.stringify(partials).slice(0, 100_000)}`;
+  const reduceUser = buildReduceUserMessage(partials);
 
   let resultMarkdown = '';
   let resultJson: Record<string, unknown> = {};
 
   try {
-    const live = createLivePreviewUpdater(jobId, 'reducing');
-    const raw = await ollamaChat(reduceSystem, reduceUser, LIMITS.chunkRetries, {
-      onToken: (t) => live.push(t),
-    });
-    await live.flush();
-    await live.clear();
+    let lastProgressPct = 80;
+    const raw = await runOllamaWithLiveFeedback(
+      jobId,
+      'reducing',
+      'Sintetizando informe…',
+      reduceSystem,
+      reduceUser,
+      async (chars) => {
+        const pct = Math.min(98, 80 + Math.floor(chars / 600));
+        if (pct > lastProgressPct) {
+          lastProgressPct = pct;
+          await updateJob(jobId, { progress_pct: pct });
+        }
+      },
+    );
+    await createLivePreviewUpdater(jobId, 'reducing').clear();
     const mdSplit = raw.split('---MARKDOWN---');
     const body = mdSplit.length >= 2 ? mdSplit.slice(1).join('---MARKDOWN---') : raw;
     resultMarkdown = normalizeReportMarkdown(body);

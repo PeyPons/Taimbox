@@ -83,11 +83,14 @@ export default function JobPage() {
   if (!job) return <p>Cargando…</p>;
 
   const isActive = ACTIVE_STATUSES.includes(job.status);
-  const showLive = isActive && Boolean(job.live_preview?.trim());
+  const expectedLivePhase = job.status === 'reducing' ? 'reducing' : job.status === 'mapping' ? 'mapping' : null;
+  const previewMatchesPhase = !expectedLivePhase || job.live_phase === expectedLivePhase;
+  const showLive = isActive && Boolean(job.live_preview?.trim()) && previewMatchesPhase;
+  const isReduceWaiting = job.status === 'reducing' && !showLive;
   const livePhaseLabel =
-    job.live_phase === 'reducing'
+    job.status === 'reducing' || job.live_phase === 'reducing'
       ? 'Redactando informe final'
-      : job.live_phase === 'mapping'
+      : job.status === 'mapping' || job.live_phase === 'mapping'
         ? 'Analizando contenido'
         : 'Procesando';
 
@@ -126,7 +129,10 @@ export default function JobPage() {
               </>
             ) : (
               <p className="live-waiting">
-                <span className="live-dot" aria-hidden /> Esperando respuesta del modelo…
+                <span className="live-dot" aria-hidden />
+                {isReduceWaiting
+                  ? 'Generando informe final… esta fase suele tardar 1–3 min (prompt más largo que el análisis).'
+                  : 'Esperando respuesta del modelo…'}
               </p>
             )}
           </div>

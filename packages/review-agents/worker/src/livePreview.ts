@@ -51,3 +51,25 @@ export function createLivePreviewUpdater(jobId: string, phase: 'mapping' | 'redu
     },
   };
 }
+
+/** Actualiza progress_message mientras Ollama tarda en emitir el primer token. */
+export function startModelWaitTicker(
+  jobId: string,
+  phase: 'mapping' | 'reducing',
+  baseMessage: string,
+  onTick: (patch: Record<string, unknown>) => void | Promise<void>,
+): () => void {
+  let seconds = 0;
+  const interval = setInterval(() => {
+    seconds += 5;
+    const suffix =
+      phase === 'reducing'
+        ? `(redactando informe, ${seconds}s — esta fase suele tardar más)`
+        : `(esperando modelo, ${seconds}s)`;
+    void onTick({
+      progress_message: `${baseMessage} ${suffix}`,
+      live_phase: phase,
+    });
+  }, 5000);
+  return () => clearInterval(interval);
+}
