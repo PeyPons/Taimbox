@@ -25,22 +25,26 @@ async function ollamaChatStreamOnce(
     headers.Authorization = `Bearer ${env.ollamaApiToken}`;
   }
 
+  const body: Record<string, unknown> = {
+    model,
+    stream: true,
+    messages: [
+      { role: 'system', content: system },
+      { role: 'user', content: user },
+    ],
+  };
+
   const res = await fetch(`${env.ollamaUrl}/api/chat`, {
     method: 'POST',
     headers,
-    body: JSON.stringify({
-      model,
-      stream: true,
-      think: true,
-      messages: [
-        { role: 'system', content: system },
-        { role: 'user', content: user },
-      ],
-    }),
+    body: JSON.stringify(body),
     signal,
   });
 
-  if (!res.ok) throw new Error(`Ollama HTTP ${res.status}`);
+  if (!res.ok) {
+    const errText = await res.text().catch(() => '');
+    throw new Error(`Ollama HTTP ${res.status}${errText ? `: ${errText.slice(0, 200)}` : ''}`);
+  }
   if (!res.body) throw new Error('Ollama empty body');
 
   const reader = res.body.getReader();

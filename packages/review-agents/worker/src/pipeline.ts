@@ -254,6 +254,20 @@ export async function processReviewJob(jobId: string): Promise<void> {
     await updateJob(jobId, { progress_pct: pct, progress_message: `Fragmento ${i + 1}/${chunks.length}` });
   }
 
+  const failedPartials = partials.filter((p) => p.error);
+  if (failedPartials.length === partials.length) {
+    const msg = String(failedPartials[0]?.error ?? 'Todos los fragmentos fallaron');
+    await updateJob(jobId, {
+      status: 'failed',
+      error_message: msg,
+      live_preview: null,
+      live_phase: null,
+      finished_at: new Date().toISOString(),
+    });
+    await logEvent(jobId, 'failed', msg);
+    return;
+  }
+
   await updateJob(jobId, {
     status: 'reducing',
     progress_pct: 80,
