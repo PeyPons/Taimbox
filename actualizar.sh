@@ -2,6 +2,27 @@
 
 # Script de actualización del proyecto Timeboxing
 # Elimina dist antes del build para evitar errores de permisos
+#
+# Ejecutar como usuario del repo (p. ej. alex), NO con `sudo su`.
+# Si se invoca como root, reasigna permisos y se reejecuta como el dueño del directorio.
+
+REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$REPO_DIR" || exit 1
+DEPLOY_USER="$(stat -c '%U' "$REPO_DIR" 2>/dev/null || echo alex)"
+
+if [ "$(id -u)" -eq 0 ]; then
+    echo "[$(date +'%H:%M:%S')] ⚠️  Ejecutado como root: corrigiendo permisos y continuando como $DEPLOY_USER..."
+    chown -R "$DEPLOY_USER:$DEPLOY_USER" "$REPO_DIR"
+    exec sudo -u "$DEPLOY_USER" bash "$0" "$@"
+fi
+
+run_root() {
+    if [ "$(id -u)" -eq 0 ]; then
+        "$@"
+    else
+        sudo "$@"
+    fi
+}
 
 echo "[$(date +'%H:%M:%S')] 🚀 Iniciando actualización..."
 
@@ -59,7 +80,7 @@ fi
 
 # 7. Reiniciar Docker (app principal Taimbox)
 echo "[$(date +'%H:%M:%S')] 🔄 Reiniciando contenedor 'mi-planificador'..."
-docker restart mi-planificador
+run_root docker restart mi-planificador
 
 if [ $? -eq 0 ]; then
     echo "[$(date +'%H:%M:%S')] ✅ Contenedor reiniciado correctamente"
@@ -86,10 +107,10 @@ if [ -d "packages/review-agents" ]; then
     cd ../..
     if systemctl is-active review-api > /dev/null 2>&1; then
         echo "[$(date +'%H:%M:%S')] 🔄 Reiniciando review-api y review-worker..."
-        sudo systemctl restart review-api review-worker
+        run_root systemctl restart review-api review-worker
     fi
     if [ -f "packages/review-agents/deploy/docker-compose.portal.yml" ]; then
-        docker compose -f packages/review-agents/deploy/docker-compose.portal.yml up -d > /dev/null 2>&1
+        run_root docker compose -f packages/review-agents/deploy/docker-compose.portal.yml up -d > /dev/null 2>&1
         echo "[$(date +'%H:%M:%S')] ✅ Portal review.taimbox.com (contenedor review-portal)"
     fi
 else
