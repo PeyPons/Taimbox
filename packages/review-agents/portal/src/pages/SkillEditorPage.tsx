@@ -45,14 +45,29 @@ export default function SkillEditorPage() {
       .finally(() => setLoading(false));
   }, [id, isNew, agencyId]);
 
+  function normalizeJson(raw: string): string {
+    return raw
+      .replace(/[\u201C\u201D\u201E\u201F\u2033\u2036]/g, '"')
+      .replace(/[\u2018\u2019\u201A\u201B\u2032\u2035]/g, "'")
+      .replace(/\u00A0/g, ' ')
+      .trim();
+  }
+
   async function save(e: React.FormEvent) {
     e.preventDefault();
     if (!agencyId) return;
     let checklist: unknown[] = [];
+    const raw = normalizeJson(checklistJson || '[]');
     try {
-      checklist = JSON.parse(checklistJson) as unknown[];
-    } catch {
-      setError('Checklist JSON inválido');
+      const parsed: unknown = raw === '' ? [] : JSON.parse(raw);
+      if (!Array.isArray(parsed)) {
+        setError('El checklist debe ser un array JSON (entre corchetes [ ]).');
+        return;
+      }
+      checklist = parsed;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Error desconocido';
+      setError(`JSON inválido: ${msg}. Pista: usa comillas rectas " " y no “ ”.`);
       return;
     }
     const body = {
