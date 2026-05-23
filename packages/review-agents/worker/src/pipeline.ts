@@ -3,6 +3,7 @@ import { extractFromBuffer, extractFromUrl, chunkText } from './extract.js';
 import { ollamaChat } from './ollama.js';
 import { sendCompletionEmail } from './notify.js';
 import { normalizeReportMarkdown } from './markdownNormalize.js';
+import { formatReviewSourceLabels } from './markdownEmail.js';
 import { LIMITS } from '@taimbox/review-shared';
 import type { ReviewJobStatus } from '@taimbox/review-shared';
 
@@ -212,10 +213,21 @@ Reglas técnicas obligatorias:
 
     const { data: user } = await supabase.auth.admin.getUserById(job.requested_by);
     const email = profile?.notify_email ?? user.user?.email;
-    if (email) {
-      const summary =
-        typeof resultJson.summary === 'string' ? resultJson.summary : 'Revisión lista';
-      await sendCompletionEmail(email, jobId, summary);
+    if (email && resultMarkdown.trim()) {
+      const { data: jobInputs } = await supabase
+        .from('review_job_inputs')
+        .select('input_type, original_filename, source_url')
+        .eq('job_id', jobId);
+
+      const sourceLabels = formatReviewSourceLabels(jobInputs ?? []);
+
+      await sendCompletionEmail({
+        to: email,
+        jobId,
+        skillName: skill.name,
+        sourceLabels,
+        resultMarkdown,
+      });
       await updateJob(jobId, { email_sent_at: new Date().toISOString() });
     }
   }
