@@ -367,7 +367,11 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                     </NavLink>
                   )}
                   {canAccess('/review-agents') && (
-                    <NavLink to="/review-agents" icon={Sparkles} active={location.pathname === '/review-agents'}>
+                    <NavLink
+                      to={import.meta.env.VITE_REVIEW_PORTAL_URL ?? 'https://review.taimbox.com'}
+                      external
+                      icon={Sparkles}
+                    >
                       {t('sidebar.menu.reviewAgents', 'Revisión IA')}
                     </NavLink>
                   )}

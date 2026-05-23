@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { apiGet, apiPost } from '../lib/api';
 import { useAgency } from '../hooks/useAgency';
 
@@ -14,18 +14,29 @@ interface Skill {
 
 export default function SkillsPage() {
   const { agencyId } = useAgency();
+  const navigate = useNavigate();
   const [skills, setSkills] = useState<Skill[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  async function reload() {
+    if (!agencyId) return;
+    setLoading(true);
+    try {
+      const r = await apiGet<{ skills: Skill[] }>(`/api/skills?agencyId=${agencyId}`);
+      setSkills(r.skills);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   useEffect(() => {
-    if (!agencyId) return;
-    apiGet<{ skills: Skill[] }>(`/api/skills?agencyId=${agencyId}`).then((r) => setSkills(r.skills));
+    reload();
   }, [agencyId]);
 
-  async function duplicate(id: string) {
+  async function duplicateAndEdit(id: string) {
     if (!agencyId) return;
-    await apiPost(`/api/skills/${id}/duplicate`, { agencyId });
-    const r = await apiGet<{ skills: Skill[] }>(`/api/skills?agencyId=${agencyId}`);
-    setSkills(r.skills);
+    const { skill } = await apiPost<{ skill: Skill }>(`/api/skills/${id}/duplicate`, { agencyId });
+    navigate(`/skills/${skill.id}`);
   }
 
   function exportSkill(s: Skill) {
@@ -36,10 +47,17 @@ export default function SkillsPage() {
     a.click();
   }
 
+  const templates = skills.filter((s) => s.is_system_template);
+  const agencySkills = skills.filter((s) => !s.is_system_template);
+
   return (
     <div>
       <h1>Skills de revisión</h1>
-      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+      <p style={{ color: '#64748b', marginBottom: '1rem' }}>
+        Las plantillas del sistema no se editan directamente: duplícalas para personalizarlas. Tus skills de agencia
+        sí se pueden editar.
+      </p>
+      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
         <Link to="/skills/new" className="btn" style={{ textDecoration: 'none' }}>
           Crear skill
         </Link>
@@ -53,7 +71,7 @@ export default function SkillsPage() {
               const file = e.target.files?.[0];
               if (!file || !agencyId) return;
               const json = JSON.parse(await file.text()) as Record<string, unknown>;
-              await apiPost('/api/skills', {
+              const { skill } = await apiPost<{ skill: Skill }>('/api/skills', {
                 agencyId,
                 slug: String(json.slug ?? `import-${Date.now().toString(36)}`),
                 name: String(json.name ?? 'Skill importada'),
@@ -63,31 +81,61 @@ export default function SkillsPage() {
                 reviewChecklist: json.review_checklist ?? json.reviewChecklist ?? [],
                 visibilityRoles: json.visibility_roles ?? json.visibilityRoles ?? [],
               });
-              const r = await apiGet<{ skills: Skill[] }>(`/api/skills?agencyId=${agencyId}`);
-              setSkills(r.skills);
+              navigate(`/skills/${skill.id}`);
             }}
           />
         </label>
       </div>
-      {skills.map((s) => (
-        <div key={s.id} className="card">
-          <h3>{s.name}</h3>
-          <p style={{ color: '#64748b' }}>{s.description || s.skill_type}</p>
-          {s.is_system_template ? (
-            <button type="button" className="btn secondary" onClick={() => duplicate(s.id)}>
-              Duplicar plantilla
-            </button>
-          ) : (
-            <>
-              <Link to={`/skills/${s.id}`}>Editar</Link>
-              {' · '}
-              <button type="button" className="btn secondary" onClick={() => exportSkill(s)}>
-                Exportar JSON
-              </button>
-            </>
-          )}
-        </div>
-      ))}
+
+      {loading ? (
+        <p>Cargando…</p>
+      ) : (
+        <>
+          <section style={{ marginBottom: '2rem' }}>
+            <h2 style={{ fontSize: '1.1rem', marginBottom: '0.75rem' }}>Tus skills ({agencySkills.length})</h2>
+            {agencySkills.length === 0 ? (
+              <p className="card" style={{ color: '#64748b' }}>
+                Aún no tienes skills propias. Duplica una plantilla abajo o crea una nueva.
+              </p>
+            ) : (
+              agencySkills.map((s) => (
+                <div key={s.id} className="card">
+                  <h3>{s.name}</h3>
+                  <p style={{ color: '#64748b' }}>{s.description || s.skill_type}</p>
+                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.75rem' }}>
+                    <Link to={`/skills/${s.id}`} className="btn" style={{ textDecoration: 'none' }}>
+                      Editar
+                    </Link>
+                    <button type="button" className="btn secondary" onClick={() => exportSkill(s)}>
+                      Exportar JSON
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </section>
+
+          <section>
+            <h2 style={{ fontSize: '1.1rem', marginBottom: '0.75rem' }}>
+              Plantillas del sistema ({templates.length})
+            </h2>
+            {templates.map((s) => (
+              <div key={s.id} className="card">
+                <h3>{s.name}</h3>
+                <p style={{ color: '#64748b' }}>{s.description || s.skill_type}</p>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.75rem' }}>
+                  <button type="button" className="btn" onClick={() => duplicateAndEdit(s.id)}>
+                    Duplicar y editar
+                  </button>
+                  <button type="button" className="btn secondary" onClick={() => exportSkill(s)}>
+                    Exportar JSON
+                  </button>
+                </div>
+              </div>
+            ))}
+          </section>
+        </>
+      )}
     </div>
   );
 }

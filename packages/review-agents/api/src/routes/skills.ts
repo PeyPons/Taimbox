@@ -131,7 +131,7 @@ router.post('/:id/duplicate', async (req, res) => {
       system_prompt: src.system_prompt,
       review_checklist: src.review_checklist,
       output_schema: src.output_schema,
-      visibility_roles: src.visibility_roles,
+      visibility_roles: [],
       allowed_input_types: src.allowed_input_types,
       created_by: userId,
       is_system_template: false,

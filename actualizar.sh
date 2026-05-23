@@ -57,7 +57,7 @@ else
     exit 1
 fi
 
-# 7. Reiniciar Docker
+# 7. Reiniciar Docker (app principal Taimbox)
 echo "[$(date +'%H:%M:%S')] 🔄 Reiniciando contenedor 'mi-planificador'..."
 docker restart mi-planificador
 
@@ -65,6 +65,35 @@ if [ $? -eq 0 ]; then
     echo "[$(date +'%H:%M:%S')] ✅ Contenedor reiniciado correctamente"
 else
     echo "[$(date +'%H:%M:%S')] ⚠️  Advertencia: No se pudo reiniciar el contenedor Docker"
+fi
+
+# 8. Review Agents (portal + API + worker en el mismo servidor)
+if [ -d "packages/review-agents" ]; then
+    echo "[$(date +'%H:%M:%S')] 📦 Actualizando review-agents..."
+    cd packages/review-agents
+    npm install > /dev/null 2>&1
+    npm run build -w @taimbox/review-shared > /dev/null 2>&1
+    npm run build -w @taimbox/review-api > /dev/null 2>&1
+    npm run build -w @taimbox/review-worker > /dev/null 2>&1
+    if [ -d "portal" ]; then
+        cd portal
+        export VITE_REVIEW_API_URL=
+        # shellcheck disable=SC1091
+        [ -f "../../.env" ] && set -a && . ../../.env && set +a
+        npm run build > /dev/null 2>&1
+        cd ..
+    fi
+    cd ../..
+    if systemctl is-active review-api > /dev/null 2>&1; then
+        echo "[$(date +'%H:%M:%S')] 🔄 Reiniciando review-api y review-worker..."
+        sudo systemctl restart review-api review-worker
+    fi
+    if [ -f "packages/review-agents/deploy/docker-compose.portal.yml" ]; then
+        docker compose -f packages/review-agents/deploy/docker-compose.portal.yml up -d > /dev/null 2>&1
+        echo "[$(date +'%H:%M:%S')] ✅ Portal review.taimbox.com (contenedor review-portal)"
+    fi
+else
+    echo "[$(date +'%H:%M:%S')] ℹ️  Sin packages/review-agents (solo tras git pull con el monorepo)"
 fi
 
 echo "[$(date +'%H:%M:%S')] ✨ ¡Actualización completada!"

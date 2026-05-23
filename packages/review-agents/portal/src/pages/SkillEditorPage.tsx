@@ -16,20 +16,33 @@ export default function SkillEditorPage() {
   const [checklistJson, setChecklistJson] = useState('[]');
   const [roles, setRoles] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(!isNew);
+  const [isTemplate, setIsTemplate] = useState(false);
 
   useEffect(() => {
-    if (isNew || !id) return;
-    apiGet<{ skills: Array<Record<string, unknown>> }>(`/api/skills?agencyId=${agencyId}`).then((r) => {
-      const s = r.skills.find((x) => x.id === id);
-      if (!s) return;
-      setName(String(s.name));
-      setSlug(String(s.slug));
-      setDescription(String(s.description ?? ''));
-      setSkillType(s.skill_type as 'document' | 'url' | 'mixed');
-      setSystemPrompt(String(s.system_prompt));
-      setChecklistJson(JSON.stringify(s.review_checklist ?? [], null, 2));
-      setRoles((s.visibility_roles as string[])?.join(', ') ?? '');
-    });
+    if (isNew || !id || !agencyId) return;
+    setLoading(true);
+    apiGet<{ skills: Array<Record<string, unknown>> }>(`/api/skills?agencyId=${agencyId}`)
+      .then((r) => {
+        const s = r.skills.find((x) => x.id === id);
+        if (!s) {
+          setError('No se encontró la skill o no tienes permiso para verla.');
+          return;
+        }
+        if (s.is_system_template) {
+          setIsTemplate(true);
+          return;
+        }
+        setName(String(s.name));
+        setSlug(String(s.slug));
+        setDescription(String(s.description ?? ''));
+        setSkillType(s.skill_type as 'document' | 'url' | 'mixed');
+        setSystemPrompt(String(s.system_prompt));
+        setChecklistJson(JSON.stringify(s.review_checklist ?? [], null, 2));
+        setRoles((s.visibility_roles as string[])?.join(', ') ?? '');
+      })
+      .catch((err) => setError(err instanceof Error ? err.message : 'Error al cargar'))
+      .finally(() => setLoading(false));
   }, [id, isNew, agencyId]);
 
   async function save(e: React.FormEvent) {
@@ -61,6 +74,40 @@ export default function SkillEditorPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error');
     }
+  }
+
+  if (loading) {
+    return (
+      <div>
+        <h1>{isNew ? 'Nueva skill' : 'Editar skill'}</h1>
+        <p>Cargando…</p>
+      </div>
+    );
+  }
+
+  if (isTemplate) {
+    return (
+      <div>
+        <h1>Plantilla del sistema</h1>
+        <div className="card">
+          <p>Las plantillas globales no se editan. Duplícala para crear una copia editable en tu agencia.</p>
+          <button
+            type="button"
+            className="btn"
+            style={{ marginTop: '1rem' }}
+            onClick={async () => {
+              if (!agencyId || !id) return;
+              const { skill } = await apiPost<{ skill: { id: string } }>(`/api/skills/${id}/duplicate`, {
+                agencyId,
+              });
+              navigate(`/skills/${skill.id}`, { replace: true });
+            }}
+          >
+            Duplicar y editar
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (

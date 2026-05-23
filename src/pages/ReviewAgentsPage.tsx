@@ -4,7 +4,8 @@ import { ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
-const DEFAULT_PORTAL_URL = import.meta.env.VITE_REVIEW_PORTAL_URL ?? 'http://localhost:5174';
+const DEFAULT_PORTAL_URL =
+  import.meta.env.VITE_REVIEW_PORTAL_URL ?? 'https://review.taimbox.com';
 
 /**
  * Enlace al portal standalone de Review Agents (ia-srv / subdominio review.*).
