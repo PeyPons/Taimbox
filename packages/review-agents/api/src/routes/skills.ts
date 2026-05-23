@@ -145,4 +145,28 @@ router.post('/:id/duplicate', async (req, res) => {
   res.status(201).json({ skill: data });
 });
 
+router.delete('/:id', async (req, res) => {
+  const { jwt } = res.locals.auth as AuthLocals;
+  const id = req.params.id;
+  const sb = supabaseForUser(jwt);
+  const { data: existing } = await sb.from('review_skills').select('id, is_system_template, is_archived').eq('id', id).single();
+  if (!existing || existing.is_system_template) {
+    res.status(404).json({ error: 'Not found or system template' });
+    return;
+  }
+  if (existing.is_archived) {
+    res.json({ ok: true });
+    return;
+  }
+  const { error } = await sb
+    .from('review_skills')
+    .update({ is_archived: true, updated_at: new Date().toISOString() })
+    .eq('id', id);
+  if (error) {
+    res.status(500).json({ error: error.message });
+    return;
+  }
+  res.json({ ok: true });
+});
+
 export default router;

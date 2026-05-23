@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { apiGet, apiPatch, apiPost } from '../lib/api';
+import { apiDelete, apiGet, apiPatch, apiPost } from '../lib/api';
 import { useAgency } from '../hooks/useAgency';
 
 export default function SkillEditorPage() {
@@ -162,9 +162,28 @@ export default function SkillEditorPage() {
           <input value={roles} onChange={(e) => setRoles(e.target.value)} placeholder="comercial, legal, Administrador" />
         </label>
         {error && <p className="error">{error}</p>}
-        <button type="submit" className="btn" style={{ marginTop: '1rem' }}>
-          Guardar
-        </button>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '1rem' }}>
+          <button type="submit" className="btn">
+            Guardar
+          </button>
+          {!isNew && id && (
+            <button
+              type="button"
+              className="btn danger"
+              onClick={async () => {
+                if (!window.confirm(`¿Eliminar la skill «${name}»?`)) return;
+                try {
+                  await apiDelete(`/api/skills/${id}`);
+                  navigate('/skills');
+                } catch (err) {
+                  setError(err instanceof Error ? err.message : 'No se pudo eliminar');
+                }
+              }}
+            >
+              Eliminar
+            </button>
+          )}
+        </div>
       </form>
     </div>
   );

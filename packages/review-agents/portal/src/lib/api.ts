@@ -37,3 +37,21 @@ export async function apiPatch<T>(path: string, body: unknown): Promise<T> {
   if (!res.ok) throw new Error(await res.text());
   return res.json() as Promise<T>;
 }
+
+export async function apiDelete<T = { ok: boolean }>(path: string): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: 'DELETE',
+    headers: await authHeaders(),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    try {
+      const j = JSON.parse(text) as { error?: string };
+      throw new Error(j.error ?? text);
+    } catch {
+      throw new Error(text || 'Error al eliminar');
+    }
+  }
+  if (res.status === 204) return { ok: true } as T;
+  return res.json() as Promise<T>;
+}

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { apiGet, apiPost } from '../lib/api';
+import { apiDelete, apiGet, apiPost } from '../lib/api';
 import { useAgency } from '../hooks/useAgency';
 
 interface Skill {
@@ -45,6 +45,17 @@ export default function SkillsPage() {
     a.href = URL.createObjectURL(blob);
     a.download = `${s.slug}.json`;
     a.click();
+  }
+
+  async function removeSkill(s: Skill) {
+    if (s.is_system_template) return;
+    if (!window.confirm(`¿Eliminar la skill «${s.name}»? No se borrarán revisiones ya hechas con ella.`)) return;
+    try {
+      await apiDelete(`/api/skills/${s.id}`);
+      await reload();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'No se pudo eliminar');
+    }
   }
 
   const templates = skills.filter((s) => s.is_system_template);
@@ -108,6 +119,9 @@ export default function SkillsPage() {
                     </Link>
                     <button type="button" className="btn secondary" onClick={() => exportSkill(s)}>
                       Exportar JSON
+                    </button>
+                    <button type="button" className="btn danger" onClick={() => removeSkill(s)}>
+                      Eliminar
                     </button>
                   </div>
                 </div>
