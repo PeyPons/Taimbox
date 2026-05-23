@@ -1,0 +1,12 @@
+services:
+  review-portal:
+    image: nginx:alpine
+    container_name: review-portal
+    restart: unless-stopped
+    ports:
+      - '3010:80'
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    volumes:
+      - ../portal/dist:/usr/share/nginx/html:ro
+      - ./nginx-review-portal.conf:/etc/nginx/conf.d/default.conf:ro
