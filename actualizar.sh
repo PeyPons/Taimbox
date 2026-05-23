@@ -79,7 +79,7 @@ if [ -d "packages/review-agents" ]; then
         cd portal
         export VITE_REVIEW_API_URL=
         # shellcheck disable=SC1091
-        [ -f "../../.env" ] && set -a && . ../../.env && set +a
+        [ -f "../../../.env" ] && set -a && . ../../../.env && set +a
         npm run build > /dev/null 2>&1
         cd ..
     fi
