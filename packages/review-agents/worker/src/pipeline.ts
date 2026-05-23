@@ -64,31 +64,59 @@ async function runOllamaWithLiveFeedback(
   baseProgressMessage: string,
   system: string,
   user: string,
-  onProgress?: (chars: number) => void | Promise<void>,
+  options: {
+    bootstrapPreview?: string;
+    onProgress?: (chars: number) => void | Promise<void>;
+  } = {},
 ): Promise<string> {
   const live = createLivePreviewUpdater(jobId, phase);
-  let gotFirstToken = false;
+  let gotStream = false;
   let streamedChars = 0;
+  let wroteThinkingHeader = false;
+  let wroteContentHeader = false;
 
-  const stopTicker = startModelWaitTicker(jobId, phase, baseProgressMessage, (patch) =>
+  if (options.bootstrapPreview) {
+    await live.setBootstrap(options.bootstrapPreview);
+  }
+
+  let stopTicker: () => void = () => {};
+
+  const beginStream = () => {
+    if (gotStream) return;
+    gotStream = true;
+    stopTicker();
+    live.resetText();
+    void updateJob(jobId, {
+      progress_message: phase === 'reducing' ? 'Redactando informe final…' : baseProgressMessage,
+      live_phase: phase,
+    });
+  };
+
+  stopTicker = startModelWaitTicker(jobId, phase, baseProgressMessage, (patch) =>
     updateJob(jobId, patch),
   );
 
   try {
     const raw = await ollamaChat(system, user, LIMITS.chunkRetries, {
-      onToken: (token) => {
-        if (!gotFirstToken) {
-          gotFirstToken = true;
-          stopTicker();
-          void updateJob(jobId, {
-            progress_message:
-              phase === 'reducing' ? 'Redactando informe final…' : baseProgressMessage,
-            live_phase: phase,
-          });
+      onThinking: (token) => {
+        beginStream();
+        if (!wroteThinkingHeader) {
+          live.push('💭 Razonamiento del modelo\n\n');
+          wroteThinkingHeader = true;
         }
         streamedChars += token.length;
         live.push(token);
-        void onProgress?.(streamedChars);
+        void options.onProgress?.(streamedChars);
+      },
+      onToken: (token) => {
+        beginStream();
+        if (wroteThinkingHeader && !wroteContentHeader) {
+          live.push('\n\n📝 Informe\n\n');
+          wroteContentHeader = true;
+        }
+        streamedChars += token.length;
+        live.push(token);
+        void options.onProgress?.(streamedChars);
       },
     });
     await live.flush();
@@ -241,6 +269,10 @@ Reglas técnicas obligatorias:
 - Usa # para el título principal y ## para secciones.
 - No concatenes varias filas de tabla en una sola línea.`;
   const reduceUser = buildReduceUserMessage(partials);
+  const reduceBootstrap =
+    `📋 Contexto que el modelo está procesando (${partials.length} fragmento(s), ${reduceUser.length.toLocaleString('es-ES')} caracteres)\n\n` +
+    `${reduceUser.slice(0, 5000)}${reduceUser.length > 5000 ? '\n\n… [contexto truncado en vista]' : ''}\n\n` +
+    `---\n⏳ Cuando el modelo responda, verás aquí su razonamiento (si el modelo lo expone) y el informe escribiéndose en directo.\n`;
 
   let resultMarkdown = '';
   let resultJson: Record<string, unknown> = {};
@@ -253,12 +285,15 @@ Reglas técnicas obligatorias:
       'Sintetizando informe…',
       reduceSystem,
       reduceUser,
-      async (chars) => {
-        const pct = Math.min(98, 80 + Math.floor(chars / 600));
-        if (pct > lastProgressPct) {
-          lastProgressPct = pct;
-          await updateJob(jobId, { progress_pct: pct });
-        }
+      {
+        bootstrapPreview: reduceBootstrap,
+        onProgress: async (chars) => {
+          const pct = Math.min(98, 80 + Math.floor(chars / 600));
+          if (pct > lastProgressPct) {
+            lastProgressPct = pct;
+            await updateJob(jobId, { progress_pct: pct });
+          }
+        },
       },
     );
     await createLivePreviewUpdater(jobId, 'reducing').clear();

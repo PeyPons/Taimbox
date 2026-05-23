@@ -87,6 +87,10 @@ export default function JobPage() {
   const previewMatchesPhase = !expectedLivePhase || job.live_phase === expectedLivePhase;
   const showLive = isActive && Boolean(job.live_preview?.trim()) && previewMatchesPhase;
   const isReduceWaiting = job.status === 'reducing' && !showLive;
+  const liveIsStreaming =
+    showLive &&
+    job.live_updated_at &&
+    Date.now() - new Date(job.live_updated_at).getTime() < 4000;
   const livePhaseLabel =
     job.status === 'reducing' || job.live_phase === 'reducing'
       ? 'Redactando informe final'
@@ -119,19 +123,23 @@ export default function JobPage() {
           <div className="live-panel-header">
             <span className="live-dot" aria-hidden />
             <strong>{livePhaseLabel}</strong>
-            <span className="live-hint">respuesta de Ollama en directo</span>
+            <span className="live-hint">
+              {showLive && !liveIsStreaming && job.status === 'reducing'
+                ? 'contexto enviado — esperando primer token del modelo'
+                : 'salida de Ollama en directo (texto plano)'}
+            </span>
           </div>
           <div ref={liveRef} className="live-preview">
             {showLive ? (
               <>
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>{job.live_preview ?? ''}</ReactMarkdown>
-                <span className="live-cursor" aria-hidden />
+                <pre className="live-raw">{job.live_preview ?? ''}</pre>
+                {liveIsStreaming && <span className="live-cursor" aria-hidden />}
               </>
             ) : (
               <p className="live-waiting">
                 <span className="live-dot" aria-hidden />
                 {isReduceWaiting
-                  ? 'Generando informe final… esta fase suele tardar 1–3 min (prompt más largo que el análisis).'
+                  ? 'Preparando contexto del informe…'
                   : 'Esperando respuesta del modelo…'}
               </p>
             )}

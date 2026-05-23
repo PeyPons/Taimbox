@@ -3,7 +3,15 @@ import { LIMITS } from '@taimbox/review-shared';
 
 export interface OllamaStreamOptions {
   onToken?: (token: string) => void;
+  /** Modelos con razonamiento (p. ej. DeepSeek-R1) emiten tokens en `thinking`. */
+  onThinking?: (token: string) => void;
 }
+
+type OllamaStreamChunk = {
+  message?: { content?: string; thinking?: string };
+  thinking?: string;
+  done?: boolean;
+};
 
 async function ollamaChatStreamOnce(
   system: string,
@@ -22,6 +30,7 @@ async function ollamaChatStreamOnce(
     body: JSON.stringify({
       model: env.ollamaModel,
       stream: true,
+      think: true,
       messages: [
         { role: 'system', content: system },
         { role: 'user', content: user },
@@ -48,7 +57,9 @@ async function ollamaChatStreamOnce(
       const trimmed = line.trim();
       if (!trimmed) continue;
       try {
-        const chunk = JSON.parse(trimmed) as { message?: { content?: string }; done?: boolean };
+        const chunk = JSON.parse(trimmed) as OllamaStreamChunk;
+        const thinking = chunk.message?.thinking ?? chunk.thinking ?? '';
+        if (thinking) options.onThinking?.(thinking);
         const token = chunk.message?.content ?? '';
         if (token) {
           full += token;

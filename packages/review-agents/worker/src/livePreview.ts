@@ -8,6 +8,20 @@ export function createLivePreviewUpdater(jobId: string, phase: 'mapping' | 'redu
   let lastFlush = 0;
   let pending: ReturnType<typeof setTimeout> | null = null;
 
+  const scheduleFlush = () => {
+    const now = Date.now();
+    if (now - lastFlush >= FLUSH_MS) {
+      void flush();
+      return;
+    }
+    if (!pending) {
+      pending = setTimeout(() => {
+        pending = null;
+        void flush();
+      }, FLUSH_MS);
+    }
+  };
+
   const flush = async () => {
     if (pending) {
       clearTimeout(pending);
@@ -28,17 +42,14 @@ export function createLivePreviewUpdater(jobId: string, phase: 'mapping' | 'redu
   return {
     push(token: string) {
       text += token;
-      const now = Date.now();
-      if (now - lastFlush >= FLUSH_MS) {
-        void flush();
-        return;
-      }
-      if (!pending) {
-        pending = setTimeout(() => {
-          pending = null;
-          void flush();
-        }, FLUSH_MS);
-      }
+      scheduleFlush();
+    },
+    resetText() {
+      text = '';
+    },
+    async setBootstrap(bootstrap: string) {
+      text = bootstrap;
+      await flush();
     },
     flush,
     async clear() {

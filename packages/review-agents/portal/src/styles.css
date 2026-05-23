@@ -114,6 +114,15 @@ label { display: block; margin-top: 0.75rem; font-weight: 500; font-size: 0.9rem
   background: #1e293b;
   color: #cbd5e1;
 }
+.live-raw {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: #e2e8f0;
+}
 .live-waiting { color: #94a3b8; margin: 0; display: flex; align-items: center; gap: 0.5rem; }
 
 .live-cursor {
