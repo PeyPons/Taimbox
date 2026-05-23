@@ -35,6 +35,7 @@ import {
   Activity,
   DollarSign,
   FileText,
+  Sparkles,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from '@/lib/utils';
@@ -345,10 +346,10 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               )}
 
               {/* EQUIPO */}
-              {(canAccess('/team') || canAccess('/okrs') || (modules.timeTracker && canAccess('/team'))) && (
+              {(canAccess('/team') || canAccess('/okrs') || canAccess('/review-agents') || (modules.timeTracker && canAccess('/team'))) && (
                 <NavGroup
                   label={t('sidebar.groups.team', 'Equipo')}
-                  isActive={['/team', '/okrs', '/tiempos'].includes(location.pathname)}
+                  isActive={['/team', '/okrs', '/tiempos', '/review-agents'].includes(location.pathname)}
                 >
                   {canAccess('/team') && (
                     <NavLink to="/team" icon={Users} active={location.pathname === '/team'}>
@@ -363,6 +364,11 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   {modules.professionalGoals !== false && canAccess('/okrs') && (
                     <NavLink to="/okrs" icon={Rocket} active={location.pathname === '/okrs'}>
                       {t('sidebar.menu.okrs', 'Objetivos')}
+                    </NavLink>
+                  )}
+                  {canAccess('/review-agents') && (
+                    <NavLink to="/review-agents" icon={Sparkles} active={location.pathname === '/review-agents'}>
+                      {t('sidebar.menu.reviewAgents', 'Revisión IA')}
                     </NavLink>
                   )}
                 </NavGroup>

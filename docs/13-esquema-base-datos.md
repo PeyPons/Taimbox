@@ -47,6 +47,26 @@ Si el código o una migración **contradice** el snapshot, **prevalece el códig
 
 - **`support_tickets`**, **`support_ticket_replies`**.
 
+## 13.6b. Review Agents (Ollama)
+
+Migración: `20260526120000_review_agents.sql`. Procesamiento en **ia-srv** (`packages/review-agents/`); Postgres/Auth/Storage/Realtime en Supabase.
+
+| Tabla | Uso |
+|-------|-----|
+| `review_profiles` | Perfil por `user_id` + `agency_id` (`role_key`, email aviso) |
+| `review_skills` / `review_skill_versions` | Skills de revisión (plantillas globales `agency_id` NULL) |
+| `review_jobs` | Trabajo async (`queued` → … → `completed`) |
+| `review_job_inputs` | Archivos, URLs, texto |
+| `review_job_chunks` | Map-reduce parcial |
+| `review_job_events` | Timeline UI |
+
+- **RLS:** patrón `user_agencies`; visibilidad de skills vía `review_skill_visible_to_user(skill_id)`.
+- **Storage:** bucket privado `review-documents` (`{agency_id}/{job_id}/…`).
+- **Realtime:** `review_jobs`, `review_job_events` en `supabase_realtime`.
+- **Taimbox:** permiso `can_access_review_agents`, ruta `/review-agents` (enlace al portal).
+
+Baseline MCP: [`docs/review-agents-mcp-baseline.md`](review-agents-mcp-baseline.md).
+
 ## 13.7. Tipos y matices del snapshot
 
 - Aparecen tipos **`USER-DEFINED`** (`preferred_view`, `default_view` en `department_config`): en PostgreSQL corresponden a enums del esquema real; el archivo SQL de contexto no es ejecutable literal sin esos tipos creados antes.

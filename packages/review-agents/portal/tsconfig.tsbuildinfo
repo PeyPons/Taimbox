@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/main.tsx","./src/vite-env.d.ts","./src/hooks/useagency.ts","./src/lib/api.ts","./src/lib/supabase.ts","./src/pages/homepage.tsx","./src/pages/jobpage.tsx","./src/pages/loginpage.tsx","./src/pages/newreviewpage.tsx","./src/pages/skilleditorpage.tsx","./src/pages/skillspage.tsx"],"version":"5.9.3"}

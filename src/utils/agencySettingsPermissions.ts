@@ -39,6 +39,7 @@ export const AGENCY_ROLE_PERMISSION_GROUPS: {
       'can_access_team_capacity',
       'can_assign_tasks_to_others',
       'can_access_weekly_forecast',
+      'can_access_review_agents',
     ],
   },
   {

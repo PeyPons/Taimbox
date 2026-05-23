@@ -1,0 +1,14 @@
+[Unit]
+Description=Taimbox Review API
+After=network.target redis.service
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/review-agents/api
+EnvironmentFile=/etc/review-agent/env
+ExecStart=/usr/bin/node dist/index.js
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

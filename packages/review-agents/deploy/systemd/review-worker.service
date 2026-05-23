@@ -1,0 +1,14 @@
+[Unit]
+Description=Taimbox Review Worker (Ollama pipeline)
+After=network.target redis.service ollama.service
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/review-agents/worker
+EnvironmentFile=/etc/review-agent/env
+ExecStart=/usr/bin/node dist/index.js
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

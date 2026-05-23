@@ -1,0 +1,31 @@
+{
+  "name": "@taimbox/review-worker",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@mozilla/readability": "^0.6.0",
+    "@supabase/supabase-js": "^2.89.0",
+    "@taimbox/review-shared": "file:../shared",
+    "bullmq": "^5.34.5",
+    "cheerio": "^1.0.0",
+    "ioredis": "^5.4.2",
+    "jsdom": "^26.0.0",
+    "mammoth": "^1.9.0",
+    "pdf-parse": "^1.1.1",
+    "ws": "^8.18.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/jsdom": "^21.1.7",
+    "@types/node": "^22.16.5",
+    "@types/pdf-parse": "^1.1.4",
+    "tsx": "^4.19.2",
+    "typescript": "^5.8.3"
+  }
+}

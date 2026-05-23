@@ -1,0 +1,19 @@
+# Ejemplo VirtualHost en aaPanel / Apache (ia-srv)
+# Proxy /api -> review-api:3001
+# DocumentRoot -> packages/review-agents/portal/dist
+
+<VirtualHost *:443>
+    ServerName review.tudominio.com
+
+    DocumentRoot /opt/review-agents/portal/dist
+
+    <Directory /opt/review-agents/portal/dist>
+        AllowOverride None
+        Require all granted
+        FallbackResource /index.html
+    </Directory>
+
+    ProxyPreserveHost On
+    ProxyPass /api http://127.0.0.1:3001/api
+    ProxyPassReverse /api http://127.0.0.1:3001/api
+</VirtualHost>

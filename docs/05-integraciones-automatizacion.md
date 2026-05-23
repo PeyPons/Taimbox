@@ -316,6 +316,20 @@ El workspace incluye un servidor MCP para **consultar y auditar** la instancia S
 
 **Limitaciones conocidas (mayo 2026):** sin tabla `supabase_migrations.schema_migrations`, el historial MCP no sustituye al diff contra `supabase/migrations/*.sql`. Algunas herramientas de metadatos (`list_tables`) pueden fallar por credenciales del usuario `supabase_read_only_user` del proxy; `execute_sql` y `get_advisors` suelen funcionar igual.
 
+#### Review Agents + Ollama (ia-srv)
+
+Sistema de revisión de documentos/URLs con **skills** configurables, cola **BullMQ/Redis** y worker Node en el mismo host que **Ollama** (`127.0.0.1:11434`). No usa Edge Functions (jobs de hasta ~2 h).
+
+| Componente | Ruta en repo |
+|------------|----------------|
+| Migración SQL | `supabase/migrations/20260526120000_review_agents.sql` |
+| API REST | `packages/review-agents/api` (puerto 3001) |
+| Worker | `packages/review-agents/worker` |
+| Portal SPA | `packages/review-agents/portal` |
+| Deploy ia-srv | `packages/review-agents/deploy/` (Redis, systemd, Apache, `hardening.sh`) |
+
+Variables: ver `packages/review-agents/deploy/env.example`. Esquema y RLS: [13-esquema-base-datos.md](13-esquema-base-datos.md) (§ 13.6b). Integración Taimbox: permiso `can_access_review_agents`, `/review-agents` → portal externo (`VITE_REVIEW_PORTAL_URL`).
+
 #### Despliegue de Edge Functions (self-hosted)
 
 El entorno usa Supabase self-hosted con Docker. El contenedor `supabase-edge-functions` lee las funciones desde un volumen montado. Rutas: repo Taimbox `/home/alex/Timeboxing`, volumen de funciones `/home/alex/supabase-pi/supabase/docker/volumes/functions/`.

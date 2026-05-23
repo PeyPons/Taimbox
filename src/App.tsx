@@ -119,6 +119,7 @@ const TeamPulsePage = lazyWithRetry(() => import("./pages/TeamPulsePage"));
 const TiemposPage = lazyWithRetry(() => import("./pages/TiemposPage"));
 const ApiKeysPage = lazyWithRetry(() => import("./pages/ApiKeysPage"));
 const ContactSupportPage = lazyWithRetry(() => import("./pages/ContactSupportPage"));
+const ReviewAgentsPage = lazyWithRetry(() => import("./pages/ReviewAgentsPage"));
 const GoogleCallbackPage = lazyWithRetry(() => import("./pages/GoogleCallbackPage"));
 const MetaCallbackPage = lazyWithRetry(() => import("./pages/MetaCallbackPage"));
 const ResetPasswordPage = lazyWithRetry(() => import("./pages/ResetPasswordPage"));
@@ -285,6 +286,7 @@ const App = () => (
                             <Route path="/meta-ads" element={<Suspense fallback={<PageLoader />}><PlanGuard><PermissionProtectedRoute requiredPermission="/meta-ads"><ModuleGuard module="ppc"><MetaAdsPage /></ModuleGuard></PermissionProtectedRoute></PlanGuard></Suspense>} />
                             <Route path="/api-keys" element={<Suspense fallback={<PageLoader />}><PlanGuard><PermissionProtectedRoute requiredPermission="/api-keys"><ApiKeysPage /></PermissionProtectedRoute></PlanGuard></Suspense>} />
                             <Route path="/soporte" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/soporte"><ContactSupportPage /></PermissionProtectedRoute></Suspense>} />
+                            <Route path="/review-agents" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/review-agents"><ReviewAgentsPage /></PermissionProtectedRoute></Suspense>} />
                           </Route>
                         </Route>
 
