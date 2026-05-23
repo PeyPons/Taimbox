@@ -13,9 +13,7 @@ export const env = {
   ollamaApiToken: process.env.OLLAMA_API_TOKEN ?? '',
   /** Modelo por defecto si no hay MAP/REDUCE específicos. */
   ollamaModel: process.env.OLLAMA_MODEL ?? 'qwen2.5:7b-instruct',
-  /** Análisis por fragmento (rápido). */
-  ollamaModelMap: process.env.OLLAMA_MODEL_MAP ?? process.env.OLLAMA_MODEL ?? 'llama3.2:3b',
-  /** Informe final (calidad en español). */
+  ollamaModelMap: process.env.OLLAMA_MODEL_MAP ?? 'llama3.2:3b',
   ollamaModelReduce: process.env.OLLAMA_MODEL_REDUCE ?? process.env.OLLAMA_MODEL ?? 'qwen2.5:7b-instruct',
   resendApiKey: process.env.RESEND_API_KEY ?? '',
   resendFrom: process.env.RESEND_FROM_EMAIL ?? 'Taimbox <noreply@send.taimbox.com>',
