@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { apiGet, apiPost } from '../lib/api';
 import { supabase } from '../lib/supabase';
 import { useAgency } from '../hooks/useAgency';
@@ -99,7 +100,7 @@ export default function JobPage() {
       {job.status === 'completed' && job.result_markdown && (
         <div className="card markdown-body">
           <h3>Informe</h3>
-          <ReactMarkdown>{job.result_markdown}</ReactMarkdown>
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>{job.result_markdown}</ReactMarkdown>
           <button
             type="button"
             className="btn secondary"

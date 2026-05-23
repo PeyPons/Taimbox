@@ -2,6 +2,7 @@ import { supabase } from './supabase.js';
 import { extractFromBuffer, extractFromUrl, chunkText } from './extract.js';
 import { ollamaChat } from './ollama.js';
 import { sendCompletionEmail } from './notify.js';
+import { normalizeReportMarkdown } from './markdownNormalize.js';
 import { LIMITS } from '@taimbox/review-shared';
 import type { ReviewJobStatus } from '@taimbox/review-shared';
 
@@ -154,7 +155,15 @@ export async function processReviewJob(jobId: string): Promise<void> {
   await updateJob(jobId, { status: 'reducing', progress_pct: 80, progress_message: 'Sintetizando informe…' });
   await logEvent(jobId, 'reducing', 'Reduce final');
 
-  const reduceSystem = `${skill.system_prompt}\n\nGenera el informe final en español. Primero un bloque JSON válido con: summary (string), score (0-100), findings (array), recommendations (array). Después, separado por ---MARKDOWN---, el informe en markdown.`;
+  const reduceSystem = `${skill.system_prompt}
+
+Genera el informe final en español siguiendo el FORMATO DE RESPUESTA de las instrucciones anteriores.
+
+Reglas técnicas obligatorias:
+- Responde SOLO en Markdown (sin JSON inicial ni bloques de código envolviendo todo el informe).
+- Cada fila de tabla en su propia línea; línea en blanco antes y después de cada tabla.
+- Usa # para el título principal y ## para secciones.
+- No concatenes varias filas de tabla en una sola línea.`;
   const reduceUser = `Análisis parciales (${partials.length} fragmentos):\n${JSON.stringify(partials).slice(0, 100_000)}`;
 
   let resultMarkdown = '';
@@ -163,16 +172,17 @@ export async function processReviewJob(jobId: string): Promise<void> {
   try {
     const raw = await ollamaChat(reduceSystem, reduceUser);
     const mdSplit = raw.split('---MARKDOWN---');
-    if (mdSplit.length >= 2) {
-      resultJson = parsePartialJson(mdSplit[0]);
-      resultMarkdown = mdSplit.slice(1).join('---MARKDOWN---').trim();
-    } else {
-      resultJson = parsePartialJson(raw);
-      resultMarkdown =
-        typeof resultJson.summary === 'string'
-          ? String(resultJson.summary)
-          : raw;
-    }
+    const body = mdSplit.length >= 2 ? mdSplit.slice(1).join('---MARKDOWN---') : raw;
+    resultMarkdown = normalizeReportMarkdown(body);
+
+    const scoreMatch = resultMarkdown.match(/(\d{1,3})\s*\/\s*10/);
+    const summaryMatch = resultMarkdown.match(
+      /\*\*Resumen en una frase:\*\*\s*([^\n]+)/i,
+    );
+    resultJson = {
+      score: scoreMatch ? Number(scoreMatch[1]) : null,
+      summary: summaryMatch?.[1]?.trim() ?? resultMarkdown.slice(0, 200),
+    };
   } catch (e) {
     await updateJob(jobId, {
       status: 'failed',

@@ -13,7 +13,7 @@ export const env = {
   ollamaApiToken: process.env.OLLAMA_API_TOKEN ?? '',
   ollamaModel: process.env.OLLAMA_MODEL ?? 'gemma4:latest',
   resendApiKey: process.env.RESEND_API_KEY ?? '',
-  resendFrom: process.env.RESEND_FROM_EMAIL ?? 'Taimbox <onboarding@resend.dev>',
+  resendFrom: process.env.RESEND_FROM_EMAIL ?? 'Taimbox <noreply@send.taimbox.com>',
   portalPublicUrl: process.env.REVIEW_PORTAL_URL ?? 'http://localhost:5174',
   workerConcurrency: Number(process.env.WORKER_CONCURRENCY ?? 1),
 };
