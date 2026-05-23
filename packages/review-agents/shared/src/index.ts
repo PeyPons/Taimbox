@@ -74,4 +74,6 @@ export const LIMITS = {
   chunkRetries: 3,
 } as const;
 
-export const DEFAULT_OLLAMA_MODEL = 'gemma4:latest';
+export const DEFAULT_OLLAMA_MODEL = 'qwen2.5:7b-instruct';
+export const DEFAULT_OLLAMA_MODEL_MAP = 'llama3.2:3b';
+export const DEFAULT_OLLAMA_MODEL_REDUCE = 'qwen2.5:7b-instruct';

@@ -11,7 +11,12 @@ export const env = {
   /** Base URL sin /api/chat — p. ej. http://88.30.74.159/ollama-api */
   ollamaUrl: process.env.OLLAMA_URL ?? 'http://88.30.74.159/ollama-api',
   ollamaApiToken: process.env.OLLAMA_API_TOKEN ?? '',
-  ollamaModel: process.env.OLLAMA_MODEL ?? 'gemma4:latest',
+  /** Modelo por defecto si no hay MAP/REDUCE específicos. */
+  ollamaModel: process.env.OLLAMA_MODEL ?? 'qwen2.5:7b-instruct',
+  /** Análisis por fragmento (rápido). */
+  ollamaModelMap: process.env.OLLAMA_MODEL_MAP ?? process.env.OLLAMA_MODEL ?? 'llama3.2:3b',
+  /** Informe final (calidad en español). */
+  ollamaModelReduce: process.env.OLLAMA_MODEL_REDUCE ?? process.env.OLLAMA_MODEL ?? 'qwen2.5:7b-instruct',
   resendApiKey: process.env.RESEND_API_KEY ?? '',
   resendFrom: process.env.RESEND_FROM_EMAIL ?? 'Taimbox <noreply@send.taimbox.com>',
   portalPublicUrl: process.env.REVIEW_PORTAL_URL ?? 'http://localhost:5174',

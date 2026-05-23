@@ -14,6 +14,7 @@ type OllamaStreamChunk = {
 };
 
 async function ollamaChatStreamOnce(
+  model: string,
   system: string,
   user: string,
   options: OllamaStreamOptions,
@@ -28,7 +29,7 @@ async function ollamaChatStreamOnce(
     method: 'POST',
     headers,
     body: JSON.stringify({
-      model: env.ollamaModel,
+      model,
       stream: true,
       think: true,
       messages: [
@@ -79,13 +80,14 @@ export async function ollamaChat(
   user: string,
   retries = LIMITS.chunkRetries,
   options: OllamaStreamOptions = {},
+  model = env.ollamaModel,
 ): Promise<string> {
   let lastErr: Error | null = null;
   for (let i = 0; i < retries; i++) {
     try {
       const controller = new AbortController();
       const t = setTimeout(() => controller.abort(), LIMITS.chunkTimeoutMs);
-      const full = await ollamaChatStreamOnce(system, user, options, controller.signal);
+      const full = await ollamaChatStreamOnce(model, system, user, options, controller.signal);
       clearTimeout(t);
       return full;
     } catch (e) {

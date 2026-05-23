@@ -57,7 +57,9 @@ Variables del worker (en el host donde corre el worker, **no** en ia-srv):
 ```env
 OLLAMA_URL=http://88.30.74.159/ollama-api
 OLLAMA_API_TOKEN=tu-token-bearer
-OLLAMA_MODEL=gemma4:latest
+OLLAMA_MODEL=qwen2.5:7b-instruct
+OLLAMA_MODEL_MAP=llama3.2:3b
+OLLAMA_MODEL_REDUCE=qwen2.5:7b-instruct
 ```
 
 ## Producción (api + worker + portal)

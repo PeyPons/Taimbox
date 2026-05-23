@@ -5,6 +5,7 @@ import { sendCompletionEmail } from './notify.js';
 import { normalizeReportMarkdown } from './markdownNormalize.js';
 import { formatReviewSourceLabels } from './markdownEmail.js';
 import { createLivePreviewUpdater, startModelWaitTicker } from './livePreview.js';
+import { env } from './env.js';
 import { LIMITS } from '@taimbox/review-shared';
 import type { ReviewJobStatus } from '@taimbox/review-shared';
 
@@ -68,6 +69,7 @@ async function runOllamaWithLiveFeedback(
     bootstrapPreview?: string;
     onProgress?: (chars: number) => void | Promise<void>;
   } = {},
+  model = env.ollamaModel,
 ): Promise<string> {
   const live = createLivePreviewUpdater(jobId, phase);
   let gotStream = false;
@@ -118,7 +120,7 @@ async function runOllamaWithLiveFeedback(
         live.push(token);
         void options.onProgress?.(streamedChars);
       },
-    });
+    }, model);
     await live.flush();
     return raw;
   } finally {
@@ -225,6 +227,8 @@ export async function processReviewJob(jobId: string): Promise<void> {
         `Analizando fragmento ${i + 1}/${chunks.length}…`,
         systemBase,
         userMsg,
+        {},
+        env.ollamaModelMap,
       );
       partial = parsePartialJson(raw);
     } catch (e) {
@@ -295,6 +299,7 @@ Reglas técnicas obligatorias:
           }
         },
       },
+      env.ollamaModelReduce,
     );
     await createLivePreviewUpdater(jobId, 'reducing').clear();
     const mdSplit = raw.split('---MARKDOWN---');
