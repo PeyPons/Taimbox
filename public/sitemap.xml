@@ -19,27 +19,12 @@
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://taimbox.com/blog/que-es-timeboxing</loc>
+    <loc>https://taimbox.com/blog/estimacion-proyectos-agencia-como-acertar</loc>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://taimbox.com/blog/planificacion-proyectos-cronograma-recursos</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://taimbox.com/blog/ley-parkinson</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://taimbox.com/blog/kpis-agencias-marketing-2026</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://taimbox.com/blog/plantilla-planificacion-recursos-agencia</loc>
+    <loc>https://taimbox.com/blog/capacidad-calendario-vs-capacidad-productiva-equipo</loc>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
@@ -59,7 +44,27 @@
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://taimbox.com/blog/capacidad-calendario-vs-capacidad-productiva-equipo</loc>
+    <loc>https://taimbox.com/blog/plantilla-planificacion-recursos-agencia</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://taimbox.com/blog/kpis-agencias-marketing-2026</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://taimbox.com/blog/planificacion-proyectos-cronograma-recursos</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://taimbox.com/blog/ley-parkinson</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://taimbox.com/blog/que-es-timeboxing</loc>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
@@ -205,27 +210,12 @@
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://taimbox.com/en/blog/what-is-timeboxing</loc>
+    <loc>https://taimbox.com/en/blog/agency-project-estimation-how-to-get-it-right</loc>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://taimbox.com/en/blog/project-planning-schedule-resources</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://taimbox.com/en/blog/parkinsons-law</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://taimbox.com/en/blog/marketing-agency-kpis-2026</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://taimbox.com/en/blog/agency-resource-planning-template</loc>
+    <loc>https://taimbox.com/en/blog/calendar-capacity-vs-shippable-team-capacity</loc>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
@@ -245,7 +235,27 @@
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://taimbox.com/en/blog/calendar-capacity-vs-shippable-team-capacity</loc>
+    <loc>https://taimbox.com/en/blog/agency-resource-planning-template</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://taimbox.com/en/blog/marketing-agency-kpis-2026</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://taimbox.com/en/blog/project-planning-schedule-resources</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://taimbox.com/en/blog/parkinsons-law</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://taimbox.com/en/blog/what-is-timeboxing</loc>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>

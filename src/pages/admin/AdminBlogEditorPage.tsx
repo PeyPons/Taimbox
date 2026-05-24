@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useAppTranslation } from "@/hooks/useAppTranslation";
@@ -6,6 +6,12 @@ import { useCreatePost, useUpdatePost, blogQueryKeys } from "@/hooks/useBlogPost
 import { getPostById } from "@/lib/blog/client";
 import { BlogBlocksSchema } from "@/lib/blog/blockSchema";
 import type { BlogBlock } from "@/lib/blog/blockSchema";
+import {
+  formToCmsSeed,
+  parseBlogCmsSeed,
+  pathsFromSlug,
+  seedToFormPatch,
+} from "@/lib/blog/importSeed";
 import type { BlogPostRecord, BlogPostStatus } from "@/lib/blog/types";
 import { listVisualIds } from "@/lib/blog/visualRegistry";
 import { BlockRenderer } from "@/components/landing/blog/BlockRenderer";
@@ -23,7 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Save, ArrowLeft, Eye, AlertCircle } from "lucide-react";
+import { Loader2, Save, ArrowLeft, Eye, AlertCircle, Upload, Download } from "lucide-react";
 import { toast } from "@/lib/notify";
 
 interface FormState {
@@ -149,15 +155,94 @@ export default function AdminBlogEditorPage() {
   const [form, setForm] = useState<FormState>(() => recordToFormState(null));
   const [activeLang, setActiveLang] = useState<"es" | "en">("es");
   const [previewLang, setPreviewLang] = useState<"es" | "en">("es");
+  const [pathEnTouched, setPathEnTouched] = useState(false);
+  const importInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (!isNew && existing) setForm(recordToFormState(existing));
+    if (!isNew && existing) {
+      setForm(recordToFormState(existing));
+      setPathEnTouched(true);
+    }
   }, [isNew, existing]);
+
+  const handleSlugChange = (slug: string) => {
+    if (isNew && !pathEnTouched) {
+      const paths = pathsFromSlug(slug);
+      setForm((prev) => ({
+        ...prev,
+        slug,
+        pathEs: paths.pathEs,
+        pathEn: paths.pathEn,
+      }));
+      return;
+    }
+    setForm((prev) => ({ ...prev, slug }));
+  };
+
+  const handleImportSeedFile = async (file: File) => {
+    try {
+      const text = await file.text();
+      const parsed = parseBlogCmsSeed(JSON.parse(text));
+      if (!parsed.ok) {
+        toast.error(parsed.error);
+        return;
+      }
+      const patch = seedToFormPatch(parsed.seed);
+      setForm((prev) => ({ ...prev, ...patch }));
+      setPathEnTouched(true);
+      toast.success(
+        t("admin.blog.importSeedOk", "Contenido importado. Revisa fecha y estado antes de guardar."),
+      );
+    } catch {
+      toast.error(t("admin.blog.importSeedErr", "No se pudo leer el archivo JSON."));
+    }
+  };
 
   const blocksEsResult = useMemo(() => safeParseBlocksRaw(form.blocksEsRaw), [form.blocksEsRaw]);
   const blocksEnResult = useMemo(() => safeParseBlocksRaw(form.blocksEnRaw), [form.blocksEnRaw]);
   const blocksEsError = typeof blocksEsResult === "string" ? blocksEsResult : null;
   const blocksEnError = typeof blocksEnResult === "string" ? blocksEnResult : null;
+
+  const handleExportSeed = () => {
+    if (blocksEsError || blocksEnError) {
+      toast.error(t("admin.blog.exportSeedInvalid", "Corrige los bloques antes de exportar."));
+      return;
+    }
+    const jsonLdEs = tryParseJson<Record<string, unknown> | Record<string, unknown>[]>(
+      form.jsonLdEsRaw,
+    );
+    const jsonLdEn = tryParseJson<Record<string, unknown> | Record<string, unknown>[]>(
+      form.jsonLdEnRaw,
+    );
+    const seed = formToCmsSeed({
+      slug: form.slug,
+      status: form.status,
+      pathEs: form.pathEs,
+      pathEn: form.pathEn,
+      date: form.date,
+      readingMinutes: form.readingMinutes,
+      relatedSlug: form.relatedSlug,
+      titleEs: form.titleEs,
+      titleEn: form.titleEn,
+      descriptionEs: form.descriptionEs,
+      descriptionEn: form.descriptionEn,
+      metaTitleEs: form.metaTitleEs,
+      metaTitleEn: form.metaTitleEn,
+      metaDescriptionEs: form.metaDescriptionEs,
+      metaDescriptionEn: form.metaDescriptionEn,
+      blocksEs: blocksEsResult as BlogBlock[],
+      blocksEn: blocksEnResult as BlogBlock[],
+      jsonLdEs: jsonLdEs.ok ? (jsonLdEs.value ?? null) : null,
+      jsonLdEn: jsonLdEn.ok ? (jsonLdEn.value ?? null) : null,
+    });
+    const blob = new Blob([JSON.stringify(seed, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${form.slug.trim() || "blog-post"}-cms-seed.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
   const previewBlocks: BlogBlock[] = previewLang === "es"
     ? (blocksEsError ? [] : (blocksEsResult as BlogBlock[]))
     : (blocksEnError ? [] : (blocksEnResult as BlogBlock[]));
@@ -256,7 +341,31 @@ export default function AdminBlogEditorPage() {
               : t("admin.blog.editorTitleEdit", "Editar post")}
           </h1>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap justify-end">
+          <input
+            ref={importInputRef}
+            type="file"
+            accept="application/json,.json"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) void handleImportSeedFile(file);
+              e.target.value = "";
+            }}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => importInputRef.current?.click()}
+          >
+            <Upload className="h-4 w-4 mr-1" />
+            {t("admin.blog.importSeed", "Importar seed JSON")}
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={handleExportSeed}>
+            <Download className="h-4 w-4 mr-1" />
+            {t("admin.blog.exportSeed", "Exportar seed JSON")}
+          </Button>
           <Button onClick={handleSave} disabled={isSaving}>
             {isSaving ? (
               <Loader2 className="h-4 w-4 animate-spin mr-1" />
@@ -282,7 +391,7 @@ export default function AdminBlogEditorPage() {
                 <Input
                   id="bp-slug"
                   value={form.slug}
-                  onChange={(e) => setForm({ ...form, slug: e.target.value })}
+                  onChange={(e) => handleSlugChange(e.target.value)}
                   placeholder="mi-articulo-2026"
                 />
                 <p className="text-xs text-slate-500">
@@ -307,7 +416,10 @@ export default function AdminBlogEditorPage() {
                   <Input
                     id="bp-pathEn"
                     value={form.pathEn}
-                    onChange={(e) => setForm({ ...form, pathEn: e.target.value })}
+                    onChange={(e) => {
+                      setPathEnTouched(true);
+                      setForm({ ...form, pathEn: e.target.value });
+                    }}
                     placeholder="/en/blog/my-article"
                   />
                 </div>
@@ -598,6 +710,10 @@ export default function AdminBlogEditorPage() {
             <Label className="inline-flex items-center gap-2">
               <Eye className="h-4 w-4" />
               {t("admin.blog.preview", "Previsualización")}
+              <span className="text-xs font-normal text-slate-500">
+                ({previewBlocks.length}{" "}
+                {t("admin.blog.blockCount", "bloques")})
+              </span>
             </Label>
             <Tabs value={previewLang} onValueChange={(v) => setPreviewLang(v as "es" | "en")}>
               <TabsList className="h-7">
