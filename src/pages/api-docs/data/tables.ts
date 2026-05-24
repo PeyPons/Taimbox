@@ -18,45 +18,30 @@ export const TABLE_GROUPS: TableGroup[] = [
       {
         name: 'agencies',
         description:
-          'Cada agencia es un tenant aislado. Todos los recursos se asocian a una agencia. Solo lectura via API: la creacion de agencias se realiza desde la app (registro/onboarding).',
-        authNote: 'Requiere autenticacion. Solo puedes acceder a las agencias de tu usuario.',
+          'Modelo de tenant (referencia de esquema, no recurso CRUD integrable). GET /agencies devuelve []: RLS no expone filas ni settings (roles, OAuth, Stripe). Para POST en otras tablas copia agency_id desde API e integraciones (Datos de conexion). Creacion de agencias solo en la app (registro/onboarding).',
+        authNote: 'Fuera del alcance operativo de integraciones. Sin lectura ni escritura util sobre agencies via PostgREST. El JWT del token API ya fija el tenant para RLS.',
         columns: [
-          { name: 'id', type: 'uuid', required: false, default: 'gen_random_uuid()', pk: true, description: 'Identificador unico.' },
-          { name: 'name', type: 'text', required: true, description: 'Nombre de la agencia. Debe ser unico.' },
-          { name: 'slug', type: 'text', required: true, description: 'Slug URL-friendly. Unico.' },
-          { name: 'settings', type: 'jsonb', required: false, default: "'{}'", description: 'Configuracion de la agencia (roles, modulos, branding).' },
-          { name: 'setup_completed', type: 'boolean', required: false, default: 'false', description: 'Indica si el onboarding se completo.' },
-          { name: 'created_at', type: 'timestamptz', required: false, default: 'now()', description: 'Fecha de creacion. Auto-generado.' },
-          { name: 'updated_at', type: 'timestamptz', required: false, default: 'now()', description: 'Ultima actualizacion. Auto-generado.' },
+          { name: 'id', type: 'uuid', required: false, default: 'gen_random_uuid()', pk: true, description: 'UUID del tenant. Incluyelo en POST de otras tablas; copialo desde API e integraciones, no desde GET /agencies.' },
+          { name: 'name', type: 'text', required: true, description: 'Nombre de la agencia. No expuesto via API publica (solo referencia de esquema / FK).' },
+          { name: 'slug', type: 'text', required: true, description: 'Slug URL-friendly. No expuesto via API publica.' },
+          { name: 'settings', type: 'jsonb', required: false, default: "'{}'", description: 'Configuracion sensible (roles, modulos, integraciones). Sin SELECT via PostgREST; la app usa get_agency_for_app_client con campos redactados.' },
+          { name: 'setup_completed', type: 'boolean', required: false, default: 'false', description: 'Onboarding completado. No expuesto via API publica.' },
+          { name: 'created_at', type: 'timestamptz', required: false, default: 'now()', description: 'Fecha de creacion. No expuesto via API publica.' },
+          { name: 'updated_at', type: 'timestamptz', required: false, default: 'now()', description: 'Ultima actualizacion. No expuesto via API publica.' },
         ],
         examples: {
-          select: `const { data } = await timeboxing
-  .from('agencies')
-  .select('id, name, slug, settings')
-  .eq('id', agencyId)
-  .single()`,
-          insert: `// Las agencias no se crean via API.
-// Se gestionan desde la app (registro / onboarding).`,
+          select: `// No consultes GET /agencies. Para integraciones server-to-server:
+const agencyId = '<AGENCY_ID>' // UUID desde API e integraciones > Datos de conexion
+
+// Opcional (sesion app con varias agencias): solo id + name, sin settings
+// const { data } = await taimbox.rpc('list_my_agencies_directory')`,
+          insert: `// Las agencias no se crean ni modifican via API de integracion.
+// Registro y onboarding solo desde la app (Edge Functions / service_role).`,
         },
         responses: {
-          getList: `[
-  {
-    "id": "a1b2c3d4-...",
-    "name": "Mi Agencia",
-    "slug": "mi-agencia",
-    "settings": { "roles": [...], "modules": {...} }
-  }
-]`,
-          getOne: `{
-  "id": "a1b2c3d4-...",
-  "name": "Mi Agencia",
-  "slug": "mi-agencia",
-  "settings": { "roles": [...], "modules": {...} },
-  "setup_completed": true,
-  "created_at": "2026-01-15T10:30:00Z",
-  "updated_at": "2026-02-10T14:22:00Z"
-}`,
-          post: `// No disponible. Las agencias se crean desde la app.`,
+          getList: `// GET /rest/v1/agencies → [] (sin politica SELECT; secretos en settings no salen por PostgREST).`,
+          getOne: `// GET /rest/v1/agencies?id=eq.{uuid} → [] (mismo motivo).`,
+          post: `// POST /rest/v1/agencies → denegado (INSERT no permitido al cliente autenticado).`,
         },
       },
       {
@@ -83,13 +68,13 @@ export const TABLE_GROUPS: TableGroup[] = [
           { name: 'created_at', type: 'timestamptz', required: false, default: 'now()', description: 'Fecha de creacion. Auto-generado.' },
         ],
         examples: {
-          select: `const { data } = await timeboxing
+          select: `const { data } = await taimbox
   .from('employees')
   .select('id, name, role, email, default_weekly_capacity, is_active')
   .eq('agency_id', agencyId)
   .eq('is_active', true)
   .order('name')`,
-          insert: `const { data } = await timeboxing
+          insert: `const { data } = await taimbox
   .from('employees')
   .insert({
     name: 'Ana Garcia',
@@ -178,12 +163,12 @@ export const TABLE_GROUPS: TableGroup[] = [
           { name: 'created_at', type: 'timestamptz', required: false, default: 'now()', description: 'Fecha de creacion. Auto-generado.' },
         ],
         examples: {
-          select: `const { data } = await timeboxing
+          select: `const { data } = await taimbox
   .from('clients')
   .select('id, name, color')
   .eq('agency_id', agencyId)
   .order('name')`,
-          insert: `const { data } = await timeboxing
+          insert: `const { data } = await taimbox
   .from('clients')
   .insert({ name: 'Cliente Ejemplo', color: '#8B5CF6', agency_id: agencyId })
   .select()
@@ -236,13 +221,13 @@ export const TABLE_GROUPS: TableGroup[] = [
           { name: 'created_at', type: 'timestamptz', required: false, default: 'now()', description: 'Fecha de creacion. Auto-generado.' },
         ],
         examples: {
-          select: `const { data } = await timeboxing
+          select: `const { data } = await taimbox
   .from('projects')
   .select('id, name, client_id, budget_hours, monthly_fee, status')
   .eq('agency_id', agencyId)
   .eq('status', 'active')
   .order('name')`,
-          insert: `const { data } = await timeboxing
+          insert: `const { data } = await taimbox
   .from('projects')
   .insert({
     client_id: clientId,
@@ -300,7 +285,7 @@ export const TABLE_GROUPS: TableGroup[] = [
         name: 'allocations',
         description:
           'Unidad atomica de planificacion. Cada asignacion vincula un empleado con un proyecto para una semana concreta.',
-        authNote: 'Requiere autenticacion. Filtra por agency_id a traves del proyecto.',
+        authNote: 'Sin columna agency_id. Filtra por employee_id o project_id. Escritura (INSERT/UPDATE/DELETE) requiere permiso can_assign_tasks_for_employee: no disponible con token API (solo sesion de usuario en la app).',
         columns: [
           { name: 'id', type: 'uuid', required: false, default: 'gen_random_uuid()', pk: true, description: 'Identificador unico.' },
           { name: 'employee_id', type: 'uuid', required: true, fk: 'employees(id)', description: 'Empleado asignado.' },
@@ -317,45 +302,35 @@ export const TABLE_GROUPS: TableGroup[] = [
           { name: 'focus_date', type: 'date', required: false, description: 'Día en que el empleado marca la tarea en foco (vista Mi día); null = backlog. No altera hours_assigned.' },
           { name: 'dependency_id', type: 'uuid', required: false, fk: 'allocations(id)', description: 'Asignacion de la que depende.' },
           { name: 'parent_allocation_id', type: 'uuid', required: false, fk: 'allocations(id)', description: 'Asignacion padre (subdivisiones).' },
+          { name: 'distribution_source_allocation_id', type: 'uuid', required: false, fk: 'allocations(id)', description: 'Origen si proviene de una distribucion de horas.' },
           { name: 'transferred_from_allocation_id', type: 'uuid', required: false, fk: 'allocations(id)', description: 'Origen si fue transferida.' },
+          { name: 'original_transferred_task_name', type: 'text', required: false, description: 'Nombre de tarea original tras transferencia/rollover.' },
           { name: 'transfer_source_employee_id', type: 'uuid', required: false, fk: 'employees(id)', description: 'Empleado origen de la transferencia.' },
           { name: 'created_at', type: 'timestamptz', required: false, default: 'now()', description: 'Fecha de creacion. Auto-generado.' },
         ],
         examples: {
-          select: `const { data } = await timeboxing
+          select: `const { data } = await taimbox
   .from('allocations')
   .select('id, employee_id, project_id, week_start_date, hours_assigned, task_name, status')
   .eq('employee_id', employeeId)
   .gte('week_start_date', '2026-02-01')
   .lte('week_start_date', '2026-02-28')
   .order('week_start_date')`,
-          insert: `const { data } = await timeboxing
+          insert: `// Escritura solo desde sesion de usuario en la app (no token API).
+// Ejemplo de lectura:
+const { data } = await taimbox
   .from('allocations')
-  .insert({
-    employee_id: employeeId,
-    project_id: projectId,
-    week_start_date: '2026-02-17',
-    hours_assigned: 8,
-    task_name: 'Diseno de landing',
-    status: 'planned'
-  })
-  .select()
-  .single()`,
+  .select('id, employee_id, project_id, week_start_date, hours_assigned')
+  .eq('project_id', projectId)
+  .gte('week_start_date', '2026-02-01')`,
           curlSelect: `curl -X GET \\
   '<BASE_URL>/allocations?select=id,employee_id,project_id,week_start_date,'\\
   'hours_assigned,task_name,status&employee_id=eq.<EMPLOYEE_ID>&'\\
   'week_start_date=gte.2026-02-01&week_start_date=lte.2026-02-28&order=week_start_date.asc' \\
   -H 'apikey: <TU_API_KEY>' \\
   -H 'Authorization: Bearer <TU_API_TOKEN>'`,
-          curlInsert: `curl -X POST \\
-  '<BASE_URL>/allocations' \\
-  -H 'apikey: <TU_API_KEY>' \\
-  -H 'Authorization: Bearer <TU_API_TOKEN>' \\
-  -H 'Content-Type: application/json' \\
-  -H 'Prefer: return=representation' \\
-  -d '{"employee_id":"<EMPLOYEE_ID>","project_id":"<PROJECT_ID>",'\\
-  '"week_start_date":"2026-02-17","hours_assigned":8,'\\
-  '"task_name":"Diseno de landing","status":"planned"}'`,
+          curlInsert: `// POST allocations: solo sesion app (no token API).
+// Ver seccion Limites RLS.`,
         },
         responses: {
           getList: `[
@@ -410,13 +385,13 @@ export const TABLE_GROUPS: TableGroup[] = [
           { name: 'deleted_at', type: 'timestamptz', required: false, description: 'Soft delete; null = activa.' },
         ],
         examples: {
-          select: `const { data } = await timeboxing
+          select: `const { data } = await taimbox
   .from('allocation_notes')
   .select('id, allocation_id, body, source, created_at')
   .eq('allocation_id', allocationId)
   .is('deleted_at', null)
   .order('created_at')`,
-          insert: `const { data } = await timeboxing
+          insert: `const { data } = await taimbox
   .from('allocation_notes')
   .insert({
     allocation_id: allocationId,
@@ -461,7 +436,7 @@ export const TABLE_GROUPS: TableGroup[] = [
         name: 'deadlines',
         description:
           'Objetivos mensuales por proyecto. Define cuantas horas debe dedicar cada empleado a un proyecto en un mes.',
-        authNote: 'Requiere autenticacion. Se filtra por proyecto (que pertenece a una agencia).',
+        authNote: 'Sin columna agency_id. Filtra por project_id (el proyecto pertenece a tu agencia via RLS).',
         columns: [
           { name: 'id', type: 'uuid', required: false, default: 'gen_random_uuid()', pk: true, description: 'Identificador unico.' },
           { name: 'project_id', type: 'uuid', required: true, fk: 'projects(id)', description: 'Proyecto asociado.' },
@@ -475,11 +450,11 @@ export const TABLE_GROUPS: TableGroup[] = [
           { name: 'updated_at', type: 'timestamptz', required: false, default: 'now()', description: 'Auto-generado.' },
         ],
         examples: {
-          select: `const { data } = await timeboxing
+          select: `const { data } = await taimbox
   .from('deadlines')
   .select('id, project_id, month, employee_hours, budget_override')
   .eq('month', '2026-02')`,
-          insert: `const { data } = await timeboxing
+          insert: `const { data } = await taimbox
   .from('deadlines')
   .insert({
     project_id: projectId,
@@ -524,7 +499,7 @@ export const TABLE_GROUPS: TableGroup[] = [
         name: 'time_entries',
         description:
           'Registro de horas reales trabajadas por asignacion y dia. Se puede escribir via INSERT o mediante la RPC log_timer_hours (cronómetro de la app). UNIQUE (employee_id, allocation_id, date). RLS: el usuario solo ve sus propias filas.',
-        authNote: 'Requiere autenticacion. Filtra por agency_id para listar por agencia; RLS limita a las filas del empleado vinculado al usuario.',
+        authNote: 'RLS limita a las filas del empleado vinculado al usuario (auth.uid). Con token API no veras entradas de otros empleados aunque filtres por agency_id.',
         columns: [
           { name: 'id', type: 'uuid', required: false, default: 'gen_random_uuid()', pk: true, description: 'Identificador unico.' },
           { name: 'allocation_id', type: 'uuid', required: true, fk: 'allocations(id)', description: 'Asignacion a la que se imputan las horas.' },
@@ -537,14 +512,14 @@ export const TABLE_GROUPS: TableGroup[] = [
           { name: 'updated_at', type: 'timestamptz', required: false, default: 'now()', description: 'Auto-generado.' },
         ],
         examples: {
-          select: `const { data } = await timeboxing
+          select: `const { data } = await taimbox
   .from('time_entries')
   .select('id, allocation_id, date, hours, notes')
   .eq('agency_id', agencyId)
   .eq('employee_id', employeeId)
   .gte('date', '2026-02-17')
   .lte('date', '2026-02-23')`,
-          insert: `const { data } = await timeboxing
+          insert: `const { data } = await taimbox
   .from('time_entries')
   .insert({
     allocation_id: allocationId,
@@ -587,7 +562,7 @@ export const TABLE_GROUPS: TableGroup[] = [
         name: 'active_timers',
         description:
           'Cronómetros activos: un registro por empleado con la tarea (allocation) y hora de inicio. La app usa esta tabla para mostrar y recuperar el timer tras F5. Escritura desde la app; lectura/consulta via API. RLS: cada usuario solo ve su propio timer.',
-        authNote: 'Requiere autenticacion. Filtra por agency_id para listar timers de la agencia. RLS limita a la fila del empleado del usuario.',
+        authNote: 'Solo la app (sesion de usuario con empleado vinculado). No accesible con token API.',
         columns: [
           { name: 'employee_id', type: 'uuid', required: true, pk: true, fk: 'employees(id)', description: 'Empleado (PK; un timer activo por empleado).' },
           { name: 'allocation_id', type: 'uuid', required: true, fk: 'allocations(id)', description: 'Tarea en la que está el cronómetro.' },
@@ -595,7 +570,7 @@ export const TABLE_GROUPS: TableGroup[] = [
           { name: 'agency_id', type: 'uuid', required: true, fk: 'agencies(id)', description: 'Agencia del empleado. Rellenado por trigger.' },
         ],
         examples: {
-          select: `const { data } = await timeboxing
+          select: `const { data } = await taimbox
   .from('active_timers')
   .select('employee_id, allocation_id, started_at')
   .eq('agency_id', agencyId)
@@ -619,7 +594,7 @@ export const TABLE_GROUPS: TableGroup[] = [
         name: 'timer_sessions',
         description:
           'Sesiones exactas de cronómetro (start_time, end_time) por cada "Stop". Append-only; pensada para webhooks e integraciones (p. ej. Perfex). La analítica interna está en time_entries. RLS: el usuario solo ve sus propias sesiones.',
-        authNote: 'Requiere autenticacion. Filtra por agency_id para listar sesiones de la agencia.',
+        authNote: 'Solo lectura de las propias sesiones del empleado vinculado al usuario. No accesible con token API.',
         columns: [
           { name: 'id', type: 'uuid', required: false, default: 'gen_random_uuid()', pk: true, description: 'Identificador unico.' },
           { name: 'employee_id', type: 'uuid', required: true, fk: 'employees(id)', description: 'Empleado que registró la sesión.' },
@@ -631,7 +606,7 @@ export const TABLE_GROUPS: TableGroup[] = [
           { name: 'created_at', type: 'timestamptz', required: false, default: 'now()', description: 'Auto-generado.' },
         ],
         examples: {
-          select: `const { data } = await timeboxing
+          select: `const { data } = await taimbox
   .from('timer_sessions')
   .select('id, employee_id, allocation_id, start_time, end_time, hours')
   .eq('agency_id', agencyId)
@@ -684,12 +659,12 @@ export const TABLE_GROUPS: TableGroup[] = [
           { name: 'result_allocation_ids', type: 'uuid[]', required: false, default: "'{}'", description: 'IDs de allocations hijas (p. ej. distribute) o continuacion (rollover). La aceptacion atomica usa la RPC accept_task_transfer.' },
         ],
         examples: {
-          select: `const { data } = await timeboxing
+          select: `const { data } = await taimbox
   .from('task_transfers')
   .select('id, allocation_id, from_employee_id, to_employee_id, hours_transferred, status')
   .eq('agency_id', agencyId)
   .eq('status', 'pending')`,
-          insert: `const { data } = await timeboxing
+          insert: `const { data } = await taimbox
   .from('task_transfers')
   .insert({
     allocation_id: allocationId,
@@ -747,7 +722,7 @@ export const TABLE_GROUPS: TableGroup[] = [
       {
         name: 'absences',
         description: 'Ausencias de empleados (vacaciones, baja, permisos). Reducen la capacidad disponible automaticamente.',
-        authNote: 'Requiere autenticacion.',
+        authNote: 'Sin columna agency_id. Filtra por employee_id (empleados de tu agencia via RLS).',
         columns: [
           { name: 'id', type: 'uuid', required: false, default: 'gen_random_uuid()', pk: true, description: 'Identificador unico.' },
           { name: 'employee_id', type: 'uuid', required: true, fk: 'employees(id)', description: 'Empleado ausente.' },
@@ -759,12 +734,12 @@ export const TABLE_GROUPS: TableGroup[] = [
           { name: 'created_at', type: 'timestamptz', required: false, default: 'now()', description: 'Auto-generado.' },
         ],
         examples: {
-          select: `const { data } = await timeboxing
+          select: `const { data } = await taimbox
   .from('absences')
   .select('id, employee_id, start_date, end_date, type, hours')
   .eq('employee_id', employeeId)
   .gte('end_date', '2026-02-01')`,
-          insert: `const { data } = await timeboxing
+          insert: `const { data } = await taimbox
   .from('absences')
   .insert({
     employee_id: employeeId,
@@ -817,7 +792,7 @@ export const TABLE_GROUPS: TableGroup[] = [
       {
         name: 'team_events',
         description: 'Eventos del equipo que reducen disponibilidad (festivos, formaciones, team buildings).',
-        authNote: 'Requiere autenticacion.',
+        authNote: 'Filtra por date y affected_employee_ids. RLS por agencia del token.',
         columns: [
           { name: 'id', type: 'uuid', required: false, default: 'gen_random_uuid()', pk: true, description: 'Identificador unico.' },
           { name: 'name', type: 'text', required: true, description: 'Nombre del evento.' },
@@ -828,12 +803,12 @@ export const TABLE_GROUPS: TableGroup[] = [
           { name: 'created_at', type: 'timestamptz', required: false, default: 'now()', description: 'Auto-generado.' },
         ],
         examples: {
-          select: `const { data } = await timeboxing
+          select: `const { data } = await taimbox
   .from('team_events')
   .select('id, name, date, hours_reduction, affected_employee_ids')
   .gte('date', '2026-02-01')
   .lte('date', '2026-02-28')`,
-          insert: `const { data } = await timeboxing
+          insert: `const { data } = await taimbox
   .from('team_events')
   .insert({
     name: 'Dia de la Constitucion',
@@ -884,12 +859,12 @@ export const TABLE_GROUPS: TableGroup[] = [
           { name: 'updated_at', type: 'timestamptz', required: false, default: 'now()', description: 'Auto-generado.' },
         ],
         examples: {
-          select: `const { data } = await timeboxing
+          select: `const { data } = await taimbox
   .from('global_assignments')
   .select('*')
   .eq('agency_id', agencyId)
   .eq('month', '2026-02')`,
-          insert: `const { data } = await timeboxing
+          insert: `const { data } = await taimbox
   .from('global_assignments')
   .insert({
     month: '2026-03',
@@ -949,11 +924,11 @@ export const TABLE_GROUPS: TableGroup[] = [
           { name: 'updated_at', type: 'timestamptz', required: false, default: 'now()', description: 'Auto-generado.' },
         ],
         examples: {
-          select: `const { data } = await timeboxing
+          select: `const { data } = await taimbox
   .from('department_config')
   .select('*')
   .eq('agency_id', agencyId)`,
-          insert: `const { data } = await timeboxing
+          insert: `const { data } = await taimbox
   .from('department_config')
   .insert({
     agency_id: agencyId,
@@ -1001,11 +976,11 @@ export const TABLE_GROUPS: TableGroup[] = [
           { name: 'updated_at', type: 'timestamptz', required: false, default: 'now()', description: 'Auto-generado.' },
         ],
         examples: {
-          select: `const { data } = await timeboxing
+          select: `const { data } = await taimbox
   .from('client_settings')
   .select('*')
   .eq('client_id', clientId)`,
-          insert: `const { data } = await timeboxing
+          insert: `const { data } = await taimbox
   .from('client_settings')
   .upsert({
     client_id: clientId,
@@ -1045,7 +1020,7 @@ export const TABLE_GROUPS: TableGroup[] = [
       {
         name: 'weekly_feedback',
         description: 'Feedback semanal sobre asignaciones: permite reportar bloqueos, problemas de estimacion u otros motivos.',
-        authNote: 'Requiere autenticacion.',
+        authNote: 'Sin columna agency_id. Filtra por employee_id.',
         columns: [
           { name: 'id', type: 'uuid', required: false, default: 'gen_random_uuid()', pk: true, description: 'Identificador unico.' },
           { name: 'employee_id', type: 'uuid', required: true, fk: 'employees(id)', description: 'Empleado que reporta.' },
@@ -1053,16 +1028,17 @@ export const TABLE_GROUPS: TableGroup[] = [
           { name: 'project_id', type: 'uuid', required: false, fk: 'projects(id)', description: 'Proyecto afectado.' },
           { name: 'allocation_id', type: 'uuid', required: false, fk: 'allocations(id)', description: 'Asignacion concreta.' },
           { name: 'reason', type: 'text', required: false, check: "IN ('technical_issue','client_blocker','bad_estimation','personal_absence','other')", description: 'Tipo de problema.' },
+          { name: 'weekly_action', type: 'text', required: false, check: "IN ('keep','postpone','distribute','transfer','justify','cancel','move')", description: 'Accion de cierre semanal (keep, postpone, distribute, transfer, justify, cancel, move).' },
           { name: 'comments', type: 'text', required: false, description: 'Comentarios adicionales.' },
           { name: 'created_at', type: 'timestamptz', required: false, default: 'now()', description: 'Auto-generado.' },
         ],
         examples: {
-          select: `const { data } = await timeboxing
+          select: `const { data } = await taimbox
   .from('weekly_feedback')
   .select('id, employee_id, week_start_date, reason, comments')
   .eq('employee_id', employeeId)
   .eq('week_start_date', '2026-02-17')`,
-          insert: `const { data } = await timeboxing
+          insert: `const { data } = await taimbox
   .from('weekly_feedback')
   .insert({
     employee_id: employeeId,
@@ -1122,12 +1098,12 @@ export const TABLE_GROUPS: TableGroup[] = [
           { name: 'created_at', type: 'timestamptz', required: false, default: 'now()', description: 'Auto-generado.' },
         ],
         examples: {
-          select: `const { data } = await timeboxing
+          select: `const { data } = await taimbox
   .from('professional_goals')
   .select('*')
   .eq('employee_id', employeeId)
   .order('due_date')`,
-          insert: `const { data } = await timeboxing
+          insert: `const { data } = await taimbox
   .from('professional_goals')
   .insert({
     employee_id: employeeId,
@@ -1178,12 +1154,12 @@ export const TABLE_GROUPS: TableGroup[] = [
           { name: 'created_at', type: 'timestamptz', required: false, default: 'now()', description: 'Auto-generado.' },
         ],
         examples: {
-          select: `const { data } = await timeboxing
+          select: `const { data } = await taimbox
   .from('user_routines')
   .select('*')
   .eq('employee_id', employeeId)
   .eq('is_active', true)`,
-          insert: `const { data } = await timeboxing
+          insert: `const { data } = await taimbox
   .from('user_routines')
   .insert({
     employee_id: employeeId,
@@ -1236,13 +1212,13 @@ export const TABLE_GROUPS: TableGroup[] = [
           { name: 'expires_at', type: 'timestamptz', required: false, default: 'now() + 5min', description: 'Expiracion automatica (5 minutos).' },
         ],
         examples: {
-          select: `const { data } = await timeboxing
+          select: `const { data } = await taimbox
   .from('project_editing_locks')
   .select('*')
   .eq('project_id', projectId)
   .eq('month', '2026-02')
   .gt('expires_at', new Date().toISOString())`,
-          insert: `const { data } = await timeboxing
+          insert: `const { data } = await taimbox
   .from('project_editing_locks')
   .insert({
     project_id: projectId,

@@ -968,9 +968,9 @@
         "apiDocsLinkText": "documentación pública de la API",
         "apiDocsIntroSuffix": "incluye:",
         "apiDocsItem1": "Overview (autenticación, base URL, formatos de respuesta, changelog).",
-        "apiDocsItem2": "Cinco tutoriales paso a paso (primeros pasos, sincronizar equipo, planificación, reportes, ausencias).",
+        "apiDocsItem2": "Once tutoriales paso a paso (primeros pasos, equipo, planificación, horas, transferencias, informes, ausencias, configuración, feedback, objetivos y bloqueos).",
         "apiDocsItem3": "SDK JavaScript, API REST, filtrado y suscripciones Realtime.",
-        "apiDocsItem4": "Referencia completa de 17 recursos (tablas) con ejemplos de respuesta.",
+        "apiDocsItem4": "Referencia completa de 20 recursos (tablas) con ejemplos de respuesta.",
         "apiDocsItem5": "Búsqueda rápida (Ctrl+K) y menú lateral fijo para navegar en la documentación.",
         "apiDocsButton": "Ver documentación API"
       }
@@ -2311,6 +2311,7 @@
         },
         "mockApi": {
           "title": "API REST",
+          "endpoint": "/rest/v1/allocations",
           "codeTaskName": "Diseño Home",
           "pillJwt": "Auth JWT",
           "pillCrm": "CRM/ERP",

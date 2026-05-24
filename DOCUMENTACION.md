@@ -9,7 +9,7 @@
 | Documento | Qué encontrarás |
 |-----------|-----------------|
 | [docs/00-introduccion.md](docs/00-introduccion.md) | Título y propósito del documento técnico detallado original (incluye referencia al mapa de dependencias). |
-| [docs/01-arquitectura.md](docs/01-arquitectura.md) | Stack SPA, GTM y Consent Mode, i18n y rutas `/en`, reglas SEO y páginas públicas, convenciones del blog y API docs. |
+| [docs/01-arquitectura.md](docs/01-arquitectura.md) | Stack SPA, GTM y Consent Mode, i18n y rutas `/en`, reglas SEO y páginas públicas, convenciones del blog y API docs públicos (`/api-docs`: 20 recursos, límites RLS, RPC integración vs app). |
 | [docs/02-entidades-modelos.md](docs/02-entidades-modelos.md) | Glosario de entidades (Agency, Employee con `monthlyCost`/BD `hourly_rate`, Project/presupuesto entregable, Deadline, Allocation), aliasing, tablas de componentes y reglas multi-tenant. |
 | [docs/03-logica-negocio.md](docs/03-logica-negocio.md) | Capacidad efectiva, split weeks, presupuesto efectivo/mínimo, prorrateo horas entregables en rentabilidad, pacing e ingreso devengado. |
 | [docs/04-contextos-realtime.md](docs/04-contextos-realtime.md) | AppContext (carga, upsert, `loadedMonthsRef` tras allocations OK, deduplicación de carga por mes), Realtime, canales unificados en Deadlines y bloqueos. |

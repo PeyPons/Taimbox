@@ -15,12 +15,19 @@ import { OverviewIntro } from './api-docs/sections/OverviewIntro';
 import { OverviewAuth } from './api-docs/sections/OverviewAuth';
 import { OverviewBaseUrl } from './api-docs/sections/OverviewBaseUrl';
 import { OverviewResponses } from './api-docs/sections/OverviewResponses';
+import { OverviewRls } from './api-docs/sections/OverviewRls';
 import { OverviewChangelog } from './api-docs/sections/OverviewChangelog';
 import { TutorialQuickStart } from './api-docs/sections/TutorialQuickStart';
 import { TutorialSyncTeam } from './api-docs/sections/TutorialSyncTeam';
 import { TutorialPlanning } from './api-docs/sections/TutorialPlanning';
+import { TutorialTimeTracking } from './api-docs/sections/TutorialTimeTracking';
+import { TutorialTransfers } from './api-docs/sections/TutorialTransfers';
 import { TutorialReports } from './api-docs/sections/TutorialReports';
 import { TutorialAbsences } from './api-docs/sections/TutorialAbsences';
+import { TutorialConfiguration } from './api-docs/sections/TutorialConfiguration';
+import { TutorialFeedback } from './api-docs/sections/TutorialFeedback';
+import { TutorialGoals } from './api-docs/sections/TutorialGoals';
+import { TutorialLocks } from './api-docs/sections/TutorialLocks';
 import { SdkSection } from './api-docs/sections/SdkSection';
 import { RestSection } from './api-docs/sections/RestSection';
 import { FilteringSection } from './api-docs/sections/FilteringSection';
@@ -268,14 +275,21 @@ export default function ApiDocsPage() {
             <OverviewAuth />
             <OverviewBaseUrl />
             <OverviewResponses />
+            <OverviewRls />
             <OverviewChangelog />
 
             <SectionDivider title={t('page.sectionTutorials')} />
             <TutorialQuickStart />
             <TutorialSyncTeam />
             <TutorialPlanning />
+            <TutorialTimeTracking />
+            <TutorialTransfers />
             <TutorialReports />
             <TutorialAbsences />
+            <TutorialConfiguration />
+            <TutorialFeedback />
+            <TutorialGoals />
+            <TutorialLocks />
 
             <SectionDivider title={t('page.sectionSdkRest')} />
             <SdkSection />

@@ -180,7 +180,7 @@ function MockAPI() {
 
             <div className="rounded-xl bg-slate-950 p-3 border border-slate-700/50 font-mono text-[10px] mb-3 overflow-x-auto">
                 <p className="text-purple-400">
-                    GET <span className="text-emerald-400">/api/v1/tasks</span>
+                    GET <span className="text-emerald-400">{t(`${P}.mockApi.endpoint`)}</span>
                 </p>
                 <p className="text-slate-500 mt-1">Authorization: Bearer {'<token>'}</p>
                 <p className="text-slate-500">Content-Type: application/json</p>

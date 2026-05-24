@@ -1,4 +1,4 @@
-import { CalendarDays } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { i18nAsArray } from '@/lib/i18nReturnObjects';
 import { SectionHeading } from '../components/SectionHeading';
@@ -12,17 +12,17 @@ type TutorialStepJson = {
   lang: string | null;
 };
 
-export function TutorialPlanning() {
+export function TutorialTransfers() {
   const { t } = useTranslation('apiDocs');
-  const steps = i18nAsArray<TutorialStepJson>(t('tutorials.planning.steps', { returnObjects: true }));
+  const steps = i18nAsArray<TutorialStepJson>(t('tutorials.transfers.steps', { returnObjects: true }));
 
   return (
     <section>
-      <SectionHeading id="tutorial-planning" icon={CalendarDays} className="mb-2">
-        {t('tutorials.planning.title')}
+      <SectionHeading id="tutorial-transfers" icon={ArrowRight} className="mb-2">
+        {t('tutorials.transfers.title')}
       </SectionHeading>
       <p className="text-indigo-100/85 mb-6">
-        {t('tutorials.planning.subtitle')}
+        {t('tutorials.transfers.subtitle')}
       </p>
 
       <div className="space-y-0">
@@ -41,16 +41,16 @@ export function TutorialPlanning() {
 
       <div className="mt-6 p-4 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
         <p className="text-sm text-emerald-100/90">
-          <strong className="text-emerald-300">{t('tutorials.planning.nextLabel')}</strong>{' '}
-          {t('tutorials.planning.nextText')}{' '}
+          <strong className="text-emerald-300">{t('tutorials.transfers.nextLabel')}</strong>{' '}
+          {t('tutorials.transfers.nextText')}{' '}
           <button
             type="button"
-            onClick={() => document.getElementById('tutorial-time-tracking')?.scrollIntoView({ behavior: 'smooth' })}
+            onClick={() => document.getElementById('tutorial-reports')?.scrollIntoView({ behavior: 'smooth' })}
             className="text-emerald-300 underline hover:text-white"
           >
-            {t('tutorials.planning.nextLink')}
+            {t('tutorials.transfers.nextLink')}
           </button>
-          {t('tutorials.planning.nextSuffix')}
+          {t('tutorials.transfers.nextSuffix')}
         </p>
       </div>
     </section>

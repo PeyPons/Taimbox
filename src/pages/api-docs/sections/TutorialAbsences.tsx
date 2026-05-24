@@ -41,16 +41,16 @@ export function TutorialAbsences() {
 
       <div className="mt-6 p-4 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
         <p className="text-sm text-emerald-100/90">
-          <strong className="text-emerald-300">{t('tutorials.absences.doneLabel')}</strong>{' '}
-          {t('tutorials.absences.doneText')}{' '}
+          <strong className="text-emerald-300">{t('tutorials.absences.nextLabel')}</strong>{' '}
+          {t('tutorials.absences.nextText')}{' '}
           <button
             type="button"
-            onClick={() => document.getElementById('res-organizacion')?.scrollIntoView({ behavior: 'smooth' })}
+            onClick={() => document.getElementById('tutorial-configuration')?.scrollIntoView({ behavior: 'smooth' })}
             className="text-emerald-300 underline hover:text-white"
           >
-            {t('tutorials.absences.doneLink')}
+            {t('tutorials.absences.nextLink')}
           </button>
-          {t('tutorials.absences.doneSuffix')}
+          {t('tutorials.absences.nextSuffix')}
         </p>
       </div>
     </section>

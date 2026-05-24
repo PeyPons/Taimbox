@@ -52,9 +52,23 @@ export function RestSection() {
       </div>
 
       <div className="mt-8 pt-6 border-t border-white/10">
-        <h4 className="text-sm font-semibold text-white mb-3">{t('rest.rpcTitle')}</h4>
+        <h4 className="text-sm font-semibold text-white mb-3">{t('rest.rpcIntegrationsTitle')}</h4>
         <p className="text-indigo-100/85 mb-4 text-sm">
-          {t('rest.rpcIntro')}
+          {t('rest.rpcIntegrationsIntro')}
+        </p>
+        <EndpointBlock
+          method="POST"
+          path="/rest/v1/rpc/list_my_agencies_directory"
+          description={t('rest.listAgenciesDesc')}
+          curlExample={expandBase(t('rest.listAgenciesCurl'))}
+          sdkExample={t('rest.listAgenciesSdk')}
+        />
+      </div>
+
+      <div className="mt-8 pt-6 border-t border-white/10">
+        <h4 className="text-sm font-semibold text-white mb-3">{t('rest.rpcAppTitle')}</h4>
+        <p className="text-indigo-100/85 mb-4 text-sm">
+          {t('rest.rpcAppIntro')}
         </p>
         <EndpointBlock
           method="POST"
@@ -69,6 +83,13 @@ export function RestSection() {
           description={t('rest.teamTimersDesc')}
           curlExample={expandBase(t('rest.teamTimersCurl'))}
           sdkExample={t('rest.teamTimersSdk')}
+        />
+        <EndpointBlock
+          method="POST"
+          path="/rest/v1/rpc/accept_task_transfer"
+          description={t('rest.acceptTransferDesc')}
+          curlExample={expandBase(t('rest.acceptTransferCurl'))}
+          sdkExample={t('rest.acceptTransferSdk')}
         />
       </div>
     </section>

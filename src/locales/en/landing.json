@@ -968,9 +968,9 @@
         "apiDocsLinkText": "public API documentation",
         "apiDocsIntroSuffix": "includes:",
         "apiDocsItem1": "Overview (authentication, base URL, response formats, changelog).",
-        "apiDocsItem2": "Five step-by-step tutorials (getting started, syncing team, planning, reporting, absences).",
+        "apiDocsItem2": "Eleven step-by-step tutorials (getting started, team, planning, time tracking, transfers, reports, absences, configuration, feedback, goals, and locks).",
         "apiDocsItem3": "JavaScript SDK, REST API, filtering, and Realtime subscriptions.",
-        "apiDocsItem4": "Full reference for 17 resources (tables) with sample responses.",
+        "apiDocsItem4": "Full reference for 20 resources (tables) with sample responses.",
         "apiDocsItem5": "Quick search (Ctrl+K) and a fixed sidebar menu to navigate docs.",
         "apiDocsButton": "View API docs"
       }
@@ -2311,6 +2311,7 @@
         },
         "mockApi": {
           "title": "REST API",
+          "endpoint": "/rest/v1/allocations",
           "codeTaskName": "Homepage design",
           "pillJwt": "JWT auth",
           "pillCrm": "CRM/ERP",
