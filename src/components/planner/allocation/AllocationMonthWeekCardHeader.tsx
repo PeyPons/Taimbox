@@ -1,6 +1,8 @@
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   AllocationWeekMetricsDisplay,
+  loadPercentageTone,
+  resolveDisplayStatus,
   WeekStripItemSummary,
 } from '@/components/planner/allocation/allocationWeekMetrics';
 import { cn } from '@/lib/utils';
@@ -27,13 +29,14 @@ export function AllocationMonthWeekCardHeader({
   const hasBreakdown = breakdown && breakdown.length > 0;
   const breakdownHours = hasBreakdown ? round2(breakdown.reduce((s, b) => s + b.hours, 0)) : 0;
   const pct = Math.round(loadPercentage);
-  const pctTone =
-    loadPercentage > 110 ? 'text-red-600' : loadPercentage < 90 ? 'text-amber-700' : 'text-emerald-700';
-  const barTone =
-    loadPercentage > 110 ? 'bg-red-500' : loadPercentage < 90 ? 'bg-amber-400' : 'bg-emerald-500';
+  const displayStatus = resolveDisplayStatus(summary);
+  const { text: pctTone, bar: barTone } = loadPercentageTone(displayStatus);
+  const metricsRows = summary.showComp
+    ? 'grid-rows-[auto_minmax(2.875rem,auto)_auto_minmax(1.125rem,auto)]'
+    : 'grid-rows-[auto_minmax(1.875rem,auto)_auto_minmax(1.125rem,auto)]';
 
   return (
-    <div className="grid grid-rows-[auto_minmax(2.5rem,auto)_auto_1.125rem] gap-1 pb-2 border-b border-slate-100 shrink-0">
+    <div className={cn('grid gap-1 pb-2 border-b border-slate-100 shrink-0', metricsRows)}>
       <div className="flex items-baseline justify-between gap-1 min-w-0">
         <span className="text-xs font-semibold text-slate-800">S{weekIndex + 1}</span>
         <span className="text-[10px] text-slate-400 tabular-nums truncate">{weekDateLabel}</span>

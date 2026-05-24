@@ -31,6 +31,19 @@ export function resolveDisplayStatus(summary: WeekStripItemSummary) {
   return isZeroCapacityOverload ? 'overload' : summary.status;
 }
 
+export function loadPercentageTone(displayStatus: LoadStatus) {
+  switch (displayStatus) {
+    case 'overload':
+      return { text: 'text-red-600', bar: 'bg-red-500' };
+    case 'warning':
+      return { text: 'text-amber-700', bar: 'bg-amber-400' };
+    case 'healthy':
+      return { text: 'text-emerald-700', bar: 'bg-emerald-500' };
+    default:
+      return { text: 'text-slate-500', bar: 'bg-slate-300' };
+  }
+}
+
 export function MetricLine({
   label,
   children,
@@ -47,8 +60,8 @@ export function MetricLine({
   return (
     <div
       className={cn(
-        'flex items-baseline gap-1 w-full leading-tight tabular-nums',
-        size === 'xs' ? 'text-[10px] h-[13px]' : 'text-[10px] sm:text-[11px] h-[14px]'
+        'flex items-baseline gap-1 w-full leading-none tabular-nums shrink-0',
+        size === 'xs' ? 'text-[11px] min-h-[14px]' : 'text-[11px] sm:text-[12px] min-h-[15px]'
       )}
     >
       <span

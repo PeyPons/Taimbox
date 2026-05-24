@@ -16,6 +16,7 @@ import { format, parseISO, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Users, ChevronLeft, ChevronRight, CalendarDays, Check, ChevronDown, Activity } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { loadPercentageTone } from '@/components/planner/allocation/allocationWeekMetrics';
 import { getStorageKey, getWeeksForMonth } from '@/utils/dateUtils';
 import { useWeeklyCloseDay } from '@/hooks/useWeeklyCloseDay';
 import { ActivityLogSection } from '@/components/shared/ActivityLogSection';
@@ -405,6 +406,7 @@ export default function WeeklyForecastPage() {
 
                             const newTotal = weekLoad.hours + totalTransfer;
                             const exceeds = newTotal > weekLoad.capacity;
+                            const { text: loadTone } = loadPercentageTone(weekLoad.status);
 
                             return (
                               <div className="space-y-3 p-3 bg-slate-50 rounded-lg">
@@ -417,11 +419,7 @@ export default function WeeklyForecastPage() {
                                     <span
                                       className={cn(
                                         'font-semibold',
-                                        weekLoad.percentage > 110
-                                          ? 'text-red-600'
-                                          : weekLoad.percentage > 100
-                                            ? 'text-amber-600'
-                                            : 'text-emerald-600',
+                                        loadTone,
                                       )}
                                     >
                                       {weekLoad.hours}h / {weekLoad.capacity}h ({weekLoad.percentage}%)

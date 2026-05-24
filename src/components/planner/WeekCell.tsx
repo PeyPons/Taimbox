@@ -2,6 +2,7 @@ import { Allocation, LoadStatus } from '@/types';
 import { cn } from '@/lib/utils';
 import {
   resolveDisplayStatus,
+  loadPercentageTone,
   weekCellSurfaceClass,
   type WeekStripItemSummary,
 } from '@/components/planner/allocation/allocationWeekMetrics';
@@ -123,11 +124,7 @@ function WeekCellCompact({
   };
   const displayStatus = resolveDisplayStatus(summary);
   const pct = Math.round(percentage);
-
-  const pctTone =
-    pct > 110 ? 'text-red-600' : pct < 90 ? 'text-amber-700' : 'text-emerald-700';
-  const barTone =
-    pct > 110 ? 'bg-red-500' : pct < 90 ? 'bg-amber-400' : 'bg-emerald-500';
+  const { text: pctTone, bar: barTone } = loadPercentageTone(displayStatus);
 
   const reductionHours = round2(breakdown.reduce((s, b) => s + b.hours, 0));
 
@@ -139,8 +136,8 @@ function WeekCellCompact({
             type="button"
             onClick={onClick}
             className={cn(
-              'h-full w-full min-w-0 p-2 transition-all cursor-pointer border rounded-lg flex flex-col gap-1.5 tabular-nums touch-manipulation text-left',
-              touchTarget ? 'min-h-[44px] min-w-[44px]' : 'min-h-[88px]',
+              'h-full w-full min-w-0 p-2.5 transition-all cursor-pointer border rounded-lg flex flex-col gap-2 tabular-nums touch-manipulation text-left',
+              touchTarget ? 'min-h-[44px] min-w-[44px]' : 'min-h-[102px]',
               weekCellSurfaceClass(displayStatus, isCurrentWeek),
               'hover:shadow-sm hover:brightness-[0.98]',
               !hasActivity && !hasReductions && 'opacity-55 hover:opacity-100',
@@ -149,13 +146,13 @@ function WeekCellCompact({
             )}
           >
             <div className="flex items-center gap-1.5 min-w-0">
-              <div className="flex-1 h-1.5 bg-white/70 rounded-full overflow-hidden min-w-0">
+              <div className="flex-1 h-2 bg-white/70 rounded-full overflow-hidden min-w-0">
                 <div
                   className={cn('h-full rounded-full transition-all', barTone)}
                   style={{ width: `${Math.min(pct, 100)}%` }}
                 />
               </div>
-              <span className={cn('text-[10px] font-bold shrink-0 w-8 text-right', pctTone)}>
+              <span className={cn('text-[11px] font-bold shrink-0 w-9 text-right', pctTone)}>
                 {pct}%
               </span>
             </div>
@@ -163,7 +160,7 @@ function WeekCellCompact({
             <div className="min-w-0">
               <div
                 className={cn(
-                  'text-[11px] font-bold font-mono leading-none truncate',
+                  'text-xs font-bold font-mono leading-none truncate',
                   displayStatus === 'overload'
                     ? 'text-red-700'
                     : displayStatus === 'warning'
@@ -176,36 +173,36 @@ function WeekCellCompact({
                 {hours}/{capacity}h
               </div>
               {hasActivity ? (
-                <div className="text-[9px] text-slate-500 mt-0.5 truncate flex items-center gap-0.5">
+                <div className="text-[10px] text-slate-500 mt-0.5 truncate flex items-center gap-0.5">
                   {completedTasks.length === allocations.length && (
-                    <CheckCircle2 className="w-2.5 h-2.5 text-emerald-600 shrink-0" aria-hidden />
+                    <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" aria-hidden />
                   )}
                   <span className="truncate">
                     {completedTasks.length}/{allocations.length} tareas
                   </span>
                 </div>
               ) : hasReductions ? (
-                <div className="text-[9px] text-slate-400 mt-0.5">Libre</div>
+                <div className="text-[10px] text-slate-400 mt-0.5">Libre</div>
               ) : (
-                <div className="text-[9px] text-slate-300 mt-0.5 uppercase tracking-wide">Libre</div>
+                <div className="text-[10px] text-slate-300 mt-0.5 uppercase tracking-wide">Libre</div>
               )}
             </div>
 
             {(hasReductions || isZeroCapacityOverload) && (
               <div className="flex items-center gap-1 mt-auto min-w-0">
                 {hasReductions && breakdown.some((b) => b.type === 'absence') && (
-                  <Palmtree className="w-3 h-3 text-orange-600 shrink-0" aria-hidden />
+                  <Palmtree className="w-3.5 h-3.5 text-orange-600 shrink-0" aria-hidden />
                 )}
                 {hasReductions && breakdown.some((b) => b.type === 'event') && (
-                  <Zap className="w-3 h-3 text-blue-600 shrink-0" aria-hidden />
+                  <Zap className="w-3.5 h-3.5 text-blue-600 shrink-0" aria-hidden />
                 )}
                 {hasReductions && (
-                  <span className="text-[9px] text-orange-700 truncate font-medium">
+                  <span className="text-[10px] text-orange-700 truncate font-medium">
                     -{reductionHours}h cap.
                   </span>
                 )}
                 {isZeroCapacityOverload && (
-                  <AlertCircle className="w-3 h-3 text-red-600 shrink-0 ml-auto" aria-hidden />
+                  <AlertCircle className="w-3.5 h-3.5 text-red-600 shrink-0 ml-auto" aria-hidden />
                 )}
               </div>
             )}

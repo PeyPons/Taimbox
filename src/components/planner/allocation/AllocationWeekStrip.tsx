@@ -44,6 +44,7 @@ export function AllocationWeekStrip({
 
   const isCompact = variant === 'compact';
   const colCount = weeks.length;
+  const showCompMetrics = !isCompact && weekSummaries.some((summary) => summary.showComp);
 
   return (
     <div
@@ -81,8 +82,11 @@ export function AllocationWeekStrip({
             className={cn(
               isCompact
                 ? 'h-9 sm:h-10 flex-row items-center justify-between gap-2 px-2.5 py-1 rounded-lg w-full min-w-0'
-                : 'h-[4.75rem] sm:h-[5rem] flex-col items-stretch gap-1 px-2 py-1.5 rounded-lg w-full min-w-0',
-              isMobile && !isCompact && 'min-h-[4.75rem]',
+                : cn(
+                    'flex-col items-stretch gap-1 px-2 py-1.5 rounded-lg w-full min-w-0',
+                    showCompMetrics ? 'h-[6.25rem] sm:h-[6.5rem]' : 'h-[5.25rem] sm:h-[5.5rem]'
+                  ),
+              isMobile && !isCompact && (showCompMetrics ? 'min-h-[6.25rem]' : 'min-h-[5.25rem]'),
               !isActive && 'bg-white/80 text-slate-600 border-slate-200 hover:bg-white',
               !isActive && !isCompact && displayStatus === 'overload' && 'border-red-200 bg-red-50/60 hover:bg-red-50',
               !isActive && !isCompact && displayStatus === 'warning' && 'border-amber-200 bg-amber-50/50 hover:bg-amber-50',
@@ -116,7 +120,7 @@ export function AllocationWeekStrip({
               </span>
             </div>
             {!isCompact && (
-              <AllocationWeekMetricsDisplay summary={summary} isActive={isActive} className="flex-1 justify-center" />
+              <AllocationWeekMetricsDisplay summary={summary} isActive={isActive} className="shrink-0" />
             )}
           </Button>
         );

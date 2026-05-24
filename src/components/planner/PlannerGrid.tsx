@@ -14,7 +14,7 @@ import { es } from 'date-fns/locale';
 
 const EMPLOYEE_COL_WIDE = 180;
 const EMPLOYEE_COL_NARROW = 168;
-const WEEK_COL_MIN = 100;
+const WEEK_COL_MIN = 116;
 const TOTAL_COL = 72;
 
 export function PlannerGrid() {
@@ -193,10 +193,10 @@ export function PlannerGrid() {
                         cellVariant="compact"
                       />
 
-                      <div className="flex items-center justify-center border-l p-1.5 bg-slate-50/30 min-w-0">
+                      <div className="flex items-center justify-center border-l p-2 bg-slate-50/30 min-w-0">
                         <div
                           className={cn(
-                            'flex flex-col items-center justify-center w-full max-w-[56px] min-h-[52px] rounded-lg border px-1 py-1',
+                            'flex flex-col items-center justify-center w-full max-w-[60px] min-h-[60px] rounded-lg border px-1.5 py-1.5',
                             monthlyLoad.status === 'overload'
                               ? 'bg-red-50 border-red-200 text-red-700'
                               : monthlyLoad.status === 'warning'

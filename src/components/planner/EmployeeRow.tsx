@@ -77,7 +77,7 @@ export function EmployeeRow({
         );
 
         return (
-          <div key={week.weekStart.toISOString()} className="border-r last:border-r-0 p-1 min-w-0">
+          <div key={week.weekStart.toISOString()} className="border-r last:border-r-0 p-1.5 min-w-0">
             <WeekCell
               allocations={weekAllocations}
               hours={load.hours}
