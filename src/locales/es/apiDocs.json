@@ -47,6 +47,7 @@
       "tutorialGoals": "Objetivos y rutinas",
       "tutorialLocks": "Bloqueos de edición",
       "sdk": "SDK JavaScript",
+      "openapi": "OpenAPI",
       "rest": "API REST (HTTP)",
       "filtering": "Filtrado y paginación",
       "realtime": "Suscripciones en tiempo real",
@@ -113,6 +114,13 @@
       "tokenBody": "Los administradores de cada agencia pueden crear sus propios tokens de acceso desde la sección <strong>API e integraciones</strong> dentro de la app. Cada token está vinculado a tu <code>agency_id</code> y protegido por políticas RLS (Row Level Security).",
       "tokenRls": "Todas las operaciones están limitadas a los datos de tu agencia. No es posible acceder a datos de otras agencias.",
       "tokenCta": "Ir a API e integraciones",
+      "recommendedPathTitle": "Ruta recomendada",
+      "recommendedPathSubtitle": "Si es tu primera integración, sigue este orden:",
+      "recommendedPathSteps": [
+        { "targetId": "auth", "label": "Autenticación y cabeceras", "description": "Token, ANON_KEY y buenas prácticas." },
+        { "targetId": "tutorial-quickstart", "label": "Primeros pasos", "description": "Tu primera petición con el SDK." },
+        { "targetId": "res-organizacion", "label": "Referencia de recursos", "description": "Tablas, columnas y ejemplos." }
+      ],
       "useCasesTitle": "Casos de uso",
       "useCases": [
         "Sincronizar proyectos y empleados con tu ERP o CRM",
@@ -170,7 +178,8 @@
       "thFilter": "Cómo filtrar",
       "permissionsTitle": "Permisos readonly / readwrite",
       "permissionsBody": "Al crear un token eliges solo lectura (readonly) o lectura/escritura (readwrite). Los tokens readonly reciben 403 en POST, PATCH y DELETE. Los readwrite pueden escribir solo donde RLS lo permita: empleados, clientes, proyectos, ausencias, deadlines, task_transfers (crear solicitud), etc. No desbloquean allocations ni RPCs de app.",
-      "outOfScopeTitle": "Fuera del alcance público de la API",
+      "outOfScopeTitle": "Qué no forma parte de la API de integración",
+      "outOfScopeIntro": "Esta documentación describe solo recursos útiles para integraciones por agencia. No es un inventario del esquema completo de la base de datos.",
       "rows": [
         { "scope": "agency_id directo", "read": "Sí (employees, clients, projects, …)", "write": "Sí con token readwrite", "filter": "RLS automático; POST incluye agency_id" },
         { "scope": "Sin agency_id (allocations, deadlines, absences, …)", "read": "Sí", "write": "Parcial (ver fila)", "filter": "employee_id, project_id, month, dates" },
@@ -180,10 +189,9 @@
         { "scope": "RPC accept_task_transfer", "read": "—", "write": "Solo receptor en app", "filter": "p_transfer_id, p_acceptance_mode" }
       ],
       "outOfScope": [
-        { "name": "notification_rules / notification_deliveries", "reason": "Gestión interna de avisos; deliveries solo service role." },
-        { "name": "ad_accounts_config, google_ads_*, meta_ads_*, segmentation_rules", "reason": "Integraciones Ads gestionadas desde la app, no expuestas en API pública." },
-        { "name": "platform_admins, admin_*, support_tickets, review_*", "reason": "Panel plataforma, soporte y Review Agents; fuera de integración por agencia." },
-        { "name": "api_tokens", "reason": "Crear/revocar tokens solo desde la app (Edge Functions generate-api-token / revoke-api-token)." }
+        { "name": "api_tokens", "reason": "Generar y revocar tokens solo desde API e integraciones en la app (Edge Functions generate-api-token / revoke-api-token)." },
+        { "name": "Notificaciones por email", "reason": "Reglas y envíos se gestionan en la app; no hay endpoints públicos para configurar avisos desde integraciones." },
+        { "name": "Integraciones Ads", "reason": "Google Ads, Meta Ads y reglas de segmentación se configuran en la app, no vía token API." }
       ]
     },
     "responses": {
@@ -297,6 +305,20 @@
     "code": "import { createClient } from '@supabase/supabase-js'\n\n// URL de tu instancia Supabase + clave anónima (la misma que usa la app)\nconst SUPABASE_URL = 'https://api.taimbox.com'\nconst ANON_KEY = process.env.SUPABASE_ANON_KEY\n\n// Token API generado desde API e integraciones\nconst API_TOKEN = process.env.TIMEBOXING_API_TOKEN\n\nconst taimbox = createClient(SUPABASE_URL, ANON_KEY, {\n  global: {\n    headers: { Authorization: `Bearer ${API_TOKEN}` }\n  }\n})\n\n// Ejemplo: listar empleados activos de tu agencia\n// (RLS filtra automáticamente por tu agency_id)\nconst { data: employees, error } = await taimbox\n  .from('employees')\n  .select('id, name, role, email')\n  .eq('is_active', true)\n  .order('name')\n\nif (error) {\n  console.error('Error:', error.message)\n} else {\n  console.log('Empleados:', employees)\n}",
     "noteTitle": "Nota:",
     "noteBody": "En tablas con agency_id no hace falta filtrar en GET: RLS usa el agency_id del JWT. En allocations, deadlines o absences filtra por employee_id o project_id."
+  },
+  "openapi": {
+    "title": "OpenAPI",
+    "intro": "Especificación OpenAPI 3.0 de la API de integración por agencia, generada a partir de la referencia pública. Úsala con Swagger, Postman, Redoc u otros generadores de clientes.",
+    "note": "Este spec está curado para integraciones (RLS, permisos readonly/readwrite y operaciones solo app). No sustituye la documentación narrativa; complementa la referencia de recursos.",
+    "download": "Descargar JSON",
+    "openRaw": "Abrir spec en nueva pestaña",
+    "viewerCardTitle": "Documentación interactiva",
+    "viewerCardBody": "Explora endpoints, schemas y operaciones en una vista dedicada (OpenAPI + Redoc), sin mezclar la navegación de esta página.",
+    "openViewer": "Abrir documentación interactiva",
+    "backToDocs": "Volver a API Docs",
+    "viewerTitle": "Taimbox Integration API — OpenAPI",
+    "viewerSeoTitle": "OpenAPI interactivo | Taimbox",
+    "viewerSeoDescription": "Especificación OpenAPI interactiva de la API de integración de Taimbox."
   },
   "rest": {
     "title": "API REST (HTTP)",

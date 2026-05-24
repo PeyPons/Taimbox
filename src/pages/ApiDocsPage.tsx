@@ -29,6 +29,7 @@ import { TutorialFeedback } from './api-docs/sections/TutorialFeedback';
 import { TutorialGoals } from './api-docs/sections/TutorialGoals';
 import { TutorialLocks } from './api-docs/sections/TutorialLocks';
 import { SdkSection } from './api-docs/sections/SdkSection';
+import { OpenApiSection } from './api-docs/sections/OpenApiSection';
 import { RestSection } from './api-docs/sections/RestSection';
 import { FilteringSection } from './api-docs/sections/FilteringSection';
 import { RealtimeSection } from './api-docs/sections/RealtimeSection';
@@ -120,8 +121,17 @@ function SectionDivider({ title }: { title: string }) {
 export default function ApiDocsPage() {
   const { t, i18n } = useTranslation('apiDocs');
   const lang = i18n.language.startsWith('en') ? 'en' : 'es';
+  const location = useLocation();
+  const navigate = useNavigate();
   const { activeSection, navigateToSection } = useScrollSpy();
   const isMobile = useIsMobile();
+
+  useEffect(() => {
+    const hash = location.hash.slice(1);
+    if (hash.startsWith('tag/')) {
+      navigate(`${localizedPathFromEs('/api-docs/openapi', i18n.language)}#${hash}`, { replace: true });
+    }
+  }, [location.hash, navigate, i18n.language]);
 
   const pathHome = localizedPathFromEs('/', i18n.language);
   const pathGuide = localizedPathFromEs('/guia', i18n.language);
@@ -293,6 +303,7 @@ export default function ApiDocsPage() {
 
             <SectionDivider title={t('page.sectionSdkRest')} />
             <SdkSection />
+            <OpenApiSection />
             <RestSection />
             <FilteringSection />
             <RealtimeSection />

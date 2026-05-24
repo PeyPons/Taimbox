@@ -34,6 +34,7 @@ export const PUBLIC_PATH_ES_TO_EN: Record<string, string> = {
   "/guia": "/en/guide",
   "/contacto": "/en/contact",
   "/api-docs": "/en/api-docs",
+  "/api-docs/openapi": "/en/api-docs/openapi",
   "/pitch": "/en/pitch",
 };
 

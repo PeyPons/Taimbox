@@ -2,16 +2,29 @@ import { Link } from 'react-router-dom';
 import { useTranslation, Trans } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Key, Database, FileJson, Zap, Filter, Terminal, Shield } from 'lucide-react';
+import { Key, Database, FileJson, Zap, Filter, Terminal, Shield, Map } from 'lucide-react';
 import { localizedPathFromEs } from '@/i18n/publicPaths';
 import { i18nAsArray } from '@/lib/i18nReturnObjects';
 import { SectionHeading } from '../components/SectionHeading';
 
 const USE_CASE_ICONS = [Database, FileJson, Zap, Filter, Terminal, Shield] as const;
 
+type RecommendedPathStep = {
+  targetId: string;
+  label: string;
+  description: string;
+};
+
+function scrollToSection(id: string) {
+  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
 export function OverviewIntro() {
   const { t, i18n } = useTranslation('apiDocs');
   const cases = i18nAsArray<string>(t('overview.intro.useCases', { returnObjects: true }));
+  const pathSteps = i18nAsArray<RecommendedPathStep>(
+    t('overview.intro.recommendedPathSteps', { returnObjects: true }),
+  );
 
   return (
     <section>
@@ -23,6 +36,37 @@ export function OverviewIntro() {
           {t('overview.intro.subtitle')}
         </p>
       </div>
+
+      <Card className="border border-emerald-500/25 bg-emerald-500/[0.06] backdrop-blur-xl mb-6">
+        <CardContent className="p-5">
+          <div className="flex items-start gap-3 mb-4">
+            <div className="w-9 h-9 rounded-lg bg-emerald-500/20 flex items-center justify-center shrink-0">
+              <Map className="h-4 w-4 text-emerald-300" />
+            </div>
+            <div>
+              <h3 className="text-white font-semibold text-sm">{t('overview.intro.recommendedPathTitle')}</h3>
+              <p className="text-xs text-emerald-100/75 mt-1">{t('overview.intro.recommendedPathSubtitle')}</p>
+            </div>
+          </div>
+          <ol className="grid sm:grid-cols-3 gap-2">
+            {pathSteps.map((step, i) => (
+              <li key={step.targetId}>
+                <button
+                  type="button"
+                  onClick={() => scrollToSection(step.targetId)}
+                  className="w-full h-full text-left p-3 rounded-lg bg-white/[0.04] border border-white/10 hover:bg-white/[0.08] hover:border-emerald-500/30 transition-colors"
+                >
+                  <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-500/25 text-emerald-200 text-[10px] font-bold mb-2">
+                    {i + 1}
+                  </span>
+                  <span className="block text-sm font-medium text-white mb-1">{step.label}</span>
+                  <span className="block text-xs text-indigo-200/65 leading-relaxed">{step.description}</span>
+                </button>
+              </li>
+            ))}
+          </ol>
+        </CardContent>
+      </Card>
 
       <Card className="border-2 border-indigo-300/40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl mb-6 shadow-xl shadow-indigo-950/20">
         <CardContent className="p-6">

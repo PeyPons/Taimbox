@@ -44,6 +44,7 @@ export const TOC_GROUPS: TocGroup[] = [
     defaultOpen: false,
     items: [
       { id: 'sdk', labelKey: 'toc.items.sdk' },
+      { id: 'openapi', labelKey: 'toc.items.openapi' },
       { id: 'rest', labelKey: 'toc.items.rest' },
       { id: 'filtering', labelKey: 'toc.items.filtering' },
       { id: 'realtime', labelKey: 'toc.items.realtime' },

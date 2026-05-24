@@ -1,0 +1,4113 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Taimbox Integration API",
+    "version": "1.0.0",
+    "description": "OpenAPI spec for Taimbox agency integration (PostgREST). Curated from the public API docs; RLS and token scopes may restrict operations not listed as available. Human-readable docs: https://taimbox.com/api-docs",
+    "contact": {
+      "name": "Taimbox",
+      "url": "https://taimbox.com/contacto"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://api.taimbox.com",
+      "description": "Taimbox API (PostgREST)"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Integration resources",
+      "description": "Tables available for agency integrations (subject to RLS)."
+    },
+    {
+      "name": "RPC (integration)",
+      "description": "RPC callable with integration token when documented."
+    },
+    {
+      "name": "App only (not integration token)",
+      "description": "Documented for reference; not available with API Bearer token."
+    }
+  ],
+  "paths": {
+    "/rest/v1/agencies": {
+      "get": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "List agencies",
+        "description": "Modelo de tenant (referencia de esquema, no recurso CRUD integrable). GET /agencies devuelve []: RLS no expone filas ni settings (roles, OAuth, Stripe). Para POST en otras tablas copia agency_id desde API e integraciones (Datos de conexion). Creacion de agencias solo en la app (registro/onboarding). Fuera del alcance operativo de integraciones. Sin lectura ni escritura util sobre agencies via PostgREST. El JWT del token API ya fija el tenant para RLS. GET devuelve [] por RLS; no usar para obtener agency_id.",
+        "operationId": "list_agencies",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/select"
+          },
+          {
+            "$ref": "#/components/parameters/order"
+          },
+          {
+            "$ref": "#/components/parameters/limit"
+          },
+          {
+            "$ref": "#/components/parameters/offset"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of rows (may be empty when RLS filters all results).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/agencies"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-read": true
+      }
+    },
+    "/rest/v1/employees": {
+      "get": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "List employees",
+        "description": "Miembros del equipo. Cada empleado tiene un rol, capacidad semanal y horario laboral. Requiere autenticacion. Filtra por agency_id obligatorio.",
+        "operationId": "list_employees",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/select"
+          },
+          {
+            "$ref": "#/components/parameters/order"
+          },
+          {
+            "$ref": "#/components/parameters/limit"
+          },
+          {
+            "$ref": "#/components/parameters/offset"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of rows (may be empty when RLS filters all results).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/employees"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-read": true
+      },
+      "post": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "Create employees",
+        "description": "Miembros del equipo. Cada empleado tiene un rol, capacidad semanal y horario laboral. Requires readwrite token where RLS allows INSERT.",
+        "operationId": "create_employees",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/preferReturn"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/employees"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created row (with Prefer: return=representation).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/employees"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-write": "readwrite"
+      },
+      "patch": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "Update employees",
+        "operationId": "update_employees",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter: id=eq.{uuid}"
+          },
+          {
+            "$ref": "#/components/parameters/preferReturn"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/employees"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated row.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/employees"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-write": "readwrite"
+      },
+      "delete": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "Delete employees",
+        "operationId": "delete_employees",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter: id=eq.{uuid}"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted."
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-write": "readwrite"
+      }
+    },
+    "/rest/v1/clients": {
+      "get": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "List clients",
+        "description": "Clientes de la agencia. Cada proyecto pertenece a un cliente. Requiere autenticacion. Filtra por agency_id obligatorio.",
+        "operationId": "list_clients",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/select"
+          },
+          {
+            "$ref": "#/components/parameters/order"
+          },
+          {
+            "$ref": "#/components/parameters/limit"
+          },
+          {
+            "$ref": "#/components/parameters/offset"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of rows (may be empty when RLS filters all results).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/clients"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-read": true
+      },
+      "post": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "Create clients",
+        "description": "Clientes de la agencia. Cada proyecto pertenece a un cliente. Requires readwrite token where RLS allows INSERT.",
+        "operationId": "create_clients",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/preferReturn"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/clients"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created row (with Prefer: return=representation).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/clients"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-write": "readwrite"
+      },
+      "patch": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "Update clients",
+        "operationId": "update_clients",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter: id=eq.{uuid}"
+          },
+          {
+            "$ref": "#/components/parameters/preferReturn"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/clients"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated row.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/clients"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-write": "readwrite"
+      },
+      "delete": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "Delete clients",
+        "operationId": "delete_clients",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter: id=eq.{uuid}"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted."
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-write": "readwrite"
+      }
+    },
+    "/rest/v1/projects": {
+      "get": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "List projects",
+        "description": "Proyectos asociados a un cliente. Contienen las asignaciones de horas del equipo. Requiere autenticacion. Filtra por agency_id obligatorio.",
+        "operationId": "list_projects",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/select"
+          },
+          {
+            "$ref": "#/components/parameters/order"
+          },
+          {
+            "$ref": "#/components/parameters/limit"
+          },
+          {
+            "$ref": "#/components/parameters/offset"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of rows (may be empty when RLS filters all results).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/projects"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-read": true
+      },
+      "post": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "Create projects",
+        "description": "Proyectos asociados a un cliente. Contienen las asignaciones de horas del equipo. Requires readwrite token where RLS allows INSERT.",
+        "operationId": "create_projects",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/preferReturn"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/projects"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created row (with Prefer: return=representation).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/projects"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-write": "readwrite"
+      },
+      "patch": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "Update projects",
+        "operationId": "update_projects",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter: id=eq.{uuid}"
+          },
+          {
+            "$ref": "#/components/parameters/preferReturn"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/projects"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated row.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/projects"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-write": "readwrite"
+      },
+      "delete": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "Delete projects",
+        "operationId": "delete_projects",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter: id=eq.{uuid}"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted."
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-write": "readwrite"
+      }
+    },
+    "/rest/v1/allocations": {
+      "get": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "List allocations",
+        "description": "Unidad atomica de planificacion. Cada asignacion vincula un empleado con un proyecto para una semana concreta. Sin columna agency_id. Filtra por employee_id o project_id. Escritura (INSERT/UPDATE/DELETE) requiere permiso can_assign_tasks_for_employee: no disponible con token API (solo sesion de usuario en la app). Solo lectura con token API.",
+        "operationId": "list_allocations",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/select"
+          },
+          {
+            "$ref": "#/components/parameters/order"
+          },
+          {
+            "$ref": "#/components/parameters/limit"
+          },
+          {
+            "$ref": "#/components/parameters/offset"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of rows (may be empty when RLS filters all results).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/allocations"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-read": true
+      }
+    },
+    "/rest/v1/allocation_notes": {
+      "get": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "List allocation_notes",
+        "description": "Anotaciones append-only por tarea (allocation). Distinto de weekly_feedback.comments y time_entries.notes. Requiere autenticacion. Filtra por agency_id.",
+        "operationId": "list_allocation_notes",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/select"
+          },
+          {
+            "$ref": "#/components/parameters/order"
+          },
+          {
+            "$ref": "#/components/parameters/limit"
+          },
+          {
+            "$ref": "#/components/parameters/offset"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of rows (may be empty when RLS filters all results).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/allocation_notes"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-read": true
+      },
+      "post": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "Create allocation_notes",
+        "description": "Anotaciones append-only por tarea (allocation). Distinto de weekly_feedback.comments y time_entries.notes. Requires readwrite token where RLS allows INSERT.",
+        "operationId": "create_allocation_notes",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/preferReturn"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/allocation_notes"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created row (with Prefer: return=representation).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/allocation_notes"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-write": "readwrite"
+      },
+      "patch": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "Update allocation_notes",
+        "operationId": "update_allocation_notes",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter: id=eq.{uuid}"
+          },
+          {
+            "$ref": "#/components/parameters/preferReturn"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/allocation_notes"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated row.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/allocation_notes"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-write": "readwrite"
+      },
+      "delete": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "Delete allocation_notes",
+        "operationId": "delete_allocation_notes",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter: id=eq.{uuid}"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted."
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-write": "readwrite"
+      }
+    },
+    "/rest/v1/deadlines": {
+      "get": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "List deadlines",
+        "description": "Objetivos mensuales por proyecto. Define cuantas horas debe dedicar cada empleado a un proyecto en un mes. Sin columna agency_id. Filtra por project_id (el proyecto pertenece a tu agencia via RLS).",
+        "operationId": "list_deadlines",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/select"
+          },
+          {
+            "$ref": "#/components/parameters/order"
+          },
+          {
+            "$ref": "#/components/parameters/limit"
+          },
+          {
+            "$ref": "#/components/parameters/offset"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of rows (may be empty when RLS filters all results).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/deadlines"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-read": true
+      },
+      "post": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "Create deadlines",
+        "description": "Objetivos mensuales por proyecto. Define cuantas horas debe dedicar cada empleado a un proyecto en un mes. Requires readwrite token where RLS allows INSERT.",
+        "operationId": "create_deadlines",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/preferReturn"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/deadlines"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created row (with Prefer: return=representation).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/deadlines"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-write": "readwrite"
+      },
+      "patch": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "Update deadlines",
+        "operationId": "update_deadlines",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter: id=eq.{uuid}"
+          },
+          {
+            "$ref": "#/components/parameters/preferReturn"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/deadlines"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated row.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/deadlines"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-write": "readwrite"
+      },
+      "delete": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "Delete deadlines",
+        "operationId": "delete_deadlines",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter: id=eq.{uuid}"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted."
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-write": "readwrite"
+      }
+    },
+    "/rest/v1/time_entries": {
+      "get": {
+        "tags": [
+          "App only (not integration token)"
+        ],
+        "summary": "List time_entries (not available via integration token)",
+        "description": "Registro de horas reales trabajadas por asignacion y dia. Se puede escribir via INSERT o mediante la RPC log_timer_hours (cronómetro de la app). UNIQUE (employee_id, allocation_id, date). RLS: el usuario solo ve sus propias filas. RLS limita a las filas del empleado vinculado al usuario (auth.uid). Con token API no veras entradas de otros empleados aunque filtres por agency_id.",
+        "operationId": "list_time_entries_app_only",
+        "deprecated": true,
+        "responses": {
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "x-taimbox-app-only": true
+      }
+    },
+    "/rest/v1/active_timers": {
+      "get": {
+        "tags": [
+          "App only (not integration token)"
+        ],
+        "summary": "List active_timers (not available via integration token)",
+        "description": "Cronómetros activos: un registro por empleado con la tarea (allocation) y hora de inicio. La app usa esta tabla para mostrar y recuperar el timer tras F5. Escritura desde la app; lectura/consulta via API. RLS: cada usuario solo ve su propio timer. Solo la app (sesion de usuario con empleado vinculado). No accesible con token API.",
+        "operationId": "list_active_timers_app_only",
+        "deprecated": true,
+        "responses": {
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "x-taimbox-app-only": true
+      }
+    },
+    "/rest/v1/timer_sessions": {
+      "get": {
+        "tags": [
+          "App only (not integration token)"
+        ],
+        "summary": "List timer_sessions (not available via integration token)",
+        "description": "Sesiones exactas de cronómetro (start_time, end_time) por cada \"Stop\". Append-only; pensada para webhooks e integraciones (p. ej. Perfex). La analítica interna está en time_entries. RLS: el usuario solo ve sus propias sesiones. Solo lectura de las propias sesiones del empleado vinculado al usuario. No accesible con token API.",
+        "operationId": "list_timer_sessions_app_only",
+        "deprecated": true,
+        "responses": {
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "x-taimbox-app-only": true
+      }
+    },
+    "/rest/v1/task_transfers": {
+      "get": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "List task_transfers",
+        "description": "Solicitudes de transferencia de tareas entre empleados. Ciclo de vida: pending -> accepted/rejected/cancelled. Requiere autenticacion. Filtra por agency_id obligatorio. POST para crear solicitud; aceptación solo en app.",
+        "operationId": "list_task_transfers",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/select"
+          },
+          {
+            "$ref": "#/components/parameters/order"
+          },
+          {
+            "$ref": "#/components/parameters/limit"
+          },
+          {
+            "$ref": "#/components/parameters/offset"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of rows (may be empty when RLS filters all results).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/task_transfers"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-read": true
+      },
+      "post": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "Create task_transfers request",
+        "description": "POST para crear solicitud; aceptación solo en app.",
+        "operationId": "create_task_transfers",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/preferReturn"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/task_transfers"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/task_transfers"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-write": "create-only"
+      }
+    },
+    "/rest/v1/absences": {
+      "get": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "List absences",
+        "description": "Ausencias de empleados (vacaciones, baja, permisos). Reducen la capacidad disponible automaticamente. Sin columna agency_id. Filtra por employee_id (empleados de tu agencia via RLS).",
+        "operationId": "list_absences",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/select"
+          },
+          {
+            "$ref": "#/components/parameters/order"
+          },
+          {
+            "$ref": "#/components/parameters/limit"
+          },
+          {
+            "$ref": "#/components/parameters/offset"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of rows (may be empty when RLS filters all results).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/absences"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-read": true
+      },
+      "post": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "Create absences",
+        "description": "Ausencias de empleados (vacaciones, baja, permisos). Reducen la capacidad disponible automaticamente. Requires readwrite token where RLS allows INSERT.",
+        "operationId": "create_absences",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/preferReturn"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/absences"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created row (with Prefer: return=representation).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/absences"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-write": "readwrite"
+      },
+      "patch": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "Update absences",
+        "operationId": "update_absences",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter: id=eq.{uuid}"
+          },
+          {
+            "$ref": "#/components/parameters/preferReturn"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/absences"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated row.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/absences"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-write": "readwrite"
+      },
+      "delete": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "Delete absences",
+        "operationId": "delete_absences",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter: id=eq.{uuid}"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted."
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-write": "readwrite"
+      }
+    },
+    "/rest/v1/team_events": {
+      "get": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "List team_events",
+        "description": "Eventos del equipo que reducen disponibilidad (festivos, formaciones, team buildings). Filtra por date y affected_employee_ids. RLS por agencia del token.",
+        "operationId": "list_team_events",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/select"
+          },
+          {
+            "$ref": "#/components/parameters/order"
+          },
+          {
+            "$ref": "#/components/parameters/limit"
+          },
+          {
+            "$ref": "#/components/parameters/offset"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of rows (may be empty when RLS filters all results).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/team_events"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-read": true
+      },
+      "post": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "Create team_events",
+        "description": "Eventos del equipo que reducen disponibilidad (festivos, formaciones, team buildings). Requires readwrite token where RLS allows INSERT.",
+        "operationId": "create_team_events",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/preferReturn"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/team_events"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created row (with Prefer: return=representation).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/team_events"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-write": "readwrite"
+      },
+      "patch": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "Update team_events",
+        "operationId": "update_team_events",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter: id=eq.{uuid}"
+          },
+          {
+            "$ref": "#/components/parameters/preferReturn"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/team_events"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated row.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/team_events"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-write": "readwrite"
+      },
+      "delete": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "Delete team_events",
+        "operationId": "delete_team_events",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter: id=eq.{uuid}"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted."
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-write": "readwrite"
+      }
+    },
+    "/rest/v1/global_assignments": {
+      "get": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "List global_assignments",
+        "description": "Asignaciones globales de horas por mes que afectan la capacidad (formaciones recurrentes, reuniones fijas, etc.). Requiere autenticacion. Filtra por agency_id.",
+        "operationId": "list_global_assignments",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/select"
+          },
+          {
+            "$ref": "#/components/parameters/order"
+          },
+          {
+            "$ref": "#/components/parameters/limit"
+          },
+          {
+            "$ref": "#/components/parameters/offset"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of rows (may be empty when RLS filters all results).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/global_assignments"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-read": true
+      },
+      "post": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "Create global_assignments",
+        "description": "Asignaciones globales de horas por mes que afectan la capacidad (formaciones recurrentes, reuniones fijas, etc.). Requires readwrite token where RLS allows INSERT.",
+        "operationId": "create_global_assignments",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/preferReturn"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/global_assignments"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created row (with Prefer: return=representation).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/global_assignments"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-write": "readwrite"
+      },
+      "patch": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "Update global_assignments",
+        "operationId": "update_global_assignments",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter: id=eq.{uuid}"
+          },
+          {
+            "$ref": "#/components/parameters/preferReturn"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/global_assignments"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated row.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/global_assignments"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-write": "readwrite"
+      },
+      "delete": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "Delete global_assignments",
+        "operationId": "delete_global_assignments",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter: id=eq.{uuid}"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted."
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-write": "readwrite"
+      }
+    },
+    "/rest/v1/department_config": {
+      "get": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "List department_config",
+        "description": "Configuracion por departamento: vista por defecto, dia y hora de cierre semanal. Requiere autenticacion. Filtra por agency_id.",
+        "operationId": "list_department_config",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/select"
+          },
+          {
+            "$ref": "#/components/parameters/order"
+          },
+          {
+            "$ref": "#/components/parameters/limit"
+          },
+          {
+            "$ref": "#/components/parameters/offset"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of rows (may be empty when RLS filters all results).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/department_config"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-read": true
+      },
+      "post": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "Create department_config",
+        "description": "Configuracion por departamento: vista por defecto, dia y hora de cierre semanal. Requires readwrite token where RLS allows INSERT.",
+        "operationId": "create_department_config",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/preferReturn"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/department_config"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created row (with Prefer: return=representation).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/department_config"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-write": "readwrite"
+      },
+      "patch": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "Update department_config",
+        "operationId": "update_department_config",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter: id=eq.{uuid}"
+          },
+          {
+            "$ref": "#/components/parameters/preferReturn"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/department_config"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated row.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/department_config"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-write": "readwrite"
+      },
+      "delete": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "Delete department_config",
+        "operationId": "delete_department_config",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter: id=eq.{uuid}"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted."
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-write": "readwrite"
+      }
+    },
+    "/rest/v1/client_settings": {
+      "get": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "List client_settings",
+        "description": "Ajustes avanzados por cliente: limite de presupuesto, agrupacion, visibilidad. Requiere autenticacion.",
+        "operationId": "list_client_settings",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/select"
+          },
+          {
+            "$ref": "#/components/parameters/order"
+          },
+          {
+            "$ref": "#/components/parameters/limit"
+          },
+          {
+            "$ref": "#/components/parameters/offset"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of rows (may be empty when RLS filters all results).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/client_settings"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-read": true
+      },
+      "post": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "Create client_settings",
+        "description": "Ajustes avanzados por cliente: limite de presupuesto, agrupacion, visibilidad. Requires readwrite token where RLS allows INSERT.",
+        "operationId": "create_client_settings",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/preferReturn"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/client_settings"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created row (with Prefer: return=representation).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/client_settings"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-write": "readwrite"
+      },
+      "patch": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "Update client_settings",
+        "operationId": "update_client_settings",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter: id=eq.{uuid}"
+          },
+          {
+            "$ref": "#/components/parameters/preferReturn"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/client_settings"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated row.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/client_settings"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-write": "readwrite"
+      },
+      "delete": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "Delete client_settings",
+        "operationId": "delete_client_settings",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter: id=eq.{uuid}"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted."
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-write": "readwrite"
+      }
+    },
+    "/rest/v1/weekly_feedback": {
+      "get": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "List weekly_feedback",
+        "description": "Feedback semanal sobre asignaciones: permite reportar bloqueos, problemas de estimacion u otros motivos. Sin columna agency_id. Filtra por employee_id.",
+        "operationId": "list_weekly_feedback",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/select"
+          },
+          {
+            "$ref": "#/components/parameters/order"
+          },
+          {
+            "$ref": "#/components/parameters/limit"
+          },
+          {
+            "$ref": "#/components/parameters/offset"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of rows (may be empty when RLS filters all results).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/weekly_feedback"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-read": true
+      },
+      "post": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "Create weekly_feedback",
+        "description": "Feedback semanal sobre asignaciones: permite reportar bloqueos, problemas de estimacion u otros motivos. Requires readwrite token where RLS allows INSERT.",
+        "operationId": "create_weekly_feedback",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/preferReturn"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/weekly_feedback"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created row (with Prefer: return=representation).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/weekly_feedback"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-write": "readwrite"
+      },
+      "patch": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "Update weekly_feedback",
+        "operationId": "update_weekly_feedback",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter: id=eq.{uuid}"
+          },
+          {
+            "$ref": "#/components/parameters/preferReturn"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/weekly_feedback"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated row.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/weekly_feedback"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-write": "readwrite"
+      },
+      "delete": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "Delete weekly_feedback",
+        "operationId": "delete_weekly_feedback",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter: id=eq.{uuid}"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted."
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-write": "readwrite"
+      }
+    },
+    "/rest/v1/professional_goals": {
+      "get": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "List professional_goals",
+        "description": "Objetivos profesionales de cada empleado con resultados clave, acciones y progreso. Requiere autenticacion.",
+        "operationId": "list_professional_goals",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/select"
+          },
+          {
+            "$ref": "#/components/parameters/order"
+          },
+          {
+            "$ref": "#/components/parameters/limit"
+          },
+          {
+            "$ref": "#/components/parameters/offset"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of rows (may be empty when RLS filters all results).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/professional_goals"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-read": true
+      },
+      "post": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "Create professional_goals",
+        "description": "Objetivos profesionales de cada empleado con resultados clave, acciones y progreso. Requires readwrite token where RLS allows INSERT.",
+        "operationId": "create_professional_goals",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/preferReturn"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/professional_goals"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created row (with Prefer: return=representation).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/professional_goals"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-write": "readwrite"
+      },
+      "patch": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "Update professional_goals",
+        "operationId": "update_professional_goals",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter: id=eq.{uuid}"
+          },
+          {
+            "$ref": "#/components/parameters/preferReturn"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/professional_goals"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated row.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/professional_goals"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-write": "readwrite"
+      },
+      "delete": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "Delete professional_goals",
+        "operationId": "delete_professional_goals",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter: id=eq.{uuid}"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted."
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-write": "readwrite"
+      }
+    },
+    "/rest/v1/user_routines": {
+      "get": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "List user_routines",
+        "description": "Rutinas recurrentes del empleado (daily standups, revisiones, etc.). Requiere autenticacion.",
+        "operationId": "list_user_routines",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/select"
+          },
+          {
+            "$ref": "#/components/parameters/order"
+          },
+          {
+            "$ref": "#/components/parameters/limit"
+          },
+          {
+            "$ref": "#/components/parameters/offset"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of rows (may be empty when RLS filters all results).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/user_routines"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-read": true
+      },
+      "post": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "Create user_routines",
+        "description": "Rutinas recurrentes del empleado (daily standups, revisiones, etc.). Requires readwrite token where RLS allows INSERT.",
+        "operationId": "create_user_routines",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/preferReturn"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/user_routines"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created row (with Prefer: return=representation).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/user_routines"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-write": "readwrite"
+      },
+      "patch": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "Update user_routines",
+        "operationId": "update_user_routines",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter: id=eq.{uuid}"
+          },
+          {
+            "$ref": "#/components/parameters/preferReturn"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/user_routines"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated row.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/user_routines"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-write": "readwrite"
+      },
+      "delete": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "Delete user_routines",
+        "operationId": "delete_user_routines",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter: id=eq.{uuid}"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted."
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-write": "readwrite"
+      }
+    },
+    "/rest/v1/project_editing_locks": {
+      "get": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "List project_editing_locks",
+        "description": "Bloqueos temporales (5 min) para evitar conflictos de edicion concurrente en un proyecto/mes. Requiere autenticacion. El lock expira automaticamente.",
+        "operationId": "list_project_editing_locks",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/select"
+          },
+          {
+            "$ref": "#/components/parameters/order"
+          },
+          {
+            "$ref": "#/components/parameters/limit"
+          },
+          {
+            "$ref": "#/components/parameters/offset"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of rows (may be empty when RLS filters all results).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/project_editing_locks"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-read": true
+      },
+      "post": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "Create project_editing_locks",
+        "description": "Bloqueos temporales (5 min) para evitar conflictos de edicion concurrente en un proyecto/mes. Requires readwrite token where RLS allows INSERT.",
+        "operationId": "create_project_editing_locks",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/preferReturn"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/project_editing_locks"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created row (with Prefer: return=representation).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/project_editing_locks"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-write": "readwrite"
+      },
+      "patch": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "Update project_editing_locks",
+        "operationId": "update_project_editing_locks",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter: id=eq.{uuid}"
+          },
+          {
+            "$ref": "#/components/parameters/preferReturn"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/project_editing_locks"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated row.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/project_editing_locks"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-write": "readwrite"
+      },
+      "delete": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "Delete project_editing_locks",
+        "operationId": "delete_project_editing_locks",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter: id=eq.{uuid}"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted."
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-write": "readwrite"
+      }
+    },
+    "/rest/v1/rpc/list_my_agencies_directory": {
+      "post": {
+        "tags": [
+          "RPC (integration)"
+        ],
+        "summary": "List agency directory (optional)",
+        "description": "Returns id and name for agencies the caller can access. Optional with API token; mainly useful with multi-agency app sessions.",
+        "operationId": "rpc_list_my_agencies_directory",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "RPC result (JSON)."
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-integration": true
+      }
+    },
+    "/rest/v1/rpc/log_timer_hours": {
+      "post": {
+        "tags": [
+          "App only (not integration token)"
+        ],
+        "summary": "Log timer hours (app only)",
+        "description": "Registers hours when stopping the timer. Requires app user session, not integration Bearer token.",
+        "operationId": "rpc_log_timer_hours",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "RPC result (JSON)."
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "deprecated": true,
+        "x-taimbox-app-only": true
+      }
+    },
+    "/rest/v1/rpc/get_team_active_timers": {
+      "post": {
+        "tags": [
+          "App only (not integration token)"
+        ],
+        "summary": "List team active timers (app only)",
+        "description": "Lists active timers for the team. Requires app user session.",
+        "operationId": "rpc_get_team_active_timers",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "RPC result (JSON)."
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "deprecated": true,
+        "x-taimbox-app-only": true
+      }
+    },
+    "/rest/v1/rpc/accept_task_transfer": {
+      "post": {
+        "tags": [
+          "App only (not integration token)"
+        ],
+        "summary": "Accept task transfer (app only)",
+        "description": "Atomic transfer acceptance. Callable only by the authenticated receiver in the app.",
+        "operationId": "rpc_accept_task_transfer",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "RPC result (JSON)."
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "deprecated": true,
+        "x-taimbox-app-only": true
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "apikey",
+        "description": "Supabase ANON_KEY for your instance."
+      },
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "API token from Taimbox → API e integraciones."
+      }
+    },
+    "parameters": {
+      "select": {
+        "name": "select",
+        "in": "query",
+        "schema": {
+          "type": "string"
+        },
+        "description": "PostgREST column selection (e.g. id,name)."
+      },
+      "order": {
+        "name": "order",
+        "in": "query",
+        "schema": {
+          "type": "string"
+        },
+        "description": "PostgREST order (e.g. name.asc)."
+      },
+      "limit": {
+        "name": "limit",
+        "in": "query",
+        "schema": {
+          "type": "integer"
+        },
+        "description": "Max rows (PostgREST)."
+      },
+      "offset": {
+        "name": "offset",
+        "in": "query",
+        "schema": {
+          "type": "integer"
+        },
+        "description": "Skip rows (PostgREST)."
+      },
+      "preferReturn": {
+        "name": "Prefer",
+        "in": "header",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "return=representation"
+          ]
+        },
+        "description": "Return created/updated row in response body."
+      }
+    },
+    "responses": {
+      "Unauthorized": {
+        "description": "Missing or invalid apikey / token."
+      },
+      "Forbidden": {
+        "description": "RLS or readonly token denies the operation."
+      }
+    },
+    "schemas": {
+      "agencies": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "UUID del tenant. Incluyelo en POST de otras tablas; copialo desde API e integraciones, no desde GET /agencies."
+          },
+          "name": {
+            "type": "string",
+            "description": "Nombre de la agencia. No expuesto via API publica (solo referencia de esquema / FK)."
+          },
+          "slug": {
+            "type": "string",
+            "description": "Slug URL-friendly. No expuesto via API publica."
+          },
+          "settings": {
+            "type": "object",
+            "description": "Configuracion sensible (roles, modulos, integraciones). Sin SELECT via PostgREST; la app usa get_agency_for_app_client con campos redactados."
+          },
+          "setup_completed": {
+            "type": "boolean",
+            "description": "Onboarding completado. No expuesto via API publica."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Fecha de creacion. No expuesto via API publica."
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Ultima actualizacion. No expuesto via API publica."
+          }
+        },
+        "required": [
+          "name",
+          "slug"
+        ]
+      },
+      "employees": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Identificador unico."
+          },
+          "name": {
+            "type": "string",
+            "description": "Nombre completo del empleado."
+          },
+          "first_name": {
+            "type": "string",
+            "description": "Nombre."
+          },
+          "last_name": {
+            "type": "string",
+            "description": "Apellido."
+          },
+          "email": {
+            "type": "string",
+            "description": "Correo electronico."
+          },
+          "role": {
+            "type": "string",
+            "description": "Nombre del rol (define permisos)."
+          },
+          "department": {
+            "type": "string",
+            "description": "Departamento al que pertenece."
+          },
+          "default_weekly_capacity": {
+            "type": "number",
+            "description": "Horas base de trabajo por semana (ej. 40)."
+          },
+          "work_schedule": {
+            "type": "object",
+            "description": "Horas por dia: { monday: 8, tuesday: 8, ... sunday: 0 }."
+          },
+          "hourly_rate": {
+            "type": "number",
+            "description": "Coste por hora del empleado."
+          },
+          "is_active": {
+            "type": "boolean",
+            "description": "Si esta activo. Los inactivos no aparecen en planificacion."
+          },
+          "avatar_url": {
+            "type": "string",
+            "description": "URL del avatar."
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Vinculacion con usuario de la plataforma. Solo lectura."
+          },
+          "agency_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Agencia a la que pertenece."
+          },
+          "department_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Departamento configurado."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Fecha de creacion. Auto-generado."
+          }
+        },
+        "required": [
+          "name",
+          "role",
+          "default_weekly_capacity",
+          "work_schedule",
+          "agency_id"
+        ]
+      },
+      "clients": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Identificador unico."
+          },
+          "name": {
+            "type": "string",
+            "description": "Nombre del cliente."
+          },
+          "color": {
+            "type": "string",
+            "description": "Color hex para representacion visual (ej. #3B82F6)."
+          },
+          "agency_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Agencia propietaria."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Fecha de creacion. Auto-generado."
+          }
+        },
+        "required": [
+          "name",
+          "color",
+          "agency_id"
+        ]
+      },
+      "projects": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Identificador unico."
+          },
+          "client_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Cliente al que pertenece."
+          },
+          "name": {
+            "type": "string",
+            "description": "Nombre del proyecto."
+          },
+          "status": {
+            "type": "string",
+            "description": "Estado del proyecto."
+          },
+          "budget_hours": {
+            "type": "number",
+            "description": "Horas presupuestadas por mes."
+          },
+          "minimum_hours": {
+            "type": "number",
+            "description": "Minimo de horas comprometidas."
+          },
+          "monthly_fee": {
+            "type": "number",
+            "description": "Tarifa mensual del proyecto (EUR)."
+          },
+          "project_type": {
+            "type": "string",
+            "description": "Tipo: Mensual, Puntual, etc."
+          },
+          "deliverable_contract_fee": {
+            "type": "number",
+            "description": "Total EUR contrato entregable; NULL = usar monthly_fee como total al prorratear por mes."
+          },
+          "deliverable_start_date": {
+            "type": "string",
+            "format": "date",
+            "description": "Inicio fase entregable (inclusivo), con deliverable_due_date."
+          },
+          "deliverable_due_date": {
+            "type": "string",
+            "format": "date",
+            "description": "Fin previsto fase entregable (inclusivo)."
+          },
+          "is_hidden": {
+            "type": "boolean",
+            "description": "Oculto en vistas generales."
+          },
+          "okrs": {
+            "type": "object",
+            "description": "Objetivos y resultados clave del proyecto."
+          },
+          "deliverables_log": {
+            "type": "object",
+            "description": "Registro de entregables."
+          },
+          "last_meeting_date": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Fecha de la ultima reunion con el cliente."
+          },
+          "external_id": {
+            "type": "integer",
+            "description": "ID externo para integraciones CRM."
+          },
+          "agency_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Agencia propietaria."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Fecha de creacion. Auto-generado."
+          }
+        },
+        "required": [
+          "client_id",
+          "name",
+          "agency_id"
+        ]
+      },
+      "allocations": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Identificador unico."
+          },
+          "employee_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Empleado asignado."
+          },
+          "project_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Proyecto destino."
+          },
+          "week_start_date": {
+            "type": "string",
+            "format": "date",
+            "description": "Lunes de la semana (YYYY-MM-DD)."
+          },
+          "hours_assigned": {
+            "type": "number",
+            "description": "Horas planificadas para la semana."
+          },
+          "hours_actual": {
+            "type": "number",
+            "description": "Horas realmente trabajadas (reportadas)."
+          },
+          "hours_computed": {
+            "type": "number",
+            "description": "Horas calculadas por el sistema."
+          },
+          "task_name": {
+            "type": "string",
+            "description": "Nombre de la tarea."
+          },
+          "description": {
+            "type": "string",
+            "description": "Descripcion detallada de la tarea."
+          },
+          "status": {
+            "type": "string",
+            "description": "Estado de la asignacion."
+          },
+          "is_locked": {
+            "type": "boolean",
+            "description": "Si esta bloqueada para edicion."
+          },
+          "user_priority": {
+            "type": "integer",
+            "description": "Prioridad asignada por el usuario (orden)."
+          },
+          "focus_date": {
+            "type": "string",
+            "format": "date",
+            "description": "Día en que el empleado marca la tarea en foco (vista Mi día); null = backlog. No altera hours_assigned."
+          },
+          "dependency_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Asignacion de la que depende."
+          },
+          "parent_allocation_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Asignacion padre (subdivisiones)."
+          },
+          "distribution_source_allocation_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Origen si proviene de una distribucion de horas."
+          },
+          "transferred_from_allocation_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Origen si fue transferida."
+          },
+          "original_transferred_task_name": {
+            "type": "string",
+            "description": "Nombre de tarea original tras transferencia/rollover."
+          },
+          "transfer_source_employee_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Empleado origen de la transferencia."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Fecha de creacion. Auto-generado."
+          }
+        },
+        "required": [
+          "employee_id",
+          "project_id",
+          "week_start_date",
+          "hours_assigned"
+        ]
+      },
+      "allocation_notes": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Identificador unico."
+          },
+          "allocation_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Tarea semanal asociada."
+          },
+          "agency_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Agencia (RLS directo)."
+          },
+          "author_employee_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Autor de la anotacion."
+          },
+          "body": {
+            "type": "string",
+            "description": "Contenido (max 10000 caracteres)."
+          },
+          "source": {
+            "type": "string",
+            "description": "Origen de la nota."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Auto-generado."
+          },
+          "deleted_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Soft delete; null = activa."
+          }
+        },
+        "required": [
+          "allocation_id",
+          "agency_id",
+          "body",
+          "source"
+        ]
+      },
+      "deadlines": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Identificador unico."
+          },
+          "project_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Proyecto asociado."
+          },
+          "month": {
+            "type": "string",
+            "description": "Mes en formato YYYY-MM."
+          },
+          "employee_hours": {
+            "type": "object",
+            "description": "Mapa { employeeId: horas } con el reparto mensual."
+          },
+          "budget_override": {
+            "type": "number",
+            "description": "Presupuesto personalizado para este mes (sobreescribe el del proyecto)."
+          },
+          "recognized_revenue": {
+            "type": "number",
+            "description": "Columna legada; la app no la usa para métricas (ingreso entregable en projects.deliverable_*)."
+          },
+          "notes": {
+            "type": "string",
+            "description": "Notas internas sobre el deadline."
+          },
+          "is_hidden": {
+            "type": "boolean",
+            "description": "Oculto en vista general."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Auto-generado."
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Auto-generado."
+          }
+        },
+        "required": [
+          "project_id",
+          "month"
+        ]
+      },
+      "time_entries": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Identificador unico."
+          },
+          "allocation_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Asignacion a la que se imputan las horas."
+          },
+          "employee_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Empleado que registra."
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "description": "Dia del registro (YYYY-MM-DD)."
+          },
+          "hours": {
+            "type": "number",
+            "description": "Horas trabajadas (numeric 10,6 para segundos). Máximo por sesión configurable por agencia (timeTrackerMaxHours)."
+          },
+          "notes": {
+            "type": "string",
+            "description": "Notas sobre el trabajo realizado."
+          },
+          "agency_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Agencia del empleado. Permite filtrar por agencia en API."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Auto-generado."
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Auto-generado."
+          }
+        },
+        "required": [
+          "allocation_id",
+          "employee_id",
+          "date",
+          "agency_id"
+        ]
+      },
+      "active_timers": {
+        "type": "object",
+        "properties": {
+          "employee_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Empleado (PK; un timer activo por empleado)."
+          },
+          "allocation_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Tarea en la que está el cronómetro."
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Hora de inicio del cronómetro."
+          },
+          "agency_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Agencia del empleado. Rellenado por trigger."
+          }
+        },
+        "required": [
+          "allocation_id",
+          "started_at",
+          "agency_id"
+        ]
+      },
+      "timer_sessions": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Identificador unico."
+          },
+          "employee_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Empleado que registró la sesión."
+          },
+          "allocation_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Tarea imputada."
+          },
+          "start_time": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Inicio de la sesión."
+          },
+          "end_time": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Fin de la sesión."
+          },
+          "hours": {
+            "type": "number",
+            "description": "Horas de la sesión (numeric 10,6)."
+          },
+          "agency_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Agencia del empleado."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Auto-generado."
+          }
+        },
+        "required": [
+          "employee_id",
+          "allocation_id",
+          "start_time",
+          "end_time",
+          "hours",
+          "agency_id"
+        ]
+      },
+      "task_transfers": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Identificador unico."
+          },
+          "allocation_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Asignacion que se transfiere."
+          },
+          "from_employee_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Empleado que envia la tarea."
+          },
+          "to_employee_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Empleado que recibe la tarea."
+          },
+          "hours_transferred": {
+            "type": "number",
+            "description": "Horas que se transfieren."
+          },
+          "status": {
+            "type": "string",
+            "description": "Estado de la solicitud."
+          },
+          "acceptance_mode": {
+            "type": "string",
+            "description": "Modo de aceptacion elegido por el receptor."
+          },
+          "reason": {
+            "type": "string",
+            "description": "Motivo de la transferencia."
+          },
+          "rejection_reason": {
+            "type": "string",
+            "description": "Motivo del rechazo (si aplica)."
+          },
+          "agency_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Agencia."
+          },
+          "requested_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Fecha de solicitud. Auto-generado."
+          },
+          "responded_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Fecha de respuesta."
+          },
+          "result_allocation_ids": {
+            "type": "string",
+            "description": "IDs de allocations hijas (p. ej. distribute) o continuacion (rollover). La aceptacion atomica usa la RPC accept_task_transfer."
+          }
+        },
+        "required": [
+          "allocation_id",
+          "from_employee_id",
+          "to_employee_id",
+          "hours_transferred",
+          "agency_id"
+        ]
+      },
+      "absences": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Identificador unico."
+          },
+          "employee_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Empleado ausente."
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date",
+            "description": "Fecha de inicio (YYYY-MM-DD)."
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date",
+            "description": "Fecha de fin (YYYY-MM-DD)."
+          },
+          "type": {
+            "type": "string",
+            "description": "Tipo de ausencia (vacaciones, baja, permiso, etc.)."
+          },
+          "hours": {
+            "type": "number",
+            "description": "Horas de ausencia (si es parcial)."
+          },
+          "description": {
+            "type": "string",
+            "description": "Descripcion o notas."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Auto-generado."
+          }
+        },
+        "required": [
+          "employee_id",
+          "start_date",
+          "end_date",
+          "type"
+        ]
+      },
+      "team_events": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Identificador unico."
+          },
+          "name": {
+            "type": "string",
+            "description": "Nombre del evento."
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "description": "Fecha del evento."
+          },
+          "hours_reduction": {
+            "type": "number",
+            "description": "Horas que se reducen de la capacidad."
+          },
+          "affected_employee_ids": {
+            "type": "object",
+            "description": "Array de UUIDs de empleados afectados."
+          },
+          "description": {
+            "type": "string",
+            "description": "Descripcion del evento."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Auto-generado."
+          }
+        },
+        "required": [
+          "name",
+          "date",
+          "hours_reduction",
+          "affected_employee_ids"
+        ]
+      },
+      "global_assignments": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Identificador unico."
+          },
+          "month": {
+            "type": "string",
+            "description": "Mes en formato YYYY-MM."
+          },
+          "name": {
+            "type": "string",
+            "description": "Nombre de la asignacion global."
+          },
+          "hours": {
+            "type": "number",
+            "description": "Horas mensuales reservadas."
+          },
+          "affects_all": {
+            "type": "boolean",
+            "description": "Si afecta a todos los empleados."
+          },
+          "affected_employee_ids": {
+            "type": "object",
+            "description": "Array de UUIDs afectados (si no es global)."
+          },
+          "employee_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Empleado especifico (si es individual)."
+          },
+          "agency_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Agencia."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Auto-generado."
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Auto-generado."
+          }
+        },
+        "required": [
+          "month",
+          "name",
+          "hours"
+        ]
+      },
+      "department_config": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Identificador unico."
+          },
+          "agency_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Agencia."
+          },
+          "department_name": {
+            "type": "string",
+            "description": "Nombre del departamento."
+          },
+          "default_view": {
+            "type": "string",
+            "description": "Vista por defecto (weekly)."
+          },
+          "is_view_strict": {
+            "type": "boolean",
+            "description": "Fuerza la vista; no permite cambiarla."
+          },
+          "closing_day": {
+            "type": "integer",
+            "description": "Dia de cierre semanal (0=dom, 1=lun...6=sab)."
+          },
+          "closing_hour": {
+            "type": "integer",
+            "description": "Hora de cierre (0-23)."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Auto-generado."
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Auto-generado."
+          }
+        },
+        "required": [
+          "agency_id",
+          "department_name"
+        ]
+      },
+      "client_settings": {
+        "type": "object",
+        "properties": {
+          "client_id": {
+            "type": "string",
+            "description": "ID del cliente (clave primaria)."
+          },
+          "budget_limit": {
+            "type": "number",
+            "description": "Limite de presupuesto total."
+          },
+          "group_name": {
+            "type": "string",
+            "description": "Nombre de grupo para agrupar clientes."
+          },
+          "is_hidden": {
+            "type": "boolean",
+            "description": "Oculto en vistas generales."
+          },
+          "is_sales_account": {
+            "type": "boolean",
+            "description": "Si es una cuenta comercial."
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Auto-generado."
+          }
+        }
+      },
+      "weekly_feedback": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Identificador unico."
+          },
+          "employee_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Empleado que reporta."
+          },
+          "week_start_date": {
+            "type": "string",
+            "format": "date",
+            "description": "Lunes de la semana (YYYY-MM-DD)."
+          },
+          "project_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Proyecto afectado."
+          },
+          "allocation_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Asignacion concreta."
+          },
+          "reason": {
+            "type": "string",
+            "description": "Tipo de problema."
+          },
+          "weekly_action": {
+            "type": "string",
+            "description": "Accion de cierre semanal (keep, postpone, distribute, transfer, justify, cancel, move)."
+          },
+          "comments": {
+            "type": "string",
+            "description": "Comentarios adicionales."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Auto-generado."
+          }
+        },
+        "required": [
+          "employee_id",
+          "week_start_date"
+        ]
+      },
+      "professional_goals": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Identificador unico."
+          },
+          "employee_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Empleado propietario."
+          },
+          "title": {
+            "type": "string",
+            "description": "Titulo del objetivo."
+          },
+          "key_results": {
+            "type": "object",
+            "description": "Resultados clave asociados."
+          },
+          "actions": {
+            "type": "string",
+            "description": "Acciones concretas para lograrlo."
+          },
+          "training_url": {
+            "type": "string",
+            "description": "URL de recurso formativo."
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date",
+            "description": "Fecha de inicio."
+          },
+          "due_date": {
+            "type": "string",
+            "format": "date",
+            "description": "Fecha objetivo."
+          },
+          "progress": {
+            "type": "integer",
+            "description": "Progreso 0-100."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Auto-generado."
+          }
+        },
+        "required": [
+          "employee_id",
+          "title"
+        ]
+      },
+      "user_routines": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Identificador unico."
+          },
+          "employee_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Empleado propietario."
+          },
+          "title": {
+            "type": "string",
+            "description": "Nombre de la rutina."
+          },
+          "estimated_minutes": {
+            "type": "integer",
+            "description": "Duracion estimada en minutos."
+          },
+          "project_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Proyecto asociado (opcional)."
+          },
+          "is_active": {
+            "type": "boolean",
+            "description": "Si la rutina esta activa."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Auto-generado."
+          }
+        },
+        "required": [
+          "employee_id",
+          "title"
+        ]
+      },
+      "project_editing_locks": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Identificador unico."
+          },
+          "project_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Proyecto bloqueado."
+          },
+          "employee_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Empleado que posee el lock."
+          },
+          "month": {
+            "type": "string",
+            "description": "Mes bloqueado (YYYY-MM)."
+          },
+          "locked_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Inicio del bloqueo."
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Expiracion automatica (5 minutos)."
+          }
+        },
+        "required": [
+          "project_id",
+          "employee_id",
+          "month"
+        ]
+      }
+    }
+  },
+  "security": [
+    {
+      "ApiKeyAuth": [],
+      "BearerAuth": []
+    }
+  ]
+}

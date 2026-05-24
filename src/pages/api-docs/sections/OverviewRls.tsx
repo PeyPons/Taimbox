@@ -64,6 +64,7 @@ export function OverviewRls() {
       <p className="text-indigo-100/85 mb-4 text-sm">{t('overview.rls.permissionsBody')}</p>
 
       <h3 className="text-white font-semibold mb-3">{t('overview.rls.outOfScopeTitle')}</h3>
+      <p className="text-indigo-100/85 mb-4 text-sm">{t('overview.rls.outOfScopeIntro')}</p>
       <ul className="space-y-2">
         {outOfScope.map((item) => (
           <li

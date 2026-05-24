@@ -51,6 +51,7 @@ import TermsOfServicePage from "./pages/TermsOfServicePage";
 import PreciosPage from "./pages/PreciosPage";
 import GuiaPage from "./pages/GuiaPage";
 import ApiDocsPage from "./pages/ApiDocsPage";
+import OpenApiViewerPage from "./pages/OpenApiViewerPage";
 import PresentationPage from "./pages/PresentationPage";
 import ContactoPage from "./pages/ContactoPage";
 import { ModuleGuard } from "./components/auth/ModuleGuard";
@@ -190,6 +191,7 @@ const App = () => (
 
                         {/* Documentación API (pública) */}
                         <Route path="/api-docs" element={<ApiDocsPage />} />
+                        <Route path="/api-docs/openapi" element={<OpenApiViewerPage />} />
 
                         {/* Presentación interna (oculta, no enlazada) */}
                         <Route path="/pitch" element={<PresentationPage />} />
@@ -214,6 +216,7 @@ const App = () => (
                         <Route path="/en/guide/:section" element={<GuiaPage />} />
                         <Route path="/en/contact" element={<ContactoPage />} />
                         <Route path="/en/api-docs" element={<ApiDocsPage />} />
+                        <Route path="/en/api-docs/openapi" element={<OpenApiViewerPage />} />
                         <Route path="/en/pitch" element={<PresentationPage />} />
 
                         {/* Ruta pública Login */}
