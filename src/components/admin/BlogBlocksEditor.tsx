@@ -1,6 +1,6 @@
-import { useCallback } from "react";
-import type { BlogBlock, BlogBlockType } from "@/lib/blog/blockSchema";
-import { BLOCK_TYPES_ORDERED } from "@/lib/blog/blockSchema";
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { BlogBlockDraft, BlogBlockType } from "@/lib/blog/blockSchema";
+import { BLOCK_TYPE_LABELS, BLOCK_TYPES_ORDERED } from "@/lib/blog/blockSchema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,10 +13,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ChevronDown, ChevronUp, Plus, Trash2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface BlogBlocksEditorProps {
-  blocks: BlogBlock[];
-  onChange: (blocks: BlogBlock[]) => void;
+  blocks: BlogBlockDraft[];
+  onChange: (blocks: BlogBlockDraft[]) => void;
   visualIds: { id: string; mode: string }[];
   labels: {
     addBlock: string;
@@ -26,6 +27,7 @@ interface BlogBlocksEditorProps {
     moveDown: string;
     type: string;
     html: string;
+    htmlHint: string;
     text: string;
     level: string;
     anchorId: string;
@@ -42,10 +44,11 @@ interface BlogBlocksEditorProps {
     visualId: string;
     addItem: string;
     tocHint: string;
+    blocksCount: string;
   };
 }
 
-function newBlock(type: BlogBlockType): BlogBlock {
+function newBlock(type: BlogBlockType): BlogBlockDraft {
   const id = crypto.randomUUID();
   switch (type) {
     case "paragraph":
@@ -75,9 +78,41 @@ function newBlock(type: BlogBlockType): BlogBlock {
   }
 }
 
+function AddBlockBar({
+  onAdd,
+  addBlockLabel,
+}: {
+  onAdd: (type: BlogBlockType) => void;
+  addBlockLabel: string;
+}) {
+  return (
+    <div className="rounded-lg border border-dashed border-indigo-200 bg-indigo-50/50 p-3 space-y-2">
+      <p className="text-xs font-medium text-indigo-900">{addBlockLabel}</p>
+      <div className="flex flex-wrap gap-1.5">
+        {BLOCK_TYPES_ORDERED.map((type) => (
+          <Button
+            key={type}
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-7 text-xs bg-white hover:bg-indigo-50"
+            onClick={() => onAdd(type)}
+          >
+            <Plus className="h-3 w-3 mr-1 shrink-0" />
+            {BLOCK_TYPE_LABELS[type]}
+          </Button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function BlogBlocksEditor({ blocks, onChange, visualIds, labels }: BlogBlocksEditorProps) {
+  const [focusBlockId, setFocusBlockId] = useState<string | null>(null);
+  const blockRefs = useRef(new Map<string, HTMLDivElement>());
+
   const patch = useCallback(
-    (index: number, next: BlogBlock) => {
+    (index: number, next: BlogBlockDraft) => {
       const copy = [...blocks];
       copy[index] = next;
       onChange(copy);
@@ -98,28 +133,82 @@ export function BlogBlocksEditor({ blocks, onChange, visualIds, labels }: BlogBl
   };
 
   const add = (type: BlogBlockType) => {
-    onChange([...blocks, newBlock(type)]);
+    const block = newBlock(type);
+    onChange([...blocks, block]);
+    setFocusBlockId(block.id);
   };
+
+  useEffect(() => {
+    if (!focusBlockId) return;
+    const el = blockRefs.current.get(focusBlockId);
+    el?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    const timer = window.setTimeout(() => setFocusBlockId(null), 2200);
+    return () => window.clearTimeout(timer);
+  }, [focusBlockId, blocks.length]);
 
   return (
     <div className="space-y-3">
+      <AddBlockBar onAdd={add} addBlockLabel={labels.addBlock} />
+
+      {blocks.length === 0 ? (
+        <p className="text-sm text-slate-500 py-4 text-center border border-slate-200 rounded-lg bg-white">
+          {labels.blocksCount}
+        </p>
+      ) : (
+        <p className="text-xs text-slate-500">
+          {blocks.length} {labels.blocksCount}
+        </p>
+      )}
+
       {blocks.map((b, index) => (
         <div
           key={b.id}
-          className="rounded-lg border border-slate-200 bg-slate-50/80 p-3 space-y-3"
+          ref={(el) => {
+            if (el) blockRefs.current.set(b.id, el);
+            else blockRefs.current.delete(b.id);
+          }}
+          className={cn(
+            "rounded-lg border bg-white p-3 space-y-3 transition-shadow",
+            focusBlockId === b.id
+              ? "border-indigo-400 ring-2 ring-indigo-200 shadow-sm"
+              : "border-slate-200",
+          )}
         >
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <span className="text-xs font-medium text-slate-500">
-              {labels.block} {index + 1} · <code className="text-slate-700">{b.type}</code>
+            <span className="text-xs font-medium text-slate-600">
+              {labels.block} {index + 1} · {BLOCK_TYPE_LABELS[b.type]}
             </span>
             <div className="flex gap-1">
-              <Button type="button" variant="ghost" size="icon" className="h-7 w-7" disabled={index === 0} onClick={() => move(index, -1)} title={labels.moveUp}>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                disabled={index === 0}
+                onClick={() => move(index, -1)}
+                title={labels.moveUp}
+              >
                 <ChevronUp className="h-4 w-4" />
               </Button>
-              <Button type="button" variant="ghost" size="icon" className="h-7 w-7" disabled={index === blocks.length - 1} onClick={() => move(index, 1)} title={labels.moveDown}>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                disabled={index === blocks.length - 1}
+                onClick={() => move(index, 1)}
+                title={labels.moveDown}
+              >
                 <ChevronDown className="h-4 w-4" />
               </Button>
-              <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-red-600" onClick={() => remove(index)} title={labels.remove}>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-red-600"
+                onClick={() => remove(index)}
+                title={labels.remove}
+              >
                 <Trash2 className="h-4 w-4" />
               </Button>
             </div>
@@ -151,8 +240,9 @@ export function BlogBlocksEditor({ blocks, onChange, visualIds, labels }: BlogBl
               <Label className="text-xs">{labels.html}</Label>
               <Textarea
                 rows={4}
-                className="text-xs font-mono"
+                className="text-sm"
                 value={b.html}
+                placeholder={labels.htmlHint}
                 onChange={(e) => patch(index, { ...b, html: e.target.value })}
               />
             </div>
@@ -163,8 +253,9 @@ export function BlogBlocksEditor({ blocks, onChange, visualIds, labels }: BlogBl
               <div className="grid gap-1 sm:col-span-2">
                 <Label className="text-xs">{labels.text}</Label>
                 <Input
-                  className="h-8 text-xs"
+                  className="h-8 text-sm"
                   value={b.text}
+                  placeholder="Título de la sección"
                   onChange={(e) => patch(index, { ...b, text: e.target.value })}
                 />
               </div>
@@ -217,7 +308,7 @@ export function BlogBlocksEditor({ blocks, onChange, visualIds, labels }: BlogBl
                 <Textarea
                   key={i}
                   rows={2}
-                  className="text-xs"
+                  className="text-sm"
                   value={item}
                   onChange={(e) => {
                     const items = [...b.items];
@@ -273,7 +364,7 @@ export function BlogBlocksEditor({ blocks, onChange, visualIds, labels }: BlogBl
                 <div key={i} className="space-y-1 border-t border-slate-200 pt-2">
                   <Label className="text-xs">{labels.question}</Label>
                   <Input
-                    className="h-8 text-xs"
+                    className="h-8 text-sm"
                     value={item.q}
                     onChange={(e) => {
                       const items = b.items.map((it, j) =>
@@ -285,7 +376,7 @@ export function BlogBlocksEditor({ blocks, onChange, visualIds, labels }: BlogBl
                   <Label className="text-xs">{labels.answer}</Label>
                   <Textarea
                     rows={2}
-                    className="text-xs"
+                    className="text-sm"
                     value={item.a}
                     onChange={(e) => {
                       const items = b.items.map((it, j) =>
@@ -320,6 +411,7 @@ export function BlogBlocksEditor({ blocks, onChange, visualIds, labels }: BlogBl
               <Input
                 className="h-8 text-xs font-mono"
                 value={b.slug}
+                placeholder="slug-del-post-relacionado"
                 onChange={(e) => patch(index, { ...b, slug: e.target.value })}
               />
             </div>
@@ -330,7 +422,7 @@ export function BlogBlocksEditor({ blocks, onChange, visualIds, labels }: BlogBl
               <div className="grid gap-1">
                 <Label className="text-xs">{labels.text}</Label>
                 <Input
-                  className="h-8 text-xs"
+                  className="h-8 text-sm"
                   value={b.text}
                   onChange={(e) => patch(index, { ...b, text: e.target.value })}
                 />
@@ -371,7 +463,7 @@ export function BlogBlocksEditor({ blocks, onChange, visualIds, labels }: BlogBl
                 onValueChange={(visualId) => patch(index, { ...b, visualId })}
               >
                 <SelectTrigger className="h-8 text-xs">
-                  <SelectValue placeholder="—" />
+                  <SelectValue placeholder="Elige una infografía…" />
                 </SelectTrigger>
                 <SelectContent>
                   {visualIds
@@ -388,20 +480,7 @@ export function BlogBlocksEditor({ blocks, onChange, visualIds, labels }: BlogBl
         </div>
       ))}
 
-      <Select onValueChange={(v) => add(v as BlogBlockType)}>
-        <SelectTrigger className="h-9 w-full max-w-xs text-xs">
-          <Plus className="h-3.5 w-3.5 mr-1" />
-          <SelectValue placeholder={labels.addBlock} />
-        </SelectTrigger>
-        <SelectContent>
-          {BLOCK_TYPES_ORDERED.map((type) => (
-            <SelectItem key={type} value={type}>
-              {type}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      {blocks.length > 0 && <AddBlockBar onAdd={add} addBlockLabel={labels.addBlock} />}
     </div>
   );
 }
-

@@ -10,7 +10,7 @@ export function RelatedPostBlock({ block }: { block: RelatedPostBlockType }) {
   if (!related) return null;
   const loc = getLocaleSummaryFields(related, i18n.language);
   return (
-    <div className="my-8 max-w-xl mx-auto">
+    <div className="max-w-xl mx-auto">
       <BlogRelatedPost
         title={loc.title}
         description={loc.description}

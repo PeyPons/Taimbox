@@ -16,10 +16,16 @@ const INNER_H = H - PAD.t - PAD.b;
 const STEP = 0.5;
 const SAMPLE_COUNT = Math.floor(100 / STEP) + 1;
 
-const DURATION_DRAW_MS = 4500;
-const PAUSE_END_MS = 2000;
-const PAUSE_START_MS = 800;
-const CYCLE_MS = PAUSE_START_MS + DURATION_DRAW_MS + PAUSE_END_MS;
+const DEFAULT_DURATION_DRAW_MS = 4500;
+const DEFAULT_PAUSE_END_MS = 2000;
+const DEFAULT_PAUSE_START_MS = 800;
+
+export interface OcupacionVsRentabilidadChartProps {
+  /** Duración del trazo 0→100 % (ms). */
+  durationDrawMs?: number;
+  pauseStartMs?: number;
+  pauseEndMs?: number;
+}
 
 function profitAtU(u: number): number {
   if (u <= 0) return -0.92;
@@ -62,16 +68,24 @@ function buildPathD(upToIdx: number): string {
   return parts.join(' ');
 }
 
-export function OcupacionVsRentabilidadChart() {
+export function OcupacionVsRentabilidadChart({
+  durationDrawMs = DEFAULT_DURATION_DRAW_MS,
+  pauseStartMs = DEFAULT_PAUSE_START_MS,
+  pauseEndMs = DEFAULT_PAUSE_END_MS,
+}: OcupacionVsRentabilidadChartProps = {}) {
   const { t } = useTranslation('blog');
   const compKey = 'components.ocupacionChart';
+  const cycleMs = pauseStartMs + durationDrawMs + pauseEndMs;
 
   const pathRef = useRef<SVGPathElement>(null);
   const dotRef = useRef<SVGCircleElement>(null);
   const labelRef = useRef<SVGTextElement>(null);
   const rafRef = useRef(0);
   const pausedRef = useRef(false);
+  const timingRef = useRef({ durationDrawMs, pauseStartMs, pauseEndMs, cycleMs });
   const [paused, setPaused] = useState(false);
+
+  timingRef.current = { durationDrawMs, pauseStartMs, pauseEndMs, cycleMs };
 
   useEffect(() => {
     pausedRef.current = paused;
@@ -88,9 +102,12 @@ export function OcupacionVsRentabilidadChart() {
     let pausedLastFrame = false;
 
     const tick = (now: number) => {
+      const { durationDrawMs: drawMs, pauseStartMs: startMs, pauseEndMs: endMs, cycleMs: cycle } =
+        timingRef.current;
+
       if (pausedRef.current) {
         if (!pausedLastFrame && startTime !== null) {
-          elapsedAtPause = (now - startTime) % CYCLE_MS;
+          elapsedAtPause = (now - startTime) % cycle;
         }
         pausedLastFrame = true;
         rafRef.current = requestAnimationFrame(tick);
@@ -102,16 +119,16 @@ export function OcupacionVsRentabilidadChart() {
         pausedLastFrame = false;
       }
 
-      const elapsed = (now - startTime) % CYCLE_MS;
+      const elapsed = (now - startTime) % cycle;
 
       let idx: number;
       let u: number;
 
-      if (elapsed < PAUSE_START_MS) {
+      if (elapsed < startMs) {
         idx = 0;
         u = 0;
-      } else if (elapsed < PAUSE_START_MS + DURATION_DRAW_MS) {
-        const drawT = (elapsed - PAUSE_START_MS) / DURATION_DRAW_MS;
+      } else if (elapsed < startMs + drawMs) {
+        const drawT = (elapsed - startMs) / drawMs;
         const eased = drawT < 0.5
           ? 2 * drawT * drawT
           : 1 - (-2 * drawT + 2) ** 2 / 2;
@@ -140,7 +157,7 @@ export function OcupacionVsRentabilidadChart() {
 
     rafRef.current = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafRef.current);
-  }, []);
+  }, [durationDrawMs, pauseStartMs, pauseEndMs, cycleMs]);
 
   const yZero = yPos(0);
   const peakPx = xPos(72);
@@ -149,7 +166,7 @@ export function OcupacionVsRentabilidadChart() {
   const originY = yPos(profitAtU(0));
 
   return (
-    <figure className="my-8 rounded-2xl border border-white/10 bg-slate-950 p-4 sm:p-6 overflow-x-auto shadow-lg shadow-black/20 relative">
+    <figure className="w-full m-0 rounded-2xl border border-white/10 bg-slate-950 p-3 sm:p-6 overflow-x-auto shadow-lg shadow-black/20 relative">
       <svg
         viewBox={`0 0 ${W} ${H}`}
         className="w-full min-w-[300px] h-auto"

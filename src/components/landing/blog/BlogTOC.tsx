@@ -30,8 +30,8 @@ export function BlogTOC({ items, className = '', variant = 'default' }: BlogTOCP
   const iconClass = isEditorial ? 'h-4 w-4 shrink-0 text-indigo-600' : 'h-4 w-4 shrink-0 text-indigo-400';
   const borderT = isEditorial ? 'border-t border-slate-200' : 'border-t border-white/10';
   const linkClass = isEditorial
-    ? 'text-sm text-indigo-800 hover:text-indigo-950 transition-colors block py-0.5'
-    : 'text-sm text-indigo-200/90 hover:text-white transition-colors block py-0.5';
+    ? 'text-sm text-indigo-800 hover:text-indigo-950 transition-colors block py-1 leading-snug'
+    : 'text-sm text-indigo-200/90 hover:text-white transition-colors block py-1 leading-snug';
 
   return (
     <div className={`${shell} ${className}`}>
@@ -54,7 +54,7 @@ export function BlogTOC({ items, className = '', variant = 'default' }: BlogTOCP
         id="blog-toc-list"
         className={`${borderT} ${open ? 'block' : 'hidden sm:block'}`}
       >
-        <ul className="p-4 pt-3 space-y-2">
+        <ul className="p-4 pt-3 space-y-1.5 sm:space-y-2">
           {items.map((item) => (
             <li key={item.id}>
               <a href={`#${item.id}`} className={linkClass}>

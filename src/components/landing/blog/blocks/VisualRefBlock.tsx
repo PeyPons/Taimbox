@@ -24,8 +24,10 @@ export function VisualRefBlock({ block }: { block: VisualRefBlockType }) {
   }
   const Component = entry.Component;
   return (
-    <Suspense fallback={<div className="my-6 h-32 animate-pulse rounded-xl bg-white/5" />}>
-      <Component {...(block.props ?? {})} />
+    <Suspense fallback={<div className="w-full h-32 animate-pulse rounded-xl bg-white/5" />}>
+      <div className="w-full max-w-full overflow-x-auto [&_section]:my-0 [&_figure]:my-0">
+        <Component {...(block.props ?? {})} />
+      </div>
     </Suspense>
   );
 }

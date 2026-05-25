@@ -13,7 +13,7 @@ export function TocBlock({ allBlocks }: { allBlocks: BlogBlock[] }) {
 
   if (items.length === 0) return null;
   return (
-    <div className="my-8">
+    <div className="m-0">
       <BlogTOC items={items} />
     </div>
   );

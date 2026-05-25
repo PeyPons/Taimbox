@@ -131,13 +131,13 @@ export default function BlogArticleDynamicPage() {
           <BlogBreadcrumb title={loc.title} />
         </div>
 
-        <article className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-14 md:py-16 text-left overflow-x-hidden">
-          <header className="mb-12 sm:mb-14 text-center flex flex-col items-center gap-3">
+        <article className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-14 md:py-16 text-left">
+          <header className="mb-10 sm:mb-12 text-center flex flex-col items-center gap-4 sm:gap-5">
             <BlogReadingTime minutes={post.readingMinutes} />
-            <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-[2.75rem] font-black text-white leading-[1.15] tracking-tight">
+            <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-[2.75rem] font-black text-white leading-[1.2] sm:leading-[1.15] tracking-tight max-w-3xl">
               {loc.title}
             </h1>
-            <p className="text-indigo-100/90 text-base sm:text-lg leading-relaxed max-w-2xl mx-auto">
+            <p className="text-indigo-100/90 text-base sm:text-lg leading-[1.75] max-w-2xl mx-auto">
               {loc.description}
             </p>
           </header>

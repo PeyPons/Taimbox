@@ -21,7 +21,7 @@ export function CtaBlock({ block }: { block: CtaBlockType }) {
   );
 
   return (
-    <div className="text-center my-10">
+    <div className="text-center mt-4 sm:mt-6">
       {isStaticAssetHref(block.href) ? (
         <a href={block.href} download>
           {button}

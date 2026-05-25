@@ -142,6 +142,144 @@
         }
       },
       "caption": "Modelo conceptual basado en benchmarks del sector 2025-2026. La rentabilidad cae por encima del 85% porque el coste de fricción supera el ingreso marginal."
+    },
+    "estimacionHero": {
+      "badge": "Desviación típica",
+      "subtitle": "Lo que prometes vs lo que consume el calendario",
+      "variance": "+80% de plazo",
+      "promised": "Fecha prometida en comercial",
+      "promisedDays": "10 días",
+      "actual": "Duración real (histórico)",
+      "actualDays": "18 días",
+      "caption": "Misma tipología de landing: el esfuerzo de teclado no explica el calendario. Las esperas del cliente y la carga concurrente se comen el margen."
+    },
+    "esfuerzoVsDuracion": {
+      "effortLabel": "Esfuerzo (teclado)",
+      "effortValue": "8 h",
+      "effortHint": "Diseño + cambios aplicados",
+      "durationLabel": "Duración (calendario)",
+      "durationValue": "~7 días",
+      "durationHint": "Desde kick-off hasta aprobación",
+      "step": "Paso {{n}}",
+      "steps": {
+        "design": { "title": "Diseño inicial", "time": "6 h · 1 día" },
+        "wait": { "title": "Espera cliente", "time": "+4 días · 0 h" },
+        "changes": { "title": "Cambios + otro proyecto", "time": "2 h · +2 días" },
+        "approval": { "title": "Aprobación final", "time": "Buffer legal/revisión" }
+      },
+      "caption": "Prometer «el viernes» mirando solo las horas de diseño ignora el 70% del calendario."
+    },
+    "sesgosEstimacion": {
+      "intro": "Cuatro voces distorsionan el mismo número antes de que llegue al contrato",
+      "roles": {
+        "sales": {
+          "title": "Comercial / cuentas",
+          "bias": "Optimismo por fee",
+          "effect": "Recorta horas para ganar el pitch"
+        },
+        "pm": {
+          "title": "Project manager",
+          "bias": "Aversión al riesgo",
+          "effect": "Mete buffer oculto que nadie explica"
+        },
+        "creative": {
+          "title": "Creativo / técnico",
+          "bias": "Realismo defensivo",
+          "effect": "Estima ejecución pura; le llaman «caro»"
+        },
+        "client": {
+          "title": "Cliente",
+          "bias": "«Solo un cambio»",
+          "effect": "Oculta revisiones y tiempos legales"
+        }
+      },
+      "funnelLabel": "Número que sale en la propuesta",
+      "funnelResult": "Nadie cree que sea real — y acaba teniendo razón",
+      "caption": "La estimación no falla en Excel: falla en la negociación del número."
+    },
+    "metodosEstimacion": {
+      "root": "¿Qué método usar?",
+      "branches": {
+        "analogy": {
+          "title": "Analogía histórica",
+          "when": "3–5 proyectos parecidos cerrados. Brief repetible.",
+          "output": "Mediana de horas reales por rol"
+        },
+        "bottomUp": {
+          "title": "Bottom-up",
+          "when": "Encargo nuevo o híbrido. Error caro.",
+          "output": "Suma por entregable + fase"
+        },
+        "pert": {
+          "title": "Tres puntos (PERT)",
+          "when": "Stack nuevo, integración incierta, plataforma desconocida.",
+          "output": "E = (O + 4P + Pes) / 6"
+        }
+      },
+      "caption": "No elijas uno para siempre: rota según histórico e incertidumbre."
+    },
+    "bufferCalculator": {
+      "title": "Buffer de contingencia",
+      "subtitle": "Sobre 40 h base de ejecución (ejemplo)",
+      "base": "Esfuerzo base",
+      "total": "Presupuesto con buffer",
+      "scenarios": {
+        "known": {
+          "label": "Cliente recurrente",
+          "note": "+10–20 %: fricción normal (revisiones, coordinación). Histórico fiable."
+        },
+        "ambiguous": {
+          "label": "Brief ambiguo",
+          "note": "+20–30 % o fase Discovery facturable aparte. Sin referencias ni exclusiones."
+        },
+        "newTech": {
+          "label": "Tecnología nueva",
+          "note": "+25–35 % en la partida técnica + resultado PERT documentado antes de fee cerrado."
+        }
+      },
+      "caption": "Distribuye el buffer por categoría (creativo, PM, esperas), no como % opaco."
+    },
+    "ritualEstimacion": {
+      "steps": {
+        "gate": { "title": "Gate de brief", "body": "Objetivos, referencias, aprobadores, exclusiones. ¿Estimable sí/no?" },
+        "analogy": { "title": "Analogía", "body": "Mediana de 3–5 proyectos similares por rol." },
+        "bottomUp": { "title": "Bottom-up", "body": "Lo nuevo se estima aparte + buffers por categoría." },
+        "duration": { "title": "Duración", "body": "Cruce con capacidad real + esperas cliente/legal." },
+        "committee": { "title": "Comité 30 min", "body": "Comercial, ops y lead técnico. Recorta alcance, no horas mágicas." }
+      },
+      "quote": "«Ninguna fecha sale al cliente sin pasar este filtro — aunque duela.»",
+      "caption": "Ritual de estimación en cinco pasos antes de prometer fecha o fee."
+    },
+    "estimadoVsReal": {
+      "title": "Desviación por rol (proyecto tipo)",
+      "subtitle": "Integración web + creatividad — mismo SOW, distintas disciplinas",
+      "aria": "Gráfico de barras comparando horas estimadas y reales por rol",
+      "roles": { "copy": "Copy", "design": "Diseño", "dev": "Desarrollo", "pm": "PM" },
+      "estimated": "Estimado",
+      "actual": "Real",
+      "legendEstimated": "Horas presupuestadas",
+      "legendActual": "Horas reales",
+      "caption": "Desviación >20% en una tipología = pricing obsoleto, no «equipo lento»."
+    },
+    "tiposFeeEstimacion": {
+      "types": {
+        "fixed": {
+          "title": "Precio cerrado",
+          "estimate": "Analogía + bottom-up + buffer alto. Duración al cliente.",
+          "risk": "Riesgo en scope creep: protocolo de cambios obligatorio."
+        },
+        "tm": {
+          "title": "Time & materials",
+          "estimate": "Cap diario/semanal + techo de horas. Esfuerzo visible.",
+          "risk": "Riesgo en percepción de «sin freno»: informes de pacing."
+        },
+        "retainer": {
+          "title": "Retainer mensual",
+          "estimate": "Capacidad productiva × mes, no calendario al 100%.",
+          "risk": "Riesgo en scope infinito: lista de incluidos/excluidos."
+        }
+      },
+      "caption": "El método de estimación cambia según cómo facturas — no es lo mismo prometer fecha que prometer capacidad."
     }
   },
   "posts": {

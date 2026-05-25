@@ -10,11 +10,9 @@ const TONE_STYLES: Record<CalloutBlockType["tone"], string> = {
 
 export function CalloutBlock({ block }: { block: CalloutBlockType }) {
   return (
-    <div
-      className={`rounded-2xl border ${TONE_STYLES[block.tone]} p-4 sm:p-6 my-6`}
-    >
+    <div className={`rounded-2xl border ${TONE_STYLES[block.tone]} p-4 sm:p-6`}>
       <p
-        className="text-white/95 font-medium m-0"
+        className="text-white/95 font-medium m-0 text-base sm:text-lg leading-[1.75]"
         dangerouslySetInnerHTML={{ __html: sanitizeInlineHtml(block.html) }}
       />
     </div>

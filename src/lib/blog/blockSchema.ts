@@ -16,6 +16,8 @@ export const HeadingBlockSchema = blockBase.extend({
   level: z.union([z.literal(2), z.literal(3), z.literal(4)]),
   text: z.string().min(1),
   anchorId: z.string().regex(/^[a-z0-9-]+$/).optional(),
+  /** Nombre del icono Lucide (PascalCase), p. ej. Brain, Clock */
+  icon: z.string().regex(/^[A-Z][a-zA-Z0-9]*$/).optional(),
 });
 
 export const CalloutBlockSchema = blockBase.extend({
@@ -91,7 +93,63 @@ export const BlogBlockSchema = z.discriminatedUnion("type", [
 
 export const BlogBlocksSchema = z.array(BlogBlockSchema);
 
+/** Esquema relajado para el editor admin: permite bloques incompletos mientras se editan. */
+export const HeadingBlockDraftSchema = blockBase.extend({
+  type: z.literal("heading"),
+  level: z.union([z.literal(2), z.literal(3), z.literal(4)]).default(2),
+  text: z.string().default(""),
+  anchorId: z.string().optional(),
+  icon: z.string().optional(),
+});
+
+export const RelatedPostBlockDraftSchema = blockBase.extend({
+  type: z.literal("relatedPost"),
+  slug: z.string().default(""),
+});
+
+export const CtaBlockDraftSchema = blockBase.extend({
+  type: z.literal("cta"),
+  text: z.string().default(""),
+  href: z.string().default("/"),
+  variant: z.enum(["primary", "secondary"]).default("primary"),
+});
+
+export const VisualRefBlockDraftSchema = blockBase.extend({
+  type: z.literal("visualRef"),
+  visualId: z.string().default(""),
+  props: z.record(z.string(), z.unknown()).optional(),
+});
+
+export const FaqBlockDraftSchema = blockBase.extend({
+  type: z.literal("faq"),
+  items: z
+    .array(
+      z.object({
+        q: z.string().default(""),
+        a: z.string().default(""),
+      }),
+    )
+    .min(1),
+});
+
+export const BlogBlockDraftSchema = z.discriminatedUnion("type", [
+  ParagraphBlockSchema,
+  HeadingBlockDraftSchema,
+  CalloutBlockSchema,
+  ListBlockSchema,
+  TableBlockSchema,
+  FaqBlockDraftSchema,
+  TocBlockSchema,
+  RelatedPostBlockDraftSchema,
+  HtmlBlockSchema,
+  CtaBlockDraftSchema,
+  VisualRefBlockDraftSchema,
+]);
+
+export const BlogBlocksDraftSchema = z.array(BlogBlockDraftSchema);
+
 export type BlogBlock = z.infer<typeof BlogBlockSchema>;
+export type BlogBlockDraft = z.infer<typeof BlogBlockDraftSchema>;
 export type BlogBlockType = BlogBlock["type"];
 export type ParagraphBlock = z.infer<typeof ParagraphBlockSchema>;
 export type HeadingBlock = z.infer<typeof HeadingBlockSchema>;
@@ -118,6 +176,20 @@ export const BLOCK_TYPES_ORDERED: BlogBlockType[] = [
   "relatedPost",
   "visualRef",
 ];
+
+export const BLOCK_TYPE_LABELS: Record<BlogBlockType, string> = {
+  heading: "Título (H2/H3/H4)",
+  paragraph: "Párrafo",
+  list: "Lista",
+  table: "Tabla",
+  callout: "Destacado / callout",
+  faq: "Preguntas frecuentes",
+  toc: "Índice (TOC)",
+  html: "HTML libre",
+  cta: "Botón / CTA",
+  relatedPost: "Post relacionado",
+  visualRef: "Infografía",
+};
 
 /** Omite bloques invalidos en lugar de vaciar todo el articulo. */
 export function safeParseBlocks(input: unknown): BlogBlock[] {

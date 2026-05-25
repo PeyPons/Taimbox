@@ -109,6 +109,39 @@ export const blogVisualRegistry: Record<string, VisualRegistryEntry> = {
     () => import("@/components/landing/blog/PlanificacionKpiCardsVisual"),
     "PlanificacionKpiCardsVisual",
   ),
+
+  EstimacionHeroVisual: inlineNamed(
+    () => import("@/components/landing/blog/estimacion/EstimacionHeroVisual"),
+    "EstimacionHeroVisual",
+  ),
+  EsfuerzoVsDuracionVisual: inlineNamed(
+    () => import("@/components/landing/blog/estimacion/EsfuerzoVsDuracionVisual"),
+    "EsfuerzoVsDuracionVisual",
+  ),
+  SesgosEstimacionVisual: inlineNamed(
+    () => import("@/components/landing/blog/estimacion/SesgosEstimacionVisual"),
+    "SesgosEstimacionVisual",
+  ),
+  MetodosEstimacionVisual: inlineNamed(
+    () => import("@/components/landing/blog/estimacion/MetodosEstimacionVisual"),
+    "MetodosEstimacionVisual",
+  ),
+  BufferCalculatorVisual: inlineNamed(
+    () => import("@/components/landing/blog/estimacion/BufferCalculatorVisual"),
+    "BufferCalculatorVisual",
+  ),
+  RitualEstimacionInfographic: inlineNamed(
+    () => import("@/components/landing/blog/estimacion/RitualEstimacionInfographic"),
+    "RitualEstimacionInfographic",
+  ),
+  EstimadoVsRealChart: inlineNamed(
+    () => import("@/components/landing/blog/estimacion/EstimadoVsRealChart"),
+    "EstimadoVsRealChart",
+  ),
+  TiposFeeEstimacionVisual: inlineNamed(
+    () => import("@/components/landing/blog/estimacion/TiposFeeEstimacionVisual"),
+    "TiposFeeEstimacionVisual",
+  ),
 };
 
 export function getVisualEntry(visualId: string): VisualRegistryEntry | undefined {

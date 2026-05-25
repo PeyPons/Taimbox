@@ -1,0 +1,573 @@
+#!/usr/bin/env node
+/**
+ * Genera scripts/blog-seed/estimacion-proyectos-agencia-cms.json
+ * con visuales inline, secciones ampliadas y FAQ extendida.
+ */
+import { writeFileSync } from "node:fs";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const OUT = resolve(__dirname, "blog-seed/estimacion-proyectos-agencia-cms.json");
+
+const faqEs = [
+  {
+    q: "¿Qué es la estimación de proyectos en una agencia?",
+    a: "Es predecir esfuerzo (horas-persona), duración en calendario (con esperas y aprobaciones), recursos y coste antes de comprometer fecha o fee con el cliente. No es una corazonada: es la base de la rentabilidad.",
+  },
+  {
+    q: "¿Por qué siempre subestimo los plazos?",
+    a: "Por la falacia de planificación (asumes el mejor escenario), la presión comercial por fees competitivos y porque no mapeas dependencias ni tiempos de respuesta del cliente en la fase de venta.",
+  },
+  {
+    q: "¿Cuánto buffer debo añadir?",
+    a: "Entre 10 y 20 % en proyectos con histórico sólido; entre 20 y 30 % con brief ambiguo o cliente nuevo. Mejor por categoría (creativo, PM, esperas) que un porcentaje global opaco.",
+  },
+  {
+    q: "¿Prometo esfuerzo o duración al cliente?",
+    a: "Duración: fecha de entrega en calendario. El esfuerzo en horas es interno para margen, pricing y asignación de capacidad.",
+  },
+  {
+    q: "¿Cómo estimo una campaña sin historial?",
+    a: "Bottom-up por entregables + PERT en las partes inciertas. Si el riesgo es alto, vende una fase Discovery acotada antes de un fee cerrado grande.",
+  },
+  {
+    q: "¿Cada cuánto revisar los ratios de estimación?",
+    a: "Tras cada proyecto grande con desviación notable y, como mínimo, una revisión trimestral por tipología de servicio. Mensualmente si escalas equipo o cartera.",
+  },
+  {
+    q: "¿Cómo estimar un proyecto a precio cerrado vs time & materials?",
+    a: "Precio cerrado exige analogía + buffer alto + protocolo de cambios. Time & materials permite techo de horas y pacing semanal visible; el riesgo pasa a percepción de control, no a margen ciego.",
+  },
+  {
+    q: "¿Cuántas horas de PM debo presupuestar?",
+    a: "Entre 15 y 25 % del esfuerzo total cuando hay 3+ departamentos o freelancers. En retainers, fija un % mensual de coordinación explícito en el SOW.",
+  },
+  {
+    q: "¿Cómo estimar una landing Shopify sin historial?",
+    a: "Bottom-up: discovery (4–8 h), wireframes (6–12 h), diseño (12–20 h), dev (16–40 h según integraciones), QA (4–8 h). Suma buffers de revisión creativa (+15 %) y espera cliente (+2 días por ronda).",
+  },
+  {
+    q: "¿Qué hago cuando el cliente pide cambios fuera de alcance?",
+    a: "Registra, cuantifica y comunica antes de ejecutar — no después. Re-estima duración y fee; si no hay acuerdo, el cambio va a fase siguiente o backlog facturable.",
+  },
+  {
+    q: "¿La estimación en retainer es igual que en proyecto?",
+    a: "No. En retainer estimas capacidad productiva mensual (horas útiles × personas), no un entregable único. Necesitas lista de incluidos/excluidos para evitar scope infinito.",
+  },
+  {
+    q: "¿Qué herramienta uso para estimado vs real?",
+    a: "Excel con pacing basta al inicio; cuando creces, un planificador con horas asignadas vs presupuestadas por proyecto evita el pacing verde con margen rojo al cierre.",
+  },
+];
+
+const faqEn = [
+  {
+    q: "What is project estimation in an agency?",
+    a: "Predicting effort (person-hours), calendar duration (including waits and approvals), resources, and cost before committing to a date or fee. It is not gut feel — it is the base of profitability.",
+  },
+  {
+    q: "Why do I always underestimate timelines?",
+    a: "Planning fallacy (best-case thinking), sales pressure for competitive fees, and failure to map client dependencies during the sale.",
+  },
+  {
+    q: "How much buffer should I add?",
+    a: "10–20% with solid history; 20–30% with ambiguous briefs or new clients. Split by category (creative, PM, waits), not one opaque global %.",
+  },
+  {
+    q: "Do I promise effort or duration to the client?",
+    a: "Duration: delivery date on the calendar. Effort in hours stays internal for margin and capacity.",
+  },
+  {
+    q: "How do I estimate a campaign with no history?",
+    a: "Bottom-up by deliverable plus PERT on uncertain parts. Sell bounded Discovery before a large fixed fee if risk is high.",
+  },
+  {
+    q: "How often should I recalibrate estimation ratios?",
+    a: "After any large project with notable variance, and at least quarterly by service type. Monthly if you are scaling team or portfolio.",
+  },
+  {
+    q: "How do I estimate fixed price vs time & materials?",
+    a: "Fixed price needs analogy + high buffer + change protocol. T&M allows hour ceilings and visible weekly pacing; risk shifts to perception of control, not blind margin.",
+  },
+  {
+    q: "How many PM hours should I budget?",
+    a: "15–25% of total effort with 3+ departments or freelancers. On retainers, set an explicit monthly coordination % in the SOW.",
+  },
+  {
+    q: "How do I estimate a Shopify landing with no history?",
+    a: "Bottom-up: discovery (4–8 h), wireframes (6–12 h), design (12–20 h), dev (16–40 h by integrations), QA (4–8 h). Add creative revision buffer (+15%) and client wait (+2 days per round).",
+  },
+  {
+    q: "What when the client asks for out-of-scope changes?",
+    a: "Log, quantify, and communicate before executing — not after. Re-estimate duration and fee; without agreement, push to next phase or billable backlog.",
+  },
+  {
+    q: "Is retainer estimation the same as project estimation?",
+    a: "No. Retainers estimate monthly productive capacity (useful hours × people), not a single deliverable. You need included/excluded lists to avoid infinite scope.",
+  },
+  {
+    q: "What tool for estimate vs actual?",
+    a: "Excel with pacing works at first; as you grow, a planner with assigned vs budgeted hours per project avoids green pacing with red margin at close.",
+  },
+];
+
+function v(id, visualId, props) {
+  return { id, type: "visualRef", visualId, ...(props ? { props } : {}) };
+}
+
+function h(id, level, text, anchorId, icon) {
+  return { id, type: "heading", level, text, anchorId, ...(icon ? { icon } : {}) };
+}
+
+function p(id, html) {
+  return { id, type: "paragraph", html };
+}
+
+function c(id, tone, html) {
+  return { id, type: "callout", tone, html };
+}
+
+function blocksEs() {
+  return [
+    p(
+      "intro-1",
+      "El martes por la tarde, cuentas cierra un briefing y le dice al cliente que la landing estará lista en <strong>diez días</strong>, «como la última». El miércoles, operaciones abre el histórico y ve que esa «última landing» tardó <strong>dieciocho días</strong> y se comió el margen. La fecha ya está prometida; el déficit lo pagará producción con horas extra y estrés.",
+    ),
+    p(
+      "intro-2",
+      "Si en diez proyectos seguidos la desviación media entre horas estimadas y horas reales supera el <strong>20&nbsp;%</strong>, no es mala suerte: es un fallo de método. La estimación en agencias no es adivinar cuánto tarda una tarea; es lo que decide si el fee que firmas tiene sentido antes de que el equipo empiece a trabajar.",
+    ),
+    v("visual-hero", "EstimacionHeroVisual"),
+    c(
+      "intro-callout",
+      "highlight",
+      "Este artículo no es un manual PMBOK. Es lo que pasa en la trinchera cuando vendes horas, prometes fechas y el cliente responde «el viernes».",
+    ),
+    { id: "toc-1", type: "toc" },
+
+    h("h2-1", 2, "1. Por qué fallas incluso cuando tu equipo es bueno", "por-que-fallan-estimaciones", "Brain"),
+    p(
+      "s1-p1",
+      "El problema rara vez es que tu diseñador o desarrollador no sepa hacer el trabajo. Equipos senior pueden estimar peor que juniors si nadie les obliga a mirar datos. Entran tres fuerzas a la vez: sesgos cognitivos, presión comercial y la brecha entre vender y entregar.",
+    ),
+    p(
+      "s1-p2",
+      "Daniel Kahneman lo llamó <strong>falacia de planificación</strong> (planning fallacy): subestimamos tiempo, coste y riesgo, y sobreestimamos el beneficio. En la práctica, el equipo adopta la <strong>visión interna</strong>: miran solo este briefing, asumen un escenario limpio (sin caídas, sin enfermedades, sin el cliente tardando cuatro días en responder) y estiman el mejor caso posible.",
+    ),
+    p(
+      "s1-p3",
+      "El antídoto es la <strong>visión externa</strong>: ignorar un rato las «particularidades» del proyecto y mirar la mediana de los últimos encargos parecidos. Pero eso choca con comercial, porque la primera estimación muchas veces se hace para ganar el pitch, no para proteger la rentabilidad.",
+    ),
+    v("visual-sesgos", "SesgosEstimacionVisual"),
+    p(
+      "s1-p5",
+      "Y aquí la cicatriz clásica: el caso de éxito que vendes en comercial suele ser el proyecto que <em>menos</em> horas consumió — el cliente no pidió cambios, la tecnología funcionó a la primera, el equipo estaba inspirado. Usas un outlier como estándar y todos los proyectos siguientes vuelven a la media… con margen rojo.",
+    ),
+
+    h("h2-2", 2, "2. Esfuerzo vs duración: el error que convierte 8 horas en dos semanas", "esfuerzo-vs-duracion", "Clock"),
+    p(
+      "s2-p1",
+      "<strong>Esfuerzo</strong> = horas-persona de trabajo activo. <strong>Duración</strong> = días laborables desde que empieza la tarea hasta que el cliente la aprueba. En una agencia, la duración casi siempre es mayor que esfuerzo ÷ capacidad disponible. Prometer fecha mirando solo el esfuerzo es la forma más rápida de mentir en el calendario.",
+    ),
+    v("visual-esfuerzo", "EsfuerzoVsDuracionVisual"),
+    {
+      id: "s2-list",
+      type: "list",
+      ordered: false,
+      items: [
+        "<strong>Aprobación cliente:</strong> mínimo 2 días laborables por ronda de revisión creativa, salvo SLA firmado.",
+        "<strong>Legal / compliance:</strong> +3 a 5 días en sectores regulados (farma, finanzas, seguros).",
+        "<strong>Iteraciones:</strong> al menos 1 ronda mayor de revisión incluida, salvo que el SOW diga lo contrario.",
+      ],
+    },
+    p(
+      "s2-p3",
+      "Cicatriz del mockup: el diseñador estima <strong>6 horas</strong> para un mockup de app. Cuentas ve el jueves libre en el calendario y promete entrega el viernes. El diseño sale el viernes; el cliente no revisa hasta el miércoles siguiente (+4 días). El diseñador ya está en otra cuenta y tarda 2 días más en aplicar cambios (+2 h de esfuerzo). Entrega real: <strong>~2 semanas</strong>, no «el viernes».",
+    ),
+    c(
+      "s2-callout",
+      "warning",
+      "Al cliente promete <strong>duración</strong> (fecha de entrega). El esfuerzo en horas es dato interno para margen y capacidad — no sustituye una fecha en el contrato.",
+    ),
+
+    h("h2-3", 2, "3. Tres métodos que sí encajan en una agencia (sin volverte consultor PM)", "metodos-estimacion-agencia", "GitBranch"),
+    p(
+      "s3-p1",
+      "No hace falta un PMBOK de 400 páginas. Alterna tres enfoques según cuánto histórico tengas y cuánta incertidumbre haya. Para el marco general de cronograma y recursos, el hilo lo desarrollamos en <a href=\"/blog/planificacion-proyectos-cronograma-recursos\">planificación de proyectos: cronograma, presupuesto y recursos</a>.",
+    ),
+    v("visual-metodos", "MetodosEstimacionVisual"),
+    h("h3-31", 3, "3.1 Estimación por analogía (la que más deberías usar)", "estimacion-analogia"),
+    p(
+      "s31-p1",
+      "Ante un briefing nuevo, la pregunta no es «¿cuánto crees que tardas?». Es «¿qué pasó en los últimos 3–5 proyectos del mismo tipo?». Aísla encargos parecidos (misma tipología: landing Shopify, retainer social, campaña B2B en LinkedIn…) y saca horas <strong>reales</strong> por rol.",
+    ),
+    h("h3-32", 3, "3.2 Estimación ascendente (bottom-up)", "estimacion-bottom-up"),
+    p(
+      "s32-p1",
+      "Cuando el encargo es nuevo o híbrido, descompón en entregables atómicos: investigación, wireframes, producción por rol (copy, arte, dev), QA, handoff. Cada pieza la estima quien la ejecuta; suma por fase y rol.",
+    ),
+    h("h3-33", 3, "3.3 Tres puntos (PERT) cuando el riesgo manda", "estimacion-tres-puntos"),
+    p(
+      "s33-p1",
+      "Plataforma nueva, API de terceros, integración que nadie ha tocado: pide tres cifras — optimista (O), probable (P), pesimista (Pes) — y calcula el esfuerzo esperado: <strong>E = (O + 4P + Pes) / 6</strong>.",
+    ),
+
+    h("h2-4", 2, "4. Buffers: cuánto añadir sin inflar el presupuesto hasta lo ridículo", "buffers-contingencia", "Shield"),
+    p(
+      "s4-p1",
+      "Un presupuesto sin contingencia no es planificación; es fe. El buffer no es «engordar el margen»: es provisionar la fricción normal de producir trabajo intelectual.",
+    ),
+    v("visual-buffer", "BufferCalculatorVisual"),
+    p(
+      "s4-p2",
+      "Cicatriz del buffer fantasma: el PM quita el colchón del presupuesto que ve el cliente pero lo absorbe en silencio. El Excel de pacing sigue en verde porque él coordina de noche. Tres meses después, en el cierre de <a href=\"/blog/como-medir-rentabilidad-proyecto-agencia-dejar-vender-horas\">rentabilidad por proyecto</a>, el margen explica lo que el verde no contó.",
+    ),
+    p(
+      "s4-p3",
+      "Estima sobre <strong>capacidad productiva</strong>, no sobre un calendario lleno al 100 %. Si no distingues horas visibles de horas útiles, el buffer se come antes de empezar — lo desarrollamos en <a href=\"/blog/capacidad-calendario-vs-capacidad-productiva-equipo\">capacidad calendario vs capacidad productiva</a>.",
+    ),
+    v("visual-capacity", "PlanificacionCapacityCardsVisual"),
+
+    h("h2-8", 2, "5. Cómo cambia la estimación según el tipo de fee", "tipos-fee-estimacion", "Scale"),
+    p(
+      "s8-p1",
+      "No estimas igual un precio cerrado, un time & materials o un retainer mensual. En precio cerrado vendes <strong>duración y alcance</strong>; en T&M vendes <strong>techo de horas</strong> con visibilidad; en retainer vendes <strong>capacidad</strong>, no un entregable único.",
+    ),
+    v("visual-fee", "TiposFeeEstimacionVisual"),
+    p(
+      "s8-p2",
+      "Cicatriz del retainer infinito: el cliente interpreta «equipo dedicado» como «haced lo que haga falta este mes». Sin lista de incluidos/excluidos, cada petición de Slack entra gratis y la estimación mensual se vuelve ficción.",
+    ),
+
+    h("h2-5", 2, "6. Ritual de estimación en cinco pasos (antes de prometer fecha)", "ritual-estimacion-cinco-pasos", "ListChecks"),
+    p(
+      "s5-p1",
+      "Ninguna fecha ni fee sale al cliente sin pasar este filtro. Comercial, operaciones y el lead del rol crítico en la misma mesa — aunque duela.",
+    ),
+    v("visual-ritual", "RitualEstimacionInfographic"),
+    c(
+      "s5-callout",
+      "warning",
+      "Cicatriz: el comité dura 8 minutos porque «hay que enviar la propuesta ya». Se recortan un 20 % las horas «y ya veremos». Ahí la estimación vuelve a ser una mentira cómoda.",
+    ),
+
+    h("h2-6", 2, "7. Estimado vs real: el bucle que mejora cada presupuesto", "estimado-vs-real", "BarChart3"),
+    p(
+      "s6-p1",
+      "La madurez operativa se mide por cerrar el ciclo entre lo que vendiste y lo que pasó. Sin registro de tiempo disciplinado, vuelves a ciegas — y la desviación se come entre un 15 y un 30 % de ingresos facturables en muchas agencias.",
+    ),
+    v("visual-variance", "EstimadoVsRealChart"),
+    p(
+      "s6-p2",
+      "Desviación (%) = ((horas reales − horas estimadas) / horas estimadas) × 100. Alerta de dirección: desviación media <strong>&gt; 20 %</strong> en una tipología = pricing obsoleto, no «equipo lento».",
+    ),
+    p(
+      "s6-p3",
+      "El KPI en detalle está en <a href=\"/blog/kpis-agencias-marketing-2026\">KPIs para agencias de marketing</a>. La plantilla Excel con pacing y margen estimado, en <a href=\"/blog/plantilla-planificacion-recursos-agencia\">plantilla de planificación de recursos</a>.",
+    ),
+
+    h("h2-9", 2, "8. Estimación por tipología de encargo", "estimacion-por-tipologia", "Target"),
+    {
+      id: "s9-table",
+      type: "table",
+      headers: ["Tipo", "Qué estimar primero", "Buffer típico", "Trampa habitual"],
+      rows: [
+        ["Landing / web", "Bottom-up por entregable + duración con esperas", "+15–20 % creativo", "Ignorar QA y handoff"],
+        ["Campaña paid", "Horas de setup + % PM + revisiones creativas", "+10–15 %", "No presupuestar aprendizaje de plataforma"],
+        ["Retainer social", "Capacidad mensual × meses, no posts sueltos", "Lista incluidos/excluidos", "Scope infinito por chat"],
+        ["Branding / identidad", "Rondas de revisión explícitas (nº)", "+20–25 %", "Revisiones «ilimitadas» en SOW"],
+        ["Integración / dev", "PERT en partes técnicas inciertas", "+25–35 % técnico", "Estimar solo código, no pruebas"],
+      ],
+    },
+
+    h("h2-7", 2, "9. Anti-patrones y re-estimación cuando el scope se mueve", "anti-patrones-estimacion", "AlertTriangle"),
+    {
+      id: "s7-list",
+      type: "list",
+      ordered: false,
+      items: [
+        "<strong>Solo ejecutar, no overhead:</strong> presupuestas 40 h de dev e ignoras dailies, Slack, peer review y handoffs (~20 % del senior en agencias medianas).",
+        "<strong>Clonar el proyecto estrella:</strong> el que salió perfecto se convierte en «estándar» y profana la analogía por medianas.",
+        "<strong>Ignorar proyectos simultáneos:</strong> 8 h de esfuerzo no caben en un día si la persona lleva cuatro cuentas — ver <a href=\"/blog/gestion-carga-trabajo-equipo-sin-burnout\">gestión de carga de trabajo</a>.",
+        "<strong>Revisiones ilimitadas «incluidas»:</strong> sin tope en el SOW, cada duda del cliente es trabajo gratis.",
+      ],
+    },
+    p(
+      "s7-p1",
+      "Cuando el equipo está ocupado pero el margen cae, casi siempre hay una cadena: mala estimación → sobrepromesa → horas no registradas → utilización ficticia. El hilo completo en <a href=\"/blog/por-que-tu-agencia-pierde-rentabilidad-equipo-ocupado\">por qué pierde rentabilidad aunque el equipo esté ocupado</a>.",
+    ),
+    v("visual-ocupacion", "OcupacionVsRentabilidadChart", {
+      durationDrawMs: 7000,
+      pauseEndMs: 2800,
+    }),
+    p(
+      "s7-p2",
+      "Si el cliente pide cambios a mitad de proyecto, no re-estimes «de memoria»: vuelve al gate de brief, cuantifica el delta y comunica antes de ejecutar. El protocolo de alcance del post de <a href=\"/blog/planificacion-proyectos-cronograma-recursos\">planificación de proyectos</a> aplica igual aquí.",
+    ),
+
+    h("h2-faq", 2, "Preguntas frecuentes", "preguntas-frecuentes"),
+    { id: "faq-block", type: "faq", items: faqEs },
+    { id: "related-1", type: "relatedPost", slug: "planificacion-proyectos-cronograma-recursos" },
+    {
+      id: "cta-1",
+      type: "cta",
+      text: "Explorar el planificador de recursos",
+      href: "/planificador-recursos",
+      variant: "primary",
+    },
+  ];
+}
+
+function blocksEn() {
+  return [
+    p(
+      "intro-1",
+      "On Tuesday afternoon, accounts closes a brief and tells the client the landing page will be ready in <strong>ten days</strong> — “just like the last one.” On Wednesday, ops opens the history and sees that “last landing” actually took <strong>eighteen days</strong> and eroded margin. The date is already promised; production will pay with overtime and stress.",
+    ),
+    p(
+      "intro-2",
+      "If the average gap between estimated and actual hours exceeds <strong>20%</strong> across ten projects in a row, it is not bad luck — it is a broken method. Project estimation in agencies is not guessing task duration; it decides whether the fee you sign makes sense before anyone starts work.",
+    ),
+    v("visual-hero", "EstimacionHeroVisual"),
+    c(
+      "intro-callout",
+      "highlight",
+      "This is not a PMBOK manual. It is what happens in the trenches when you sell hours, promise dates, and the client replies “Friday.”",
+    ),
+    { id: "toc-1", type: "toc" },
+
+    h("h2-1", 2, "1. Why you fail even when your team is good", "why-estimates-fail", "Brain"),
+    p(
+      "s1-p1",
+      "The problem is rarely that your designer or developer cannot do the work. Senior teams can estimate worse than juniors without a data-backed process. Three forces stack up: cognitive bias, sales pressure, and the gap between selling and delivering.",
+    ),
+    p(
+      "s1-p2",
+      "Daniel Kahneman called it the <strong>planning fallacy</strong>: we underestimate time, cost, and risk while overestimating benefit. In practice, teams take the <strong>inside view</strong> — they stare at this brief, assume a clean run, and estimate the best case.",
+    ),
+    v("visual-sesgos", "SesgosEstimacionVisual"),
+    p(
+      "s1-p5",
+      "Classic scar: the success story you pitch is usually the project that used the <em>fewest</em> hours. You treat an outlier as the new standard; every following job regresses to the mean with red margin.",
+    ),
+
+    h("h2-2", 2, "2. Effort vs duration: how 8 hours becomes two weeks", "effort-vs-duration", "Clock"),
+    p(
+      "s2-p1",
+      "<strong>Effort</strong> = person-hours of focused work. <strong>Duration</strong> = business days from task start to client approval. In agencies, duration is almost always larger than effort ÷ available capacity.",
+    ),
+    v("visual-esfuerzo", "EsfuerzoVsDuracionVisual"),
+    c(
+      "s2-callout",
+      "warning",
+      "Promise the client <strong>duration</strong> (delivery date). Effort in hours is internal data for margin and capacity — it does not replace a contract date.",
+    ),
+
+    h("h2-3", 2, "3. Three methods that fit agencies (without becoming a PM consultant)", "estimation-methods", "GitBranch"),
+    p(
+      "s3-p1",
+      "You do not need a 400-page PMBOK. Rotate three approaches based on history and uncertainty. For the wider schedule frame, see <a href=\"/en/blog/project-planning-schedule-resources\">project planning: schedule, budget, and resources</a>.",
+    ),
+    v("visual-metodos", "MetodosEstimacionVisual"),
+    h("h3-31", 3, "3.1 Historical analogy (your default)", "analogy-estimation"),
+    p(
+      "s31-p1",
+      "On a new brief, do not ask “how long do you think?” Ask “what happened on the last 3–5 jobs of the same type?” Pull <strong>actual</strong> hours by role.",
+    ),
+    h("h3-32", 3, "3.2 Bottom-up", "bottom-up-estimation"),
+    p(
+      "s32-p1",
+      "When the engagement is new or hybrid, break it into atomic deliverables. Each piece is estimated by whoever executes it; sum by phase and role.",
+    ),
+    h("h3-33", 3, "3.3 Three-point (PERT) when risk dominates", "pert-estimation"),
+    p(
+      "s33-p1",
+      "New platform, third-party API: ask for optimistic, most likely, and pessimistic — then <strong>E = (O + 4P + Pes) / 6</strong>.",
+    ),
+
+    h("h2-4", 2, "4. Buffers: how much to add without ridicule", "buffers-contingency", "Shield"),
+    p(
+      "s4-p1",
+      "A budget without contingency is not planning; it is hope. Buffer provisions normal friction — it is not “padding margin.”",
+    ),
+    v("visual-buffer", "BufferCalculatorVisual"),
+    p(
+      "s4-p3",
+      "Estimate against <strong>productive capacity</strong>, not a calendar booked at 100% — see <a href=\"/en/blog/calendar-capacity-vs-shippable-team-capacity\">calendar vs productive capacity</a>.",
+    ),
+    v("visual-capacity", "PlanificacionCapacityCardsVisual"),
+
+    h("h2-8", 2, "5. How fee type changes estimation", "fee-types-estimation", "Scale"),
+    p(
+      "s8-p1",
+      "Fixed price, T&M, and monthly retainer are not the same estimation problem. Fixed sells <strong>duration and scope</strong>; T&M sells a <strong>visible hour ceiling</strong>; retainer sells <strong>capacity</strong>.",
+    ),
+    v("visual-fee", "TiposFeeEstimacionVisual"),
+
+    h("h2-5", 2, "6. Five-step estimation ritual (before you promise a date)", "estimation-ritual", "ListChecks"),
+    p(
+      "s5-p1",
+      "No date or fee goes to the client without this filter. Sales, ops, and the critical-role lead in the same room — even when it hurts.",
+    ),
+    v("visual-ritual", "RitualEstimacionInfographic"),
+    c(
+      "s5-callout",
+      "warning",
+      "Scar: the committee lasts 8 minutes because “we must send the proposal now.” Hours get cut 20% “and we will figure it out.”",
+    ),
+
+    h("h2-6", 2, "7. Estimate vs actual: the loop that improves every quote", "estimate-vs-actual", "BarChart3"),
+    p(
+      "s6-p1",
+      "Operational maturity is closing the loop between what you sold and what happened. Without disciplined time tracking, you fly blind.",
+    ),
+    v("visual-variance", "EstimadoVsRealChart"),
+    p(
+      "s6-p3",
+      "KPI detail in <a href=\"/en/blog/marketing-agency-kpis-2026\">marketing agency KPIs</a>. Excel template in <a href=\"/en/blog/agency-resource-planning-template\">resource planning template</a>.",
+    ),
+
+    h("h2-9", 2, "8. Estimation by engagement type", "estimation-by-type", "Target"),
+    {
+      id: "s9-table",
+      type: "table",
+      headers: ["Type", "Estimate first", "Typical buffer", "Common trap"],
+      rows: [
+        ["Landing / web", "Bottom-up + duration with waits", "+15–20% creative", "Ignoring QA and handoff"],
+        ["Paid campaign", "Setup hours + PM % + creative revisions", "+10–15%", "Skipping platform learning"],
+        ["Social retainer", "Monthly capacity × months", "Included/excluded list", "Infinite scope via chat"],
+        ["Branding", "Explicit revision rounds (count)", "+20–25%", "“Unlimited” revisions in SOW"],
+        ["Integration / dev", "PERT on uncertain tech", "+25–35% technical", "Code only, no testing"],
+      ],
+    },
+
+    h("h2-7", 2, "9. Anti-patterns and re-estimation when scope moves", "anti-patterns", "AlertTriangle"),
+    p(
+      "s7-p1",
+      "When the team looks busy but margin falls: bad estimate → over-promise → unlogged hours → fake utilization. See <a href=\"/en/blog/why-agency-loses-profitability-busy-team\">why profitability drops when everyone is busy</a>.",
+    ),
+    v("visual-ocupacion", "OcupacionVsRentabilidadChart", {
+      durationDrawMs: 7000,
+      pauseEndMs: 2800,
+    }),
+
+    h("h2-faq", 2, "Frequently asked questions", "faq"),
+    { id: "faq-block", type: "faq", items: faqEn },
+    { id: "related-1", type: "relatedPost", slug: "planificacion-proyectos-cronograma-recursos" },
+    {
+      id: "cta-1",
+      type: "cta",
+      text: "Explore the resource planner",
+      href: "/planificador-recursos",
+      variant: "primary",
+    },
+  ];
+}
+
+const faqJsonLd = (items, lang) =>
+  items.map((item) => ({
+    "@type": "Question",
+    name: item.q,
+    acceptedAnswer: { "@type": "Answer", text: item.a },
+  }));
+
+const seed = {
+  _instructions:
+    "Seed CMS para estimación de proyectos. Actualizar en /admin/blog/edit. Visuales requieren deploy de frontend.",
+  slug: "estimacion-proyectos-agencia-como-acertar",
+  status: "published",
+  path_es: "/blog/estimacion-proyectos-agencia-como-acertar",
+  path_en: "/en/blog/agency-project-estimation-how-to-get-it-right",
+  date: "2026-05-25",
+  reading_minutes: 20,
+  related_slug: "planificacion-proyectos-cronograma-recursos",
+  title_es:
+    "Por qué tus estimaciones de proyecto siempre fallan (y cómo acertar más en una agencia)",
+  title_en: "Why your project estimates always fail (and how to get them right in an agency)",
+  description_es:
+    "Guía visual para estimar proyectos en agencias: esfuerzo vs duración, buffers, tipos de fee, ritual en 5 pasos y estimado vs real. Infografías, tablas y FAQ ampliada.",
+  description_en:
+    "Visual guide to agency project estimation: effort vs duration, buffers, fee types, 5-step ritual, and estimate vs actual. Infographics, tables, and expanded FAQ.",
+  meta_title_es: "Estimación de proyectos en agencias: guía visual completa",
+  meta_title_en: "Agency project estimation: complete visual guide",
+  meta_description_es:
+    "Subestimas plazos aunque el equipo sea senior. Estimación de campañas y proyectos en agencias de marketing: métodos, buffers, mockups y ritual antes de prometer fecha.",
+  meta_description_en:
+    "You underestimate timelines even with senior teams. Agency campaign and project estimation: methods, buffers, visuals, and ritual before you promise a date.",
+  blocks_es: blocksEs(),
+  blocks_en: blocksEn(),
+  json_ld_es: {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Article",
+        headline:
+          "Por qué tus estimaciones de proyecto siempre fallan (y cómo acertar más en una agencia)",
+        description:
+          "Guía visual para estimar proyectos en agencias: esfuerzo vs duración, buffers, tipos de fee y ritual en 5 pasos.",
+        author: { "@type": "Organization", name: "Taimbox" },
+        publisher: { "@type": "Organization", name: "Taimbox" },
+        datePublished: "2026-05-25",
+        inLanguage: "es",
+      },
+      {
+        "@type": "HowTo",
+        name: "Ritual de estimación de proyectos en agencias en 5 pasos",
+        description:
+          "Gate de brief, analogía histórica, bottom-up, mapeo de duración y comité de 30 minutos antes de prometer fecha o fee.",
+        step: [
+          { "@type": "HowToStep", position: 1, name: "Gate de brief", text: "Validar objetivos, referencias, aprobadores y exclusiones." },
+          { "@type": "HowToStep", position: 2, name: "Analogía histórica", text: "Mediana de horas reales por rol en 3–5 proyectos similares." },
+          { "@type": "HowToStep", position: 3, name: "Bottom-up", text: "Estimar lo nuevo aparte y sumar buffers por categoría." },
+          { "@type": "HowToStep", position: 4, name: "Mapeo de duración", text: "Cruzar esfuerzo con capacidad productiva e insertar esperas." },
+          { "@type": "HowToStep", position: 5, name: "Comité 30 min", text: "Alinear comercial, operaciones y lead técnico; recortar alcance si hace falta." },
+        ],
+      },
+      { "@type": "FAQPage", mainEntity: faqJsonLd(faqEs, "es") },
+      {
+        "@type": "SoftwareApplication",
+        name: "Taimbox",
+        applicationCategory: "BusinessApplication",
+        description: "Planificador de recursos y tiempo para agencias. Estimado vs real y pacing por proyecto.",
+      },
+    ],
+  },
+  json_ld_en: {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Article",
+        headline: "Why your project estimates always fail (and how to get them right in an agency)",
+        description:
+          "Visual guide to agency project estimation: effort vs duration, buffers, fee types, and 5-step ritual.",
+        author: { "@type": "Organization", name: "Taimbox" },
+        publisher: { "@type": "Organization", name: "Taimbox" },
+        datePublished: "2026-05-25",
+        inLanguage: "en",
+      },
+      {
+        "@type": "HowTo",
+        name: "Five-step agency project estimation ritual",
+        description: "Brief gate, analogy, bottom-up, duration mapping, 30-minute committee.",
+        step: [
+          { "@type": "HowToStep", position: 1, name: "Brief gate", text: "Validate goals, references, approvers, exclusions." },
+          { "@type": "HowToStep", position: 2, name: "Historical analogy", text: "Median actual hours by role from similar projects." },
+          { "@type": "HowToStep", position: 3, name: "Bottom-up", text: "Estimate net-new scope with category buffers." },
+          { "@type": "HowToStep", position: 4, name: "Duration mapping", text: "Cross effort with productive capacity and waits." },
+          { "@type": "HowToStep", position: 5, name: "30-minute committee", text: "Align sales, ops, technical lead; trim scope if needed." },
+        ],
+      },
+      { "@type": "FAQPage", mainEntity: faqJsonLd(faqEn, "en") },
+      {
+        "@type": "SoftwareApplication",
+        name: "Taimbox",
+        applicationCategory: "BusinessApplication",
+        description: "Resource planner for agencies. Estimate vs actual and project pacing.",
+      },
+    ],
+  },
+};
+
+writeFileSync(OUT, JSON.stringify(seed, null, 2) + "\n", "utf8");
+console.log(`[build-estimacion-seed] Escrito ${OUT} (${seed.blocks_es.length} bloques ES)`);

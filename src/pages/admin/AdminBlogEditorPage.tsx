@@ -4,8 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useAppTranslation } from "@/hooks/useAppTranslation";
 import { useCreatePost, useUpdatePost, blogQueryKeys } from "@/hooks/useBlogPosts";
 import { getPostById } from "@/lib/blog/client";
-import { BlogBlocksSchema } from "@/lib/blog/blockSchema";
-import type { BlogBlock } from "@/lib/blog/blockSchema";
+import { BlogBlocksSchema, BlogBlocksDraftSchema } from "@/lib/blog/blockSchema";
+import type { BlogBlock, BlogBlockDraft } from "@/lib/blog/blockSchema";
 import {
   formToCmsSeed,
   parseBlogCmsSeed,
@@ -29,8 +29,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Save, ArrowLeft, Eye, AlertCircle, Upload, Download } from "lucide-react";
+import { Loader2, Save, ArrowLeft, Eye, AlertCircle, Upload, Download, Code2, Pencil } from "lucide-react";
 import { toast } from "@/lib/notify";
+import { cn } from "@/lib/utils";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface FormState {
   slug: string;
@@ -136,6 +144,17 @@ function safeParseBlocksRaw(raw: string): BlogBlock[] | string {
   return validated.data;
 }
 
+function safeParseBlocksDraftRaw(raw: string): BlogBlockDraft[] | string {
+  const parsed = tryParseJson<unknown>(raw);
+  if (!parsed.ok) return parsed.error;
+  if (parsed.value === undefined) return [];
+  const validated = BlogBlocksDraftSchema.safeParse(parsed.value);
+  if (!validated.success) {
+    return validated.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ");
+  }
+  return validated.data;
+}
+
 export default function AdminBlogEditorPage() {
   const { t } = useAppTranslation();
   const navigate = useNavigate();
@@ -154,7 +173,8 @@ export default function AdminBlogEditorPage() {
 
   const [form, setForm] = useState<FormState>(() => recordToFormState(null));
   const [activeLang, setActiveLang] = useState<"es" | "en">("es");
-  const [previewLang, setPreviewLang] = useState<"es" | "en">("es");
+  const [contentPane, setContentPane] = useState<"edit" | "preview">("edit");
+  const [jsonDialogLang, setJsonDialogLang] = useState<"es" | "en" | null>(null);
   const [pathEnTouched, setPathEnTouched] = useState(false);
   const importInputRef = useRef<HTMLInputElement>(null);
 
@@ -200,8 +220,12 @@ export default function AdminBlogEditorPage() {
 
   const blocksEsResult = useMemo(() => safeParseBlocksRaw(form.blocksEsRaw), [form.blocksEsRaw]);
   const blocksEnResult = useMemo(() => safeParseBlocksRaw(form.blocksEnRaw), [form.blocksEnRaw]);
+  const blocksEsDraft = useMemo(() => safeParseBlocksDraftRaw(form.blocksEsRaw), [form.blocksEsRaw]);
+  const blocksEnDraft = useMemo(() => safeParseBlocksDraftRaw(form.blocksEnRaw), [form.blocksEnRaw]);
   const blocksEsError = typeof blocksEsResult === "string" ? blocksEsResult : null;
   const blocksEnError = typeof blocksEnResult === "string" ? blocksEnResult : null;
+  const blocksEsJsonError = typeof blocksEsDraft === "string" ? blocksEsDraft : null;
+  const blocksEnJsonError = typeof blocksEnDraft === "string" ? blocksEnDraft : null;
 
   const handleExportSeed = () => {
     if (blocksEsError || blocksEnError) {
@@ -243,9 +267,9 @@ export default function AdminBlogEditorPage() {
     a.click();
     URL.revokeObjectURL(url);
   };
-  const previewBlocks: BlogBlock[] = previewLang === "es"
-    ? (blocksEsError ? [] : (blocksEsResult as BlogBlock[]))
-    : (blocksEnError ? [] : (blocksEnResult as BlogBlock[]));
+  const previewBlocks: BlogBlock[] = activeLang === "es"
+    ? (Array.isArray(blocksEsDraft) ? (blocksEsDraft as BlogBlock[]) : [])
+    : (Array.isArray(blocksEnDraft) ? (blocksEnDraft as BlogBlock[]) : []);
 
   const visualIds = useMemo(() => listVisualIds(), []);
 
@@ -377,11 +401,9 @@ export default function AdminBlogEditorPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        {/* Editor */}
-        <div className="space-y-6">
-          {/* Metadatos comunes */}
-          <Card>
+      <div className="space-y-6">
+        {/* Metadatos comunes */}
+        <Card>
             <CardHeader>
               <CardTitle>{t("admin.blog.sectionGeneral", "Identidad y rutas")}</CardTitle>
             </CardHeader>
@@ -573,92 +595,6 @@ export default function AdminBlogEditorPage() {
                     </div>
                     <div className="grid gap-2">
                       <Label>
-                        {t("admin.blog.blocks", "Contenido del artículo")} ({lng.toUpperCase()})
-                      </Label>
-                      {!(lng === "es" ? blocksEsError : blocksEnError) &&
-                      Array.isArray(lng === "es" ? blocksEsResult : blocksEnResult) ? (
-                        <BlogBlocksEditor
-                          blocks={(lng === "es" ? blocksEsResult : blocksEnResult) as BlogBlock[]}
-                          visualIds={visualIds}
-                          onChange={(next) =>
-                            setForm({
-                              ...form,
-                              ...(lng === "es"
-                                ? { blocksEsRaw: JSON.stringify(next, null, 2) }
-                                : { blocksEnRaw: JSON.stringify(next, null, 2) }),
-                            })
-                          }
-                          labels={{
-                            addBlock: t("admin.blog.addBlock", "Añadir bloque…"),
-                            block: t("admin.blog.block", "Bloque"),
-                            remove: t("common.delete", "Eliminar"),
-                            moveUp: t("admin.blog.moveUp", "Subir"),
-                            moveDown: t("admin.blog.moveDown", "Bajar"),
-                            type: t("admin.blog.blockType", "Tipo"),
-                            html: t("admin.blog.html", "HTML"),
-                            text: t("admin.blog.text", "Texto"),
-                            level: t("admin.blog.level", "Nivel"),
-                            anchorId: t("admin.blog.anchorId", "anchorId (TOC)"),
-                            tone: t("admin.blog.tone", "Tono"),
-                            ordered: t("admin.blog.orderedList", "Lista numerada"),
-                            items: t("admin.blog.items", "Ítems"),
-                            headers: t("admin.blog.tableHeaders", "Cabeceras"),
-                            rows: t("admin.blog.tableRows", "Filas"),
-                            question: t("admin.blog.faqQ", "Pregunta"),
-                            answer: t("admin.blog.faqA", "Respuesta"),
-                            slug: t("admin.blog.relatedSlugField", "Slug relacionado"),
-                            href: t("admin.blog.href", "Enlace"),
-                            variant: t("admin.blog.variant", "Variante"),
-                            visualId: t("admin.blog.visualId", "Infografía"),
-                            addItem: t("admin.blog.addItem", "Añadir ítem"),
-                            tocHint: t(
-                              "admin.blog.tocHint",
-                              "El índice se genera automáticamente desde los títulos con anchorId.",
-                            ),
-                          }}
-                        />
-                      ) : (
-                        <Textarea
-                          rows={16}
-                          className="font-mono text-xs"
-                          value={lng === "es" ? form.blocksEsRaw : form.blocksEnRaw}
-                          onChange={(e) =>
-                            setForm({
-                              ...form,
-                              ...(lng === "es"
-                                ? { blocksEsRaw: e.target.value }
-                                : { blocksEnRaw: e.target.value }),
-                            })
-                          }
-                        />
-                      )}
-                      {(lng === "es" ? blocksEsError : blocksEnError) != null && (
-                        <p className="text-xs text-red-600 inline-flex items-start gap-1">
-                          <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-                          {lng === "es" ? blocksEsError : blocksEnError}
-                        </p>
-                      )}
-                      <details className="text-xs text-slate-500">
-                        <summary className="cursor-pointer">
-                          {t("admin.blog.blocksJsonAdvanced", "Edición JSON avanzada")}
-                        </summary>
-                        <Textarea
-                          rows={10}
-                          className="font-mono text-[10px] mt-2"
-                          value={lng === "es" ? form.blocksEsRaw : form.blocksEnRaw}
-                          onChange={(e) =>
-                            setForm({
-                              ...form,
-                              ...(lng === "es"
-                                ? { blocksEsRaw: e.target.value }
-                                : { blocksEnRaw: e.target.value }),
-                            })
-                          }
-                        />
-                      </details>
-                    </div>
-                    <div className="grid gap-2">
-                      <Label>
                         {t("admin.blog.jsonLd", "JSON-LD (opcional)")} ({lng.toUpperCase()})
                       </Label>
                       <Textarea
@@ -685,64 +621,221 @@ export default function AdminBlogEditorPage() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm">
-                {t("admin.blog.visualRefIds", "visualIds disponibles")}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ul className="text-xs text-slate-700 grid grid-cols-1 sm:grid-cols-2 gap-1">
-                {visualIds.map((v) => (
-                  <li key={v.id} className="font-mono">
-                    {v.id}{" "}
-                    <span className="text-slate-400">({v.mode})</span>
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Preview */}
-        <div className="space-y-3 xl:sticky xl:top-6 xl:self-start">
-          <div className="flex items-center justify-between">
-            <Label className="inline-flex items-center gap-2">
-              <Eye className="h-4 w-4" />
-              {t("admin.blog.preview", "Previsualización")}
-              <span className="text-xs font-normal text-slate-500">
-                ({previewBlocks.length}{" "}
-                {t("admin.blog.blockCount", "bloques")})
-              </span>
-            </Label>
-            <Tabs value={previewLang} onValueChange={(v) => setPreviewLang(v as "es" | "en")}>
-              <TabsList className="h-7">
-                <TabsTrigger value="es" className="h-6 text-xs">
-                  ES
-                </TabsTrigger>
-                <TabsTrigger value="en" className="h-6 text-xs">
-                  EN
-                </TabsTrigger>
+        {/* Contenido del artículo — editor visual + preview */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between gap-4 flex-wrap">
+            <CardTitle>{t("admin.blog.sectionContent", "Contenido del artículo")}</CardTitle>
+            <Tabs value={activeLang} onValueChange={(v) => setActiveLang(v as "es" | "en")}>
+              <TabsList>
+                <TabsTrigger value="es">Español</TabsTrigger>
+                <TabsTrigger value="en">English</TabsTrigger>
               </TabsList>
             </Tabs>
+          </CardHeader>
+          <CardContent>
+            {(["es", "en"] as const).map((lng) => {
+              if (lng !== activeLang) return null;
+              const draftBlocks = lng === "es" ? blocksEsDraft : blocksEnDraft;
+              const jsonError = lng === "es" ? blocksEsJsonError : blocksEnJsonError;
+              const publishError = lng === "es" ? blocksEsError : blocksEnError;
+              const rawKey = lng === "es" ? "blocksEsRaw" : "blocksEnRaw";
+
+              return (
+                <div key={lng} className="space-y-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <Tabs value={contentPane} onValueChange={(v) => setContentPane(v as "edit" | "preview")}>
+                      <TabsList className="h-8 xl:hidden">
+                        <TabsTrigger value="edit" className="h-7 text-xs gap-1">
+                          <Pencil className="h-3.5 w-3.5" />
+                          {t("admin.blog.contentTabEdit", "Editor")}
+                        </TabsTrigger>
+                        <TabsTrigger value="preview" className="h-7 text-xs gap-1">
+                          <Eye className="h-3.5 w-3.5" />
+                          {t("admin.blog.contentTabPreview", "Vista previa")}
+                        </TabsTrigger>
+                      </TabsList>
+                    </Tabs>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 text-xs"
+                      onClick={() => setJsonDialogLang(lng)}
+                    >
+                      <Code2 className="h-3.5 w-3.5 mr-1" />
+                      {t("admin.blog.blocksJsonAdvanced", "JSON avanzado")}
+                    </Button>
+                  </div>
+
+                  {publishError != null && jsonError == null && (
+                    <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2 inline-flex items-start gap-1.5">
+                      <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                      {t(
+                        "admin.blog.blocksDraftWarning",
+                        "Completa los campos obligatorios antes de guardar:",
+                      )}{" "}
+                      {publishError}
+                    </p>
+                  )}
+
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                    <div className={contentPane === "preview" ? "hidden xl:block" : undefined}>
+                      {jsonError != null ? (
+                        <div className="space-y-2 rounded-lg border border-red-200 bg-red-50/50 p-4">
+                          <p className="text-xs text-red-700 inline-flex items-start gap-1">
+                            <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                            {t(
+                              "admin.blog.blocksJsonBroken",
+                              "El JSON no es válido. Corrígelo en JSON avanzado para recuperar el editor visual.",
+                            )}{" "}
+                            {jsonError}
+                          </p>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-8 text-xs"
+                            onClick={() => setJsonDialogLang(lng)}
+                          >
+                            {t("admin.blog.openJsonEditor", "Abrir editor JSON")}
+                          </Button>
+                        </div>
+                      ) : (
+                        <BlogBlocksEditor
+                          blocks={draftBlocks as BlogBlockDraft[]}
+                          visualIds={visualIds}
+                          onChange={(next) =>
+                            setForm({
+                              ...form,
+                              [rawKey]: JSON.stringify(next, null, 2),
+                            })
+                          }
+                          labels={{
+                            addBlock: t("admin.blog.addBlock", "Añadir bloque…"),
+                            block: t("admin.blog.block", "Bloque"),
+                            remove: t("common.delete", "Eliminar"),
+                            moveUp: t("admin.blog.moveUp", "Subir"),
+                            moveDown: t("admin.blog.moveDown", "Bajar"),
+                            type: t("admin.blog.blockType", "Tipo"),
+                            html: t("admin.blog.html", "Contenido"),
+                            htmlHint: t(
+                              "admin.blog.htmlHint",
+                              "Puedes usar HTML básico: <strong>, <a href=\"…\">, <em>…",
+                            ),
+                            text: t("admin.blog.text", "Texto"),
+                            level: t("admin.blog.level", "Nivel"),
+                            anchorId: t("admin.blog.anchorId", "anchorId (TOC)"),
+                            tone: t("admin.blog.tone", "Tono"),
+                            ordered: t("admin.blog.orderedList", "Lista numerada"),
+                            items: t("admin.blog.items", "Ítems"),
+                            headers: t("admin.blog.tableHeaders", "Cabeceras"),
+                            rows: t("admin.blog.tableRows", "Filas"),
+                            question: t("admin.blog.faqQ", "Pregunta"),
+                            answer: t("admin.blog.faqA", "Respuesta"),
+                            slug: t("admin.blog.relatedSlugField", "Slug relacionado"),
+                            href: t("admin.blog.href", "Enlace"),
+                            variant: t("admin.blog.variant", "Variante"),
+                            visualId: t("admin.blog.visualId", "Infografía"),
+                            addItem: t("admin.blog.addItem", "Añadir ítem"),
+                            tocHint: t(
+                              "admin.blog.tocHint",
+                              "El índice se genera automáticamente desde los títulos con anchorId.",
+                            ),
+                            blocksCount: t("admin.blog.blocksCountLabel", "bloques"),
+                          }}
+                        />
+                      )}
+                    </div>
+
+                    <div
+                      className={cn(
+                        "space-y-2",
+                        contentPane === "edit" ? "hidden xl:block" : undefined,
+                      )}
+                    >
+                      <Label className="inline-flex items-center gap-2 text-sm">
+                        <Eye className="h-4 w-4" />
+                        {t("admin.blog.preview", "Previsualización")}
+                        <span className="text-xs font-normal text-slate-500">
+                          ({previewBlocks.length}{" "}
+                          {t("admin.blog.blockCount", "bloques")})
+                        </span>
+                      </Label>
+                      <div className="rounded-2xl border border-slate-300 bg-gradient-to-br from-indigo-950 via-purple-950 to-indigo-900 p-4 sm:p-6 max-h-[70vh] overflow-y-auto">
+                        <h2 className="text-xl font-bold text-white mb-2">
+                          {lng === "es" ? form.titleEs : form.titleEn}
+                        </h2>
+                        <p className="text-indigo-100/80 text-sm mb-6">
+                          {lng === "es" ? form.descriptionEs : form.descriptionEn}
+                        </p>
+                        <BlockRenderer blocks={previewBlocks} />
+                      </div>
+                      <p className="text-xs text-slate-500">
+                        {t(
+                          "admin.blog.previewHint",
+                          "La previsualización usa el mismo BlockRenderer que la web pública. Los visualRef de tipo fullPage no se pre-renderizan aquí.",
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
+
+        <details className="rounded-lg border border-slate-200 bg-white">
+          <summary className="cursor-pointer px-4 py-3 text-sm font-medium text-slate-700">
+            {t("admin.blog.visualRefIds", "visualIds disponibles")}
+          </summary>
+          <div className="px-4 pb-4">
+            <ul className="text-xs text-slate-700 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1">
+              {visualIds.map((v) => (
+                <li key={v.id} className="font-mono">
+                  {v.id}{" "}
+                  <span className="text-slate-400">({v.mode})</span>
+                </li>
+              ))}
+            </ul>
           </div>
-          <div className="rounded-2xl border border-slate-300 bg-gradient-to-br from-indigo-950 via-purple-950 to-indigo-900 p-4 sm:p-6 max-h-[80vh] overflow-y-auto">
-            <h2 className="text-xl font-bold text-white mb-2">
-              {previewLang === "es" ? form.titleEs : form.titleEn}
-            </h2>
-            <p className="text-indigo-100/80 text-sm mb-6">
-              {previewLang === "es" ? form.descriptionEs : form.descriptionEn}
-            </p>
-            <BlockRenderer blocks={previewBlocks} />
-          </div>
-          <p className="text-xs text-slate-500">
-            {t(
-              "admin.blog.previewHint",
-              "La previsualización usa el mismo BlockRenderer que la web pública. Los visualRef de tipo fullPage no se pre-renderizan aquí.",
-            )}
-          </p>
-        </div>
+        </details>
       </div>
+
+      <Dialog open={jsonDialogLang != null} onOpenChange={(open) => !open && setJsonDialogLang(null)}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {t("admin.blog.blocksJsonAdvanced", "JSON avanzado")}{" "}
+              ({jsonDialogLang?.toUpperCase()})
+            </DialogTitle>
+            <DialogDescription>
+              {t(
+                "admin.blog.blocksJsonAdvancedHint",
+                "Solo para edición masiva o importación parcial. El editor visual es la forma recomendada.",
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <Textarea
+            rows={22}
+            className="font-mono text-xs"
+            value={jsonDialogLang === "es" ? form.blocksEsRaw : form.blocksEnRaw}
+            onChange={(e) =>
+              setForm({
+                ...form,
+                ...(jsonDialogLang === "es"
+                  ? { blocksEsRaw: e.target.value }
+                  : { blocksEnRaw: e.target.value }),
+              })
+            }
+          />
+          {(jsonDialogLang === "es" ? blocksEsJsonError : blocksEnJsonError) != null && (
+            <p className="text-xs text-red-600 inline-flex items-start gap-1">
+              <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+              {jsonDialogLang === "es" ? blocksEsJsonError : blocksEnJsonError}
+            </p>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

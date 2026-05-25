@@ -142,6 +142,144 @@
         }
       },
       "caption": "Conceptual model based on 2025-2026 industry benchmarks. Profitability drops above 85% because friction cost exceeds marginal revenue."
+    },
+    "estimacionHero": {
+      "badge": "Typical variance",
+      "subtitle": "What you promise vs what the calendar consumes",
+      "variance": "+80% timeline",
+      "promised": "Date promised in sales",
+      "promisedDays": "10 days",
+      "actual": "Actual duration (history)",
+      "actualDays": "18 days",
+      "caption": "Same landing type: keyboard effort does not explain the calendar. Client waits and concurrent load erode margin."
+    },
+    "esfuerzoVsDuracion": {
+      "effortLabel": "Effort (keyboard)",
+      "effortValue": "8 h",
+      "effortHint": "Design + applied changes",
+      "durationLabel": "Duration (calendar)",
+      "durationValue": "~7 days",
+      "durationHint": "From kick-off to approval",
+      "step": "Step {{n}}",
+      "steps": {
+        "design": { "title": "Initial design", "time": "6 h · 1 day" },
+        "wait": { "title": "Client wait", "time": "+4 days · 0 h" },
+        "changes": { "title": "Changes + other project", "time": "2 h · +2 days" },
+        "approval": { "title": "Final approval", "time": "Legal/review buffer" }
+      },
+      "caption": "Promising “Friday” from design hours alone ignores ~70% of the calendar."
+    },
+    "sesgosEstimacion": {
+      "intro": "Four voices distort the same number before it reaches the contract",
+      "roles": {
+        "sales": {
+          "title": "Sales / accounts",
+          "bias": "Fee optimism",
+          "effect": "Trims hours to win the pitch"
+        },
+        "pm": {
+          "title": "Project manager",
+          "bias": "Risk aversion",
+          "effect": "Hides buffers nobody explains"
+        },
+        "creative": {
+          "title": "Creative / tech",
+          "bias": "Defensive realism",
+          "effect": "Estimates pure execution; labelled “expensive”"
+        },
+        "client": {
+          "title": "Client",
+          "bias": "“Just a tweak”",
+          "effect": "Hides reviews and legal time"
+        }
+      },
+      "funnelLabel": "Number on the proposal",
+      "funnelResult": "Nobody believes it — and they turn out right",
+      "caption": "Estimation fails in negotiation, not in Excel."
+    },
+    "metodosEstimacion": {
+      "root": "Which method to use?",
+      "branches": {
+        "analogy": {
+          "title": "Historical analogy",
+          "when": "3–5 similar closed projects. Repeatable brief.",
+          "output": "Median actual hours by role"
+        },
+        "bottomUp": {
+          "title": "Bottom-up",
+          "when": "New or hybrid engagement. Costly error.",
+          "output": "Sum by deliverable + phase"
+        },
+        "pert": {
+          "title": "Three-point (PERT)",
+          "when": "New stack, uncertain integration, unknown platform.",
+          "output": "E = (O + 4P + Pes) / 6"
+        }
+      },
+      "caption": "Do not pick one forever: rotate by history and uncertainty."
+    },
+    "bufferCalculator": {
+      "title": "Contingency buffer",
+      "subtitle": "On 40 h base execution (example)",
+      "base": "Base effort",
+      "total": "Budget with buffer",
+      "scenarios": {
+        "known": {
+          "label": "Repeat client",
+          "note": "+10–20%: normal friction (reviews, coordination). Reliable history."
+        },
+        "ambiguous": {
+          "label": "Ambiguous brief",
+          "note": "+20–30% or separate billable Discovery. No references or exclusions."
+        },
+        "newTech": {
+          "label": "New technology",
+          "note": "+25–35% on the technical line + documented PERT before fixed fee."
+        }
+      },
+      "caption": "Split buffer by category (creative, PM, waits), not as opaque %."
+    },
+    "ritualEstimacion": {
+      "steps": {
+        "gate": { "title": "Brief gate", "body": "Goals, references, approvers, exclusions. Estimable yes/no?" },
+        "analogy": { "title": "Analogy", "body": "Median of 3–5 similar projects by role." },
+        "bottomUp": { "title": "Bottom-up", "body": "Net-new scope estimated separately + category buffers." },
+        "duration": { "title": "Duration", "body": "Cross with real capacity + client/legal waits." },
+        "committee": { "title": "30-min committee", "body": "Sales, ops, technical lead. Trim scope, not magic hours." }
+      },
+      "quote": "“No date goes to the client without this filter — even when it hurts.”",
+      "caption": "Five-step estimation ritual before promising date or fee."
+    },
+    "estimadoVsReal": {
+      "title": "Variance by role (typical project)",
+      "subtitle": "Web integration + creative — same SOW, different disciplines",
+      "aria": "Bar chart comparing estimated and actual hours by role",
+      "roles": { "copy": "Copy", "design": "Design", "dev": "Development", "pm": "PM" },
+      "estimated": "Estimated",
+      "actual": "Actual",
+      "legendEstimated": "Budgeted hours",
+      "legendActual": "Actual hours",
+      "caption": "Variance >20% in one project type = obsolete pricing, not “slow team”."
+    },
+    "tiposFeeEstimacion": {
+      "types": {
+        "fixed": {
+          "title": "Fixed price",
+          "estimate": "Analogy + bottom-up + high buffer. Duration to client.",
+          "risk": "Scope creep risk: change protocol mandatory."
+        },
+        "tm": {
+          "title": "Time & materials",
+          "estimate": "Daily/weekly cap + hour ceiling. Visible effort.",
+          "risk": "“No brake” perception: pacing reports."
+        },
+        "retainer": {
+          "title": "Monthly retainer",
+          "estimate": "Productive capacity × month, not 100% calendar.",
+          "risk": "Infinite scope risk: included/excluded list."
+        }
+      },
+      "caption": "Estimation method changes with how you bill — promising date ≠ promising capacity."
     }
   },
   "posts": {
