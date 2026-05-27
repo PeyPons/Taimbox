@@ -1,6 +1,6 @@
 // Edge Function: webhook de Stripe para actualizar agencies (suscripción)
 // Configurar en Stripe Dashboard la URL: https://<project>.supabase.co/functions/v1/stripe-webhook
-// Eventos: customer.subscription.created, customer.subscription.updated, customer.subscription.deleted
+// Eventos: customer.subscription.created|updated|deleted, invoice.payment_failed
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import Stripe from "npm:stripe@14.21.0";
 import {
@@ -93,6 +93,37 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 500,
       });
+    }
+  } else if (event.type === "invoice.payment_failed") {
+    const invoice = event.data.object as Stripe.Invoice;
+    const subId =
+      typeof invoice.subscription === "string"
+        ? invoice.subscription
+        : invoice.subscription?.id;
+    if (!subId) {
+      console.warn("invoice.payment_failed sin subscription:", invoice.id);
+      return new Response(JSON.stringify({ received: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+    try {
+      const sub = await stripe.subscriptions.retrieve(subId);
+      const agencyId = sub.metadata?.agency_id;
+      if (!agencyId) {
+        console.warn("invoice.payment_failed: subscription sin agency_id:", subId);
+      } else {
+        const { error } = await supabase
+          .from("agencies")
+          .update({
+            subscription_status: "past_due",
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", agencyId);
+        if (error) console.error("Error marking agency past_due:", error);
+      }
+    } catch (e) {
+      console.error("invoice.payment_failed handler error:", e);
     }
   } else if (event.type === "customer.subscription.deleted") {
     const sub = event.data.object as Stripe.Subscription;

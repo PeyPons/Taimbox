@@ -26,7 +26,7 @@ Funciones serverless que corren en Deno dentro del contenedor `supabase-edge-fun
 | `add-platform-admin` | `supabase/functions/add-platform-admin/index.ts` | Añade un usuario como admin de plataforma. |
 | `create-checkout-session` | `supabase/functions/create-checkout-session/index.ts` | Crea sesión de Stripe Checkout para suscripción (Pro/Business). Crea o recupera Customer, devuelve URL. Requiere `STRIPE_SECRET_KEY`. |
 | `create-billing-portal-session` | `supabase/functions/create-billing-portal-session/index.ts` | Crea sesión del Stripe Customer Portal (body: `agency_id`). Redirige al portal para gestionar tarjeta, facturas o cancelar suscripción. Requiere `STRIPE_SECRET_KEY`. |
-| `stripe-webhook` | `supabase/functions/stripe-webhook/index.ts` | Webhook Stripe: actualiza `agencies` (plan_id, subscription_status, trial_ends_at) según eventos de suscripción. Requiere `STRIPE_WEBHOOK_SECRET`. Opcional: `STRIPE_PRICE_ID_PRO` y `STRIPE_PRICE_ID_BUSINESS` para mapear plan por precio cuando los metadatos de la suscripción no reflejan el tier real. |
+| `stripe-webhook` | `supabase/functions/stripe-webhook/index.ts` | Webhook Stripe: actualiza `agencies` (plan_id, subscription_status, trial_ends_at) con `customer.subscription.created|updated|deleted` y marca `past_due` con `invoice.payment_failed`. Requiere `STRIPE_WEBHOOK_SECRET`. Opcional: `STRIPE_PRICE_ID_PRO` y `STRIPE_PRICE_ID_BUSINESS` para mapear plan por precio. En el Dashboard de Stripe, incluir también `invoice.payment_failed` en el endpoint del webhook. |
 | `send-welcome-email` | `supabase/functions/send-welcome-email/index.ts` | Endpoint HTTP opcional; delega en `_shared/welcome-and-invitation-email.ts` (misma lógica que `register-agency` / `invite-user-to-agency` / `create-user`). Body: `{ email, name, agencyName, type }`. Invitaciones: enlace recovery vía `_shared/password-recovery-url.ts`. Envío: `_shared/resend.ts` (igual que `request-password-reset`). Requiere `RESEND_API_KEY`. |
 | `send-contact-email` | `supabase/functions/send-contact-email/index.ts` | Envía email interno a `CONTACT_TO_EMAIL` (default `hello@taimbox.com`) desde el formulario público `/contacto` vía Resend. Body: `{ name, email, subject, message }`. Requiere `RESEND_API_KEY`. La página `src/pages/ContactoPage.tsx` usa `useTranslation('landing')` y las claves `static.contact.seoTitle` / `static.contact.seoDescription` en `src/locales/{es,en}/landing.json` para `SeoTags`. |
 | `request-password-reset` | `supabase/functions/request-password-reset/index.ts` | Genera enlace de recuperación (`_shared/password-recovery-url.ts`) y lo envía por email vía Resend. Body: `{ email }`. Funciona para cualquier usuario en `auth.users`. Siempre devuelve 200 (previene enumeración). No requiere autenticación. |
@@ -518,6 +518,8 @@ Si los logs muestran `main function started` seguido de `shutdown signal receive
      -e STRIPE_WEBHOOK_SECRET="$STRIPE_WEBHOOK_SECRET" \
      -e STRIPE_PRICE_ID_PRO="${STRIPE_PRICE_ID_PRO:-}" \
      -e STRIPE_PRICE_ID_BUSINESS="${STRIPE_PRICE_ID_BUSINESS:-}" \
+     -e CHECKOUT_BASE_URL="${CHECKOUT_BASE_URL:-https://taimbox.com}" \
+     -e REGISTRATION_NOTIFY_EMAIL="${REGISTRATION_NOTIFY_EMAIL:-}" \
      -e RESEND_API_KEY="$RESEND_API_KEY" \
      -e RESEND_FROM_EMAIL="${RESEND_FROM_EMAIL:-Taimbox <noreply@taimbox.com>}" \
      -e VERIFY_JWT="${FUNCTIONS_VERIFY_JWT:-true}" \
