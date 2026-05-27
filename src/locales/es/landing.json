@@ -456,9 +456,9 @@
     "recommended": "Recomendado",
     "earlyTariff": "Tarifa Early Adopter · de por vida",
     "currencyLabel": "Ver precios en",
-    "currencyBillingUsd": "Precios mostrados en USD a título orientativo. El cobro de la suscripción se realiza en EUR.",
-    "currencyBillingEur": "Importes convertidos desde USD. El cobro de la suscripción se realiza en EUR.",
-    "currencyBillingConverted": "Importes orientativos en {{currency}} (base USD). El cobro se realiza en EUR.",
+    "currencyBillingUsd": "Precios y suscripción en USD. El cobro se procesa en dólares vía Stripe.",
+    "currencyBillingEur": "Importes orientativos en EUR. La suscripción se cobra en USD.",
+    "currencyBillingConverted": "Importes orientativos en {{currency}}. La suscripción se cobra en USD.",
     "enterpriseTitle": "¿Más de 50 personas o necesitas algo a medida?",
     "enterpriseSub": "Enterprise sin límites · SLA · Soporte dedicado · Facturación personalizada",
     "enterpriseCta": "Hablar con ventas",
@@ -591,7 +591,7 @@
       },
       {
         "q": "¿La prueba de Business requiere tarjeta de crédito?",
-        "a": "Sí, Stripe te pedirá un método de pago al iniciar la suscripción, pero no se cobrará absolutamente nada durante los 14 días de prueba. Al finalizar se aplicará tu tarifa Business (facturación en EUR vía Stripe). Si cancelas antes, no habrá cargo."
+        "a": "Sí, Stripe te pedirá un método de pago al iniciar la suscripción, pero no se cobrará absolutamente nada durante los 14 días de prueba. Al finalizar se aplicará tu tarifa Business ($149/mes en USD). Si cancelas antes, no habrá cargo."
       },
       {
         "q": "¿Hay descuentos por pago anual?",

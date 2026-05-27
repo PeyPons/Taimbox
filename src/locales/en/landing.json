@@ -456,9 +456,9 @@
     "recommended": "Recommended",
     "earlyTariff": "Early adopter rate · for life",
     "currencyLabel": "Show prices in",
-    "currencyBillingUsd": "Prices shown in USD for reference. Subscription charges are processed in EUR.",
-    "currencyBillingEur": "Amounts converted from USD. Subscription charges are processed in EUR.",
-    "currencyBillingConverted": "Indicative amounts in {{currency}} (USD base). Charges are processed in EUR.",
+    "currencyBillingUsd": "Prices and subscription in USD. Charges are processed in US dollars via Stripe.",
+    "currencyBillingEur": "Indicative amounts in EUR. Your subscription is billed in USD.",
+    "currencyBillingConverted": "Indicative amounts in {{currency}}. Your subscription is billed in USD.",
     "enterpriseTitle": "More than 50 people or need something custom?",
     "enterpriseSub": "Unlimited Enterprise · SLA · Dedicated support · Custom billing",
     "enterpriseCta": "Talk to sales",
@@ -591,7 +591,7 @@
       },
       {
         "q": "Does the Business trial require a card?",
-        "a": "Yes, Stripe will ask for a payment method when you start the subscription, but nothing is charged during the 14-day trial. After that your Business rate applies (billed in EUR via Stripe). Cancel before and there’s no charge."
+        "a": "Yes, Stripe will ask for a payment method when you start the subscription, but nothing is charged during the 14-day trial. After that your Business rate applies ($149/month USD). Cancel before and there’s no charge."
       },
       {
         "q": "Are there annual discounts?",

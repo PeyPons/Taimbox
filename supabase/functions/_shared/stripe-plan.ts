@@ -2,6 +2,18 @@ import type Stripe from "npm:stripe@14.21.0";
 
 export type PaidPlanId = "pro" | "business";
 
+/** Suscripciones creadas antes del cambio a USD (Stripe live, EUR). */
+const LEGACY_EUR_PRICE_IDS: Record<PaidPlanId, string> = {
+  pro: "price_1T9CpPKEVG6SFdOYZ8tEm2f4",
+  business: "price_1T9CpLKEVG6SFdOY0hBKOFA6",
+};
+
+function priceIdMatchesPlan(priceId: string, planId: PaidPlanId, env: StripePlanEnv): boolean {
+  const current = getStripePriceIdForPlan(planId, env);
+  if (current && priceId === current) return true;
+  return priceId === LEGACY_EUR_PRICE_IDS[planId];
+}
+
 export interface StripePlanEnv {
   pricePro?: string;
   priceBusiness?: string;
@@ -42,10 +54,10 @@ export function resolvePlanIdFromSubscription(
     const priceId =
       typeof rawPrice === "string" ? rawPrice : (rawPrice as Stripe.Price | undefined)?.id;
 
-    if (priceId && env.priceBusiness && priceId === env.priceBusiness) {
+    if (priceId && priceIdMatchesPlan(priceId, "business", env)) {
       return "business";
     }
-    if (priceId && env.pricePro && priceId === env.pricePro) {
+    if (priceId && priceIdMatchesPlan(priceId, "pro", env)) {
       return "pro";
     }
 
@@ -79,8 +91,8 @@ export async function resolvePlanIdFromSubscriptionAsync(
     const priceId =
       typeof rawPrice === "string" ? rawPrice : (rawPrice as Stripe.Price | undefined)?.id;
     if (!priceId) continue;
-    if (env.priceBusiness && priceId === env.priceBusiness) matchedByEnv = true;
-    if (env.pricePro && priceId === env.pricePro) matchedByEnv = true;
+    if (priceIdMatchesPlan(priceId, "business", env)) matchedByEnv = true;
+    if (priceIdMatchesPlan(priceId, "pro", env)) matchedByEnv = true;
   }
 
   if (matchedByEnv) return sync;

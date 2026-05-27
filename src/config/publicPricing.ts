@@ -1,6 +1,6 @@
 import type { AgencyCurrencyCode } from '@/constants/currencies';
 
-/** Planes mostrados en home (s07) y /precios. Importes base en USD; cobro Stripe en EUR. */
+/** Planes mostrados en home (s07) y /precios. Importes base y cobro Stripe en USD. */
 export type PublicPlanId = 'starter' | 'pro' | 'business' | 'enterprise';
 
 export interface PublicPlanPricing {
