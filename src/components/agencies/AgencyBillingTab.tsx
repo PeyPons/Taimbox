@@ -180,8 +180,8 @@ export function AgencyBillingTab() {
 
   // Business button label: show trial only if not used yet
   const businessLabel = trialUsedAt
-    ? 'Business (149 €/mes)'
-    : 'Business (149 €/mes, 14 días de prueba)';
+    ? 'Business ($149/mes)'
+    : 'Business ($149/mes, 14 días de prueba)';
 
   return (
     <div className="space-y-6">
@@ -303,7 +303,7 @@ export function AgencyBillingTab() {
                   ) : (
                     <>
                       <ExternalLink className="h-4 w-4 mr-1" />
-                      Pro (49 €/mes)
+                      Pro ($49/mes)
                     </>
                   )}
                 </Button>
@@ -370,14 +370,14 @@ export function AgencyBillingTab() {
               <div className="space-y-3">
                 <p>
                   Vas a cambiar de <strong>{PLAN_NAMES[planId]}</strong> a{' '}
-                  <strong>{PLAN_NAMES[confirmDialog.targetPlan]}</strong> ({PLAN_PRICES[confirmDialog.targetPlan]} €/mes).
+                  <strong>{PLAN_NAMES[confirmDialog.targetPlan]}</strong> (${PLAN_PRICES[confirmDialog.targetPlan]}/mes).
                 </p>
 
                 {confirmDialog.loseTrial && (
                   <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-md text-amber-800 text-sm">
                     <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-amber-600" />
                     <span>
-                      Estás en periodo de prueba Business. Al cambiar a Pro, <strong>la prueba terminará inmediatamente</strong> y se cobrará Pro (49 €/mes) desde hoy.
+                      Estás en periodo de prueba Business. Al cambiar a Pro, <strong>la prueba terminará inmediatamente</strong> y se cobrará Pro ($49/mes) desde hoy.
                     </span>
                   </div>
                 )}
