@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { pathEsToEn } from '@/i18n/publicPaths';
 import { SeoTags } from '@/seo/SeoTags';
-import { Mail, Send, CheckCircle2, Phone, MapPin, Loader2, AlertCircle } from 'lucide-react';
+import { Mail, Send, CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
 import { LandingHeader } from '@/components/landing/LandingHeader';
 import { LandingFooter } from '@/components/landing/LandingFooter';
 import { Button } from '@/components/ui/button';
@@ -102,15 +102,25 @@ export default function ContactoPage() {
                 description={t('static.contact.seoDescription')}
                 lang={lang}
             />
-        <div className="min-h-screen bg-slate-950 flex flex-col font-sans selection:bg-indigo-500/30 overflow-x-hidden">
+        <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-indigo-900 relative overflow-hidden flex flex-col font-sans selection:bg-indigo-500/30">
+            <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden>
+                <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-3xl opacity-50" />
+                <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl opacity-50" />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-indigo-500/10 rounded-full blur-3xl opacity-30" />
+            </div>
+            <div
+                className="absolute inset-0 opacity-10 pointer-events-none"
+                aria-hidden
+                style={{
+                    backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
+                    backgroundSize: '50px 50px',
+                }}
+            />
+
             <LandingHeader />
 
-            <main className="flex-1 relative pt-24 pb-16 sm:pt-32 sm:pb-24">
-                {/* Background glows */}
-                <div className="absolute top-1/4 -left-64 w-96 h-96 bg-indigo-500/20 rounded-full blur-[128px] opacity-50 mix-blend-screen pointer-events-none" />
-                <div className="absolute bottom-0 -right-64 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[128px] opacity-50 mix-blend-screen pointer-events-none" />
-
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <main className="relative z-10 flex-1 pt-24 pb-16 sm:pt-32 sm:pb-24">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center max-w-2xl mx-auto mb-16">
                         <h1 className="text-4xl sm:text-5xl font-extrabold text-white tracking-tight mb-6 mt-4">
                             ¿En qué podemos <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">ayudarte?</span>
@@ -162,17 +172,14 @@ export default function ContactoPage() {
                             </Card>
                         </div>
 
-                        {/* Form */}
+                        {/* Form — panel claro para mejor legibilidad */}
                         <div className="lg:col-span-3">
-                            <Card className="bg-slate-900 border-white/10 shadow-2xl overflow-hidden relative">
-                                {/* Decorative top border */}
-                                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 opacity-50" />
-
+                            <Card className="bg-white border-slate-200/80 shadow-xl shadow-black/10">
                                 <CardContent className="p-8">
                                     <form onSubmit={handleSubmit} className="space-y-6">
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                             <div className="space-y-2">
-                                                <label htmlFor="name" className="text-sm font-medium text-slate-300">Nombre completo</label>
+                                                <label htmlFor="name" className="text-sm font-medium text-slate-700">Nombre completo</label>
                                                 <Input
                                                     id="name"
                                                     name="name"
@@ -181,11 +188,11 @@ export default function ContactoPage() {
                                                     required
                                                     maxLength={INPUT_LIMITS.personName}
                                                     placeholder="Tu nombre"
-                                                    className="bg-slate-950 border-slate-800 text-white placeholder:text-slate-600 focus-visible:ring-indigo-500"
+                                                    className="bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus-visible:ring-indigo-500"
                                                 />
                                             </div>
                                             <div className="space-y-2">
-                                                <label htmlFor="email" className="text-sm font-medium text-slate-300">Email de trabajo</label>
+                                                <label htmlFor="email" className="text-sm font-medium text-slate-700">Email de trabajo</label>
                                                 <Input
                                                     id="email"
                                                     name="email"
@@ -195,13 +202,13 @@ export default function ContactoPage() {
                                                     required
                                                     maxLength={INPUT_LIMITS.email}
                                                     placeholder="tu@empresa.com"
-                                                    className="bg-slate-950 border-slate-800 text-white placeholder:text-slate-600 focus-visible:ring-indigo-500"
+                                                    className="bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus-visible:ring-indigo-500"
                                                 />
                                             </div>
                                         </div>
 
                                         <div className="space-y-2">
-                                            <label htmlFor="subject" className="text-sm font-medium text-slate-300">Asunto</label>
+                                            <label htmlFor="subject" className="text-sm font-medium text-slate-700">Asunto</label>
                                             <Input
                                                 id="subject"
                                                 name="subject"
@@ -210,12 +217,12 @@ export default function ContactoPage() {
                                                 required
                                                 maxLength={INPUT_LIMITS.contactSubject}
                                                 placeholder="¿Sobre qué quieres hablarnos?"
-                                                className="bg-slate-950 border-slate-800 text-white placeholder:text-slate-600 focus-visible:ring-indigo-500"
+                                                className="bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus-visible:ring-indigo-500"
                                             />
                                         </div>
 
                                         <div className="space-y-2">
-                                            <label htmlFor="message" className="text-sm font-medium text-slate-300">Mensaje</label>
+                                            <label htmlFor="message" className="text-sm font-medium text-slate-700">Mensaje</label>
                                             <Textarea
                                                 id="message"
                                                 name="message"
@@ -224,7 +231,7 @@ export default function ContactoPage() {
                                                 required
                                                 maxLength={INPUT_LIMITS.contactMessage}
                                                 placeholder="Escribe tu mensaje aquí..."
-                                                className="min-h-[150px] bg-slate-950 border-slate-800 text-white placeholder:text-slate-600 focus-visible:ring-indigo-500 resize-y"
+                                                className="min-h-[150px] bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus-visible:ring-indigo-500 resize-y"
                                             />
                                         </div>
 
@@ -249,15 +256,17 @@ export default function ContactoPage() {
                                         {status !== 'idle' && (
                                             <div
                                                 className={`flex items-start gap-3 rounded-lg border px-4 py-3 ${
-                                                    status === 'sent' ? 'border-emerald-700/40 bg-emerald-500/10' : 'border-rose-700/40 bg-rose-500/10'
+                                                    status === 'sent'
+                                                        ? 'border-emerald-200 bg-emerald-50'
+                                                        : 'border-rose-200 bg-rose-50'
                                                 }`}
                                             >
                                                 {status === 'sent' ? (
-                                                    <CheckCircle2 className="w-5 h-5 text-emerald-300 mt-0.5" />
+                                                    <CheckCircle2 className="w-5 h-5 text-emerald-600 mt-0.5 shrink-0" />
                                                 ) : (
-                                                    <AlertCircle className="w-5 h-5 text-rose-300 mt-0.5" />
+                                                    <AlertCircle className="w-5 h-5 text-rose-600 mt-0.5 shrink-0" />
                                                 )}
-                                                <div className="text-sm text-slate-100">
+                                                <div className={`text-sm ${status === 'sent' ? 'text-emerald-800' : 'text-rose-800'}`}>
                                                     {statusMessage}
                                                 </div>
                                             </div>
