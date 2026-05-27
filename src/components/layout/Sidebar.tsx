@@ -31,17 +31,17 @@ import {
   MessageCircle,
   Building2,
   Clock,
-  Square,
   Activity,
   DollarSign,
   FileText,
-  Sparkles,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { useActiveTimerForSidebar } from '@/hooks/useActiveTimerForSidebar';
+import { SidebarTimerPanel } from '@/components/layout/SidebarTimerPanel';
+import { buildAgencyAwarePath, useSupportAgencyView } from '@/hooks/useSupportAgencyView';
 import { SensitiveText } from '@/components/privacy/SensitiveText';
 import { TaimboxLogo } from '@/components/brand/TaimboxLogo';
 import { SidebarImpersonationPanel } from '@/components/admin/ImpersonationBanner';
@@ -92,6 +92,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const navigate = useNavigate();
   const { currentUser, employees, projects, isLoading: isAppDataLoading } = useApp();
   const { canAccess, hasPermission } = usePermissions();
+  const { agencyId } = useSupportAgencyView();
   const { currentAgency, isLoading: isAgencyLoading } = useAgency();
   const { t } = useAppTranslation();
 
@@ -162,6 +163,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   const isTimeTrackerEnabled = modules.timeTracker === true;
   const activeTimer = useActiveTimerForSidebar(isTimeTrackerEnabled ? currentUser?.id : undefined);
+  const canOpenTimes = modules.timeTracker && canAccess('/team');
+  const timesHref = canOpenTimes ? buildAgencyAwarePath('/tiempos', agencyId) : null;
 
   // Misma magnitud que TaskTimer/useTaskTimer: base hoy en la tarea + sesión en curso (tick 1s)
   const [displayTotalSeconds, setDisplayTotalSeconds] = useState(0);
@@ -235,52 +238,17 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             </NavLink>
           </div>
 
-          {/* Cronómetro: tarea primero, cliente debajo (UX clara) */}
           {isTimeTrackerEnabled && (
-            <div className="mb-4 px-3 py-2 rounded-lg bg-slate-800/60 border border-slate-700/50 min-w-0">
-              <div className="flex items-start gap-2 min-w-0 mb-1.5">
-                <Clock className="h-3.5 w-3.5 text-slate-400 shrink-0 mt-0.5" />
-                <div className="min-w-0 flex-1">
-                  <div
-                    className="text-slate-200 text-xs font-medium truncate"
-                    title={activeTimer.isActive ? (activeTimer.taskName || '') + (activeTimer.clientName ? ` · ${t('sidebar.timer.client', 'Cliente:')} ${activeTimer.clientName}` : '') : undefined}
-                  >
-                    {activeTimer.isActive ? (activeTimer.taskName || t('sidebar.timer.taskInProgress', 'Tarea en curso')) : t('sidebar.timer.totalRegistered', 'Total registrado')}
-                  </div>
-                  {activeTimer.isActive && activeTimer.clientName && (
-                    <div className="text-[11px] text-slate-500 truncate mt-0.5">
-                      {t('sidebar.timer.client', 'Cliente:')} {activeTimer.clientName}
-                    </div>
-                  )}
-                </div>
-              </div>
-              {activeTimer.isActive ? (
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-sm text-emerald-400 font-mono tabular-nums">{formattedLiveTime}</span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 px-2 text-red-400 hover:text-red-300 hover:bg-red-950/40 text-xs shrink-0"
-                      onClick={async () => {
-                        await activeTimer.stopCurrentTimer();
-                        onClose();
-                      }}
-                    >
-                      <Square className="h-3 w-3 fill-current mr-1" />
-                      {t('sidebar.timer.stop', 'Parar')}
-                    </Button>
-                  </div>
-                  <div className="text-[11px] text-slate-500">
-                    {t('sidebar.timer.todayTotal', 'Hoy en total:')} {activeTimer.formattedTimeLabel}
-                  </div>
-                </div>
-              ) : (
-                <div className="text-sm text-slate-400">
-                  {activeTimer.formattedTimeLabel}
-                </div>
-              )}
-            </div>
+            <SidebarTimerPanel
+              activeTimer={activeTimer}
+              formattedLiveTime={formattedLiveTime}
+              timesHref={timesHref}
+              timesActive={location.pathname === '/tiempos'}
+              onStop={async () => {
+                await activeTimer.stopCurrentTimer();
+                onClose();
+              }}
+            />
           )}
 
           {/* Employee View: Simple & Focused */}
@@ -346,10 +314,10 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               )}
 
               {/* EQUIPO */}
-              {(canAccess('/team') || canAccess('/okrs') || canAccess('/review-agents') || (modules.timeTracker && canAccess('/team'))) && (
+              {(canAccess('/team') || canAccess('/okrs') || (modules.timeTracker && canAccess('/team'))) && (
                 <NavGroup
                   label={t('sidebar.groups.team', 'Equipo')}
-                  isActive={['/team', '/okrs', '/tiempos', '/review-agents'].includes(location.pathname)}
+                  isActive={['/team', '/okrs', '/tiempos'].includes(location.pathname)}
                 >
                   {canAccess('/team') && (
                     <NavLink to="/team" icon={Users} active={location.pathname === '/team'}>
@@ -364,15 +332,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   {modules.professionalGoals !== false && canAccess('/okrs') && (
                     <NavLink to="/okrs" icon={Rocket} active={location.pathname === '/okrs'}>
                       {t('sidebar.menu.okrs', 'Objetivos')}
-                    </NavLink>
-                  )}
-                  {canAccess('/review-agents') && (
-                    <NavLink
-                      to={import.meta.env.VITE_REVIEW_PORTAL_URL ?? 'https://review.taimbox.com'}
-                      external
-                      icon={Sparkles}
-                    >
-                      {t('sidebar.menu.reviewAgents', 'Revisión IA')}
                     </NavLink>
                   )}
                 </NavGroup>

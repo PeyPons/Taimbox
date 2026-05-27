@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getWeeklyProcessedAllocationIds } from '@/utils/weeklyCloseShared';
 import { useApp } from '@/contexts/AppContext';
 import { useAgency } from '@/contexts/AgencyContext';
@@ -63,6 +64,7 @@ import { PendingTransfersPanel } from '@/components/transfers/TaskTransferCompon
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
 import { usePlatformAdmin } from '@/hooks/usePlatformAdmin';
 import { Link, Navigate } from 'react-router-dom';
+import { buildAgencyAwarePath, useSupportAgencyView } from '@/hooks/useSupportAgencyView';
 
 const INTERNAL_CLIENT_NAME = 'Interno';
 const INTERNAL_PROJECT_NAME = 'Gestiones internas';
@@ -81,6 +83,8 @@ export default function EmployeeDashboard() {
   const { isPlatformAdmin, isLoading: isPlatformAdminLoading } = usePlatformAdmin();
   const isManager = canAccess('/planner') || canAccess('/operaciones') || canAccess('/finanzas');
 
+  const navigate = useNavigate();
+  const { agencyId } = useSupportAgencyView();
   const { activeView, showToggle, setView, isSaving: isSavingViewPref } = useDashboardView();
 
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -312,6 +316,36 @@ export default function EmployeeDashboard() {
     }]);
     setIsAddingTasks(true);
   };
+
+  const handleOpenPlanningFromMyDay = useCallback(() => {
+    if (currentAgency?.setupCompleted === false) {
+      toast.info(
+        t(
+          'team.dashboard.finishOnboardingFirst',
+          'Termina la configuración inicial (Explorar ya o Configurar mi agencia) para acceder al planificador.'
+        )
+      );
+      navigate('/onboarding/choose', { replace: true });
+      return;
+    }
+    if (canAccess('/planner')) {
+      navigate(buildAgencyAwarePath('/planner', agencyId));
+      return;
+    }
+    if (canAccess('/deadlines')) {
+      navigate(buildAgencyAwarePath('/deadlines', agencyId));
+      return;
+    }
+    if (showToggle && activeView === 'daily') {
+      void setView('weekly').then(() => {
+        window.setTimeout(() => {
+          document.querySelector('[data-tour="calendar"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 150);
+      });
+      return;
+    }
+    openAddTasksDialog();
+  }, [canAccess, navigate, agencyId, showToggle, activeView, setView, openAddTasksDialog, currentAgency?.setupCompleted, t]);
 
   const handleAddTasksOpenChange = (open: boolean) => {
     if (!open) {
@@ -861,6 +895,7 @@ export default function EmployeeDashboard() {
           employeeId={myEmployeeProfile.id}
           viewDate={currentMonth}
           weeklyEnabled={isWeeklyFeedbackEnabled}
+          onOpenPlanning={handleOpenPlanningFromMyDay}
           onOpenWeeklyForAllocation={(allocationId) => {
             setWeeklyFocusAllocationId(allocationId);
             setShowWeeklyDialog(true);

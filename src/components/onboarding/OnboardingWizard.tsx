@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -21,6 +21,7 @@ import {
   UserCircle,
   FolderKanban,
   Check,
+  Circle,
   ArrowRight,
   ArrowLeft,
   Sparkles,
@@ -63,6 +64,11 @@ import { cn } from '@/lib/utils';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { OnboardingCallout } from '@/components/onboarding/OnboardingCallout';
+import {
+  buildRecommendedAgencySettings,
+  quickChecklistStorageKey,
+  ONBOARDING_WIZARD_ALLOWED_KEY,
+} from '@/utils/onboardingDefaults';
 
 const ONBOARDING_STEP_KEY = 'onboarding_wizard_step_v2';
 
@@ -73,12 +79,61 @@ const DEFAULT_EHR_SUGGESTION = 75;
 const obPanel = 'rounded-xl border border-slate-200/90 bg-white shadow-sm';
 const obModuleRow = 'rounded-xl border border-slate-200/90 bg-gradient-to-b from-white to-slate-50/40 p-4 shadow-sm';
 
-function obHourOption(selected: boolean) {
-  return cn(
-    'rounded-xl border text-left text-sm transition-all shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-indigo-400',
-    selected
-      ? 'border-indigo-500 ring-2 ring-indigo-100/80 bg-indigo-50/60 shadow-md'
-      : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-md'
+function HoursModeMiniVisual({ mode, selected }: { mode: 'computed' | 'actual'; selected: boolean }) {
+  const { t } = useAppTranslation();
+  const barActive = selected ? 'bg-indigo-500' : 'bg-indigo-400/90';
+  const barMuted = selected ? 'bg-slate-500' : 'bg-slate-400';
+
+  if (mode === 'computed') {
+    return (
+      <div
+        className={cn(
+          'rounded-lg border p-3 space-y-2.5 transition-colors',
+          selected ? 'border-indigo-200/90 bg-white/90' : 'border-slate-200/90 bg-slate-50/80'
+        )}
+        aria-hidden
+      >
+        <div className="space-y-1">
+          <div className="flex items-center justify-between gap-2 text-[10px] font-medium uppercase tracking-wide text-slate-500">
+            <span>{t('onboarding.hours.vizDedicated', 'Dedicadas')}</span>
+            <span className="tabular-nums normal-case text-slate-700">1,5 h</span>
+          </div>
+          <div className="h-2 overflow-hidden rounded-full bg-slate-200/90">
+            <div className={cn('h-full w-[58%] rounded-full transition-colors', barMuted)} />
+          </div>
+        </div>
+        <div className="space-y-1">
+          <div className="flex items-center justify-between gap-2 text-[10px] font-medium uppercase tracking-wide text-indigo-700">
+            <span>{t('onboarding.hours.vizComputed', 'Computadas')}</span>
+            <span className="tabular-nums normal-case font-semibold">2 h</span>
+          </div>
+          <div className="h-2 overflow-hidden rounded-full bg-indigo-100">
+            <div className={cn('h-full w-[78%] rounded-full transition-colors', barActive)} />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className={cn(
+        'rounded-lg border p-3 space-y-2 transition-colors',
+        selected ? 'border-indigo-200/90 bg-white/90' : 'border-slate-200/90 bg-slate-50/80'
+      )}
+      aria-hidden
+    >
+      <div className="flex items-center justify-between gap-2 text-[10px] font-medium uppercase tracking-wide text-slate-500">
+        <span>{t('onboarding.hours.vizActual', 'Tiempo registrado')}</span>
+        <span className="tabular-nums normal-case font-semibold text-slate-800">2 h</span>
+      </div>
+      <div className="h-2.5 overflow-hidden rounded-full bg-slate-200/90">
+        <div className={cn('h-full w-full rounded-full transition-colors', barActive)} />
+      </div>
+      <p className="text-[10px] text-slate-500 leading-snug">
+        {t('onboarding.hours.vizActualHint', 'Una sola cifra: lo imputado = lo trabajado')}
+      </p>
+    </div>
   );
 }
 
@@ -88,42 +143,94 @@ function OnboardingHoursModeCard({
   title,
   bullets,
   icon: Icon,
+  mode,
+  recommended,
 }: {
   selected: boolean;
   onSelect: () => void;
   title: string;
   bullets: string[];
   icon: LucideIcon;
+  mode: 'computed' | 'actual';
+  recommended?: boolean;
 }) {
+  const { t } = useAppTranslation();
+
   return (
     <button
       type="button"
+      role="radio"
+      aria-checked={selected}
       onClick={onSelect}
-      className={cn(obHourOption(selected), 'flex w-full flex-col gap-3 p-4 sm:p-5')}
+      className={cn(
+        'group relative flex w-full flex-col gap-3 overflow-hidden rounded-2xl border text-left transition-all duration-200',
+        'outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2',
+        selected
+          ? 'border-indigo-400 bg-gradient-to-b from-indigo-50/95 via-white to-white shadow-lg shadow-indigo-100/60'
+          : 'border-slate-200/90 bg-white hover:border-slate-300 hover:shadow-md'
+      )}
     >
-      <div className="flex gap-3">
+      {selected ? (
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-indigo-500 via-violet-500 to-indigo-400"
+          aria-hidden
+        />
+      ) : null}
+
+      <div className="flex items-start justify-between gap-2 px-4 pt-4 sm:px-5 sm:pt-5">
         <div
           className={cn(
-            'flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border',
+            'flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border shadow-sm transition-colors',
             selected
-              ? 'border-indigo-200 bg-white text-indigo-600'
-              : 'border-slate-200 bg-slate-50 text-slate-600'
+              ? 'border-indigo-200/80 bg-gradient-to-br from-indigo-100 to-white text-indigo-600'
+              : 'border-slate-200 bg-slate-50 text-slate-600 group-hover:border-slate-300'
           )}
           aria-hidden
         >
           <Icon className="h-5 w-5 shrink-0" strokeWidth={1.75} />
         </div>
-        <div className="min-w-0 flex-1 space-y-2">
-          <span className="block text-sm font-semibold leading-snug text-slate-900">{title}</span>
-          <ul className="space-y-1.5 text-left">
-            {bullets.map((line, i) => (
-              <li key={i} className="flex gap-2 text-xs leading-relaxed text-slate-600">
-                <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-slate-400" aria-hidden />
-                <span>{line}</span>
-              </li>
-            ))}
-          </ul>
+        <div
+          className={cn(
+            'flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition-all',
+            selected
+              ? 'border-indigo-600 bg-indigo-600 text-white'
+              : 'border-slate-300 bg-white text-transparent group-hover:border-slate-400'
+          )}
+          aria-hidden
+        >
+          {selected ? <Check className="h-3.5 w-3.5 stroke-[3]" /> : <Circle className="h-2 w-2 text-slate-200" />}
         </div>
+      </div>
+
+      <div className="space-y-3 px-4 pb-4 sm:px-5 sm:pb-5">
+        <div className="space-y-1 pr-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-sm font-semibold leading-snug text-slate-900 sm:text-base">{title}</span>
+            {recommended ? (
+              <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-indigo-800">
+                {t('onboarding.hours.badgeCommon', 'Habitual')}
+              </span>
+            ) : null}
+          </div>
+        </div>
+
+        <HoursModeMiniVisual mode={mode} selected={selected} />
+
+        <ul className="space-y-1.5 rounded-lg border border-slate-100 bg-slate-50/60 px-3 py-2.5">
+          {bullets.map((line, i) => (
+            <li key={i} className="flex gap-2 text-xs leading-relaxed text-slate-600">
+              <Check
+                className={cn(
+                  'mt-0.5 h-3.5 w-3.5 shrink-0',
+                  selected ? 'text-indigo-500' : 'text-slate-400'
+                )}
+                strokeWidth={2.5}
+                aria-hidden
+              />
+              <span>{line}</span>
+            </li>
+          ))}
+        </ul>
       </div>
     </button>
   );
@@ -318,6 +425,8 @@ const CLIENT_COLORS = [
 
 export default function OnboardingWizard() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isGuidedMode = searchParams.get('mode') !== 'quick';
   const { t } = useAppTranslation();
   const { planId } = useSubscriptionLimits();
   const {
@@ -346,10 +455,10 @@ export default function OnboardingWizard() {
       },
       {
         id: 'integrations',
-        title: t('onboarding.steps.integrations.title', 'Enlaces externos (opcional)'),
+        title: t('onboarding.steps.integrations.title', 'IDs externos (opcional)'),
         description: t(
           'onboarding.steps.integrations.desc',
-          'Opcional: enlace CRM para exportación CSV. Weekly se configura en el paso anterior (Funciones del producto).'
+          'Opcional: asigna identificadores en perfiles y proyectos y exporta la planificación a CSV.'
         ),
         icon: <Plug className="h-5 w-5" />,
       },
@@ -514,6 +623,11 @@ export default function OnboardingWizard() {
 
   const currentStepIndex = STEPS.findIndex((x) => x.id === currentStep);
 
+  const resolveClientIdForProject = useCallback(
+    () => createdClientId ?? clients[0]?.id ?? null,
+    [createdClientId, clients]
+  );
+
   const goToNextStep = () => {
     const i = currentStepIndex + 1;
     if (i < STEPS.length) setCurrentStep(STEPS[i].id);
@@ -552,30 +666,52 @@ export default function OnboardingWizard() {
     [currentAgency?.id]
   );
 
+  const persistAgencyProfileSettings = async (recommended: boolean) => {
+    if (recommended) {
+      const rec = buildRecommendedAgencySettings(planId);
+      const modules = rec.modules ?? {};
+      await updateSettings({
+        ...rec,
+        modules,
+      });
+      return;
+    }
+    const ehrTarget = parsePositiveDecimalInput(ehrInput, DEFAULT_EHR_SUGGESTION, 1);
+    const weeklyOn = modWeekly && moduleAllowed(planId, 'weeklyFeedback');
+    const modules: AgencyModules = {
+      ppc: moduleAllowed(planId, 'ppc') ? (currentAgency?.settings?.modules?.ppc ?? false) : false,
+      weeklyFeedback: weeklyOn,
+      professionalGoals: modGoals && moduleAllowed(planId, 'professionalGoals'),
+      deadlines: modDeadlines && moduleAllowed(planId, 'deadlines'),
+      timeTracker: modTracker && moduleAllowed(planId, 'timeTracker'),
+    };
+    await updateSettings({
+      ehrTarget,
+      hoursTrackingPreference: hoursPref,
+      modules,
+      weeklyCloseDay: weeklyOn ? weeklyCloseDay : undefined,
+      timeTrackerMaxHours: modTracker ? timeTrackerMaxHours : undefined,
+    });
+  };
+
   const handleAgencyProfileSubmit = async () => {
     setIsProcessing(true);
     try {
-      const ehrTarget = parsePositiveDecimalInput(
-        ehrInput,
-        DEFAULT_EHR_SUGGESTION,
-        1
-      );
-      const weeklyOn = modWeekly && moduleAllowed(planId, 'weeklyFeedback');
-      const modules: AgencyModules = {
-        // PPC no se activa en onboarding: requiere OAuth en Conexiones (panel de agencia).
-        ppc: moduleAllowed(planId, 'ppc') ? (currentAgency?.settings?.modules?.ppc ?? false) : false,
-        weeklyFeedback: weeklyOn,
-        professionalGoals: modGoals && moduleAllowed(planId, 'professionalGoals'),
-        deadlines: modDeadlines && moduleAllowed(planId, 'deadlines'),
-        timeTracker: modTracker && moduleAllowed(planId, 'timeTracker'),
-      };
-      await updateSettings({
-        ehrTarget,
-        hoursTrackingPreference: hoursPref,
-        modules,
-        weeklyCloseDay: weeklyOn ? weeklyCloseDay : undefined,
-        timeTrackerMaxHours: modTracker ? timeTrackerMaxHours : undefined,
-      });
+      await persistAgencyProfileSettings(false);
+      goToNextStep();
+    } catch (e) {
+      console.error(e);
+      toast.error(t('onboarding.errors.save', 'Error al guardar'));
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleAgencyProfileRecommended = async () => {
+    setIsProcessing(true);
+    try {
+      await persistAgencyProfileSettings(true);
+      toast.success(t('onboarding.profile.recommendedApplied', 'Valores por defecto aplicados.'));
       goToNextStep();
     } catch (e) {
       console.error(e);
@@ -868,10 +1004,67 @@ export default function OnboardingWizard() {
     }
   };
 
+  const finishOnboarding = async (showQuickChecklist = false) => {
+    await completeSetup();
+    if (showQuickChecklist && currentAgency?.id && typeof window !== 'undefined') {
+      localStorage.setItem(quickChecklistStorageKey(currentAgency.id), '1');
+    }
+    toast.success(t('onboarding.done', '¡Configuración completada!'));
+    localStorage.removeItem(ONBOARDING_STEP_KEY);
+    localStorage.removeItem('onboarding_step');
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem(ONBOARDING_WIZARD_ALLOWED_KEY);
+    }
+    navigate('/planner', { replace: true });
+  };
+
+  const handleClientSkip = async () => {
+    setIsProcessing(true);
+    try {
+      if (!resolveClientIdForProject()) {
+        toast.info(
+          t(
+            'onboarding.client.skipFinishes',
+            'Sin cliente no hace falta crear un proyecto. Podrás añadir ambos después en Clientes y proyectos.'
+          )
+        );
+        await finishOnboarding(true);
+        return;
+      }
+      goToNextStep();
+    } catch {
+      toast.error(t('onboarding.errors.save', 'Error al guardar'));
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleProjectSkip = async () => {
+    setIsProcessing(true);
+    try {
+      await finishOnboarding(true);
+    } catch {
+      toast.error(t('onboarding.errors.save', 'Error al guardar'));
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const autoFinishProjectWithoutClient = useRef(false);
+
+  // Reanudación guardada en paso «proyecto» sin ningún cliente
+  useEffect(() => {
+    if (currentStep !== 'project' || isAgencyLoading) return;
+    if (resolveClientIdForProject()) return;
+    if (autoFinishProjectWithoutClient.current) return;
+    autoFinishProjectWithoutClient.current = true;
+    void finishOnboarding(true);
+  }, [currentStep, isAgencyLoading, resolveClientIdForProject]);
+
   const handleProjectSubmit = async (data: z.infer<typeof projectSchema>) => {
     setIsProcessing(true);
     try {
-      const clientId = createdClientId || clients[0]?.id;
+      const clientId = resolveClientIdForProject();
       if (!clientId) {
         toast.error(t('onboarding.errors.noClient', 'No hay cliente'));
         return;
@@ -902,11 +1095,7 @@ export default function OnboardingWizard() {
         deliverableStartDate: deliverableStartDate ?? undefined,
         deliverableDueDate: deliverableDueDate ?? undefined,
       });
-      await completeSetup();
-      toast.success(t('onboarding.done', '¡Configuración completada!'));
-      localStorage.removeItem(ONBOARDING_STEP_KEY);
-      localStorage.removeItem('onboarding_step');
-      navigate('/planner', { replace: true });
+      await finishOnboarding();
     } catch {
       toast.error(t('onboarding.errors.project', 'Error al crear el proyecto'));
     } finally {
@@ -1001,11 +1190,11 @@ export default function OnboardingWizard() {
             <CardDescription className="mx-auto mt-0.5 max-w-2xl text-[11px] leading-snug text-slate-600 sm:text-xs line-clamp-2 sm:line-clamp-3">
               {STEPS[currentStepIndex]?.description}
             </CardDescription>
-            {currentStep === 'agencyProfile' ? (
+            {currentStep === 'agencyProfile' && isGuidedMode ? (
               <p className="mx-auto mt-1 max-w-xl text-[11px] leading-snug text-slate-500 sm:text-xs">
                 {t(
-                  'onboarding.wizard.timeAndReadyFirst',
-                  'Suele tardar poco. Si cerráis, guardamos el paso y podéis seguir después.'
+                  'onboarding.wizard.guidedDuration',
+                  'Unos 8–12 min. Si cerráis, guardamos el paso y podéis seguir después.'
                 )}
               </p>
             ) : null}
@@ -1016,6 +1205,25 @@ export default function OnboardingWizard() {
               <div className={cn('space-y-6 w-full mx-auto', onboardingContentMax)}>
             {currentStep === 'agencyProfile' && (
               <div className="flex flex-col gap-5 min-h-0">
+                <div className="rounded-xl border border-indigo-200/80 bg-indigo-50/50 p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <p className="text-xs text-slate-700 leading-snug">
+                    {t(
+                      'onboarding.profile.recommendedLead',
+                      '¿Quieres ir más rápido? Dejamos unos valores por defecto sensatos; podrás cambiarlos cuando quieras en Configuración de agencia.'
+                    )}
+                  </p>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="shrink-0 gap-1.5"
+                    disabled={isProcessing}
+                    onClick={handleAgencyProfileRecommended}
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    {t('onboarding.profile.useRecommended', 'Usar valores por defecto')}
+                  </Button>
+                </div>
                 <div className="space-y-5 min-w-0">
                   <div className="space-y-3 min-w-0">
                     <div className={cn(obPanel, 'p-3 sm:p-4 space-y-2')}>
@@ -1044,10 +1252,24 @@ export default function OnboardingWizard() {
                       <p className="text-xs text-slate-500">{t('onboarding.ehr.placeholderHint', 'Revisa o ajusta el valor; si lo dejas vacío usaremos la sugerencia.')}</p>
                     </div>
 
-                    <div className={cn(obPanel, 'p-3 sm:p-4 space-y-2')}>
-                      <Label className="text-sm sm:text-base">{t('onboarding.hours.label', '¿Cómo tratáis las horas en Taimbox?')}</Label>
-                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
+                    <div className={cn(obPanel, 'p-3 sm:p-4 space-y-3')}>
+                      <Label id="onboarding-hours-mode-label" className="text-sm sm:text-base">
+                        {t('onboarding.hours.label', '¿Cómo tratáis las horas en Taimbox?')}
+                      </Label>
+                      <p className="text-xs text-slate-500 leading-snug -mt-1">
+                        {t(
+                          'onboarding.hours.labelHint',
+                          'Elige cómo se registran las horas en planificación e informes. Puedes cambiarlo después.'
+                        )}
+                      </p>
+                      <div
+                        role="radiogroup"
+                        aria-labelledby="onboarding-hours-mode-label"
+                        className="grid grid-cols-1 gap-4 sm:grid-cols-2"
+                      >
                         <OnboardingHoursModeCard
+                          mode="computed"
+                          recommended
                           selected={hoursPref === 'computed'}
                           onSelect={() => setHoursPref('computed')}
                           title={t('onboarding.hours.computed', 'Horas computadas frente a reales')}
@@ -1059,6 +1281,7 @@ export default function OnboardingWizard() {
                           icon={Layers}
                         />
                         <OnboardingHoursModeCard
+                          mode="actual"
                           selected={hoursPref === 'actual'}
                           onSelect={() => setHoursPref('actual')}
                           title={t('onboarding.hours.actual', 'Solo horas reales')}
@@ -1187,7 +1410,7 @@ export default function OnboardingWizard() {
                                   <TooltipContent side="top" className="max-w-xs text-xs leading-snug">
                                     {t(
                                       'onboarding.tracker.maxHint',
-                                      'Las sesiones de más de este tiempo se detienen solas; evita cronómetros olvidados encendidos.'
+                                      'Las sesiones de más de este tiempo se detienen solas para que no queden cronómetros olvidados encendidos.'
                                     )}
                                   </TooltipContent>
                                 </Tooltip>
@@ -1195,7 +1418,7 @@ export default function OnboardingWizard() {
                               <p id="onboarding-tracker-max-sr" className="sr-only">
                                 {t(
                                   'onboarding.tracker.maxHint',
-                                  'Las sesiones de más de este tiempo se detienen solas; evita cronómetros olvidados encendidos.'
+                                  'Las sesiones de más de este tiempo se detienen solas para que no queden cronómetros olvidados encendidos.'
                                 )}
                               </p>
                             </div>
@@ -1284,7 +1507,7 @@ export default function OnboardingWizard() {
             {currentStep === 'integrations' && (
               <div className="space-y-4">
                 <OnboardingCallout
-                  title={t('onboarding.integrations.calloutTitle', 'Enlaces externos opcionales')}
+                  title={t('onboarding.integrations.calloutTitle', 'IDs externos (opcional)')}
                   bullets={
                     Array.isArray(integrationsCalloutBullets)
                       ? (integrationsCalloutBullets as string[])
@@ -1294,15 +1517,15 @@ export default function OnboardingWizard() {
 
                 <div className={cn(obModuleRow, 'space-y-3 p-3 sm:p-4')}>
                   <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
-                    {t('agency.integrations.externalLinksTitle', 'Enlaces con sistemas externos')}
+                    {t('agency.integrations.externalLinksTitle', 'IDs externos y exportación')}
                   </p>
                   <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">
-                    {t('onboarding.integrations.crmGroup', 'CRM')}
+                    {t('onboarding.integrations.crmGroup', 'IDs externos')}
                   </p>
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 space-y-1">
                       <p className="font-medium text-sm">
-                        {t('agency.integrations.crmPackTitle', 'Integración CRM (exportación CSV)')}
+                        {t('agency.integrations.crmPackTitle', 'IDs externos y exportación CSV')}
                       </p>
                       <p className="text-xs text-slate-600 leading-snug">{t('onboarding.integrations.crmPackShort')}</p>
                       {Boolean(enabledIntegrations?.crm_user_id) && !Boolean(enabledIntegrations?.crm_export) ? (
@@ -1786,13 +2009,24 @@ export default function OnboardingWizard() {
                     )}
                   />
                   </div>
-                  <div className="flex justify-between pt-2 border-t border-slate-100">
-                    <Button type="button" variant="ghost" onClick={goToPrevStep}>
-                      <ArrowLeft className="h-4 w-4 mr-2" /> {t('common.back', 'Atrás')}
+                  <div className="flex flex-col gap-2 pt-2 border-t border-slate-100">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full border-dashed"
+                      disabled={isProcessing}
+                      onClick={handleClientSkip}
+                    >
+                      {t('onboarding.client.skip', 'Omitir: añadiré clientes después')}
                     </Button>
-                    <Button type="submit" disabled={isProcessing}>
-                      {t('common.continue', 'Continuar')} <ArrowRight className="h-4 w-4 ml-2" />
-                    </Button>
+                    <div className="flex justify-between gap-2">
+                      <Button type="button" variant="ghost" onClick={goToPrevStep}>
+                        <ArrowLeft className="h-4 w-4 mr-2" /> {t('common.back', 'Atrás')}
+                      </Button>
+                      <Button type="submit" disabled={isProcessing}>
+                        {t('common.continue', 'Continuar')} <ArrowRight className="h-4 w-4 ml-2" />
+                      </Button>
+                    </div>
                   </div>
                 </form>
               </Form>
@@ -2020,13 +2254,24 @@ export default function OnboardingWizard() {
                       )}
                     </div>
                   </div>
-                  <div className="flex justify-between pt-2 border-t border-slate-100">
-                    <Button type="button" variant="ghost" onClick={goToPrevStep}>
-                      <ArrowLeft className="h-4 w-4 mr-2" /> {t('common.back', 'Atrás')}
+                  <div className="flex flex-col gap-2 pt-2 border-t border-slate-100">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full border-dashed"
+                      disabled={isProcessing}
+                      onClick={handleProjectSkip}
+                    >
+                      {t('onboarding.project.skip', 'Omitir: crearé proyectos después')}
                     </Button>
-                    <Button type="submit" disabled={isProcessing} className="gap-2 bg-gradient-to-r from-primary to-indigo-600">
-                      <Sparkles className="h-4 w-4" /> {t('onboarding.finish', 'Completar')}
-                    </Button>
+                    <div className="flex justify-between gap-2">
+                      <Button type="button" variant="ghost" onClick={goToPrevStep}>
+                        <ArrowLeft className="h-4 w-4 mr-2" /> {t('common.back', 'Atrás')}
+                      </Button>
+                      <Button type="submit" disabled={isProcessing} className="gap-2 bg-gradient-to-r from-primary to-indigo-600">
+                        <Sparkles className="h-4 w-4" /> {t('onboarding.finish', 'Completar')}
+                      </Button>
+                    </div>
                   </div>
                 </form>
               </Form>

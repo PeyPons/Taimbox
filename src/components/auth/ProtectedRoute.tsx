@@ -5,6 +5,7 @@ import { useApp } from "@/contexts/AppContext";
 import { usePermissions } from "@/hooks/usePermissions";
 import { usePlatformAdmin } from "@/hooks/usePlatformAdmin";
 import { ROUTE_PERMISSIONS } from "@/types/permissions";
+import { ONBOARDING_WIZARD_ALLOWED_KEY } from "@/utils/onboardingDefaults";
 
 export const ProtectedRoute = () => {
   const { session, loading, isInitialized } = useAuth();
@@ -47,9 +48,16 @@ export const ProtectedRoute = () => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Si la agencia no ha completado el setup y no estamos ya en /onboarding
-  if (currentAgency && currentAgency.setupCompleted === false && location.pathname !== '/onboarding') {
-    return <Navigate to="/onboarding" replace />;
+  // Onboarding incompleto: primero /onboarding/choose; el wizard solo tras elegir «Configurar»
+  if (currentAgency && currentAgency.setupCompleted === false) {
+    const onChoose = pathname === '/onboarding/choose';
+    const onWizard =
+      pathname === '/onboarding' &&
+      typeof sessionStorage !== 'undefined' &&
+      sessionStorage.getItem(ONBOARDING_WIZARD_ALLOWED_KEY) === '1';
+    if (!onChoose && !onWizard) {
+      return <Navigate to="/onboarding/choose" replace />;
+    }
   }
 
   // Si la agencia está suspendida, redirigir a /suspended (salvo /admin para platform_admin, ya manejado arriba)

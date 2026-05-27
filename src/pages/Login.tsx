@@ -14,6 +14,7 @@ import { Rocket, LogIn } from "lucide-react";
 import { useAppTranslation } from "@/hooks/useAppTranslation";
 import { TaimboxMark } from "@/components/brand/TaimboxLogo";
 import { INPUT_LIMITS } from "@/constants/inputLimits";
+import { ONBOARDING_WIZARD_ALLOWED_KEY } from "@/utils/onboardingDefaults";
 
 type LoginFormValues = {
   email: string;
@@ -57,25 +58,24 @@ export default function Login() {
           name: z.string().min(2, t("auth.register.errors.nameTooShort")).max(INPUT_LIMITS.personName),
           email: z.string().email(t("auth.register.errors.invalidEmail")).max(INPUT_LIMITS.email),
           password: z.string().min(6, t("auth.register.errors.passwordTooShort")).max(INPUT_LIMITS.password),
-          confirmPassword: z.string().min(6, t("auth.register.errors.confirmPasswordRequired")).max(INPUT_LIMITS.password),
+          confirmPassword: z
+            .string()
+            .min(6, t("auth.register.errors.confirmPasswordRequired"))
+            .max(INPUT_LIMITS.password),
           agencyName: z.string().min(2, t("auth.register.errors.agencyNameRequired")).max(INPUT_LIMITS.agencyName),
         })
         .refine((data) => data.password === data.confirmPassword, {
           message: t("auth.register.errors.passwordsDontMatch"),
-          path: ["confirmPassword"],
+          path: ['confirmPassword'],
         }),
     [t]
   );
 
-  // Obtener la ruta de origen desde el state de navegación
   const from = (location.state as { from?: { pathname?: string } })?.from?.pathname || "/dashboard";
 
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginFormSchema),
-    defaultValues: {
-      email: '',
-      password: '',
-    },
+    defaultValues: { email: '', password: '' },
   });
 
   const registerForm = useForm<RegisterFormValues>({
@@ -89,12 +89,10 @@ export default function Login() {
     },
   });
 
-  // Abrir pestaña de registro si la URL lleva ?tab=register
   useEffect(() => {
     if (tabParam === 'register') setActiveTab('register');
   }, [tabParam]);
 
-  // Si ya estamos logueados, redirigir
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
@@ -125,7 +123,7 @@ export default function Login() {
   };
 
   const onForgotPassword = async () => {
-    if (!forgotEmail || !forgotEmail.trim()) {
+    if (!forgotEmail?.trim()) {
       toast.error(t("auth.forgotPassword.toast.missingEmail"));
       return;
     }
@@ -144,14 +142,13 @@ export default function Login() {
     }
   };
 
-  // Función para verificar disponibilidad
   const checkAvailability = async (field: 'agencyName' | 'email', value: string) => {
     if (!value || value.length < 2) return;
 
     try {
       const { data: exists, error } = await supabase.rpc('check_availability', {
         check_type: field === 'agencyName' ? 'agency_name' : 'email',
-        value: value
+        value: value,
       });
 
       if (error) {
@@ -163,16 +160,13 @@ export default function Login() {
         if (field === 'agencyName') {
           registerForm.setError('agencyName', {
             type: 'manual',
-            message: 'Esta empresa ya existe. Prueba con otro nombre.'
+            message: t('auth.register.errors.agencyNameTaken', 'Esta empresa ya existe. Prueba con otro nombre.'),
           });
         }
-        // Para email no mostramos error específico por seguridad (user enumeration),
-        // pero internamente podríamos manejarlo si quisiéramos ser más explícitos.
-        // Dado que el usuario lo pidió: "que salga un aviso antes de continuar"
         if (field === 'email') {
           registerForm.setError('email', {
             type: 'manual',
-            message: 'Este email ya está registrado.'
+            message: t('auth.register.errors.emailTaken', 'Este email ya está registrado.'),
           });
         }
       } else {
@@ -187,10 +181,10 @@ export default function Login() {
     setIsRegistering(true);
 
     try {
-      // Doble check antes de enviar
+      const agencyNameTrimmed = data.agencyName.trim();
       const { data: agencyExists } = await supabase.rpc('check_availability', {
         check_type: 'agency_name',
-        value: data.agencyName
+        value: agencyNameTrimmed,
       });
 
       if (agencyExists) {
@@ -202,20 +196,17 @@ export default function Login() {
         return;
       }
 
-      // Llamar a la edge function para crear usuario + agencia + empleado
       const { data: responseData, error } = await supabase.functions.invoke('register-agency', {
         body: {
           email: data.email,
           password: data.password,
-          name: data.name,
-          agencyName: data.agencyName || undefined
-        }
+          name: data.name.trim(),
+          agencyName: agencyNameTrimmed,
+        },
       });
 
       if (error) {
         console.error('Error en registro:', error);
-
-        // Extraer mensaje de error
         let errorMessage = t("auth.register.toast.genericError");
         if (error.message) {
           errorMessage = error.message;
@@ -226,10 +217,9 @@ export default function Login() {
               : error.context.body;
             if (body.error) errorMessage = body.error;
           } catch {
-            // ignorar
+            /* ignore */
           }
         }
-
         toast.error(errorMessage);
         return;
       }
@@ -241,7 +231,6 @@ export default function Login() {
 
       toast.success(t("auth.register.toast.success"));
 
-      // Auto-login con las credenciales recién creadas
       const { error: loginError } = await supabase.auth.signInWithPassword({
         email: data.email,
         password: data.password,
@@ -253,11 +242,12 @@ export default function Login() {
         return;
       }
 
-      // Redirigir - el onboarding wizard lo manejará ProtectedRoute
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem(ONBOARDING_WIZARD_ALLOWED_KEY);
+      }
       setTimeout(() => {
-        navigate('/onboarding', { replace: true });
+        navigate('/onboarding/choose', { replace: true });
       }, 100);
-
     } catch (err) {
       console.error('Error inesperado:', err);
       toast.error(t("auth.register.toast.unexpectedError"));
@@ -267,7 +257,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-950 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-slate-950 px-4 py-8">
       <Card className="w-full max-w-md bg-white shadow-xl">
         <CardHeader className="space-y-1">
           <div className="flex justify-center mb-4">
@@ -293,7 +283,6 @@ export default function Login() {
               </TabsTrigger>
             </TabsList>
 
-            {/* Tab Login */}
             <TabsContent value="login">
               <Form {...loginForm}>
                 <form onSubmit={loginForm.handleSubmit(onLogin)} className="space-y-4">
@@ -349,7 +338,6 @@ export default function Login() {
                 </form>
               </Form>
 
-              {/* Olvidé mi contraseña */}
               <div className="mt-4 text-center">
                 {!showForgotPassword ? (
                   <button
@@ -361,12 +349,8 @@ export default function Login() {
                   </button>
                 ) : resetSent ? (
                   <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-sm text-green-800">
-                    <p className="font-medium mb-1">
-                      {t("auth.forgotPassword.success.title")}
-                    </p>
-                    <p className="text-green-600 text-xs">
-                      {t("auth.forgotPassword.success.body")}
-                    </p>
+                    <p className="font-medium mb-1">{t("auth.forgotPassword.success.title")}</p>
+                    <p className="text-green-600 text-xs">{t("auth.forgotPassword.success.body")}</p>
                     <button
                       type="button"
                       onClick={() => { setShowForgotPassword(false); setResetSent(false); setForgotEmail(''); }}
@@ -377,9 +361,7 @@ export default function Login() {
                   </div>
                 ) : (
                   <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-3">
-                    <p className="text-sm text-slate-600">
-                      {t("auth.forgotPassword.description")}
-                    </p>
+                    <p className="text-sm text-slate-600">{t("auth.forgotPassword.description")}</p>
                     <Input
                       type="email"
                       autoComplete="email"
@@ -391,25 +373,11 @@ export default function Login() {
                       onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); onForgotPassword(); } }}
                     />
                     <div className="flex gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="flex-1"
-                        onClick={() => { setShowForgotPassword(false); setForgotEmail(''); }}
-                      >
+                      <Button type="button" variant="outline" size="sm" className="flex-1" onClick={() => { setShowForgotPassword(false); setForgotEmail(''); }}>
                         {t("auth.forgotPassword.actions.cancel")}
                       </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        className="flex-1 bg-primary hover:bg-primary/90 text-white"
-                        onClick={onForgotPassword}
-                        disabled={isSendingReset}
-                      >
-                        {isSendingReset
-                          ? t("auth.forgotPassword.actions.sending")
-                          : t("auth.forgotPassword.actions.sendLink")}
+                      <Button type="button" size="sm" className="flex-1 bg-primary hover:bg-primary/90 text-white" onClick={onForgotPassword} disabled={isSendingReset}>
+                        {isSendingReset ? t("auth.forgotPassword.actions.sending") : t("auth.forgotPassword.actions.sendLink")}
                       </Button>
                     </div>
                   </div>
@@ -417,7 +385,6 @@ export default function Login() {
               </div>
             </TabsContent>
 
-            {/* Tab Registro */}
             <TabsContent value="register">
               <Form {...registerForm}>
                 <form onSubmit={registerForm.handleSubmit(onRegister)} className="space-y-4">
@@ -440,6 +407,7 @@ export default function Login() {
                       </FormItem>
                     )}
                   />
+
                   <FormField
                     control={registerForm.control}
                     name="email"
@@ -461,6 +429,7 @@ export default function Login() {
                       </FormItem>
                     )}
                   />
+
                   <div className="grid grid-cols-2 gap-3">
                     <FormField
                       control={registerForm.control}
@@ -503,6 +472,7 @@ export default function Login() {
                       )}
                     />
                   </div>
+
                   <FormField
                     control={registerForm.control}
                     name="agencyName"
@@ -522,6 +492,7 @@ export default function Login() {
                       </FormItem>
                     )}
                   />
+
                   <Button
                     type="submit"
                     className="w-full bg-gradient-to-r from-primary to-indigo-600 hover:from-primary/90 hover:to-indigo-600/90 text-white font-medium"
@@ -531,8 +502,15 @@ export default function Login() {
                       ? t("auth.register.actions.submitting")
                       : t("auth.register.actions.submit")}
                   </Button>
-                  <p className="text-xs text-center text-slate-500">
+
+                  <p className="text-xs text-center text-slate-500 leading-snug">
                     {t("auth.register.footer")}
+                  </p>
+                  <p className="text-[11px] text-center text-indigo-700/90 leading-snug">
+                    {t(
+                      'auth.register.trialNote',
+                      '14 días de prueba del plan Business. Sin tarjeta al registrarte.'
+                    )}
                   </p>
                 </form>
               </Form>

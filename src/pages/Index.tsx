@@ -1,4 +1,5 @@
 import { PlannerGrid } from '@/components/planner/PlannerGrid';
+import { OnboardingQuickChecklist } from '@/components/onboarding/OnboardingQuickChecklist';
 import { Helmet } from 'react-helmet-async';
 import { useAppTranslation } from '@/hooks/useAppTranslation';
 
@@ -11,6 +12,7 @@ const Index = () => {
         <meta name="description" content={t('dashboard.metaDescription')} />
       </Helmet>
       <div className="h-screen flex flex-col">
+        <OnboardingQuickChecklist />
         <PlannerGrid />
       </div>
     </>

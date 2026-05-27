@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useId } from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -149,6 +149,7 @@ interface PlannerTourProps {
 
 export function PlannerTour({ onComplete, forceShow = false, onVisibilityChange }: PlannerTourProps) {
   const { currentUser, updateEmployee } = useApp();
+  const maskId = useId().replace(/:/g, '');
   const [isVisible, setIsVisible] = useState(false);
 
   // Notificar cambios de visibilidad al padre
@@ -383,6 +384,7 @@ export function PlannerTour({ onComplete, forceShow = false, onVisibilityChange 
   const isLastStep = currentStep === tourSteps.length - 1;
   const isFirstStep = currentStep === 0;
   const isCentered = step.position === 'center' || !highlightPos;
+  const blocksPageInteraction = Boolean(step.highlight && highlightPos && isReady);
 
   // Renderizamos en un portal igual que WelcomeTour para mejor posicionamiento
   const tourContent = (
@@ -395,13 +397,13 @@ export function PlannerTour({ onComplete, forceShow = false, onVisibilityChange 
           left: 0,
           width: '100vw',
           height: '100vh',
-          pointerEvents: 'auto'
+          pointerEvents: blocksPageInteraction ? 'auto' : 'none'
         }}
-        onClick={handleOverlayClick}
-        onMouseDown={(e) => e.stopPropagation()}
+        onClick={blocksPageInteraction ? handleOverlayClick : undefined}
+        onMouseDown={blocksPageInteraction ? (e) => e.stopPropagation() : undefined}
       >
         <defs>
-          <mask id="planner-tour-spotlight-mask">
+          <mask id={maskId}>
             <rect x="0" y="0" width="100%" height="100%" fill="white" />
             {highlightPos && isReady && (
               <rect
@@ -421,7 +423,7 @@ export function PlannerTour({ onComplete, forceShow = false, onVisibilityChange 
           width="100%"
           height="100%"
           fill="rgba(0, 0, 0, 0.75)"
-          mask="url(#planner-tour-spotlight-mask)"
+          mask={`url(#${maskId})`}
         />
       </svg>
 

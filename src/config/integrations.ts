@@ -10,18 +10,18 @@ export interface IntegrationDefinition {
 export const AVAILABLE_INTEGRATIONS: Record<string, IntegrationDefinition> = {
   crm_export: {
     id: 'crm_export',
-    name: 'Exportación de tareas al CRM',
+    name: 'Exportación de planificación (CSV)',
     description:
-      'Exporta la planificación a CSV y muestra en cada proyecto el campo de ID externo (CRM) para alinearlo con tu sistema.',
+      'Exporta la planificación a CSV y muestra en cada proyecto el campo de ID externo para alinearlo con tu sistema.',
     category: 'crm',
     requiresConfig: false,
     dependencies: ['crm_user_id'], // Requiere que crm_user_id esté activo
   },
   crm_user_id: {
     id: 'crm_user_id',
-    name: 'ID de usuario en el CRM',
+    name: 'ID externo en perfiles',
     description:
-      'Activa en el perfil de cada empleado un campo para su ID en el sistema externo; la exportación CSV lo usa para enlazar personas y tareas.',
+      'Campo en el perfil de cada empleado para su identificador en el sistema externo; la exportación CSV lo usa para enlazar personas y tareas.',
     category: 'crm',
     requiresConfig: false,
   },

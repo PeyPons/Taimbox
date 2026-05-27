@@ -1,8 +1,7 @@
 import { useMemo, useState, useCallback, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useApp } from '@/contexts/AppContext';
 import { useAgency } from '@/contexts/AgencyContext';
-import { usePermissions } from '@/hooks/usePermissions';
+import { useAppTranslation } from '@/hooks/useAppTranslation';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
 import { TaskTimer } from '@/components/employee/TaskTimer';
 import { Card, CardContent } from '@/components/ui/card';
@@ -32,6 +31,8 @@ export interface MyDayViewProps {
   weeklyEnabled?: boolean;
   /** Abre `WeeklyReportDialog` centrado en esta allocation (mismo flujo que «Opciones Weekly…» en el planner). */
   onOpenWeeklyForAllocation?: (allocationId: string) => void;
+  /** Vacío en Mi día: ir al planificador, Mi semana o añadir tareas (lo define el dashboard). */
+  onOpenPlanning?: () => void;
 }
 
 function sortByUserPriority(a: Allocation, b: Allocation): number {
@@ -50,14 +51,14 @@ export function MyDayView({
   viewDate,
   weeklyEnabled = false,
   onOpenWeeklyForAllocation,
+  onOpenPlanning,
 }: MyDayViewProps) {
+  const { t } = useAppTranslation();
   const { projects, clients, updateAllocation, allocations, loadDataForMonth, ensureMonthLoaded, currentUser } = useApp();
   const { currentAgency } = useAgency();
-  const { canAccess } = usePermissions();
   const { formatName: formatProjectName } = useProjectAliasing();
   const isTimeTrackerEnabled = (currentAgency?.settings?.modules?.timeTracker ?? false) && currentUser?.user_id != null;
   const preference = currentAgency?.settings?.hoursTrackingPreference;
-  const navigate = useNavigate();
   const [completedToday, setCompletedToday] = useState<string[]>([]);
   const [popoverOpenId, setPopoverOpenId] = useState<string | null>(null);
   const [completionData, setCompletionData] = useState({ actual: 0, computed: 0 });
@@ -414,21 +415,23 @@ export function MyDayView({
           <div className="bg-amber-100 p-3 rounded-full mb-3">
             <Sun className="h-6 w-6 text-amber-500" />
           </div>
-          <h3 className="text-lg font-semibold text-slate-800">Sin tareas en tu semana</h3>
+          <h3 className="text-lg font-semibold text-slate-800">
+            {t('team.dashboard.myDayEmptyTitle', 'Sin tareas en tu semana')}
+          </h3>
           <p className="text-slate-500 max-w-md mt-1 mb-4">
-            Cuando tengas asignaciones para esta semana o anteriores pendientes, aparecerán aquí.
+            {t(
+              'team.dashboard.myDayEmptyDesc',
+              'Cuando tengas asignaciones para esta semana o anteriores pendientes, aparecerán aquí.'
+            )}
           </p>
           <Button
             variant="outline"
             className="gap-2"
-            onClick={() => {
-              if (canAccess('/planner')) navigate('/planner');
-              else if (canAccess('/deadlines')) navigate('/deadlines');
-              else navigate('/dashboard');
-            }}
+            onClick={() => onOpenPlanning?.()}
+            disabled={!onOpenPlanning}
           >
             <Calendar className="h-4 w-4" />
-            Ver planificación
+            {t('team.dashboard.viewPlanning', 'Ver planificación')}
           </Button>
         </CardContent>
       </Card>

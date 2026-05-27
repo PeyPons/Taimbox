@@ -585,14 +585,14 @@ export function ProjectMutateDialog({
               <div className="space-y-2 rounded-lg border border-purple-200 bg-purple-50 p-4">
                 <div className="flex items-center gap-2">
                   <LinkIcon className="h-4 w-4 text-purple-600" />
-                  <span className="text-sm font-semibold text-purple-800">Integración CRM</span>
+                  <span className="text-sm font-semibold text-purple-800">IDs externos</span>
                 </div>
                 <FormField
                   control={projectForm.control}
                   name="externalId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-purple-700">ID Proyecto CRM</FormLabel>
+                      <FormLabel className="text-purple-700">ID externo (proyecto)</FormLabel>
                       <FormControl>
                         <Input
                           type="number"

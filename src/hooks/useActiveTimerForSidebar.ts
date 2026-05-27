@@ -15,8 +15,12 @@ export interface ActiveTimerSidebarState {
   taskName: string | null;
   /** Nombre del cliente (proyecto → cliente) cuando hay timer activo */
   clientName: string | null;
+  /** Total del día en segundos (entradas + sesión en curso si aplica) */
+  todayTotalSeconds: number;
   /** Total del día (todas las tareas + sesión en curso): texto tipo "7 min" o "1 h 23 min" */
   formattedTimeLabel: string;
+  /** Mismo total en formato compacto tipo reloj: "0:00", "1:23", "45m" */
+  formattedTodayCompact: string;
   /** Parar el cronómetro actual desde el sidebar (solo tiene efecto si isActive) */
   stopCurrentTimer: () => Promise<void>;
 }
@@ -42,6 +46,15 @@ function formatTotalAsLabel(totalSeconds: number): string {
   return `${h} h ${m} min`;
 }
 
+/** Formato compacto para la barra lateral (estilo barra global de tiempo) */
+export function formatTodayCompact(totalSeconds: number): string {
+  if (totalSeconds <= 0) return '0:00';
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  if (h === 0) return `${m}m`;
+  return `${h}:${String(m).padStart(2, '0')}`;
+}
+
 export function useActiveTimerForSidebar(employeeId: string | undefined): ActiveTimerSidebarState {
   const [state, setState] = useState<Omit<ActiveTimerSidebarState, 'stopCurrentTimer'>>({
     isActive: false,
@@ -50,7 +63,9 @@ export function useActiveTimerForSidebar(employeeId: string | undefined): Active
     sessionStartedAtMs: null,
     taskName: null,
     clientName: null,
+    todayTotalSeconds: 0,
     formattedTimeLabel: '0 min',
+    formattedTodayCompact: '0:00',
   });
 
   const fetchAndCompute = useCallback(async () => {
@@ -65,7 +80,9 @@ export function useActiveTimerForSidebar(employeeId: string | undefined): Active
               sessionStartedAtMs: null,
               taskName: null,
               clientName: null,
+              todayTotalSeconds: 0,
               formattedTimeLabel: '0 min',
+              formattedTodayCompact: '0:00',
             }
       );
       return;
@@ -115,7 +132,9 @@ export function useActiveTimerForSidebar(employeeId: string | undefined): Active
         sessionStartedAtMs: startedAtMs,
         taskName,
         clientName,
+        todayTotalSeconds: totalSeconds,
         formattedTimeLabel: formatTotalAsLabel(totalSeconds),
+        formattedTodayCompact: formatTodayCompact(totalSeconds),
       });
       return;
     }
@@ -127,7 +146,9 @@ export function useActiveTimerForSidebar(employeeId: string | undefined): Active
       sessionStartedAtMs: null,
       taskName: null,
       clientName: null,
+      todayTotalSeconds: totalSeconds,
       formattedTimeLabel: formatTotalAsLabel(totalSeconds),
+      formattedTodayCompact: formatTodayCompact(totalSeconds),
     });
   }, [employeeId]);
 

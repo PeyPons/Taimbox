@@ -526,14 +526,14 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
                     <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg space-y-2">
                       <div className="flex items-center gap-2">
                         <Hash className="w-4 h-4 text-purple-600" />
-                        <span className="text-sm font-semibold text-purple-800">Integración CRM</span>
+                        <span className="text-sm font-semibold text-purple-800">IDs externos</span>
                       </div>
                       <FormField
                         control={form.control}
                         name="crmUserId"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-purple-700">ID Usuario CRM</FormLabel>
+                            <FormLabel className="text-purple-700">ID externo (usuario)</FormLabel>
                             <FormControl>
                               <Input
                                 type="number"
@@ -545,7 +545,7 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
                               />
                             </FormControl>
                             <FormDescription className="text-xs text-purple-600">
-                              Este ID se usa para exportar tareas al CRM. Déjalo vacío si no aplica.
+                              Identificador en tu ERP u otra herramienta. Se incluye en la exportación CSV si está rellenado.
                             </FormDescription>
                             <FormMessage />
                           </FormItem>

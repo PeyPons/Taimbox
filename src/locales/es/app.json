@@ -77,10 +77,20 @@
       }
     },
     "register": {
+      "mode": {
+        "quick": "Rápido",
+        "full": "Completo",
+        "quickHint": "Mismos datos de cuenta y empresa; sin confirmar contraseña.",
+        "fullHint": "Incluye confirmación de contraseña antes de elegir cómo configurar Taimbox."
+      },
+      "trialNote": "14 días de prueba del plan Business. Sin tarjeta al registrarte.",
       "fields": {
         "name": {
           "label": "Tu nombre",
           "placeholder": "Juan García"
+        },
+        "nameOptional": {
+          "label": "Tu nombre (opcional)"
         },
         "email": {
           "label": "Email",
@@ -95,13 +105,17 @@
         "agencyName": {
           "label": "Nombre de tu empresa",
           "placeholder": "Mi Agencia"
+        },
+        "agencyNameOptional": {
+          "label": "Nombre de empresa (opcional)"
         }
       },
       "actions": {
         "submit": "Crear cuenta gratis",
+        "submitQuick": "Crear cuenta y continuar",
         "submitting": "Creando cuenta..."
       },
-      "footer": "Al registrarte, crearás una nueva empresa y serás el administrador,",
+      "footer": "Al registrarte, crearás una nueva empresa y serás el administrador.",
       "errors": {
         "nameTooShort": "El nombre debe tener al menos 2 caracteres",
         "invalidEmail": "Email inválido",
@@ -109,7 +123,9 @@
         "confirmPasswordRequired": "Confirma tu contraseña",
         "agencyNameRequired": "El nombre de la empresa es obligatorio",
         "passwordsDontMatch": "Las contraseñas no coinciden",
-        "agencyAlreadyExists": "Esta empresa ya existe. Por favor, elige otro nombre."
+        "agencyAlreadyExists": "Esta empresa ya existe. Por favor, elige otro nombre.",
+        "agencyNameTaken": "Esta empresa ya existe. Prueba con otro nombre.",
+        "emailTaken": "Este email ya está registrado."
       },
       "toast": {
         "genericError": "Error al registrar",
@@ -737,7 +753,7 @@
     "title": "Mis Agencias",
     "description": "Gestiona tus agencias o crea una nueva.",
     "newAgency": "Nueva agencia",
-    "hubIntro": "Elige la agencia activa si tienes varias. Los accesos de abajo enlazan con el mismo criterio que Configuración de agencia: rentabilidad (objetivo €/h), horas computadas frente a reales, Conexiones (Weekly, CRM, anuncios) y módulos del menú.",
+    "hubIntro": "Elige la agencia activa si tienes varias. Los accesos de abajo enlazan con el mismo criterio que Configuración de agencia: rentabilidad (objetivo €/h), horas computadas frente a reales, Conexiones (Weekly, IDs externos, anuncios) y módulos del menú.",
     "accessCount_one": "Tienes acceso a 1 agencia",
     "accessCount_other": "Tienes acceso a {{count}} agencias",
     "manageCurrent": "Gestiona tu agencia actual",
@@ -747,12 +763,12 @@
     "currentBadge": "Actual",
     "guide": {
       "title": "Qué encontrarás en cada sitio",
-      "lead": "Resumen alineado con la pantalla de configuración para que Weekly, CRM y el objetivo de precio hora no mezclen conceptos distintos.",
+      "lead": "Resumen alineado con la pantalla de configuración para que Weekly, los IDs externos y el objetivo de precio hora no mezclen conceptos distintos.",
       "settingsHeading": "Configuración de agencia",
       "settingsLi1": "General y rentabilidad: nombre, slug y objetivo de precio hora efectivo (€/h) que usa la página Rentabilidad; solo valores positivos, coma o punto como decimal y máximo dos decimales.",
       "settingsLi2": "Seguimiento de horas: eliges si el avance y la rentabilidad priorizan horas computadas (imputación comercial al cliente o presupuesto) o solo las horas reales dedicadas; no obliga a usar el cronómetro.",
       "settingsLi3": "Conexiones — Weekly: el día de cierre define cuándo una semana queda cerrada para ediciones directas en el planificador; el cierre de pendientes se hace desde el flujo Weekly. Las cuentas Meta y Google Ads se configuran aquí si el módulo PPC está activo.",
-      "settingsLi4": "Conexiones — CRM: un solo interruptor para activar a la vez el ID de usuario en perfiles, el ID externo del proyecto en cada proyecto y la exportación mensual a CSV (tarea, IDs y horas).",
+      "settingsLi4": "Conexiones — IDs externos: un interruptor para el ID en perfiles, el ID en cada proyecto y la exportación mensual a CSV (tarea, IDs y horas).",
       "settingsLi5": "Organización, equipo (roles y permisos del menú), proyectos (filtros y aliasing), funcionalidades visibles (OKRs, Deadlines, cronómetro…), apariencia y plan o facturación.",
       "teamHeading": "Equipo",
       "teamBody": "Personas, departamentos y datos operativos del staff en el día a día. No es la misma pantalla que los administradores con acceso a la agencia en Taimbox.",
@@ -1032,6 +1048,10 @@
     "timer": {
       "taskInProgress": "Tarea en curso",
       "totalRegistered": "Total registrado",
+      "todayLabel": "Hoy",
+      "tracking": "En curso",
+      "trackingAria": "Cronómetro en curso",
+      "viewTimes": "Ver tiempos",
       "client": "Cliente:",
       "stop": "Parar",
       "todayTotal": "Hoy en total:"
@@ -1256,6 +1276,10 @@
       "myTime": "Mi tiempo",
       "myWeek": "Mi semana",
       "myDay": "Mi día",
+      "myDayEmptyTitle": "Sin tareas en tu semana",
+      "myDayEmptyDesc": "Cuando tengas asignaciones para esta semana o anteriores pendientes, aparecerán aquí.",
+      "viewPlanning": "Ver planificación",
+      "finishOnboardingFirst": "Termina la configuración inicial (Explorar ya o Configurar mi agencia) para acceder al planificador.",
       "myProjects": "Mis proyectos",
       "upcomingHolidays": "Próximos festivos",
       "hoursLogged": "Horas registradas",
@@ -1267,7 +1291,7 @@
       "weekly": "Semanal",
       "addTasks": "Añadir tareas",
       "internalTask": "Tarea interna",
-      "exportCrm": "Exportar a CRM",
+      "exportCrm": "Exportar planificación (CSV)",
       "goals": "Objetivos",
       "absences": "Ausencias",
       "repeatTour": "Repetir tour",
@@ -1447,7 +1471,7 @@
     },
     "modules": {
       "title": "Funcionalidades activas",
-      "description": "Activa o desactiva funcionalidades del producto. Weekly no añade una entrada de menú: controla el cierre semanal en Mi espacio y el planificador. CRM y ads están en Conexiones.",
+      "description": "Activa o desactiva funcionalidades del producto. Weekly no añade una entrada de menú: controla el cierre semanal en Mi espacio y el planificador. Los IDs externos y los anuncios están en Conexiones.",
       "ppc": "PPC (Ads)",
       "ppcDesc": "Google/Meta Ads e informes de inversión.",
       "ppcEffect": "Afecta a: entradas Google Ads / Meta Ads y rutas /ads, /meta-ads (además de permisos de rol).",
@@ -1639,30 +1663,34 @@
     "integrations": {
       "title": "Conexiones",
       "description": "Enlaces con sistemas externos y cuentas publicitarias. El módulo PPC controla si se muestran las rutas de anuncios.",
-      "externalLinksTitle": "Enlaces con sistemas externos",
-      "externalLinksDesc": "Exportación CSV e IDs en perfiles y proyectos para cruzar datos con tu CRM u otro sistema.",
+      "externalLinksTitle": "IDs externos y exportación",
+      "externalLinksDesc": "Asigna un identificador de tu ERP, facturación u otra herramienta a cada persona y proyecto, y exporta la planificación del mes a CSV.",
       "externalBadge": "Externo",
       "adsPlatformsTitle": "Cuentas publicitarias",
       "adsPlatformsDesc": "OAuth y cuentas Meta / Google Ads. Requiere tener activado el módulo PPC y permisos de rol para ver las pantallas de anuncios.",
-      "crm": "CRM",
+      "crm": "IDs en personas y proyectos",
+      "externalIdsBlockTitle": "IDs externos",
+      "externalUserIdLabel": "ID externo (usuario)",
+      "externalUserIdHint": "Identificador de esta persona en tu ERP u otra herramienta. Se incluye en la exportación CSV si está rellenado.",
+      "externalProjectIdLabel": "ID externo (proyecto)",
       "other": "Privacidad y demostración",
       "weeklyCloseDay": "Día de cierre semanal",
       "weeklyCloseDayDesc": "Último día de la semana operativa (desde el lunes de cada semana). Pasada esa fecha, las tareas de esa semana dejan de editarse en el planificador y solo se gestionan con el flujo Weekly.",
       "selectDay": "Selecciona un día",
       "dependencyWarning": "Esta integración requiere dependencias activas",
       "dependencyError": "Para activar \"{{name}}\", primero debes activar: {{deps}}",
-      "crmUserIdWarning": "Si desactivas \"ID Usuario CRM\", también se desactivará \"Exportación de Tareas al CRM\"",
-      "crmPackTitle": "Integración CRM (exportación CSV)",
-      "crmPackDescription": "Activa el enlace con tu CRM u otro sistema: cada miembro puede indicar su ID de usuario en su perfil y, en cada proyecto, el ID externo del proyecto. Quien tenga permiso podrá exportar las tareas del mes a CSV (tarea, ID de usuario CRM, ID de proyecto externo y horas).",
-      "crmPackLegacyHint": "Solo tenías activado el ID de usuario en perfiles. Activa el interruptor para completar la integración (exportación e ID de proyecto en fichas).",
+      "crmUserIdWarning": "Si desactivas los IDs en perfiles, también se desactivará la exportación CSV",
+      "crmPackTitle": "IDs externos y exportación CSV",
+      "crmPackDescription": "Cada persona puede indicar su ID externo en el perfil y cada proyecto el suyo. Quien tenga permiso podrá exportar la planificación del mes a CSV (tarea, ID de usuario, ID de proyecto y horas) para cruzarla con tu ERP u otra herramienta.",
+      "crmPackLegacyHint": "Solo tenías activado el ID en perfiles. Activa el interruptor para habilitar también la exportación CSV y el ID en fichas de proyecto.",
       "items": {
         "crm_export": {
-          "name": "Exportación de Tareas al CRM",
-          "description": "Exporta la planificación a CSV y activa en cada proyecto el campo de ID externo del proyecto (CRM) para cruzarlo con tu sistema."
+          "name": "Exportación de planificación (CSV)",
+          "description": "Permite exportar la planificación a CSV y muestra el campo de ID externo en cada proyecto."
         },
         "crm_user_id": {
-          "name": "ID Usuario CRM",
-          "description": "Muestra en el perfil de cada miembro del equipo un campo para su ID en el CRM u otro sistema externo. Necesario para la exportación."
+          "name": "ID externo en perfiles",
+          "description": "Campo en el perfil de cada miembro para su identificador en tu sistema externo. Necesario para la exportación CSV."
         },
         "anonymize_ads_for_video": {
           "name": "Modo demostración (ocultar datos sensibles)",
@@ -1731,10 +1759,34 @@
     "done": "¡Configuración completada!",
     "finish": "Completar",
     "footer": "Todo lo que ves aquí lo puedes editar después en Configuración de agencia (nombre, módulos, departamentos, conexiones…).",
+    "choice": {
+      "title": "¿Cómo quieres empezar?",
+      "subtitle": "Puedes cambiar la configuración más tarde en Configuración de agencia.",
+      "trialNote": "Tienes 14 días de prueba del plan Business (sin tarjeta). Puedes cambiar de plan después.",
+      "quickTitle": "Explorar ya",
+      "quickDesc": "Entras al planificador en ~1 min con valores recomendados. Te guiaremos con una lista corta de pasos.",
+      "guidedTitle": "Configurar mi agencia",
+      "guidedDesc": "Asistente paso a paso (~8–12 min): módulos, departamentos, equipo, primer cliente y proyecto. Puedes omitir lo opcional.",
+      "quickSuccess": "¡Listo! Explora el planificador cuando quieras."
+    },
+    "checklist": {
+      "title": "Primeros pasos en Taimbox",
+      "allDone": "¡Buen trabajo! Ya tienes lo básico.",
+      "client": "Añade tu primer cliente",
+      "project": "Crea un proyecto",
+      "team": "Invita a tu equipo",
+      "settings": "Ajusta módulos y conexiones"
+    },
+    "profile": {
+      "recommendedLead": "¿Quieres ir más rápido? Dejamos unos valores por defecto sensatos; podrás cambiarlos cuando quieras en Configuración de agencia.",
+      "useRecommended": "Usar valores por defecto",
+      "recommendedApplied": "Valores por defecto aplicados."
+    },
     "wizard": {
       "stepProgress": "{{current}}/{{total}}",
       "stepProgressAria": "Paso {{current}} de {{total}}",
-      "timeAndReadyFirst": "Suele tardar poco. Si cerráis, guardamos el paso y podéis seguir después."
+      "timeAndReadyFirst": "Suele tardar poco. Si cerráis, guardamos el paso y podéis seguir después.",
+      "guidedDuration": "Unos 8–12 min. Si cerráis, guardamos el paso y podéis seguir después."
     },
     "common": {
       "moreDetails": "Más detalles"
@@ -1752,8 +1804,8 @@
         "desc": "Define tu referencia económica, cómo contáis el tiempo y qué partes de Taimbox queréis usar."
       },
       "integrations": {
-        "title": "Enlaces externos (opcional)",
-        "desc": "Opcional: enlace CRM para exportación CSV. Weekly se configura en el paso anterior (Funciones del producto)."
+        "title": "IDs externos (opcional)",
+        "desc": "Opcional: asigna identificadores en perfiles y proyectos y exporta la planificación a CSV."
       },
       "departments": {
         "title": "Departamentos",
@@ -1790,6 +1842,12 @@
     },
     "hours": {
       "label": "¿Cómo tratáis las horas en Taimbox?",
+      "labelHint": "Elige cómo se registran las horas en planificación e informes. Puedes cambiarlo después.",
+      "badgeCommon": "Habitual",
+      "vizDedicated": "Dedicadas",
+      "vizComputed": "Computadas",
+      "vizActual": "Tiempo registrado",
+      "vizActualHint": "Una sola cifra: lo imputado = lo trabajado",
       "computed": "Horas computadas frente a reales",
       "computedHelp": "Podéis registrar por separado lo dedicado y lo que imputáis al cliente o al presupuesto: por ejemplo 1,5 h de trabajo y 2 h «computadas» por complejidad o rentabilidad. Útil cuando ese ajuste comercial es habitual.",
       "computedBullets": [
@@ -1830,28 +1888,27 @@
       "max": "Límite por tarea (cronómetro)",
       "maxShort": "Máx. por sesión",
       "maxInfoLabel": "Qué hace este límite",
-      "maxHint": "Las sesiones de más de este tiempo se detienen solas; evita cronómetros olvidados encendidos."
+      "maxHint": "Las sesiones de más de este tiempo se detienen solas para que no queden cronómetros olvidados encendidos."
     },
     "integrations": {
       "needsDeps": "Activa antes: {{list}}",
       "deps": "Requiere dependencias activas",
-      "calloutTitle": "Enlaces externos opcionales",
+      "calloutTitle": "IDs externos (opcional)",
       "calloutBullets": [
         "Todo es opcional; lo mismo está en Configuración de agencia → Conexiones.",
-        "CRM: un interruptor para IDs en perfiles y proyectos más exportación CSV mensual.",
-        "Weekly (cierre semanal) se activa en Funcionalidades, no aquí."
+        "Un interruptor: ID en perfiles, ID en proyectos y exportación CSV mensual."
       ],
       "weeklyCardHelp": "Con Weekly activo, las semanas cerradas no se reescriben a mano en el calendario: los cambios pasan por el flujo Weekly. Si preferís libertad total, déjalo apagado.",
       "weeklyCloseHelpShort": "Último día de la semana operativa (desde el lunes). Pasada esa fecha, esa semana queda cerrada para edición directa en el planificador.",
-      "crmPackShort": "Un interruptor: ID de usuario en perfiles, ID externo en proyectos y exportación CSV mensual (tarea, IDs y horas).",
+      "crmPackShort": "Un interruptor: ID en perfiles, ID en proyectos y exportación CSV mensual (tarea, IDs y horas).",
       "intro": "Puedes dejarlo para más adelante: en Conexiones (configuración de agencia) lo activarás cuando conozcas mejor el flujo de cierre semanal.",
       "introAccordion": "Funciones opcionales",
       "weeklyExtra": "Activa un modo más disciplinado: el planificador no permite reescribir a mano semanas ya cerradas; los movimientos pasan por el cierre Weekly. Si preferís editar el pasado con libertad, déjalo apagado.",
-      "crmGroup": "CRM",
+      "crmGroup": "IDs externos",
       "skip": "Omitir y continuar sin cambios",
       "skipToast": "Podrás configurar esto en Conexiones cuando quieras.",
       "weeklyCloseHelp": "Fin de la semana operativa (desde el lunes de cada semana). Pasada esa fecha, esa semana ya no admite ediciones directas en el planificador: hay que usar Weekly. No tiene por qué ser viernes.",
-      "crmIntro": "Un solo interruptor: perfiles con ID de usuario CRM, proyectos con ID externo y exportación mensual a CSV con tarea, ID de usuario, ID de proyecto y horas."
+      "crmIntro": "Un solo interruptor: ID en perfiles, ID en proyectos y exportación mensual a CSV (tarea, IDs y horas)."
     },
     "departments": {
       "calloutTitle": "Departamentos",
@@ -1927,6 +1984,8 @@
       "invited": "Invitaciones enviadas"
     },
     "client": {
+      "skip": "Omitir: añadiré clientes después",
+      "skipFinishes": "Sin cliente no hace falta crear un proyecto. Podrás añadir ambos después en Clientes y proyectos.",
       "calloutTitle": "Cliente",
       "calloutBullets": [
         "Marca o empresa que os paga.",
@@ -1941,6 +2000,7 @@
       "colorHelp": "Solo visual: barras y etiquetas donde aparezca este cliente."
     },
     "project": {
+      "skip": "Omitir: crearé proyectos después",
       "calloutTitle": "Proyecto",
       "calloutBullets": [
         "Encargo concreto (campaña, retainer, web…).",

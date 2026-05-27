@@ -116,6 +116,7 @@ const AgenciesPage = lazyWithRetry(() => import("./pages/AgenciesPage"));
 const AgencyManagementPage = lazyWithRetry(() => import("./pages/AgencyManagementPage"));
 const TeamCapacityPage = lazyWithRetry(() => import("./pages/TeamCapacityPage"));
 const OnboardingWizard = lazyWithRetry(() => import("./components/onboarding/OnboardingWizard"));
+const OnboardingChoicePage = lazyWithRetry(() => import("./pages/OnboardingChoicePage"));
 const NotFound = lazyWithRetry(() => import("./pages/NotFound"));
 const TeamPulsePage = lazyWithRetry(() => import("./pages/TeamPulsePage"));
 const TiemposPage = lazyWithRetry(() => import("./pages/TiemposPage"));
@@ -229,7 +230,8 @@ const App = () => (
 
                         {/* Rutas Protegidas */}
                         <Route element={<ProtectedRoute />}>
-                          {/* Onboarding Wizard (sin AppLayout) */}
+                          {/* Onboarding (sin AppLayout) */}
+                          <Route path="/onboarding/choose" element={<Suspense fallback={<PageLoader />}><OnboardingChoicePage /></Suspense>} />
                           <Route path="/onboarding" element={<Suspense fallback={<PageLoader />}><OnboardingWizard /></Suspense>} />
 
                           {/* Suspended: fuera de AppLayout, solo sesión */}

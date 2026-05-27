@@ -496,21 +496,43 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
     await fetchAgencyForUser();
   }, [fetchAgencyForUser]);
 
-  // Marcar setup como completado
+  // Marcar setup como completado (RPC evita UPDATE en 0 filas por RLS sin error en el cliente)
   const completeSetup = useCallback(async () => {
     if (!currentAgency?.id) return;
 
-    const { error } = await supabase
-      .from('agencies')
-      .update({ setup_completed: true })
-      .eq('id', currentAgency.id);
+    const agencyId = currentAgency.id;
 
-    if (error) {
-      console.error('[AgencyContext] Error completando setup:', error);
-      throw error;
+    const { error: rpcError } = await supabase.rpc('complete_agency_setup_for_client', {
+      p_agency_id: agencyId,
+    });
+
+    if (rpcError) {
+      const rpcMissing =
+        rpcError.code === '42883' ||
+        rpcError.message?.includes('complete_agency_setup_for_client');
+
+      if (!rpcMissing) {
+        console.error('[AgencyContext] Error completando setup (RPC):', rpcError);
+        throw rpcError;
+      }
+
+      const { data, error: directError } = await supabase
+        .from('agencies')
+        .update({ setup_completed: true })
+        .eq('id', agencyId)
+        .select('id')
+        .maybeSingle();
+
+      if (directError || !data?.id) {
+        console.error('[AgencyContext] Error completando setup (directo):', directError);
+        throw new Error(
+          directError?.message ||
+            'No se pudo guardar la configuración inicial. ¿Aplicaste la migración complete_agency_setup_for_client?'
+        );
+      }
     }
 
-    setCurrentAgency(prev => prev ? { ...prev, setupCompleted: true } : null);
+    setCurrentAgency((prev) => (prev ? { ...prev, setupCompleted: true } : null));
   }, [currentAgency?.id]);
 
   // Actualizar nombre de agencia y regenerar slug

@@ -77,10 +77,20 @@
       }
     },
     "register": {
+      "mode": {
+        "quick": "Quick",
+        "full": "Full",
+        "quickHint": "Same account and company fields; no password confirmation.",
+        "fullHint": "Includes password confirmation before choosing how to set up Taimbox."
+      },
+      "trialNote": "14-day Business plan trial. No card required when you sign up.",
       "fields": {
         "name": {
           "label": "Your name",
           "placeholder": "John Smith"
+        },
+        "nameOptional": {
+          "label": "Your name (optional)"
         },
         "email": {
           "label": "Email",
@@ -95,10 +105,14 @@
         "agencyName": {
           "label": "Your company's name",
           "placeholder": "My Agency"
+        },
+        "agencyNameOptional": {
+          "label": "Company name (optional)"
         }
       },
       "actions": {
         "submit": "Create free account",
+        "submitQuick": "Create account and continue",
         "submitting": "Creating account..."
       },
       "footer": "When you sign up, you'll create a new company and become its admin.",
@@ -109,7 +123,9 @@
         "confirmPasswordRequired": "Confirm your password",
         "agencyNameRequired": "Company name is required",
         "passwordsDontMatch": "Passwords do not match",
-        "agencyAlreadyExists": "This company already exists. Please choose another name."
+        "agencyAlreadyExists": "This company already exists. Please choose another name.",
+        "agencyNameTaken": "This company already exists. Try another name.",
+        "emailTaken": "This email is already registered."
       },
       "toast": {
         "genericError": "Error while signing up",
@@ -773,6 +789,10 @@
       "myTime": "My Time",
       "myWeek": "My week",
       "myDay": "My day",
+      "myDayEmptyTitle": "No tasks this week",
+      "myDayEmptyDesc": "When you have assignments for this week or pending from earlier weeks, they will show up here.",
+      "viewPlanning": "View planning",
+      "finishOnboardingFirst": "Finish initial setup (Explore now or Set up my agency) before opening the planner.",
       "myProjects": "My Projects",
       "upcomingHolidays": "Upcoming Holidays",
       "hoursLogged": "Hours logged",
@@ -784,7 +804,7 @@
       "weekly": "Weekly",
       "addTasks": "Add tasks",
       "internalTask": "Internal task",
-      "exportCrm": "Export to CRM",
+      "exportCrm": "Export planning (CSV)",
       "goals": "Goals",
       "absences": "Absences",
       "repeatTour": "Repeat tour",
@@ -964,7 +984,7 @@
     },
     "modules": {
       "title": "Active features",
-      "description": "Turn product features on or off. Weekly does not add a menu entry—it controls weekly close in My space and the planner. CRM and ads are under Connections.",
+      "description": "Turn product features on or off. Weekly does not add a menu entry—it controls weekly close in My space and the planner. External IDs and ads are under Connections.",
       "ppc": "PPC (Ads)",
       "ppcDesc": "Google/Meta Ads and spend reporting.",
       "ppcEffect": "Affects: Google Ads / Meta Ads menu entries and /ads, /meta-ads routes (plus role permissions).",
@@ -1156,30 +1176,34 @@
     "integrations": {
       "title": "Connections",
       "description": "External system links and ad accounts. The PPC module controls whether ad routes appear.",
-      "externalLinksTitle": "External system links",
-      "externalLinksDesc": "CSV export and IDs on profiles and projects to sync with your CRM or another system.",
+      "externalLinksTitle": "External IDs and export",
+      "externalLinksDesc": "Assign an identifier from your ERP, billing tool, or other system to each person and project, and export the month’s planning to CSV.",
       "externalBadge": "External",
       "adsPlatformsTitle": "Ad accounts",
       "adsPlatformsDesc": "OAuth and Meta / Google Ads accounts. Requires PPC module on and role permissions to see ad screens.",
-      "crm": "CRM",
+      "crm": "IDs on people and projects",
+      "externalIdsBlockTitle": "External IDs",
+      "externalUserIdLabel": "External ID (user)",
+      "externalUserIdHint": "This person’s identifier in your ERP or other tool. Included in the CSV export when set.",
+      "externalProjectIdLabel": "External ID (project)",
       "other": "Privacy & Demo",
       "weeklyCloseDay": "Weekly close day",
       "weeklyCloseDayDesc": "Last day of the operational week (from each week’s Monday). After that date, that week’s tasks can no longer be edited in the planner and must be handled through the Weekly close flow.",
       "selectDay": "Select a day",
       "dependencyWarning": "This integration requires active dependencies",
       "dependencyError": "To activate \"{{name}}\", you must first activate: {{deps}}",
-      "crmUserIdWarning": "If you disable \"CRM User ID\", \"CRM Task Export\" will also be disabled",
-      "crmPackTitle": "CRM integration (CSV export)",
-      "crmPackDescription": "Links your agency to your CRM or another system: each member can set their CRM user ID on their profile, and each project can have an external project ID. Users with permission can export the month’s tasks to CSV (task name, CRM user ID, external project ID, and hours).",
-      "crmPackLegacyHint": "You only had the user ID field on profiles enabled. Turn the switch on to complete the integration (export and external project ID on project records).",
+      "crmUserIdWarning": "If you disable profile IDs, CSV export will also be turned off",
+      "crmPackTitle": "External IDs and CSV export",
+      "crmPackDescription": "Each member can set an external ID on their profile and each project on its record. Users with permission can export the month’s planning to CSV (task, user ID, project ID, and hours) to match your ERP or other tool.",
+      "crmPackLegacyHint": "You only had profile IDs enabled. Turn the switch on to also enable CSV export and the project ID field.",
       "items": {
         "crm_export": {
-          "name": "CRM Task Export",
-          "description": "Exports planning to CSV and enables a per-project external project ID (CRM) field so records match your external system."
+          "name": "Planning export (CSV)",
+          "description": "Exports planning to CSV and shows the external ID field on each project."
         },
         "crm_user_id": {
-          "name": "CRM User ID",
-          "description": "Adds a field on each team member’s profile for their ID in the CRM or another external system. Required for export."
+          "name": "External ID on profiles",
+          "description": "Profile field for each member’s identifier in your external system. Required for CSV export."
         },
         "anonymize_ads_for_video": {
           "name": "Demo mode (hide sensitive data)",
@@ -1298,7 +1322,7 @@
   },
   "agencies": {
     "title": "My Agencies",
-    "hubIntro": "Pick the active agency if you have more than one. The shortcuts below match Agency settings: profitability (hourly target €/h), computed vs actual hours, Connections (Weekly, CRM, ads), and menu modules.",
+    "hubIntro": "Pick the active agency if you have more than one. The shortcuts below match Agency settings: profitability (hourly target €/h), computed vs actual hours, Connections (Weekly, external IDs, ads), and menu modules.",
     "accessCount_one": "You have access to 1 agency",
     "accessCount_other": "You have access to {{count}} agencies",
     "manageCurrent": "Manage your current agency",
@@ -1308,12 +1332,12 @@
     "currentBadge": "Current",
     "guide": {
       "title": "What you’ll find in each place",
-      "lead": "Summary aligned with the settings screen so Weekly, CRM, and the hourly target do not blur into each other.",
+      "lead": "Summary aligned with the settings screen so Weekly, external IDs, and the hourly target do not blur into each other.",
       "settingsHeading": "Agency settings",
       "settingsLi1": "General & profitability: agency name, slug, and effective hourly rate target (€/h) used on Financial health; positive values only, comma or dot as decimal, up to two decimal places.",
       "settingsLi2": "Hours tracking: choose whether progress and profitability mainly use computed hours (what you bill or budget) or actual time spent; the timer is optional.",
       "settingsLi3": "Connections — Weekly: the close day is when a week stops being editable directly in the planner; carry-over is handled in the Weekly flow. Meta and Google Ads accounts are set here when the PPC module is on.",
-      "settingsLi4": "Connections — CRM: one switch turns on profile CRM user ID, external project ID on each project, and monthly CSV export (task, IDs, and hours) together.",
+      "settingsLi4": "Connections — External IDs: one switch turns on profile ID, project ID, and monthly CSV export (task, IDs, and hours) together.",
       "settingsLi5": "Organization, team tab (roles and menu permissions), projects (filters and aliasing), visible product areas (OKRs, Deadlines, timer…), appearance, and plan or billing.",
       "teamHeading": "Team",
       "teamBody": "People, departments, and day-to-day operational staff data. This is not the same screen as agency access administrators.",
@@ -1595,6 +1619,10 @@
     "timer": {
       "taskInProgress": "Task in progress",
       "totalRegistered": "Total registered",
+      "todayLabel": "Today",
+      "tracking": "Tracking",
+      "trackingAria": "Timer running",
+      "viewTimes": "View times",
       "client": "Client:",
       "stop": "Stop",
       "todayTotal": "Today's total:"
@@ -1669,10 +1697,34 @@
     "done": "Setup complete!",
     "finish": "Finish",
     "footer": "Everything you set here can be edited later in Agency settings (name, modules, departments, connections, etc.).",
+    "choice": {
+      "title": "How do you want to get started?",
+      "subtitle": "You can change all of this later in Agency settings.",
+      "trialNote": "You have a 14-day Business plan trial (no card). You can change plans later.",
+      "quickTitle": "Explore now",
+      "quickDesc": "Enter the planner in ~1 min with recommended defaults. We'll show a short checklist.",
+      "guidedTitle": "Set up my agency",
+      "guidedDesc": "Step-by-step assistant (~8–12 min): modules, departments, team, first client and project. Optional steps can be skipped.",
+      "quickSuccess": "You're in! Open the planner whenever you're ready."
+    },
+    "checklist": {
+      "title": "First steps in Taimbox",
+      "allDone": "Nice work! You have the basics covered.",
+      "client": "Add your first client",
+      "project": "Create a project",
+      "team": "Invite your team",
+      "settings": "Adjust modules and connections"
+    },
+    "profile": {
+      "recommendedLead": "Want to move faster? We'll use sensible defaults—you can change them anytime in Agency settings.",
+      "useRecommended": "Use defaults",
+      "recommendedApplied": "Defaults applied."
+    },
     "wizard": {
       "stepProgress": "{{current}}/{{total}}",
       "stepProgressAria": "Step {{current}} of {{total}}",
-      "timeAndReadyFirst": "Usually quick. If you leave, we save your place so you can continue later."
+      "timeAndReadyFirst": "Usually quick. If you leave, we save your place so you can continue later.",
+      "guidedDuration": "About 8–12 minutes. If you leave, we save your place so you can continue later."
     },
     "common": {
       "moreDetails": "More details"
@@ -1690,8 +1742,8 @@
         "desc": "Set your financial reference, how you count time, and which parts of Taimbox you want to use."
       },
       "integrations": {
-        "title": "External links (optional)",
-        "desc": "Optional: CRM link for CSV export. Weekly is configured in the previous step (Product features)."
+        "title": "External IDs (optional)",
+        "desc": "Optional: assign IDs on profiles and projects and export planning to CSV."
       },
       "departments": {
         "title": "Departments",
@@ -1728,6 +1780,12 @@
     },
     "hours": {
       "label": "How do you want Taimbox to treat hours?",
+      "labelHint": "Choose how hours are recorded in planning and reports. You can change this later.",
+      "badgeCommon": "Common",
+      "vizDedicated": "Logged",
+      "vizComputed": "Billable",
+      "vizActual": "Time logged",
+      "vizActualHint": "Single figure: billed hours = worked hours",
       "computed": "Computed vs actual hours",
       "computedHelp": "You can track time spent separately from what you bill or budget: e.g. 1.5 h worked and 2 h “computed” for complexity or margin. Choose this when that commercial adjustment is part of how you work.",
       "computedBullets": [
@@ -1768,28 +1826,27 @@
       "max": "Limit per task (timer)",
       "maxShort": "Max per session",
       "maxInfoLabel": "What this limit does",
-      "maxHint": "Sessions longer than this stop automatically so forgotten timers do not run forever."
+      "maxHint": "Sessions longer than this stop automatically so forgotten timers are not left running."
     },
     "integrations": {
       "needsDeps": "Enable first: {{list}}",
       "deps": "Requires active dependencies",
-      "calloutTitle": "Optional external links",
+      "calloutTitle": "External IDs (optional)",
       "calloutBullets": [
         "Everything here is optional; the same toggles live under Agency settings → Connections.",
-        "CRM: one switch for IDs on profiles and projects plus monthly CSV export.",
-        "Weekly (weekly close) is enabled under Features, not here."
+        "One switch: IDs on profiles and projects plus monthly CSV export."
       ],
       "weeklyCardHelp": "With Weekly on, closed weeks are not rewritten by hand in the calendar—changes go through the Weekly flow. Turn it off if you prefer full freedom.",
       "weeklyCloseHelpShort": "Last day of the operational week (from Monday). After that day, that week is locked for direct planner edits.",
-      "crmPackShort": "One switch: CRM user ID on profiles, external project ID, and monthly CSV export (task, IDs, hours).",
+      "crmPackShort": "One switch: IDs on profiles and projects, and monthly CSV export (task, IDs, hours).",
       "intro": "You can skip this for now and turn features on later in Connections (agency settings) once you know your weekly close rhythm.",
       "introAccordion": "Optional features",
       "weeklyExtra": "Enables stricter history: the planner won’t let you rewrite weeks that are already closed; changes go through the Weekly close. Leave it off if you prefer to edit the past freely.",
-      "crmGroup": "CRM",
+      "crmGroup": "External IDs",
       "skip": "Skip and continue without changes",
       "skipToast": "You can configure this later in Connections whenever you want.",
       "weeklyCloseHelp": "End of the operational week (from that week’s Monday). After it, that week no longer allows direct planner edits—you use Weekly. It does not have to be Friday.",
-      "crmIntro": "One switch: CRM user ID on profiles, external project ID on projects, and monthly CSV export with task, user ID, project ID, and hours."
+      "crmIntro": "One switch: IDs on profiles and projects, and monthly CSV export (task, IDs, and hours)."
     },
     "departments": {
       "calloutTitle": "Departments",
@@ -1865,6 +1922,8 @@
       "invited": "Invitations sent"
     },
     "client": {
+      "skip": "Skip — I'll add clients later",
+      "skipFinishes": "Without a client there is no project to create. You can add both later under Clients and projects.",
       "calloutTitle": "Client",
       "calloutBullets": [
         "The brand or company that pays you.",
@@ -1879,6 +1938,7 @@
       "colorHelp": "Visual only: bars and tags wherever this client appears."
     },
     "project": {
+      "skip": "Skip — I'll create projects later",
       "calloutTitle": "Project",
       "calloutBullets": [
         "A specific engagement (campaign, retainer, site…).",

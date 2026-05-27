@@ -42,7 +42,7 @@ export function AppLayout() {
           "lg:ml-64",
           "main-content-area" // En móvil: offset del header fijo (index.css)
         )}>
-          <Outlet />
+          <Outlet key={location.pathname} />
         </main>
       </div>
     </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useId } from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -53,8 +53,8 @@ const tourSteps: TourStep[] = [
   {
     id: 'crm-export',
     target: '[data-tour="crm-export"]',
-    title: 'Exportar al CRM',
-    description: 'Una vez planificadas tus tareas, puedes exportarlas al CRM con un solo clic. Se generará un archivo CSV listo para importar. Necesitas tener configurado tu ID de usuario del CRM.',
+    title: 'Exportar planificación (CSV)',
+    description: 'Cuando tengas tareas planificadas, puedes exportarlas a CSV con un clic para cruzarlas con tu ERP u otra herramienta. Necesitas tener tu ID externo configurado en el perfil.',
     icon: <FileDown className="w-6 h-6 text-purple-500" />,
     position: 'bottom',
     highlight: true
@@ -191,6 +191,7 @@ interface WelcomeTourProps {
 
 export function WelcomeTour({ onComplete, forceShow = false, onTabChange }: WelcomeTourProps) {
   const { currentUser, updateEmployee } = useApp();
+  const maskId = useId().replace(/:/g, '');
   const [isVisible, setIsVisible] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [highlightPos, setHighlightPos] = useState<HighlightPosition | null>(null);
@@ -525,6 +526,8 @@ export function WelcomeTour({ onComplete, forceShow = false, onTabChange }: Welc
   const isFirstStep = currentStep === 0;
   const isLastStep = currentStep === tourSteps.length - 1;
   const isCentered = step.position === 'center' || !highlightPos;
+  /** Solo bloquear la página si hay spotlight válido; si no, el SVG capturaba todos los clics. */
+  const blocksPageInteraction = Boolean(step.highlight && highlightPos && isReady);
 
   // Renderizar en un portal para evitar problemas de contexto
   const tourContent = (
@@ -537,11 +540,11 @@ export function WelcomeTour({ onComplete, forceShow = false, onTabChange }: Welc
           left: 0,
           width: '100vw',
           height: '100vh',
-          pointerEvents: 'auto'
+          pointerEvents: blocksPageInteraction ? 'auto' : 'none'
         }}
       >
         <defs>
-          <mask id="tour-spotlight-mask">
+          <mask id={maskId}>
             <rect x="0" y="0" width="100%" height="100%" fill="white" />
             {highlightPos && isReady && (
               <rect
@@ -561,7 +564,7 @@ export function WelcomeTour({ onComplete, forceShow = false, onTabChange }: Welc
           width="100%"
           height="100%"
           fill="rgba(0, 0, 0, 0.75)"
-          mask="url(#tour-spotlight-mask)"
+          mask={`url(#${maskId})`}
         />
       </svg>
 
