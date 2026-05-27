@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
+import { useAppTranslation } from '@/hooks/useAppTranslation';
 import { supabase } from '@/lib/supabase';
 import { invokeEdgeFunctionWithRetry } from '@/lib/invokeEdgeFunction';
 import { useAgency } from '@/contexts/AgencyContext';
@@ -11,7 +11,7 @@ export default function MetaCallbackPage() {
     const navigate = useNavigate();
     const { refreshAgency } = useAgency();
     const processedRef = useRef(false);
-    const { t } = useTranslation('app');
+    const { t } = useAppTranslation();
 
     useEffect(() => {
         const handleCallback = async () => {
@@ -27,8 +27,8 @@ export default function MetaCallbackPage() {
                 console.error('Error OAuth Meta:', error, errorReason, errorDescription);
                 toast.error(
                     error === 'access_denied'
-                        ? t('app.auth.oauth.meta.denied')
-                        : t('app.auth.oauth.meta.genericError', {
+                        ? t('auth.oauth.meta.denied')
+                        : t('auth.oauth.meta.genericError', {
                               error: errorDescription || error,
                           })
                 );
@@ -37,7 +37,7 @@ export default function MetaCallbackPage() {
             }
 
             if (!code) {
-                toast.error(t('app.auth.oauth.meta.invalidResponse'));
+                toast.error(t('auth.oauth.meta.invalidResponse'));
                 navigate('/agency?tab=integrations');
                 return;
             }
@@ -58,7 +58,7 @@ export default function MetaCallbackPage() {
             }
 
             if (!agencyId) {
-                toast.error(t('app.auth.oauth.meta.missingAgency'));
+                toast.error(t('auth.oauth.meta.missingAgency'));
                 navigate('/agency?tab=integrations');
                 return;
             }
@@ -85,17 +85,17 @@ export default function MetaCallbackPage() {
                     console.warn('list-meta-accounts tras OAuth:', e);
                 }
 
-                toast.success(t('app.auth.oauth.meta.success'));
+                toast.success(t('auth.oauth.meta.success'));
                 await refreshAgency();
                 navigate('/agency?tab=integrations');
             } catch (err: unknown) {
                 console.error('Error intercambiando token Meta:', err);
                 let message =
-                    err instanceof Error ? err.message : t('app.auth.oauth.common.tryAgain');
+                    err instanceof Error ? err.message : t('auth.oauth.common.tryAgain');
                 if (/name resolution|getaddrinfo/i.test(message)) {
-                    message = t('app.auth.oauth.meta.dnsError');
+                    message = t('auth.oauth.meta.dnsError');
                 }
-                toast.error(t('app.auth.oauth.meta.linkError', { message }));
+                toast.error(t('auth.oauth.meta.linkError', { message }));
                 navigate('/agency?tab=integrations');
             }
         };
@@ -107,10 +107,10 @@ export default function MetaCallbackPage() {
         <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
             <div className="h-8 w-8 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
             <p className="text-slate-600 font-medium mt-4">
-                {t('app.auth.oauth.meta.loadingTitle')}
+                {t('auth.oauth.meta.loadingTitle')}
             </p>
             <p className="text-slate-400 text-sm mt-2">
-                {t('app.auth.oauth.meta.loadingSubtitle')}
+                {t('auth.oauth.meta.loadingSubtitle')}
             </p>
         </div>
     );

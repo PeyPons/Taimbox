@@ -1805,7 +1805,7 @@ export default function AgencySettingsPage() {
                               onClick={() => {
                                 const appId = import.meta.env.VITE_META_APP_ID;
                                 if (!appId) {
-                                  toast.error('Falta VITE_META_APP_ID en el entorno.');
+                                  toast.error(t('agency.integrations.metaAds.envMissingAppId'));
                                   return;
                                 }
                                 if (!currentAgency?.id) return;
@@ -1859,11 +1859,11 @@ export default function AgencySettingsPage() {
                               onClick={() => {
                                 const appId = import.meta.env.VITE_META_APP_ID;
                                 if (!appId) {
-                                  toast.error('Falta VITE_META_APP_ID en el entorno.');
+                                  toast.error(t('agency.integrations.metaAds.envMissingAppId'));
                                   return;
                                 }
                                 if (!currentAgency?.id) {
-                                  toast.error('No se pudo identificar la agencia.');
+                                  toast.error(t('agency.integrations.metaAds.missingAgencyContext'));
                                   return;
                                 }
                                 const redirectUri = `${window.location.origin}/meta-callback`;
@@ -2071,7 +2071,7 @@ export default function AgencySettingsPage() {
                                   return;
                                 }
                                 if (!currentAgency?.id) {
-                                  toast.error('No se pudo identificar la agencia.');
+                                  toast.error(t('agency.integrations.googleAds.missingAgencyContext'));
                                   return;
                                 }
                                 const redirectUri = window.location.origin + '/google-callback';

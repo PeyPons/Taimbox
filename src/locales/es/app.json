@@ -1693,7 +1693,8 @@
         "configError": "Error de configuración: Falta el ID de cliente de la agencia.",
         "linked": "Vinculado",
         "updateSuccess": "Cuenta de Google Ads actualizada. Sincroniza de nuevo para cargar los datos.",
-        "disconnectSuccess": "Cuenta de Google Ads desvinculada"
+        "disconnectSuccess": "Cuenta de Google Ads desvinculada",
+        "missingAgencyContext": "No se pudo identificar la agencia."
       },
       "metaAds": {
         "title": "Meta Ads",
@@ -1714,7 +1715,9 @@
         "importDesc": "Llama a la API de Meta y registra las cuentas en \"Cuentas conectadas\".",
         "connectedAccounts": "Cuentas conectadas ({{count}})",
         "disconnectSuccess": "Meta Ads desvinculado",
-        "syncSuccess": "Cuentas actualizadas ({{count}} desde Meta)."
+        "syncSuccess": "Cuentas actualizadas ({{count}} desde Meta).",
+        "envMissingAppId": "Falta VITE_META_APP_ID en el entorno.",
+        "missingAgencyContext": "No se pudo identificar la agencia."
       }
     },
     "billing": {

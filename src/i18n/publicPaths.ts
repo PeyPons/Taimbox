@@ -7,6 +7,11 @@
  * (poblado por BlogPathSync) tiene prioridad y permite que admin renombre
  * o añada posts sin desplegar.
  */
+/**
+ * Pares ES → EN para hreflang (`RouteHreflangSync`) y enlaces localizados.
+ * Al añadir una landing pública nueva con traducción EN: entrada aquí, ruta en App.tsx,
+ * `SeoTags`/`CommercialSeoTags` en la página y URL en `public/sitemap.xml`.
+ */
 export const PUBLIC_PATH_ES_TO_EN: Record<string, string> = {
   "/": "/en",
   "/por-que-timeboxing": "/en/why-taimbox",

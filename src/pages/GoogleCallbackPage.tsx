@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
+import { useAppTranslation } from '@/hooks/useAppTranslation';
 import { supabase } from '@/lib/supabase';
 import { useAgency } from '@/contexts/AgencyContext';
 import { toast } from '@/lib/notify';
@@ -10,7 +10,7 @@ export default function GoogleCallbackPage() {
     const navigate = useNavigate();
     const { refreshAgency } = useAgency();
     const processedRef = useRef(false);
-    const { t } = useTranslation('app');
+    const { t } = useAppTranslation();
 
     useEffect(() => {
         const handleCallback = async () => {
@@ -23,13 +23,13 @@ export default function GoogleCallbackPage() {
 
             if (error) {
                 console.error('Error de Google OAuth:', error);
-                toast.error(t('app.auth.oauth.google.denied'));
+                toast.error(t('auth.oauth.google.denied'));
                 navigate('/agency?tab=integrations');
                 return;
             }
 
             if (!code) {
-                toast.error(t('app.auth.oauth.google.invalidResponse'));
+                toast.error(t('auth.oauth.google.invalidResponse'));
                 navigate('/agency?tab=integrations');
                 return;
             }
@@ -49,7 +49,7 @@ export default function GoogleCallbackPage() {
                 // ignore parse error
             }
             if (!agencyId) {
-                toast.error(t('app.auth.oauth.google.missingAgency'));
+                toast.error(t('auth.oauth.google.missingAgency'));
                 navigate('/agency?tab=integrations');
                 return;
             }
@@ -63,15 +63,15 @@ export default function GoogleCallbackPage() {
                 if (fnError) throw fnError;
                 if (data?.error) throw new Error(data.error);
 
-                toast.success(t('app.auth.oauth.google.success'));
+                toast.success(t('auth.oauth.google.success'));
                 await refreshAgency();
                 navigate('/agency?tab=integrations');
 
             } catch (err: any) {
                 console.error('Error intercambiando token:', err);
-                const fallbackMessage = t('app.auth.oauth.common.tryAgain');
+                const fallbackMessage = t('auth.oauth.common.tryAgain');
                 const message = err?.message || fallbackMessage;
-                toast.error(t('app.auth.oauth.google.linkError', { message }));
+                toast.error(t('auth.oauth.google.linkError', { message }));
                 navigate('/agency?tab=integrations');
             }
         };
@@ -83,10 +83,10 @@ export default function GoogleCallbackPage() {
         <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
             <div className="h-8 w-8 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
             <p className="text-slate-600 font-medium mt-4">
-                {t('app.auth.oauth.google.loadingTitle')}
+                {t('auth.oauth.google.loadingTitle')}
             </p>
             <p className="text-slate-400 text-sm mt-2">
-                {t('app.auth.oauth.google.loadingSubtitle')}
+                {t('auth.oauth.google.loadingSubtitle')}
             </p>
         </div>
     );

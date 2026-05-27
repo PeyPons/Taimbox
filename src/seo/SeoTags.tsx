@@ -29,8 +29,6 @@ export function SeoTags({
 }: SeoTagsProps) {
   const canonicalPath = lang === "en" ? pathEn : pathEs;
   const canonical = absoluteUrl(canonicalPath);
-  const urlEs = absoluteUrl(pathEs);
-  const urlEn = absoluteUrl(pathEn);
 
   const ldPayload =
     jsonLd != null
@@ -46,9 +44,6 @@ export function SeoTags({
       <meta name="description" content={description} />
       {robots != null && robots !== "" && <meta name="robots" content={robots} />}
       <link rel="canonical" href={canonical} />
-      <link rel="alternate" hrefLang="es" href={urlEs} />
-      <link rel="alternate" hrefLang="en" href={urlEn} />
-      <link rel="alternate" hrefLang="x-default" href={urlEs} />
       <meta property="og:type" content={ogType} />
       <meta property="og:title" content={title} />
       <meta property="og:description" content={description} />

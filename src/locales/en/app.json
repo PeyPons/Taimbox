@@ -1210,7 +1210,8 @@
         "configError": "Configuration error: Agency customer ID missing.",
         "linked": "Linked",
         "updateSuccess": "Google Ads account updated. Sync again to load data.",
-        "disconnectSuccess": "Google Ads account disconnected"
+        "disconnectSuccess": "Google Ads account disconnected",
+        "missingAgencyContext": "Could not identify the agency."
       },
       "metaAds": {
         "title": "Meta Ads",
@@ -1231,7 +1232,9 @@
         "importDesc": "Calls the Meta API and registers accounts in \"Connected accounts\".",
         "connectedAccounts": "Connected accounts ({{count}})",
         "disconnectSuccess": "Meta Ads disconnected",
-        "syncSuccess": "Accounts updated ({{count}} from Meta)."
+        "syncSuccess": "Accounts updated ({{count}} from Meta).",
+        "envMissingAppId": "VITE_META_APP_ID is missing from the environment.",
+        "missingAgencyContext": "Could not identify the agency."
       }
     },
     "billing": {

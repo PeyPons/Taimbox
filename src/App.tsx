@@ -62,6 +62,7 @@ import { AgencySearchParamSync } from "./components/agency/AgencySearchParamSync
 import { CookieBanner } from "./components/landing/CookieBanner";
 import { PublicLocaleSync } from "@/i18n/PublicLocaleSync";
 import { BlogPathSync } from "@/i18n/BlogPathSync";
+import { RouteHreflangSync } from "@/seo/RouteHreflangSync";
 
 // Loading fallback para páginas lazy
 const PageLoader = () => (
@@ -150,6 +151,7 @@ const App = () => (
                     <AgencySearchParamSync />
                     <PublicLocaleSync />
                     <BlogPathSync />
+                    <RouteHreflangSync />
                     <Toaster />
                     <NotificationProvider>
                       <NotificationEngineHost />
