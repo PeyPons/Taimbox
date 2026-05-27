@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { LandingHeader } from '@/components/landing/LandingHeader';
 import { LandingFooter } from '@/components/landing/LandingFooter';
+import { LandingPricingCurrencySelect } from '@/components/landing/LandingPricingCurrencySelect';
 import { Button } from '@/components/ui/button';
 import {
   Check,
@@ -18,66 +19,86 @@ import {
   PieChart,
   Activity,
   Lock,
-  Rocket
+  Rocket,
+  Crown,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { SeoTags } from '@/seo/SeoTags';
 import { i18nAsArray } from '@/lib/i18nReturnObjects';
+import { PUBLIC_PLAN_PRICING, type PublicPlanId } from '@/config/publicPricing';
+import { usePublicPricingCurrency } from '@/hooks/usePublicPricingCurrency';
+import { useHomeLiteralT } from '@/components/landing/below/useHomeLiteralT';
 
-const PLAN_META = [
+const PLAN_UI: Record<
+  PublicPlanId,
   {
-    id: 'starter' as const,
+    name: string;
+    icon: LucideIcon;
+    iconBg: string;
+    iconColor: string;
+    cardStyle: string;
+  }
+> = {
+  starter: {
     name: 'Starter',
-    price: '0',
-    originalPrice: undefined as string | undefined,
-    href: '/login?tab=register',
-    recommended: false,
     icon: Zap,
     iconBg: 'bg-indigo-500/20 border border-indigo-500/30',
     iconColor: 'text-indigo-400',
     cardStyle: 'bg-slate-900/80 border-white/10 hover:border-indigo-500/30 transition-all duration-300',
   },
-  {
-    id: 'pro' as const,
+  pro: {
     name: 'Pro',
-    originalPrice: '99',
-    price: '49',
-    href: '/login?tab=register',
-    recommended: false,
     icon: Sparkles,
     iconBg: 'bg-purple-500/20 border border-purple-500/30',
     iconColor: 'text-purple-400',
     cardStyle: 'bg-slate-900/80 border-white/10 hover:border-purple-500/30 transition-all duration-300',
   },
-  {
-    id: 'business' as const,
+  business: {
     name: 'Business',
-    originalPrice: '249',
-    price: '149',
-    href: '/login?tab=register',
-    recommended: true,
     icon: Building2,
     iconBg: 'bg-amber-500/20 border border-amber-500/30',
     iconColor: 'text-amber-400',
-    cardStyle: 'bg-gradient-to-b from-indigo-500/10 to-purple-500/10 border-indigo-500/40 relative transform lg:-translate-y-2 shadow-2xl shadow-purple-500/20 transition-all duration-300',
+    cardStyle:
+      'bg-gradient-to-b from-indigo-500/10 to-purple-500/10 border-indigo-500/40 relative lg:-translate-y-2 shadow-2xl shadow-purple-500/20 transition-all duration-300',
   },
-];
+  enterprise: {
+    name: 'Enterprise',
+    icon: Crown,
+    iconBg: 'bg-slate-500/20 border border-white/20',
+    iconColor: 'text-slate-200',
+    cardStyle: 'bg-slate-900/80 border-white/10 hover:border-white/25 transition-all duration-300',
+  },
+};
 
 const UNIVERSAL_ICONS = [LayoutGrid, Users, PieChart, Activity, Lock, Shield];
 const TRUST_ICONS = [RefreshCw, Shield, CreditCard];
 
 export default function PreciosPage() {
   const { t, i18n } = useTranslation('landing');
+  const { path } = useHomeLiteralT();
   const lang = i18n.language.startsWith('en') ? 'en' : 'es';
+
+  const {
+    currency,
+    setCurrency,
+    currencyOptions,
+    ratesLoading,
+    formatMonthly,
+    formatEurAmount,
+    billingNote,
+  } = usePublicPricingCurrency();
 
   const plans = useMemo(
     () =>
-      PLAN_META.map((meta) => ({
+      PUBLIC_PLAN_PRICING.map((meta) => ({
         ...meta,
+        ...PLAN_UI[meta.id],
         period: t(`pricing.plans.${meta.id}.period`),
         description: t(`pricing.plans.${meta.id}.description`),
         features: i18nAsArray<string>(t(`pricing.plans.${meta.id}.features`, { returnObjects: true })),
         cta: t(`pricing.plans.${meta.id}.cta`),
+        customPrice: t(`pricing.plans.${meta.id}.customPrice`, { defaultValue: '' }),
       })),
     [t, i18n.language],
   );
@@ -117,9 +138,9 @@ export default function PreciosPage() {
 
         <LandingHeader />
 
-        <article className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-14 md:py-16 text-left overflow-x-hidden">
+        <article className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-14 md:py-16 text-left overflow-x-hidden">
 
-          <section className="mb-16 sm:mb-20 text-center">
+          <section className="mb-12 sm:mb-16 text-center">
             <div className="mb-6">
               <span className="inline-block px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider text-indigo-300 bg-indigo-500/20 border border-indigo-400/30">
                 {t('pricing.heroKicker')}
@@ -151,16 +172,29 @@ export default function PreciosPage() {
           </section>
 
           <section className="mb-16 sm:mb-24">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+            <LandingPricingCurrencySelect
+              currency={currency}
+              onCurrencyChange={setCurrency}
+              options={currencyOptions}
+              loading={ratesLoading}
+              variant="dark"
+            />
+            <p className="text-center text-[11px] text-indigo-300/70 max-w-lg mx-auto -mt-4 mb-10">{billingNote}</p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 lg:gap-5">
               {plans.map((plan) => {
                 const Icon = plan.icon;
+                const isEnterprise = plan.eurMonthly == null;
+                const hasEarlyDiscount = plan.eurMonthlyOfficial != null && plan.eurMonthly != null;
+                const registerHref = path(plan.href);
+
                 return (
                   <div
                     key={plan.id}
-                    className={`rounded-2xl border p-5 sm:p-8 backdrop-blur-md flex flex-col ${plan.cardStyle}`}
+                    className={`rounded-2xl border p-5 sm:p-7 backdrop-blur-md flex flex-col relative ${plan.cardStyle}`}
                   >
                     {plan.recommended && (
-                      <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2">
+                      <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
                         <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-white bg-gradient-to-r from-indigo-500 to-purple-500 shadow-lg shadow-purple-500/30">
                           {t('pricing.recommended')}
                         </span>
@@ -177,17 +211,26 @@ export default function PreciosPage() {
                     <p className="text-indigo-200/80 text-sm mb-6 min-h-[40px]">{plan.description}</p>
 
                     <div className="flex flex-col mb-6 pb-6 border-b border-white/10">
-                      <div className="flex items-baseline gap-2">
-                        {plan.originalPrice && (
-                          <span className="text-sm font-medium text-indigo-300/40 line-through">
-                            {plan.originalPrice} €
+                      <div className="flex items-baseline gap-2 flex-wrap">
+                        {hasEarlyDiscount && (
+                          <span className="text-sm font-medium text-indigo-300/40 line-through tabular-nums">
+                            {formatMonthly(plan.eurMonthlyOfficial!)}
                           </span>
                         )}
-                        <span className="text-4xl sm:text-5xl font-black text-white">{plan.price} €</span>
-                        <span className="text-sm font-medium text-indigo-300/80">/ {plan.period}</span>
+                        <span className="text-4xl sm:text-[2.35rem] font-black text-white tabular-nums leading-none">
+                          {isEnterprise
+                            ? plan.customPrice
+                            : plan.eurMonthly === 0
+                              ? formatEurAmount(0)
+                              : formatMonthly(plan.eurMonthly!)}
+                        </span>
+                        {!isEnterprise && plan.period ? (
+                          <span className="text-sm font-medium text-indigo-300/80">/ {plan.period}</span>
+                        ) : null}
                       </div>
-                      {plan.originalPrice && (
-                        <span className="mt-1.5 text-[11px] font-semibold text-amber-400/90 uppercase tracking-wide">
+                      {hasEarlyDiscount && (
+                        <span className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-semibold text-amber-300 uppercase tracking-wide">
+                          <Sparkles className="h-3 w-3 text-amber-400 shrink-0" aria-hidden />
                           {t('pricing.earlyTariff')}
                         </span>
                       )}
@@ -204,18 +247,29 @@ export default function PreciosPage() {
                       ))}
                     </ul>
 
-                    <Link to={plan.href} className="mt-auto block">
-                      <Button
-                        size="lg"
-                        className={`w-full text-sm font-bold h-12 rounded-xl transition-all ${plan.recommended
-                          ? 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg shadow-indigo-500/25'
-                          : 'bg-white/10 hover:bg-white/20 text-white border border-white/20'
-                          }`}
-                      >
-                        {plan.cta}
-                        {plan.recommended && <ArrowRight className="ml-2 h-4 w-4" />}
-                      </Button>
-                    </Link>
+                    {plan.id === 'enterprise' ? (
+                      <a href={enterpriseMail} className="mt-auto block">
+                        <Button
+                          size="lg"
+                          className="w-full text-sm font-bold h-12 rounded-xl transition-all bg-white/10 hover:bg-white/20 text-white border border-white/20"
+                        >
+                          {plan.cta}
+                        </Button>
+                      </a>
+                    ) : (
+                      <Link to={registerHref} className="mt-auto block">
+                        <Button
+                          size="lg"
+                          className={`w-full text-sm font-bold h-12 rounded-xl transition-all ${plan.recommended
+                            ? 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg shadow-indigo-500/25'
+                            : 'bg-white/10 hover:bg-white/20 text-white border border-white/20'
+                            }`}
+                        >
+                          {plan.cta}
+                          {plan.recommended && <ArrowRight className="ml-2 h-4 w-4" />}
+                        </Button>
+                      </Link>
+                    )}
                   </div>
                 );
               })}
@@ -332,7 +386,7 @@ export default function PreciosPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto mb-10">
                   {[
-                    { num: '0€', label: t('pricing.finalStat1Label') },
+                    { num: formatEurAmount(0), label: t('pricing.finalStat1Label') },
                     { num: '14', label: t('pricing.finalStat2Label') },
                     { num: '1 min', label: t('pricing.finalStat3Label') },
                   ].map(({ num, label }, i) => (

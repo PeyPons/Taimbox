@@ -444,7 +444,7 @@
   },
   "pricing": {
     "seoTitle": "Precios y planes | Taimbox",
-    "seoDescription": "Planes Starter, Pro y Business con Taimbox. Gestión operativa, financiera y de tiempos para agencias de todos los tamaños.",
+    "seoDescription": "Planes Starter, Pro, Business y Enterprise con Taimbox. Gestión operativa, financiera y de tiempos para agencias de todos los tamaños.",
     "heroKicker": "Para agencias y equipos creativos",
     "heroLine1": "Precios diseñados para escalar con tu",
     "heroHighlight": "rentabilidad",
@@ -455,6 +455,11 @@
     "pill3": "Sin permanencia",
     "recommended": "Recomendado",
     "earlyTariff": "Tarifa Early Adopter · de por vida",
+    "currencyLabel": "Ver precios en",
+    "currencyBillingEur": "Facturación en euros (EUR) vía Stripe.",
+    "currencyBillingConverted": "Importes orientativos en {{currency}}; el cobro se realiza en EUR.",
+    "currencyFallbackNote": "(tipo de cambio aproximado; sin conexión al proveedor gratuito.)",
+    "currencyProviderNote": "Tipos de cambio diarios vía Frankfurter (BCE), sin coste ni API key.",
     "enterpriseTitle": "¿Más de 50 personas o necesitas algo a medida?",
     "enterpriseSub": "Enterprise sin límites · SLA · Soporte dedicado · Facturación personalizada",
     "enterpriseCta": "Hablar con ventas",
@@ -511,6 +516,20 @@
           "Radar de Hemorragias (P&L en vivo)",
           "API REST y webhooks",
           "OKRs y alineación estratégica"
+        ]
+      },
+      "enterprise": {
+        "period": "",
+        "description": "Para holdings y equipos de más de 50 personas con SLA.",
+        "cta": "Hablar con ventas",
+        "customPrice": "A medida",
+        "features": [
+          "Personas sin límite",
+          "SLA y soporte dedicado",
+          "Integraciones a medida",
+          "Facturación personalizada",
+          "Single Sign-On",
+          "Cuenta técnica asignada"
         ]
       }
     },

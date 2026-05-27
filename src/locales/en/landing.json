@@ -444,7 +444,7 @@
   },
   "pricing": {
     "seoTitle": "Pricing & plans | Taimbox",
-    "seoDescription": "Starter, Pro, and Business plans with Taimbox. Operational, financial, and time management for agencies of every size.",
+    "seoDescription": "Starter, Pro, Business, and Enterprise plans with Taimbox. Operational, financial, and time management for agencies of every size.",
     "heroKicker": "For agencies and creative teams",
     "heroLine1": "Pricing built to scale with your",
     "heroHighlight": "profitability",
@@ -455,6 +455,11 @@
     "pill3": "No lock-in",
     "recommended": "Recommended",
     "earlyTariff": "Early adopter rate · for life",
+    "currencyLabel": "Show prices in",
+    "currencyBillingEur": "Billing in euros (EUR) via Stripe.",
+    "currencyBillingConverted": "Indicative amounts in {{currency}}; charges are processed in EUR.",
+    "currencyFallbackNote": "(approximate rate; live provider unavailable.)",
+    "currencyProviderNote": "Daily rates via Frankfurter (ECB data), free and no API key.",
     "enterpriseTitle": "More than 50 people or need something custom?",
     "enterpriseSub": "Unlimited Enterprise · SLA · Dedicated support · Custom billing",
     "enterpriseCta": "Talk to sales",
@@ -511,6 +516,20 @@
           "Bleeding radar (live P&L)",
           "REST API & webhooks",
           "OKRs & strategic alignment"
+        ]
+      },
+      "enterprise": {
+        "period": "",
+        "description": "For holdings and teams over 50 people with SLA.",
+        "cta": "Talk to sales",
+        "customPrice": "Custom",
+        "features": [
+          "Unlimited people",
+          "SLA and dedicated support",
+          "Custom integrations",
+          "Custom billing",
+          "Single Sign-On",
+          "Assigned technical account"
         ]
       }
     },
