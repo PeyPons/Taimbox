@@ -4,6 +4,8 @@ import { useAgency } from '@/contexts/AgencyContext';
 import { useApp } from '@/contexts/AppContext';
 import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
 import type { PlanId } from '@/types';
+import type { AgencyCurrencyCode } from '@/constants/currencies';
+import { resolveAgencyCurrency } from '@/utils/currencyUtils';
 import {
   buildDefaultDepartment,
   buildRecommendedAgencySettings,
@@ -26,7 +28,7 @@ export function useOnboardingQuickSetup() {
   const { currentUser, updateEmployee } = useApp();
   const [isApplying, setIsApplying] = useState(false);
 
-  const applyQuickOnboardingDefaults = useCallback(async () => {
+  const applyQuickOnboardingDefaults = useCallback(async (opts?: { currency?: AgencyCurrencyCode }) => {
     if (!currentAgency?.id) {
       throw new Error('No hay agencia activa. Recarga la página e inténtalo de nuevo.');
     }
@@ -58,6 +60,7 @@ export function useOnboardingQuickSetup() {
 
       await updateSettings({
         ...buildRecommendedAgencySettings(effectivePlan),
+        currency: opts?.currency ?? resolveAgencyCurrency(currentAgency.settings),
         departments: deptDefs,
       });
 

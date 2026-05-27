@@ -130,7 +130,13 @@ export interface CommonExpenseEntry {
   scope?: Record<string, unknown>;
 }
 
+import type { AgencyCurrencyCode } from '@/constants/currencies';
+
+export type { AgencyCurrencyCode };
+
 export interface AgencySettings {
+  /** Moneda por defecto para importes de negocio (no convierte automáticamente cuentas Ads en otra divisa). */
+  currency?: AgencyCurrencyCode;
   /** Usuario Auth propietario de la agencia (facturación / transferencia). No confundir con user_agencies.is_primary (agencia por defecto por usuario). */
   ownerUserId?: string;
   modules?: AgencyModules;
@@ -164,7 +170,7 @@ export interface AgencySettings {
   };
   /** Cron?metro de tareas: m?ximo de horas por sesi?n antes de auto-pausa (1���24, por defecto 12). */
   timeTrackerMaxHours?: number;
-  /** Objetivo de Precio Hora Efectivo (?/h) en Salud financiera. Si no se define, se usa 75 ?/h o la media de coste por hora si es superior. */
+  /** Objetivo de Precio Hora Efectivo (en la moneda de la agencia /h) en Salud financiera. Si no se define, se usa 75/h o la media de coste por hora si es superior. */
   ehrTarget?: number;
   /** Palabras clave en el nombre del proyecto que excluyen de la alerta "Poco avance" en el Radar operativo (fin de mes). Ej.: off-page, linkbuilding. */
   radarLowProgressExcludeKeywords?: string[];

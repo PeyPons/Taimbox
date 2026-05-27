@@ -110,8 +110,8 @@ const DeliverableLifecycleBadgePresentational = memo(function DeliverableLifecyc
         `${t('deliverableLifecycle.tooltip.expectedToday', 'Esperado a hoy')}: ${pacing.expectedHoursToDate} h`,
         `${t('deliverableLifecycle.tooltip.projectedEnd', 'Proyección a fin')}: ${pacing.projectedAtDueDate} h`,
         `${t('deliverableLifecycle.tooltip.daysLeft', 'Días restantes')}: ${pacing.daysRemaining}`,
-        `${t('deliverableLifecycle.tooltip.costToDate', 'Coste hasta hoy')}: ${formatMoney(finance.costToDate)} €`,
-        `${t('deliverableLifecycle.tooltip.revenueAccrued', 'Ingreso devengado')}: ${formatMoney(finance.revenueAccrued)} €`,
+        `${t('deliverableLifecycle.tooltip.costToDate', 'Coste hasta hoy')}: ${formatMoney(finance.costToDate)}`,
+        `${t('deliverableLifecycle.tooltip.revenueAccrued', 'Ingreso devengado')}: ${formatMoney(finance.revenueAccrued)}`,
     ];
     if (finance.marginPct != null) {
         tooltipLines.push(

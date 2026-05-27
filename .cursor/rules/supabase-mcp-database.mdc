@@ -5,34 +5,62 @@ alwaysApply: true
 
 # Base de datos vía MCP (Cursor)
 
-Este proyecto tiene **acceso a PostgreSQL de producción/staging self-hosted** desde Cursor mediante MCP.
+Este proyecto tiene **acceso a PostgreSQL self-hosted** desde Cursor mediante MCP HTTP (`supabase-self-hosted`).
 
 ## Configuración
 
-- Archivo del workspace: [`.cursor/mcp.json`](../mcp.json) — servidor `supabase-self-hosted` → `http://localhost:8080/api/mcp`.
-- El proxy MCP debe estar en marcha en la máquina del desarrollador (mismo host que el stack Supabase self-hosted).
+- [`.cursor/mcp.json`](../mcp.json) → `http://localhost:8080/api/mcp`
+- **Túnel SSH obligatorio en la máquina del desarrollador** (ver abajo). Sin túnel, el MCP no conecta.
 
-## Cuándo usarlo
+## Flujo obligatorio para el agente
 
-Ante preguntas de **esquema, RLS, migraciones, salud de BD, advisors de seguridad/rendimiento** o comprobación de que una columna/RPC existe:
+Ante **esquema, RLS, migraciones, RPC, advisors** o comprobaciones en BD:
 
-1. **Usa las herramientas MCP** del servidor `project-0-Timeboxing-supabase-self-hosted` (o el nombre que muestre Cursor para `supabase-self-hosted`).
-2. **No inventes** columnas ni políticas: confirma con `execute_sql`, `get_advisors` o la documentación en [`docs/05-integraciones-automatizacion.md`](../../docs/05-integraciones-automatizacion.md) (§ MCP) y [`docs/13-esquema-base-datos.md`](../../docs/13-esquema-base-datos.md).
+1. **Primero** usa las herramientas MCP del servidor `project-0-Timeboxing-supabase-self-hosted` (nombre en Cursor: `supabase-self-hosted`): `execute_sql`, `list_migrations`, `apply_migration`, `get_advisors`, etc.
+2. **No inventes** columnas ni políticas: confirma en BD o cita `supabase/migrations/*.sql` y [`docs/13-esquema-base-datos.md`](../../docs/13-esquema-base-datos.md).
+3. Si la herramienta devuelve **`Not connected`**, error de conexión o el servidor MCP aparece en error:
+   - **Recuerda al usuario** que debe tener activo el túnel SSH (comando en la sección siguiente).
+   - Indica **Settings → MCP → `supabase-self-hosted` → Restart** (o desactivar/activar) y, si sigue fallando, un **chat nuevo**.
+   - No asumas que falta `.cursor/mcp.env` para el modo HTTP de `mcp.json` (suele ser opcional; ver [`docs/05-integraciones-automatizacion.md`](../../docs/05-integraciones-automatizacion.md) § MCP).
+
+## Túnel SSH (recordatorio al usuario)
+
+Comando habitual desde Windows (PowerShell, **una sola línea**; no usar `\` como en bash):
+
+```powershell
+ssh -p 6561 -L localhost:8080:127.0.0.1:54323 -L localhost:54322:127.0.0.1:5432 alex@192.168.1.131
+```
+
+| Puerto local | Remoto | Uso |
+|--------------|--------|-----|
+| `8080` | `54323` | Studio, API y **MCP** (`/api/mcp`) — **imprescindible** |
+| `54322` | `5432` | Postgres directo — solo para `supabase db push` / CLI; opcional para MCP HTTP |
+
+Solo Studio/MCP (mínimo):
+
+```powershell
+ssh -p 6561 -L localhost:8080:127.0.0.1:54323 alex@192.168.1.131
+```
+
+Detalle: [`docs/05-integraciones-automatizacion.md`](../../docs/05-integraciones-automatizacion.md) (§ Acceso a la base de datos desde Cursor).
 
 ## Herramientas habituales
 
 | Herramienta | Uso |
 |-------------|-----|
-| `execute_sql` | Consultas de lectura, comprobaciones de columnas/FK, conteos |
-| `get_advisors` | Linter de seguridad y rendimiento (`security` / `performance`) |
-| `list_migrations` | Historial en BD (puede estar vacío si el esquema no se aplicó vía CLI) |
-| `apply_migration` | **DDL** — preferir frente a `execute_sql` para cambios de esquema |
-| `list_tables` | Inventario de tablas (puede fallar si el usuario read-only del proxy no está configurado) |
+| `execute_sql` | Lecturas, comprobación de columnas/RPC/políticas |
+| `get_advisors` | Linter seguridad y rendimiento |
+| `list_migrations` | Historial en BD (puede estar vacío en self-hosted) |
+| `apply_migration` | **DDL** versionado (preferir frente a SQL ad hoc) |
+| `list_tables` | Inventario (puede fallar; usar `execute_sql` si hace falta) |
+
+## `.cursor/mcp.env`
+
+- **No es obligatorio** si usas solo el MCP por URL en `mcp.json` (credenciales en el proxy del servidor).
+- **Sí hace falta** si lanzas el MCP en modo **stdio** con [`scripts/mcp-selfhosted-supabase.mjs`](../scripts/mcp-selfhosted-supabase.mjs).
+- **No crear ni commitear** `mcp.env` con secretos; copiar desde [`.cursor/mcp.env.example`](../mcp.env.example) y rellenar en local.
 
 ## Precauciones
 
-- **Fuente de verdad del esquema versionado:** `supabase/migrations/*.sql` y el código de la app.
-- **No** commitear secretos; `.cursor/mcp.json` solo apunta al proxy local.
-- Cambios destructivos o DDL: coordinar con el usuario; usar `apply_migration` y alinear el repo.
-
-Detalle operativo: [docs/05-integraciones-automatizacion.md](../../docs/05-integraciones-automatizacion.md) (subsección *Acceso a la base de datos desde Cursor*).
+- Fuente de verdad del esquema versionado: `supabase/migrations/*.sql` y el código.
+- DDL destructivo: coordinar con el usuario; usar `apply_migration`.

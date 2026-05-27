@@ -32,7 +32,6 @@ import {
     CheckCircle2,
     Landmark,
     Settings2,
-    Download,
     Layers,
 } from 'lucide-react';
 import { format, startOfMonth, subMonths, addMonths, endOfMonth, isSameMonth, subDays } from 'date-fns';
@@ -67,7 +66,6 @@ import {
 } from '@/components/agency/CommonExpensesSettingsCard';
 import { toast } from '@/lib/notify';
 import { usePermissions } from '@/hooks/usePermissions';
-import { buildRentabilityDiagnosticPayload } from '@/utils/reportExports/rentabilityDiagnostic';
 import {
     getRowCost,
     getStandardHourlyCost,
@@ -78,6 +76,7 @@ import { getMarginSemaphore } from '@/utils/marginSemaphore';
 import { DeliverableLifecycleTable } from '@/components/financial/DeliverableLifecycleTable';
 import { deliverablePhaseOverlapsMonth, getDeliverablePhase } from '@/utils/deliverableLifecycle';
 import { PROJECT_TYPE_ENTREGABLE } from '@/config/projectTypePresets';
+import { useFormatMoney } from '@/hooks/useFormatMoney';
 
 export default function FinancialHealthPage() {
     const { t } = useTranslation('app');
@@ -97,6 +96,12 @@ export default function FinancialHealthPage() {
     const [globalAssignmentsForMonth, setGlobalAssignmentsForMonth] = useState<GlobalAssignment[]>([]);
     const { projects, clients, employees, allocations, ensureMonthLoaded } = useApp();
     const { currentAgency, updateSettings } = useAgency();
+    const { formatMoney, formatPerHour, currencySymbol, inCurrencyParens, perHourSuffix } = useFormatMoney();
+    const defaultPerHour = useMemo(() => formatPerHour(75, 0), [formatPerHour]);
+    const currencyLabels = useMemo(
+        () => ({ currencyParens: inCurrencyParens, currencySymbol, perHourSuffix, defaultPerHour }),
+        [inCurrencyParens, currencySymbol, perHourSuffix, defaultPerHour],
+    );
     const { selectedDepartmentId } = useDepartmentView();
     const { historyMinDate: minReportingMonth } = useSubscriptionLimits();
     const { isActive: privacyDemoActive, anonymizer: privacyAnonymizer } = usePrivacyDemo();
@@ -552,11 +557,11 @@ export default function FinancialHealthPage() {
             const projectHours = hoursMode === 'computed' ? p.computed : p.actual;
             const ehr = projectHours > 0 ? (p.monthlyFee || 0) / projectHours : Number.POSITIVE_INFINITY;
             const ehrLabel = projectHours > 0
-                ? `${(ehr || 0).toFixed(0)} €/h`
+                ? `${formatPerHour((ehr || 0), 0)}`
                 : 'Sin iniciar';
             return { metric: p, clientName, ehr, ehrLabel };
         });
-    }, [projectMetricsBillableWithActivity, clientById, hoursMode]);
+    }, [projectMetricsBillableWithActivity, clientById, hoursMode, formatPerHour]);
 
     const sortedProjects = useMemo(() => {
         return [...enrichedProjects].sort((a, b) => {
@@ -1040,7 +1045,7 @@ export default function FinancialHealthPage() {
     );
 
     const hoursHeaderLabel = hoursMode === 'computed' ? 'HORAS (COMPUTADAS)' : 'HORAS (REALES)';
-    const costHeaderLabel = effectiveCostMode === 'standard' ? 'Coste (€) — Operativo' : 'Coste (€) — Dinámico';
+    const costHeaderLabel = effectiveCostMode === 'standard' ? `Coste ${inCurrencyParens} — Operativo` : `Coste ${inCurrencyParens} — Dinámico`;
     const costHeaderTooltip = useMemo(() => {
         const commonNote =
             agencyTotalOverheadApplied > 0
@@ -1080,78 +1085,6 @@ export default function FinancialHealthPage() {
             ) + commonNote
         );
     }, [dynamicCostFallbackActive, costMode, agencyTotalOverheadApplied, t]);
-
-    const handleExportDiagnosticJson = useCallback(() => {
-        try {
-            const payload = buildRentabilityDiagnosticPayload({
-                commonExpensesAlloc,
-                commonExpensesMonthKey,
-                costMode,
-                effectiveCostMode,
-                isViewingCurrentMonth,
-                dynamicCostFallbackActive,
-                pctMonthElapsed,
-                departmentNameForView,
-                searchQueryActive: Boolean(searchQuery.trim()),
-                agencyId: currentAgency?.id ?? null,
-                agencyName: currentAgency?.name ?? null,
-                hoursMode,
-                totalRevenue,
-                totalHoursForView,
-                effectiveHourlyRate,
-                netMargin,
-                marginPercent,
-                totalInternalCost,
-                totalOverheadInView,
-                ehrTarget,
-                projectMetricsForView,
-                projectCostAndMarginMap,
-                employeeProfitabilityList,
-                employees,
-            });
-
-            const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `taimbox-rentabilidad-diagnostico-${commonExpensesMonthKey}.json`;
-            a.rel = 'noopener';
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            URL.revokeObjectURL(url);
-            toast.success(t('financialHealth.exportDiagnostic.success'));
-        } catch (e) {
-            console.error(e);
-            toast.error(t('financialHealth.exportDiagnostic.error'));
-        }
-    }, [
-        commonExpensesAlloc,
-        commonExpensesMonthKey,
-        costMode,
-        currentAgency?.id,
-        currentAgency?.name,
-        departmentNameForView,
-        dynamicCostFallbackActive,
-        effectiveCostMode,
-        effectiveHourlyRate,
-        employeeProfitabilityList,
-        employees,
-        ehrTarget,
-        hoursMode,
-        isViewingCurrentMonth,
-        marginPercent,
-        netMargin,
-        pctMonthElapsed,
-        projectCostAndMarginMap,
-        projectMetricsForView,
-        searchQuery,
-        totalHoursForView,
-        totalInternalCost,
-        totalOverheadInView,
-        totalRevenue,
-        t,
-    ]);
 
     return (
         <div className="p-4 sm:p-6 md:p-8 max-w-[1600px] mx-auto space-y-6">
@@ -1228,23 +1161,6 @@ export default function FinancialHealthPage() {
                                     {t('financialHealth.settings.openButton', 'Objetivo y gastos')}
                                 </Button>
                             )}
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        size="sm"
-                                        className="h-9 gap-1.5 shrink-0"
-                                        onClick={handleExportDiagnosticJson}
-                                    >
-                                        <Download className="h-4 w-4" />
-                                        <span className="hidden sm:inline">{t('financialHealth.exportDiagnostic.button')}</span>
-                                    </Button>
-                                </TooltipTrigger>
-                                <TooltipContent side="bottom" className="text-xs max-w-xs">
-                                    {t('financialHealth.exportDiagnostic.tooltip')}
-                                </TooltipContent>
-                            </Tooltip>
                             {canAccess('/agency') && (
                                 <Button type="button" variant="ghost" size="sm" className="h-9 shrink-0 text-xs" asChild>
                                     <Link to="/exportacion-informes">{t('financialHealth.exportHubLink', 'Más exportaciones')}</Link>
@@ -1420,7 +1336,7 @@ export default function FinancialHealthPage() {
                     <div className="space-y-4 py-2">
                         <div className="max-w-xs space-y-2">
                             <Label htmlFor="fh-ehr-target">
-                                {t('agency.general.ehrTarget', 'Objetivo Precio Hora Efectivo (€/h)')}
+                                {t('agency.general.ehrTarget', currencyLabels)}
                             </Label>
                             <Input
                                 id="fh-ehr-target"
@@ -1435,10 +1351,7 @@ export default function FinancialHealthPage() {
                                 }}
                             />
                             <p className="text-xs text-slate-500">
-                                {t(
-                                    'financialHealth.settings.ehrNote',
-                                    'Mínimo 1 €/h. Si no guardas un valor, se usará el coste cargado o 75 €/h según la lógica de la página.'
-                                )}
+                                {t('financialHealth.settings.ehrNote', currencyLabels)}
                             </p>
                         </div>
                         <CommonExpensesSettingsCard
@@ -1522,7 +1435,7 @@ export default function FinancialHealthPage() {
                                             )}
                                         >
                                             {totalHoursForView > 0
-                                                ? `${effectiveHourlyRate.toFixed(0)} €/h`
+                                                ? `${formatPerHour(effectiveHourlyRate, 0)}`
                                                 : '–'}
                                         </span>
                                         {totalHoursForView > 0 && !ehrIsHealthy && (
@@ -1532,7 +1445,7 @@ export default function FinancialHealthPage() {
                                     <p className="text-xs text-slate-600 mt-1">
                                         Objetivo de la agencia:{' '}
                                         <span className="font-semibold tabular-nums">
-                                          {formatEhrTargetForDisplay(ehrTarget)} €/h
+                                          {formatEhrTargetForDisplay(ehrTarget)} {perHourSuffix}
                                         </span>
                                     </p>
                                     {totalHoursForView > 0 && (
@@ -1572,7 +1485,7 @@ export default function FinancialHealthPage() {
                                                 marginIsPositive ? "text-emerald-700" : "text-red-600"
                                             )}
                                         >
-                                            {netMargin.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                                            {formatMoney(netMargin)}
                                         </span>
                                         {marginIsPositive ? (
                                             <TrendingUp className="h-5 w-5 text-emerald-500" aria-hidden="true" />
@@ -1615,14 +1528,14 @@ export default function FinancialHealthPage() {
                                 <CardContent>
                                     <div className="flex items-baseline gap-2">
                                         <span className="text-3xl md:text-4xl font-bold tabular-nums text-slate-800">
-                                            {commonExpensesBreakdown.total.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                                            {formatMoney(commonExpensesBreakdown.total)}
                                         </span>
                                     </div>
                                     <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-600">
                                         <span>
                                             Fijos:{' '}
                                             <span className="font-semibold tabular-nums">
-                                                {commonExpensesBreakdown.totalRecurring.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                                                {formatMoney(commonExpensesBreakdown.totalRecurring)}
                                             </span>
                                             {' '}({commonExpensesBreakdown.countRecurring} líneas)
                                         </span>
@@ -1630,7 +1543,7 @@ export default function FinancialHealthPage() {
                                         <span>
                                             Puntuales:{' '}
                                             <span className="font-semibold tabular-nums">
-                                                {commonExpensesBreakdown.totalMonthly.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                                                {formatMoney(commonExpensesBreakdown.totalMonthly)}
                                             </span>
                                             {' '}({commonExpensesBreakdown.countMonthly} líneas)
                                         </span>
@@ -1685,10 +1598,7 @@ export default function FinancialHealthPage() {
                                                     'financialHealth.commonExpenses.unallocated',
                                                     'Parte de los gastos comunes no se ha podido imputar ({{amount}}). Revisa departamentos vacíos o líneas con 0 h en modo por horas.',
                                                     {
-                                                        amount: commonExpensesAlloc.unallocatedAmount.toLocaleString('es-ES', {
-                                                            style: 'currency',
-                                                            currency: 'EUR',
-                                                        }),
+                                                        amount: formatMoney(commonExpensesAlloc.unallocatedAmount),
                                                     }
                                                 )}
                                             </p>
@@ -1701,10 +1611,7 @@ export default function FinancialHealthPage() {
                                                             {t('financialHealth.commonExpenses.totalAgency')}
                                                         </dt>
                                                         <dd className="font-mono font-semibold text-slate-800">
-                                                            {agencyTotalOverheadApplied.toLocaleString('es-ES', {
-                                                                style: 'currency',
-                                                                currency: 'EUR',
-                                                            })}
+                                                            {formatMoney(agencyTotalOverheadApplied)}
                                                         </dd>
                                                     </div>
                                                     <div>
@@ -1712,10 +1619,7 @@ export default function FinancialHealthPage() {
                                                             {t('financialHealth.commonExpenses.inViewRows')}
                                                         </dt>
                                                         <dd className="font-mono font-semibold text-slate-800">
-                                                            {overheadVisibleFromRows.toLocaleString('es-ES', {
-                                                                style: 'currency',
-                                                                currency: 'EUR',
-                                                            })}
+                                                            {formatMoney(overheadVisibleFromRows)}
                                                         </dd>
                                                     </div>
                                                 </dl>
@@ -1781,7 +1685,7 @@ export default function FinancialHealthPage() {
                                                             <th className="px-4 py-3 text-left font-medium rounded-tl-lg">Cliente / Proyecto</th>
                                                             <th className="px-4 py-3 text-right font-medium">
                                                                 <span className="inline-flex items-center gap-1">
-                                                                    {isViewingCurrentMonth ? 'Ingreso devengado (€)' : 'Ingreso (Fee)'}
+                                                                    {isViewingCurrentMonth ? `Ingreso devengado ${inCurrencyParens}` : 'Ingreso (Fee)'}
                                                                     {isViewingCurrentMonth && (
                                                                         <Tooltip>
                                                                             <TooltipTrigger asChild>
@@ -1828,7 +1732,7 @@ export default function FinancialHealthPage() {
                                                                     </TooltipContent>
                                                                 </Tooltip>
                                                             </th>
-                                                            <th className="px-4 py-3 text-right font-medium">Margen (€)</th>
+                                                            <th className="px-4 py-3 text-right font-medium">{`Margen ${inCurrencyParens}`}</th>
                                                             <th className="px-4 py-3 text-right font-medium rounded-tr-lg">Acción</th>
                                                         </tr>
                                                     </thead>
@@ -1887,12 +1791,9 @@ export default function FinancialHealthPage() {
                                                                         </td>
                                                                         <td className="px-4 py-3 text-right align-middle">
                                                                             <div className="font-mono text-xs tabular-nums">
-                                                                                {(projectDisplayFeeMap.get(p.projectId) ?? p.monthlyFee).toLocaleString('es-ES', {
-                                                                                    style: 'currency',
-                                                                                    currency: 'EUR'
-                                                                                })}
+                                                                                {formatMoney((projectDisplayFeeMap.get(p.projectId) ?? p.monthlyFee))}
                                                                                 {isViewingCurrentMonth && (p.monthlyFee ?? 0) > 0 && (
-                                                                                    <span className="block text-[10px] text-slate-400 font-normal">/ {p.monthlyFee.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })} total</span>
+                                                                                    <span className="block text-[10px] text-slate-400 font-normal">/ {formatMoney(p.monthlyFee)} total</span>
                                                                                 )}
                                                                             </div>
                                                                         </td>
@@ -1936,10 +1837,10 @@ export default function FinancialHealthPage() {
                                                                             </div>
                                                                         </td>
                                                                         <td className="px-4 py-3 text-right align-middle font-mono text-xs tabular-nums text-slate-700" onClick={(e) => e.stopPropagation()}>
-                                                                            {cm.payrollCost.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                                                                            {formatMoney(cm.payrollCost)}
                                                                         </td>
                                                                         <td className="px-4 py-3 text-right align-middle font-mono text-xs tabular-nums text-slate-600" onClick={(e) => e.stopPropagation()}>
-                                                                            {cm.overheadCost.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                                                                            {formatMoney(cm.overheadCost)}
                                                                         </td>
                                                                         <td className="px-4 py-3 text-right align-middle">
                                                                             {(() => {
@@ -1970,7 +1871,7 @@ export default function FinancialHealthPage() {
                                                                         <td className={cn("px-4 py-3 text-right align-middle font-mono text-xs tabular-nums font-semibold", semaphoreRadar.className)}>
                                                                             <span className="inline-flex items-center justify-end gap-1">
                                                                                 {semaphoreRadar.showAlert && <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden />}
-                                                                                {displayMarginRadar.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                                                                                {formatMoney(displayMarginRadar)}
                                                                             </span>
                                                                         </td>
                                                                         <td className="px-4 py-3 text-right align-middle" onClick={(e) => e.stopPropagation()}>
@@ -2004,8 +1905,8 @@ export default function FinancialHealthPage() {
                                                                                                             <tr className="bg-slate-50 border-b border-slate-200">
                                                                                                                 <th className="text-left py-3 px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Empleado</th>
                                                                                                                 <th className="text-right py-3 px-3 text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">Horas</th>
-                                                                                                                <th className="text-right py-3 px-3 text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">Ingreso atrib. (€)</th>
-                                                                                                                <th className="text-right py-3 px-3 text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">Coste (€)</th>
+                                                                                                                <th className="text-right py-3 px-3 text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">{`Ingreso atrib. ${inCurrencyParens}`}</th>
+                                                                                                                <th className="text-right py-3 px-3 text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">{`Coste ${inCurrencyParens}`}</th>
                                                                                                                 <th className="text-right py-3 px-3 text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                                                                                                                     <Tooltip>
                                                                                                                         <TooltipTrigger asChild>
@@ -2026,7 +1927,7 @@ export default function FinancialHealthPage() {
                                                                                                                         </TooltipContent>
                                                                                                                     </Tooltip>
                                                                                                                 </th>
-                                                                                                                <th className="text-right py-3 px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">Margen (€)</th>
+                                                                                                                <th className="text-right py-3 px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">{`Margen ${inCurrencyParens}`}</th>
                                                                                                             </tr>
                                                                                                             <tr className="bg-slate-50/80">
                                                                                                                 <th className="text-left py-0.5 px-4 text-[11px] font-normal text-slate-400" colSpan={7}>{hoursMode === 'computed' ? 'Horas computadas' : 'Horas reales'}</th>
@@ -2043,10 +1944,10 @@ export default function FinancialHealthPage() {
                                                                                                                     <tr key={row.employeeId} className={cn("transition-colors hover:bg-slate-50/50", i % 2 === 1 && "bg-slate-50/30")}>
                                                                                                                         <td className="py-2.5 px-4 font-medium text-slate-900" title={emp?.name || 'Empleado'}>{emp?.name || 'Empleado'}</td>
                                                                                                                         <td className="py-2.5 px-3 text-right font-mono tabular-nums text-slate-600 text-sm">{row.hoursDisplay.toFixed(1)} h</td>
-                                                                                                                        <td className="py-2.5 px-3 text-right font-mono tabular-nums text-slate-700 text-sm">{row.attributedRevenue.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</td>
-                                                                                                                        <td className="py-2.5 px-3 text-right font-mono tabular-nums text-slate-700 text-sm">{row.cost.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</td>
+                                                                                                                        <td className="py-2.5 px-3 text-right font-mono tabular-nums text-slate-700 text-sm">{formatMoney(row.attributedRevenue)}</td>
+                                                                                                                        <td className="py-2.5 px-3 text-right font-mono tabular-nums text-slate-700 text-sm">{formatMoney(row.cost)}</td>
                                                                                                                         <td className="py-2.5 px-3 text-right font-mono tabular-nums text-slate-700 text-sm">
-                                                                                                                            {row.hoursDisplay > 0.001 ? `${costPh.toFixed(2)} €/h` : '–'}
+                                                                                                                            {row.hoursDisplay > 0.001 ? `${formatPerHour(costPh, 2)}` : '–'}
                                                                                                                         </td>
                                                                                                                         <td
                                                                                                                             className={cn(
@@ -2058,12 +1959,12 @@ export default function FinancialHealthPage() {
                                                                                                                                     : 'text-slate-700'
                                                                                                                             )}
                                                                                                                         >
-                                                                                                                            {row.hoursDisplay > 0.001 ? `${marginPh.toFixed(2)} €/h` : '–'}
+                                                                                                                            {row.hoursDisplay > 0.001 ? `${formatPerHour(marginPh, 2)}` : '–'}
                                                                                                                         </td>
                                                                                                                         <td className={cn("py-2.5 px-4 text-right font-mono tabular-nums font-semibold text-sm", rowSem.className)}>
                                                                                                                             <span className="inline-flex items-center justify-end gap-1">
                                                                                                                                 {rowSem.showAlert && <AlertTriangle className="h-3 w-3 shrink-0" aria-hidden />}
-                                                                                                                                {row.margin.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                                                                                                                                {formatMoney(row.margin)}
                                                                                                                             </span>
                                                                                                                         </td>
                                                                                                                     </tr>
@@ -2080,10 +1981,10 @@ export default function FinancialHealthPage() {
                                                                                                                     <tr className="border-t-2 border-slate-200 bg-slate-100/90 font-semibold text-slate-800">
                                                                                                                         <td className="py-3 px-4">Total</td>
                                                                                                                         <td className="py-3 px-3 text-right font-mono tabular-nums text-sm">{totH.toFixed(1)} h</td>
-                                                                                                                        <td className="py-3 px-3 text-right font-mono tabular-nums text-sm">{totRev.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</td>
-                                                                                                                        <td className="py-3 px-3 text-right font-mono tabular-nums text-sm">{totCost.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</td>
+                                                                                                                        <td className="py-3 px-3 text-right font-mono tabular-nums text-sm">{formatMoney(totRev)}</td>
+                                                                                                                        <td className="py-3 px-3 text-right font-mono tabular-nums text-sm">{formatMoney(totCost)}</td>
                                                                                                                         <td className="py-3 px-3 text-right font-mono tabular-nums text-sm">
-                                                                                                                            {totH > 0.001 ? `${(totCost / totH).toFixed(2)} €/h` : '–'}
+                                                                                                                            {totH > 0.001 ? `${formatPerHour((totCost / totH), 2)}` : '–'}
                                                                                                                         </td>
                                                                                                                         <td
                                                                                                                             className={cn(
@@ -2095,12 +1996,12 @@ export default function FinancialHealthPage() {
                                                                                                                                     : undefined
                                                                                                                             )}
                                                                                                                         >
-                                                                                                                            {totH > 0.001 ? `${(totMargin / totH).toFixed(2)} €/h` : '–'}
+                                                                                                                            {totH > 0.001 ? `${formatPerHour((totMargin / totH), 2)}` : '–'}
                                                                                                                         </td>
                                                                                                                         <td className={cn("py-3 px-4 text-right font-mono tabular-nums text-sm", totSem.className)}>
                                                                                                                             <span className="inline-flex items-center justify-end gap-1">
                                                                                                                                 {totSem.showAlert && <AlertTriangle className="h-3 w-3 shrink-0" aria-hidden />}
-                                                                                                                                {totMargin.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                                                                                                                                {formatMoney(totMargin)}
                                                                                                                             </span>
                                                                                                                         </td>
                                                                                                                     </tr>
@@ -2115,11 +2016,11 @@ export default function FinancialHealthPage() {
                                                                                                 <dl className="space-y-3 text-sm">
                                                                                                     <div>
                                                                                                         <dt className="text-slate-500 text-xs">Coste total</dt>
-                                                                                                        <dd className="font-mono font-semibold text-slate-800">{attributionRows.reduce((s, r) => s + r.cost, 0).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</dd>
+                                                                                                        <dd className="font-mono font-semibold text-slate-800">{attributionRows.reduce((s, r) => s + r.cost,formatMoney(0))}</dd>
                                                                                                     </div>
                                                                                                     <div>
                                                                                                         <dt className="text-slate-500 text-xs">Margen total</dt>
-                                                                                                        <dd className={cn("font-mono font-semibold", (() => { const totRev = attributionRows.reduce((s, r) => s + r.attributedRevenue, 0); const totMarg = attributionRows.reduce((s, r) => s + r.margin, 0); const pct = totRev > 0 ? (totMarg / totRev) * 100 : (totMarg < 0 ? -1 : 0); return getMarginSemaphore(pct).className; })())}>{attributionRows.reduce((s, r) => s + r.margin, 0).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</dd>
+                                                                                                        <dd className={cn("font-mono font-semibold", (() => { const totRev = attributionRows.reduce((s, r) => s + r.attributedRevenue, 0); const totMarg = attributionRows.reduce((s, r) => s + r.margin, 0); const pct = totRev > 0 ? (totMarg / totRev) * 100 : (totMarg < 0 ? -1 : 0); return getMarginSemaphore(pct).className; })())}>{attributionRows.reduce((s, r) => s + r.margin,formatMoney(0))}</dd>
                                                                                                     </div>
                                                                                                     <div>
                                                                                                         <dt className="text-slate-500 text-xs">% margen</dt>
@@ -2208,7 +2109,7 @@ export default function FinancialHealthPage() {
                                                         <th className="px-4 py-3 text-right font-medium rounded-tr-lg">
                                                             <Tooltip>
                                                                 <TooltipTrigger asChild>
-                                                                    <span className="cursor-help underline decoration-dotted">{t('financialHealth.columns.costTotal')}</span>
+                                                                    <span className="cursor-help underline decoration-dotted">{t('financialHealth.columns.costTotal', currencyLabels)}</span>
                                                                 </TooltipTrigger>
                                                                 <TooltipContent side="top" className="text-xs max-w-xs">
                                                                     {t('financialHealth.columns.costTotalHelp')}
@@ -2238,13 +2139,13 @@ export default function FinancialHealthPage() {
                                                                 </td>
                                                                 <td className="px-4 py-3 text-right font-mono tabular-nums text-slate-700">{(hoursMode === 'computed' ? p.computed : p.actual).toFixed(1)} h</td>
                                                                 <td className="px-4 py-3 text-right font-mono tabular-nums text-slate-700">
-                                                                    {pcm.payrollCost.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                                                                    {formatMoney(pcm.payrollCost)}
                                                                 </td>
                                                                 <td className="px-4 py-3 text-right font-mono tabular-nums text-slate-600">
-                                                                    {pcm.overheadCost.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                                                                    {formatMoney(pcm.overheadCost)}
                                                                 </td>
                                                                 <td className="px-4 py-3 text-right font-mono tabular-nums text-slate-700">
-                                                                    {pcm.cost.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                                                                    {formatMoney(pcm.cost)}
                                                                 </td>
                                                             </tr>
                                                         );
@@ -2297,10 +2198,10 @@ export default function FinancialHealthPage() {
                                                         <tr>
                                                             <th className="px-3 py-2.5 text-left font-medium rounded-tl-lg">Área</th>
                                                             <th className="px-3 py-2.5 text-right font-medium whitespace-nowrap">{hoursHeaderLabel}</th>
-                                                            <th className="px-3 py-2.5 text-right font-medium whitespace-nowrap">Ingr. (€)</th>
+                                                            <th className="px-3 py-2.5 text-right font-medium whitespace-nowrap">{`Ingr. ${inCurrencyParens}`}</th>
                                                             <th className="px-3 py-2.5 text-right font-medium whitespace-nowrap">{t('financialHealth.columns.payrollImputed')}</th>
                                                             <th className="px-3 py-2.5 text-right font-medium whitespace-nowrap">{t('financialHealth.columns.commonOverhead')}</th>
-                                                            <th className="px-3 py-2.5 text-right font-medium whitespace-nowrap">Margen (€)</th>
+                                                            <th className="px-3 py-2.5 text-right font-medium whitespace-nowrap">{`Margen ${inCurrencyParens}`}</th>
                                                             <th className="px-3 py-2.5 text-right font-medium rounded-tr-lg whitespace-nowrap">EHR</th>
                                                         </tr>
                                                     </thead>
@@ -2314,16 +2215,16 @@ export default function FinancialHealthPage() {
                                                                     <td className="px-3 py-2.5 font-medium text-slate-900">{dept.name}</td>
                                                                     <td className="px-3 py-2.5 text-right font-mono tabular-nums text-slate-600">{dept.hours.toFixed(1)} h</td>
                                                                     <td className="px-3 py-2.5 text-right font-mono tabular-nums text-slate-800">
-                                                                        {dept.revenue.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                                                                        {formatMoney(dept.revenue)}
                                                                     </td>
                                                                     <td className="px-3 py-2.5 text-right font-mono tabular-nums text-slate-700">
-                                                                        {dept.payrollCost.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                                                                        {formatMoney(dept.payrollCost)}
                                                                     </td>
                                                                     <td className="px-3 py-2.5 text-right font-mono tabular-nums text-slate-600">
-                                                                        {dept.overheadCost.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                                                                        {formatMoney(dept.overheadCost)}
                                                                     </td>
                                                                     <td className={cn("px-3 py-2.5 text-right font-mono tabular-nums font-semibold", semDept.className)}>
-                                                                        {dept.margin.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                                                                        {formatMoney(dept.margin)}
                                                                     </td>
                                                                     <td className="px-3 py-2.5 text-right">
                                                                         <span
@@ -2332,7 +2233,7 @@ export default function FinancialHealthPage() {
                                                                                 isBelowTarget ? "text-red-600" : "text-emerald-700"
                                                                             )}
                                                                         >
-                                                                            {dept.ehr.toFixed(0)} €/h
+                                                                            {formatPerHour(dept.ehr, 0)}
                                                                         </span>
                                                                     </td>
                                                                 </tr>
@@ -2374,7 +2275,7 @@ export default function FinancialHealthPage() {
                                                         <tr>
                                                             <th className="px-4 py-3 text-left font-medium rounded-tl-lg min-w-[120px]">Empleado</th>
                                                             <th className="px-4 py-3 text-right font-medium whitespace-nowrap min-w-[100px]">{hoursHeaderLabel}</th>
-                                                            <th className="px-4 py-3 text-right font-medium whitespace-nowrap min-w-[110px]">Ingr. atrib. (€)</th>
+                                                            <th className="px-4 py-3 text-right font-medium whitespace-nowrap min-w-[110px]">{`Ingr. atrib. ${inCurrencyParens}`}</th>
                                                             <th className="px-4 py-3 text-right font-medium whitespace-nowrap min-w-[88px]">
                                                                 <Tooltip>
                                                                     <TooltipTrigger asChild>
@@ -2398,7 +2299,7 @@ export default function FinancialHealthPage() {
                                                             <th className="px-4 py-3 text-right font-medium whitespace-nowrap min-w-[88px]">
                                                                 <Tooltip>
                                                                     <TooltipTrigger asChild>
-                                                                        <span className="cursor-help underline decoration-dotted">{t('financialHealth.columns.costTotal')}</span>
+                                                                        <span className="cursor-help underline decoration-dotted">{t('financialHealth.columns.costTotal', currencyLabels)}</span>
                                                                     </TooltipTrigger>
                                                                     <TooltipContent side="top" className="text-xs max-w-xs">
                                                                         {t('financialHealth.columns.costTotalHelp')}
@@ -2406,7 +2307,7 @@ export default function FinancialHealthPage() {
                                                                 </Tooltip>
                                                             </th>
                                                             <th className="px-4 py-3 text-right font-medium whitespace-nowrap min-w-[70px]">Coste/h</th>
-                                                            <th className="px-4 py-3 text-right font-medium rounded-tr-lg whitespace-nowrap min-w-[90px]">Margen (€)</th>
+                                                            <th className="px-4 py-3 text-right font-medium rounded-tr-lg whitespace-nowrap min-w-[90px]">{`Margen ${inCurrencyParens}`}</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody className="divide-y divide-slate-100">
@@ -2447,48 +2348,48 @@ export default function FinancialHealthPage() {
                                                                             ? costMode === 'standard'
                                                                                 ? t('financialHealth.costHour.tooltipLoadedStd', {
                                                                                       baseH: baseHoursStd.toFixed(0),
-                                                                                      p: pHr.toFixed(2),
-                                                                                      o: oHr.toFixed(2),
-                                                                                      c: costPerHour.toFixed(2),
+                                                                                      p: formatPerHour(pHr, 2),
+                                                                                      o: formatPerHour(oHr, 2),
+                                                                                      c: formatPerHour(costPerHour, 2),
                                                                                   })
                                                                                 : t('financialHealth.costHour.tooltipLoadedDyn', {
                                                                                       baseH: hEff.toFixed(0),
-                                                                                      p: pHr.toFixed(2),
-                                                                                      o: oHr.toFixed(2),
-                                                                                      c: costPerHour.toFixed(2),
+                                                                                      p: formatPerHour(pHr, 2),
+                                                                                      o: formatPerHour(oHr, 2),
+                                                                                      c: formatPerHour(costPerHour, 2),
                                                                                   })
                                                                             : costMode === 'standard'
-                                                                              ? `Base: ${baseHoursStd.toFixed(0)} h (capacidad teórica del mes) · ${costPerHour.toFixed(2)} €/h`
-                                                                              : `Base: ${hEff.toFixed(0)} h (reales del mes) · Nómina: ${(empResumen?.monthlyCost ?? empResumen?.hourlyRate ?? 0).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })} → ${costPerHour.toFixed(2)} €/h`
+                                                                              ? `Base: ${baseHoursStd.toFixed(0)} h (capacidad teórica del mes) · ${formatPerHour(costPerHour, 2)}`
+                                                                              : `Base: ${hEff.toFixed(0)} h (reales del mes) · Nómina: ${formatMoney((empResumen?.monthlyCost ?? empResumen?.hourlyRate ?? 0))} → ${formatPerHour(costPerHour, 2)}`
                                                                         : null;
                                                                 return (
                                                                     <tr key={ep.employeeId} className={cn("transition-colors", idx % 2 === 1 ? "bg-slate-50/50" : "bg-white", "hover:bg-slate-100/70")}>
                                                                         <td className="px-4 py-3 font-medium text-slate-900">{ep.employeeName}</td>
                                                                         <td className="px-4 py-3 text-right font-mono tabular-nums text-slate-600">{h.toFixed(1)} h</td>
-                                                                        <td className="px-4 py-3 text-right font-mono tabular-nums text-slate-700">{attr.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</td>
+                                                                        <td className="px-4 py-3 text-right font-mono tabular-nums text-slate-700">{formatMoney(attr)}</td>
                                                                         <td className="px-4 py-3 text-right font-mono tabular-nums text-slate-700">
-                                                                            {payrollShow.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                                                                            {formatMoney(payrollShow)}
                                                                         </td>
                                                                         <td className="px-4 py-3 text-right font-mono tabular-nums text-slate-600">
-                                                                            {overheadShow.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                                                                            {formatMoney(overheadShow)}
                                                                         </td>
-                                                                        <td className="px-4 py-3 text-right font-mono tabular-nums text-slate-700">{cost.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</td>
+                                                                        <td className="px-4 py-3 text-right font-mono tabular-nums text-slate-700">{formatMoney(cost)}</td>
                                                                         <td className="px-4 py-3 text-right font-mono tabular-nums text-slate-600">
                                                                             {costHelpText ? (
                                                                                 <Tooltip>
                                                                                     <TooltipTrigger asChild>
-                                                                                        <span className="cursor-help underline decoration-dotted decoration-slate-300">{h > 0 ? `${costPerHour.toFixed(2)} €/h` : '–'}</span>
+                                                                                        <span className="cursor-help underline decoration-dotted decoration-slate-300">{h > 0 ? `${formatPerHour(costPerHour, 2)}` : '–'}</span>
                                                                                     </TooltipTrigger>
                                                                                     <TooltipContent side="left" className="text-xs font-normal">
                                                                                         {costHelpText}
                                                                                     </TooltipContent>
                                                                                 </Tooltip>
-                                                                            ) : (h > 0 ? `${costPerHour.toFixed(2)} €/h` : '–')}
+                                                                            ) : (h > 0 ? `${formatPerHour(costPerHour, 2)}` : '–')}
                                                                         </td>
                                                                         <td className={cn("px-4 py-3 text-right font-mono tabular-nums font-semibold", semaphore.className)}>
                                                                             <span className="inline-flex items-center justify-end gap-1">
                                                                                 {semaphore.showAlert && <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden />}
-                                                                                {margin.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                                                                                {formatMoney(margin)}
                                                                             </span>
                                                                         </td>
                                                                     </tr>
@@ -2507,14 +2408,14 @@ export default function FinancialHealthPage() {
                                                             <td className="px-4 py-3 text-right font-mono tabular-nums">
                                                                 {(employeeDisplayTotalsWhenSearch
                                                                     ? employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + (employeeDisplayTotalsWhenSearch.get(ep.employeeId)?.attr ?? ep.attributedRevenue), 0)
-                                                                    : employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + ep.attributedRevenue, 0)
-                                                                ).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                                                                    : employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + ep.attributedRevenue,formatMoney(0)
+                                                                ))}
                                                             </td>
                                                             <td className="px-4 py-3 text-right font-mono tabular-nums">
                                                                 {(employeeDisplayTotalsWhenSearch
                                                                     ? employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + (employeeDisplayTotalsWhenSearch.get(ep.employeeId)?.payroll ?? ep.payrollAllocatedTotal), 0)
-                                                                    : employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + ep.payrollAllocatedTotal, 0)
-                                                                ).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                                                                    : employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + ep.payrollAllocatedTotal,formatMoney(0)
+                                                                ))}
                                                             </td>
                                                             <td className="px-4 py-3 text-right font-mono tabular-nums">
                                                                 {(employeeDisplayTotalsWhenSearch
@@ -2525,14 +2426,14 @@ export default function FinancialHealthPage() {
                                                                                   ep.overheadCost + ep.overheadNotAttributed),
                                                                           0
                                                                       )
-                                                                    : employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + ep.overheadCost + ep.overheadNotAttributed, 0)
-                                                                ).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                                                                    : employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + ep.overheadCost + ep.overheadNotAttributed,formatMoney(0)
+                                                                ))}
                                                             </td>
                                                             <td className="px-4 py-3 text-right font-mono tabular-nums">
                                                                 {(employeeDisplayTotalsWhenSearch
                                                                     ? employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + (employeeDisplayTotalsWhenSearch.get(ep.employeeId)?.cost ?? ep.cost), 0)
-                                                                    : employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + ep.cost, 0)
-                                                                ).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                                                                    : employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + ep.cost,formatMoney(0)
+                                                                ))}
                                                             </td>
                                                             <td className="px-4 py-3 text-right font-mono tabular-nums">
                                                                 {(() => {
@@ -2543,7 +2444,7 @@ export default function FinancialHealthPage() {
                                                                     const totalCost = employeeDisplayTotalsWhenSearch
                                                                         ? employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + (employeeDisplayTotalsWhenSearch.get(ep.employeeId)?.cost ?? ep.cost), 0)
                                                                         : employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + ep.cost, 0);
-                                                                    return totalH > 0 ? `${(totalCost / totalH).toFixed(2)} €/h` : '–';
+                                                                    return totalH > 0 ? `${formatPerHour((totalCost / totalH), 2)}` : '–';
                                                                 })()}
                                                             </td>
                                                             <td className={cn("px-4 py-3 text-right font-mono tabular-nums", (() => {
@@ -2560,8 +2461,8 @@ export default function FinancialHealthPage() {
                                                                     })()}
                                                                     {(employeeDisplayTotalsWhenSearch
                                                                         ? employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + (employeeDisplayTotalsWhenSearch.get(ep.employeeId)?.margin ?? ep.margin), 0)
-                                                                        : employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + ep.margin, 0)
-                                                                    ).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                                                                        : employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + ep.margin,formatMoney(0)
+                                                                    ))}
                                                                 </span>
                                                             </td>
                                                         </tr>
@@ -2605,7 +2506,7 @@ export default function FinancialHealthPage() {
                                                     <th className="px-4 py-3 text-left font-medium rounded-tl-lg">Cliente / Proyecto</th>
                                                     <th className="px-4 py-3 text-right font-medium">
                                                         <span className="inline-flex items-center gap-1">
-                                                            {isViewingCurrentMonth ? 'Ingreso devengado (€)' : 'Fee (€)'}
+                                                            {isViewingCurrentMonth ? `Ingreso devengado ${inCurrencyParens}` : `Fee ${inCurrencyParens}`}
                                                             {isViewingCurrentMonth && (
                                                                 <Tooltip>
                                                                     <TooltipTrigger asChild>
@@ -2652,7 +2553,7 @@ export default function FinancialHealthPage() {
                                                             </TooltipContent>
                                                         </Tooltip>
                                                     </th>
-                                                    <th className="px-4 py-3 text-right font-medium">Margen (€)</th>
+                                                    <th className="px-4 py-3 text-right font-medium">{`Margen ${inCurrencyParens}`}</th>
                                                     <th className="px-4 py-3 text-right font-medium rounded-tr-lg">Acción</th>
                                                 </tr>
                                             </thead>
@@ -2695,18 +2596,18 @@ export default function FinancialHealthPage() {
                                                                     </div>
                                                                 </td>
                                                                 <td className="px-4 py-3 text-right font-mono tabular-nums text-slate-700">
-                                                                    {(projectDisplayFeeMap.get(p.projectId) ?? p.monthlyFee).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                                                                    {formatMoney((projectDisplayFeeMap.get(p.projectId) ?? p.monthlyFee))}
                                                                     {isViewingCurrentMonth && (p.monthlyFee ?? 0) > 0 && (
-                                                                        <span className="block text-[10px] text-slate-400 font-normal">/ {p.monthlyFee.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })} total</span>
+                                                                        <span className="block text-[10px] text-slate-400 font-normal">/ {formatMoney(p.monthlyFee)} total</span>
                                                                     )}
                                                                 </td>
                                                                 <td className="px-4 py-3 text-right font-mono text-[11px] tabular-nums text-slate-600">{(hoursMode === 'computed' ? p.computed : p.actual).toFixed(1)}h / {p.budget.toFixed(1)}h</td>
                                                                 <td className="px-4 py-3 text-right"><Badge variant="outline" className="text-[11px] font-semibold tabular-nums">{ehrLabel}</Badge></td>
                                                                 <td className="px-4 py-3 text-right font-mono tabular-nums text-slate-700" onClick={(e) => e.stopPropagation()}>
-                                                                    {cm.payrollCost.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                                                                    {formatMoney(cm.payrollCost)}
                                                                 </td>
                                                                 <td className="px-4 py-3 text-right font-mono tabular-nums text-slate-600" onClick={(e) => e.stopPropagation()}>
-                                                                    {cm.overheadCost.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                                                                    {formatMoney(cm.overheadCost)}
                                                                 </td>
                                                                 <td className="px-4 py-3 text-right">
                                                                     {(() => {
@@ -2732,7 +2633,7 @@ export default function FinancialHealthPage() {
                                                                 <td className={cn("px-4 py-3 text-right font-mono tabular-nums font-semibold", semaphoreProj.className)}>
                                                                     <span className="inline-flex items-center justify-end gap-1">
                                                                         {semaphoreProj.showAlert && <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden />}
-                                                                        {displayMarginProj.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                                                                        {formatMoney(displayMarginProj)}
                                                                     </span>
                                                                 </td>
                                                                 <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
@@ -2763,8 +2664,8 @@ export default function FinancialHealthPage() {
                                                                                                 <tr className="bg-slate-50 border-b border-slate-200">
                                                                                                     <th className="text-left py-3 px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Empleado</th>
                                                                                                     <th className="text-right py-3 px-3 text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">Horas</th>
-                                                                                                    <th className="text-right py-3 px-3 text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">Ingreso atrib. (€)</th>
-                                                                                                    <th className="text-right py-3 px-3 text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">Coste (€)</th>
+                                                                                                    <th className="text-right py-3 px-3 text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">{`Ingreso atrib. ${inCurrencyParens}`}</th>
+                                                                                                    <th className="text-right py-3 px-3 text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">{`Coste ${inCurrencyParens}`}</th>
                                                                                                     <th className="text-right py-3 px-3 text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                                                                                                         <Tooltip>
                                                                                                             <TooltipTrigger asChild>
@@ -2785,7 +2686,7 @@ export default function FinancialHealthPage() {
                                                                                                             </TooltipContent>
                                                                                                         </Tooltip>
                                                                                                     </th>
-                                                                                                    <th className="text-right py-3 px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">Margen (€)</th>
+                                                                                                    <th className="text-right py-3 px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">{`Margen ${inCurrencyParens}`}</th>
                                                                                                 </tr>
                                                                                                 <tr className="bg-slate-50/80">
                                                                                                     <th className="text-left py-0.5 px-4 text-[11px] font-normal text-slate-400" colSpan={7}>{hoursMode === 'computed' ? 'Horas computadas' : 'Horas reales'}</th>
@@ -2802,10 +2703,10 @@ export default function FinancialHealthPage() {
                                                                                                         <tr key={row.employeeId} className={cn("transition-colors hover:bg-slate-50/50", i % 2 === 1 && "bg-slate-50/30")}>
                                                                                                             <td className="py-2.5 px-4 font-medium text-slate-900" title={emp?.name || 'Empleado'}>{emp?.name || 'Empleado'}</td>
                                                                                                             <td className="py-2.5 px-3 text-right font-mono tabular-nums text-slate-600 text-sm">{row.hoursDisplay.toFixed(1)} h</td>
-                                                                                                            <td className="py-2.5 px-3 text-right font-mono tabular-nums text-slate-700 text-sm">{row.attributedRevenue.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</td>
-                                                                                                            <td className="py-2.5 px-3 text-right font-mono tabular-nums text-slate-700 text-sm">{row.cost.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</td>
+                                                                                                            <td className="py-2.5 px-3 text-right font-mono tabular-nums text-slate-700 text-sm">{formatMoney(row.attributedRevenue)}</td>
+                                                                                                            <td className="py-2.5 px-3 text-right font-mono tabular-nums text-slate-700 text-sm">{formatMoney(row.cost)}</td>
                                                                                                             <td className="py-2.5 px-3 text-right font-mono tabular-nums text-slate-700 text-sm">
-                                                                                                                {row.hoursDisplay > 0.001 ? `${costPh.toFixed(2)} €/h` : '–'}
+                                                                                                                {row.hoursDisplay > 0.001 ? `${formatPerHour(costPh, 2)}` : '–'}
                                                                                                             </td>
                                                                                                             <td
                                                                                                                 className={cn(
@@ -2817,12 +2718,12 @@ export default function FinancialHealthPage() {
                                                                                                                         : 'text-slate-700'
                                                                                                                 )}
                                                                                                             >
-                                                                                                                {row.hoursDisplay > 0.001 ? `${marginPh.toFixed(2)} €/h` : '–'}
+                                                                                                                {row.hoursDisplay > 0.001 ? `${formatPerHour(marginPh, 2)}` : '–'}
                                                                                                             </td>
                                                                                                             <td className={cn("py-2.5 px-4 text-right font-mono tabular-nums font-semibold text-sm", rowSem.className)}>
                                                                                                                 <span className="inline-flex items-center justify-end gap-1">
                                                                                                                     {rowSem.showAlert && <AlertTriangle className="h-3 w-3 shrink-0" aria-hidden />}
-                                                                                                                    {row.margin.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                                                                                                                    {formatMoney(row.margin)}
                                                                                                                 </span>
                                                                                                             </td>
                                                                                                         </tr>
@@ -2839,10 +2740,10 @@ export default function FinancialHealthPage() {
                                                                                                         <tr className="border-t-2 border-slate-200 bg-slate-100/90 font-semibold text-slate-800">
                                                                                                             <td className="py-3 px-4">Total</td>
                                                                                                             <td className="py-3 px-3 text-right font-mono tabular-nums text-sm">{totH.toFixed(1)} h</td>
-                                                                                                            <td className="py-3 px-3 text-right font-mono tabular-nums text-sm">{totRev.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</td>
-                                                                                                            <td className="py-3 px-3 text-right font-mono tabular-nums text-sm">{totCost.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</td>
+                                                                                                            <td className="py-3 px-3 text-right font-mono tabular-nums text-sm">{formatMoney(totRev)}</td>
+                                                                                                            <td className="py-3 px-3 text-right font-mono tabular-nums text-sm">{formatMoney(totCost)}</td>
                                                                                                             <td className="py-3 px-3 text-right font-mono tabular-nums text-sm">
-                                                                                                                {totH > 0.001 ? `${(totCost / totH).toFixed(2)} €/h` : '–'}
+                                                                                                                {totH > 0.001 ? `${formatPerHour((totCost / totH), 2)}` : '–'}
                                                                                                             </td>
                                                                                                             <td
                                                                                                                 className={cn(
@@ -2854,12 +2755,12 @@ export default function FinancialHealthPage() {
                                                                                                                         : undefined
                                                                                                                 )}
                                                                                                             >
-                                                                                                                {totH > 0.001 ? `${(totMargin / totH).toFixed(2)} €/h` : '–'}
+                                                                                                                {totH > 0.001 ? `${formatPerHour((totMargin / totH), 2)}` : '–'}
                                                                                                             </td>
                                                                                                             <td className={cn("py-3 px-4 text-right font-mono tabular-nums text-sm", totSem.className)}>
                                                                                                                 <span className="inline-flex items-center justify-end gap-1">
                                                                                                                     {totSem.showAlert && <AlertTriangle className="h-3 w-3 shrink-0" aria-hidden />}
-                                                                                                                    {totMargin.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                                                                                                                    {formatMoney(totMargin)}
                                                                                                                 </span>
                                                                                                             </td>
                                                                                                         </tr>
@@ -2874,11 +2775,11 @@ export default function FinancialHealthPage() {
                                                                                     <dl className="space-y-3 text-sm">
                                                                                         <div>
                                                                                             <dt className="text-slate-500 text-xs">Coste total</dt>
-                                                                                            <dd className="font-mono font-semibold text-slate-800">{attributionRows.reduce((s, r) => s + r.cost, 0).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</dd>
+                                                                                            <dd className="font-mono font-semibold text-slate-800">{attributionRows.reduce((s, r) => s + r.cost,formatMoney(0))}</dd>
                                                                                         </div>
                                                                                         <div>
                                                                                             <dt className="text-slate-500 text-xs">Margen total</dt>
-                                                                                            <dd className={cn("font-mono font-semibold", (() => { const totRev = attributionRows.reduce((s, r) => s + r.attributedRevenue, 0); const totMarg = attributionRows.reduce((s, r) => s + r.margin, 0); const pct = totRev > 0 ? (totMarg / totRev) * 100 : (totMarg < 0 ? -1 : 0); return getMarginSemaphore(pct).className; })())}>{attributionRows.reduce((s, r) => s + r.margin, 0).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</dd>
+                                                                                            <dd className={cn("font-mono font-semibold", (() => { const totRev = attributionRows.reduce((s, r) => s + r.attributedRevenue, 0); const totMarg = attributionRows.reduce((s, r) => s + r.margin, 0); const pct = totRev > 0 ? (totMarg / totRev) * 100 : (totMarg < 0 ? -1 : 0); return getMarginSemaphore(pct).className; })())}>{attributionRows.reduce((s, r) => s + r.margin,formatMoney(0))}</dd>
                                                                                         </div>
                                                                                         <div>
                                                                                             <dt className="text-slate-500 text-xs">% margen</dt>
@@ -2913,14 +2814,14 @@ export default function FinancialHealthPage() {
                                                     <td className="px-4 py-3 text-right font-mono tabular-nums">
                                                         {(employeeDisplayTotalsWhenSearch
                                                             ? employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + (employeeDisplayTotalsWhenSearch.get(ep.employeeId)?.attr ?? ep.attributedRevenue), 0)
-                                                            : employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + ep.attributedRevenue, 0)
-                                                        ).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                                                            : employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + ep.attributedRevenue,formatMoney(0)
+                                                        ))}
                                                     </td>
                                                     <td className="px-4 py-3 text-right font-mono tabular-nums">
                                                         {(employeeDisplayTotalsWhenSearch
                                                             ? employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + (employeeDisplayTotalsWhenSearch.get(ep.employeeId)?.cost ?? ep.cost), 0)
-                                                            : employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + ep.cost, 0)
-                                                        ).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                                                            : employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + ep.cost,formatMoney(0)
+                                                        ))}
                                                     </td>
                                                     <td className="px-4 py-3 text-right font-mono tabular-nums">
                                                         {(() => {
@@ -2931,7 +2832,7 @@ export default function FinancialHealthPage() {
                                                             const totalCost = employeeDisplayTotalsWhenSearch
                                                                 ? employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + (employeeDisplayTotalsWhenSearch.get(ep.employeeId)?.cost ?? ep.cost), 0)
                                                                 : employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + ep.cost, 0);
-                                                            return totalH > 0 ? `${(totalCost / totalH).toFixed(2)} €/h` : '–';
+                                                            return totalH > 0 ? `${formatPerHour((totalCost / totalH), 2)}` : '–';
                                                         })()}
                                                     </td>
                                                     <td className={cn("px-4 py-3 text-right font-mono tabular-nums", (() => {
@@ -2948,8 +2849,8 @@ export default function FinancialHealthPage() {
                                                             })()}
                                                             {(employeeDisplayTotalsWhenSearch
                                                                 ? employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + (employeeDisplayTotalsWhenSearch.get(ep.employeeId)?.margin ?? ep.margin), 0)
-                                                                : employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + ep.margin, 0)
-                                                            ).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                                                                : employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + ep.margin,formatMoney(0)
+                                                            ))}
                                                         </span>
                                                     </td>
                                                     <td className={cn("px-4 py-3 text-right font-mono tabular-nums", (() => {
@@ -2983,7 +2884,7 @@ export default function FinancialHealthPage() {
                                         Proyectos internos (sin fee)
                                     </CardTitle>
                                     <CardDescription className="text-xs text-slate-500">
-                                        Proyectos con fee 0 € y actividad este mes. Rentabilidad negativa (solo coste). Respetan la búsqueda.
+                                        Proyectos con fee 0 {currencySymbol} y actividad este mes. Rentabilidad negativa (solo coste). Respetan la búsqueda.
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>
@@ -3046,13 +2947,13 @@ export default function FinancialHealthPage() {
                                                             </td>
                                                             <td className="px-4 py-3 text-right font-mono tabular-nums text-slate-700">{(hoursMode === 'computed' ? p.computed : p.actual).toFixed(1)} h</td>
                                                             <td className="px-4 py-3 text-right font-mono tabular-nums text-slate-700">
-                                                                {pcm.payrollCost.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                                                                {formatMoney(pcm.payrollCost)}
                                                             </td>
                                                             <td className="px-4 py-3 text-right font-mono tabular-nums text-slate-600">
-                                                                {pcm.overheadCost.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                                                                {formatMoney(pcm.overheadCost)}
                                                             </td>
                                                             <td className="px-4 py-3 text-right font-mono tabular-nums text-slate-700">
-                                                                {pcm.cost.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                                                                {formatMoney(pcm.cost)}
                                                             </td>
                                                         </tr>
                                                     );
@@ -3139,7 +3040,7 @@ export default function FinancialHealthPage() {
                                                         </Tooltip>
                                                     </th>
                                                     <th className="px-4 py-3 text-right font-medium whitespace-nowrap min-w-[70px]">Coste/h</th>
-                                                    <th className="px-4 py-3 text-right font-medium whitespace-nowrap min-w-[90px]">Margen (€)</th>
+                                                    <th className="px-4 py-3 text-right font-medium whitespace-nowrap min-w-[90px]">{`Margen ${inCurrencyParens}`}</th>
                                                     <th className="px-4 py-3 text-right font-medium whitespace-nowrap min-w-[70px]">% margen</th>
                                                     <th className="px-4 py-3 text-right font-medium rounded-tr-lg">Acción</th>
                                                 </tr>
@@ -3183,19 +3084,19 @@ export default function FinancialHealthPage() {
                                                                 ? costMode === 'standard'
                                                                     ? t('financialHealth.costHour.tooltipLoadedStd', {
                                                                           baseH: baseHoursStdTab.toFixed(0),
-                                                                          p: pHrTab.toFixed(2),
-                                                                          o: oHrTab.toFixed(2),
-                                                                          c: costPerHour.toFixed(2),
+                                                                          p: formatPerHour(pHrTab, 2),
+                                                                          o: formatPerHour(oHrTab, 2),
+                                                                          c: formatPerHour(costPerHour, 2),
                                                                       })
                                                                     : t('financialHealth.costHour.tooltipLoadedDyn', {
                                                                           baseH: hEffTab.toFixed(0),
-                                                                          p: pHrTab.toFixed(2),
-                                                                          o: oHrTab.toFixed(2),
-                                                                          c: costPerHour.toFixed(2),
+                                                                          p: formatPerHour(pHrTab, 2),
+                                                                          o: formatPerHour(oHrTab, 2),
+                                                                          c: formatPerHour(costPerHour, 2),
                                                                       })
                                                                 : costMode === 'standard'
-                                                                  ? `Base: ${baseHoursStdTab.toFixed(0)} h (capacidad teórica del mes) · ${costPerHour.toFixed(2)} €/h`
-                                                                  : `Base: ${hEffTab.toFixed(0)} h (reales del mes) · Nómina: ${(empTab?.monthlyCost ?? empTab?.hourlyRate ?? 0).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })} → ${costPerHour.toFixed(2)} €/h`
+                                                                  ? `Base: ${baseHoursStdTab.toFixed(0)} h (capacidad teórica del mes) · ${formatPerHour(costPerHour, 2)}`
+                                                                  : `Base: ${hEffTab.toFixed(0)} h (reales del mes) · Nómina: ${formatMoney((empTab?.monthlyCost ?? empTab?.hourlyRate ?? 0))} → ${formatPerHour(costPerHour, 2)}`
                                                             : null;
                                                     return (
                                                         <Fragment key={ep.employeeId}>
@@ -3215,7 +3116,7 @@ export default function FinancialHealthPage() {
                                                                     </div>
                                                                 </td>
                                                                 <td className="px-4 py-3 text-right font-mono tabular-nums text-slate-700">
-                                                                    {ep.payrollMonthly.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                                                                    {formatMoney(ep.payrollMonthly)}
                                                                 </td>
                                                                 <td className="px-4 py-3 text-right font-mono tabular-nums text-slate-600" onClick={(e) => e.stopPropagation()}>
                                                                     <Tooltip>
@@ -3229,20 +3130,20 @@ export default function FinancialHealthPage() {
                                                                         </TooltipContent>
                                                                     </Tooltip>
                                                                 </td>
-                                                                <td className="px-4 py-3 text-right font-mono tabular-nums text-slate-700">{displayAttr.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</td>
+                                                                <td className="px-4 py-3 text-right font-mono tabular-nums text-slate-700">{formatMoney(displayAttr)}</td>
                                                                 <td className="px-4 py-3 text-right font-mono tabular-nums text-slate-700" onClick={(e) => e.stopPropagation()}>
                                                                     <Tooltip>
                                                                         <TooltipTrigger asChild>
-                                                                            <span className="cursor-help underline decoration-dotted decoration-slate-300">{displayCost.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</span>
+                                                                            <span className="cursor-help underline decoration-dotted decoration-slate-300">{formatMoney(displayCost)}</span>
                                                                         </TooltipTrigger>
                                                                         <TooltipContent side="left" className="text-xs">
                                                                             <div className="space-y-0.5">
-                                                                                <div>Nómina imputada: <span className="font-mono">{(display ? (ep.payrollAllocatedTotal * (displayCost / (ep.cost || 1))) : ep.payrollAllocatedTotal).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</span></div>
-                                                                                <div>Gastos comunes: <span className="font-mono">{(display ? (displayCost - ep.payrollAllocatedTotal * (displayCost / (ep.cost || 1))) : ep.cost - ep.payrollAllocatedTotal).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</span></div>
-                                                                                <div className="pt-0.5 border-t border-slate-200/40">Total: <span className="font-mono font-semibold">{displayCost.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</span></div>
+                                                                                <div>Nómina imputada: <span className="font-mono">{(display ? (ep.payrollAllocatedTotal * (displayCost / (ep.cost || 1))) :formatMoney(ep.payrollAllocatedTotal))}</span></div>
+                                                                                <div>Gastos comunes: <span className="font-mono">{(display ? (displayCost - ep.payrollAllocatedTotal * (displayCost / (ep.cost || 1))) :formatMoney(ep.cost - ep.payrollAllocatedTotal))}</span></div>
+                                                                                <div className="pt-0.5 border-t border-slate-200/40">Total: <span className="font-mono font-semibold">{formatMoney(displayCost)}</span></div>
                                                                                 {ep.hoursNotAttributed > 0.001 && (
                                                                                     <div className="pt-1 text-slate-300">
-                                                                                        {ep.hoursNotAttributed.toFixed(1)} h no imputadas · {ep.costNotAttributed.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                                                                                        {ep.hoursNotAttributed.toFixed(1)} h no imputadas · {formatMoney(ep.costNotAttributed)}
                                                                                     </div>
                                                                                 )}
                                                                             </div>
@@ -3253,18 +3154,18 @@ export default function FinancialHealthPage() {
                                                                     {costHelpTextTab ? (
                                                                         <Tooltip>
                                                                             <TooltipTrigger asChild>
-                                                                                <span className="cursor-help underline decoration-dotted decoration-slate-300">{displayHours > 0 ? `${costPerHour.toFixed(2)} €/h` : '–'}</span>
+                                                                                <span className="cursor-help underline decoration-dotted decoration-slate-300">{displayHours > 0 ? `${formatPerHour(costPerHour, 2)}` : '–'}</span>
                                                                             </TooltipTrigger>
                                                                             <TooltipContent side="left" className="text-xs font-normal">
                                                                                 {costHelpTextTab}
                                                                             </TooltipContent>
                                                                         </Tooltip>
-                                                                    ) : (displayHours > 0 ? `${costPerHour.toFixed(2)} €/h` : '–')}
+                                                                    ) : (displayHours > 0 ? `${formatPerHour(costPerHour, 2)}` : '–')}
                                                                 </td>
                                                                 <td className={cn("px-4 py-3 text-right font-mono tabular-nums font-semibold", semaphoreEmp.className)}>
                                                                     <span className="inline-flex items-center justify-end gap-1">
                                                                         {semaphoreEmp.showAlert && <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden />}
-                                                                        {displayMargin.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                                                                        {formatMoney(displayMargin)}
                                                                     </span>
                                                                 </td>
                                                                 <td className={cn("px-4 py-3 text-right font-mono tabular-nums", semaphoreEmp.className)}>{displayAttr > 0 ? `${displayMarginPct.toFixed(1)}%` : '–'}</td>
@@ -3314,7 +3215,7 @@ export default function FinancialHealthPage() {
                                                                                         <dl className="space-y-2.5 text-sm">
                                                                                             <div>
                                                                                                 <dt className="text-slate-500 text-xs">Nómina del mes</dt>
-                                                                                                <dd className="font-mono font-semibold text-slate-800">{ep.payrollMonthly.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</dd>
+                                                                                                <dd className="font-mono font-semibold text-slate-800">{formatMoney(ep.payrollMonthly)}</dd>
                                                                                             </div>
                                                                                             <div>
                                                                                                 <dt className="text-slate-500 text-xs">Horas del mes ({hoursMode === 'computed' ? 'computadas' : 'reales'})</dt>
@@ -3322,7 +3223,7 @@ export default function FinancialHealthPage() {
                                                                                             </div>
                                                                                             <div className="border-t border-slate-100 pt-2">
                                                                                                 <dt className="text-slate-500 text-xs">Ingreso atribuido</dt>
-                                                                                                <dd className="font-mono font-semibold text-slate-800">{(q ? sumAttr : ep.attributedRevenue).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</dd>
+                                                                                                <dd className="font-mono font-semibold text-slate-800">{(q ? sumAttr :formatMoney(ep.attributedRevenue))}</dd>
                                                                                             </div>
                                                                                             <div>
                                                                                                 <dt className="text-slate-500 text-xs flex items-center gap-1">
@@ -3335,7 +3236,7 @@ export default function FinancialHealthPage() {
                                                                                                         </TooltipContent>
                                                                                                     </Tooltip>
                                                                                                 </dt>
-                                                                                                <dd className="font-mono font-semibold text-slate-800">{(q ? sumPayroll : ep.payrollAllocatedTotal).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</dd>
+                                                                                                <dd className="font-mono font-semibold text-slate-800">{(q ? sumPayroll :formatMoney(ep.payrollAllocatedTotal))}</dd>
                                                                                             </div>
                                                                                             {!q && ep.payrollStandardIdle > 0.005 && effectiveCostMode === 'standard' && (
                                                                                                 <div>
@@ -3350,13 +3251,13 @@ export default function FinancialHealthPage() {
                                                                                                         </Tooltip>
                                                                                                     </dt>
                                                                                                     <dd className="font-mono font-semibold text-slate-600">
-                                                                                                        {ep.payrollStandardIdle.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                                                                                                        {formatMoney(ep.payrollStandardIdle)}
                                                                                                     </dd>
                                                                                                 </div>
                                                                                             )}
                                                                                             <div>
                                                                                                 <dt className="text-slate-500 text-xs">Gastos comunes</dt>
-                                                                                                <dd className="font-mono font-semibold text-slate-800">{(q ? sumOverhead : ep.overheadCost).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</dd>
+                                                                                                <dd className="font-mono font-semibold text-slate-800">{(q ? sumOverhead :formatMoney(ep.overheadCost))}</dd>
                                                                                             </div>
                                                                                             {!q && ep.hoursNotAttributed > 0.001 && (
                                                                                                 <div>
@@ -3373,14 +3274,14 @@ export default function FinancialHealthPage() {
                                                                                                         </Tooltip>
                                                                                                     </dt>
                                                                                                     <dd className="font-mono font-semibold text-slate-600">
-                                                                                                        {ep.costNotAttributed.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                                                                                                        {formatMoney(ep.costNotAttributed)}
                                                                                                         <span className="block text-[11px] text-slate-400 font-normal">{ep.hoursNotAttributed.toFixed(1)} h</span>
                                                                                                     </dd>
                                                                                                 </div>
                                                                                             )}
                                                                                             <div className="border-t border-slate-100 pt-2">
-                                                                                                <dt className="text-slate-500 text-xs">Margen (€)</dt>
-                                                                                                <dd className={cn("font-mono font-semibold", getMarginSemaphore(marginPct).className)}>{(q ? sumMargin : ep.margin).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</dd>
+                                                                                                <dt className="text-slate-500 text-xs">{`Margen ${inCurrencyParens}`}</dt>
+                                                                                                <dd className={cn("font-mono font-semibold", getMarginSemaphore(marginPct).className)}>{(q ? sumMargin :formatMoney(ep.margin))}</dd>
                                                                                             </div>
                                                                                             <div>
                                                                                                 <dt className="text-slate-500 text-xs">% margen</dt>
@@ -3405,7 +3306,7 @@ export default function FinancialHealthPage() {
                                                                                                     <tr className="bg-slate-50 border-b border-slate-200">
                                                                                                         <th className="text-left py-3 px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Proyecto</th>
                                                                                                         <th className="text-right py-3 px-3 text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">Horas</th>
-                                                                                                        <th className="text-right py-3 px-3 text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">Ingreso atrib. (€)</th>
+                                                                                                        <th className="text-right py-3 px-3 text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">{`Ingreso atrib. ${inCurrencyParens}`}</th>
                                                                                                         <th className="text-right py-3 px-3 text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">Nómina imput.</th>
                                                                                                         <th className="text-right py-3 px-3 text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">G. comunes</th>
                                                                                                         <th className="text-right py-3 px-3 text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
@@ -3428,7 +3329,7 @@ export default function FinancialHealthPage() {
                                                                                                                 </TooltipContent>
                                                                                                             </Tooltip>
                                                                                                         </th>
-                                                                                                        <th className="text-right py-3 px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">Margen (€)</th>
+                                                                                                        <th className="text-right py-3 px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">{`Margen ${inCurrencyParens}`}</th>
                                                                                                     </tr>
                                                                                                     <tr className="bg-slate-50/80">
                                                                                                         <th className="text-left py-0.5 px-4 text-[11px] font-normal text-slate-400" colSpan={8}>{hoursMode === 'computed' ? 'Horas computadas' : 'Horas reales'}</th>
@@ -3441,9 +3342,9 @@ export default function FinancialHealthPage() {
                                                                                                                 <SensitiveText kind="project" id={bp.projectId}>{bp.projectName}</SensitiveText>
                                                                                                             </td>
                                                                                                             <td className="py-2.5 px-3 text-right font-mono tabular-nums text-slate-600 text-sm">{bp.hoursDisplay.toFixed(1)} h</td>
-                                                                                                            <td className="py-2.5 px-3 text-right font-mono tabular-nums text-slate-700 text-sm">{bp.attributedRevenue.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</td>
-                                                                                                            <td className="py-2.5 px-3 text-right font-mono tabular-nums text-slate-700 text-sm">{bp.payrollCost.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</td>
-                                                                                                            <td className="py-2.5 px-3 text-right font-mono tabular-nums text-slate-500 text-sm">{bp.overheadCost.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</td>
+                                                                                                            <td className="py-2.5 px-3 text-right font-mono tabular-nums text-slate-700 text-sm">{formatMoney(bp.attributedRevenue)}</td>
+                                                                                                            <td className="py-2.5 px-3 text-right font-mono tabular-nums text-slate-700 text-sm">{formatMoney(bp.payrollCost)}</td>
+                                                                                                            <td className="py-2.5 px-3 text-right font-mono tabular-nums text-slate-500 text-sm">{formatMoney(bp.overheadCost)}</td>
                                                                                                             <td
                                                                                                                 className={cn(
                                                                                                                     'py-2.5 px-3 text-right font-mono tabular-nums text-sm',
@@ -3454,10 +3355,10 @@ export default function FinancialHealthPage() {
                                                                                                                         : 'text-slate-700'
                                                                                                                 )}
                                                                                                             >
-                                                                                                                {bp.hoursDisplay > 0.001 ? `${(bp.margin / bp.hoursDisplay).toFixed(2)} €/h` : '–'}
+                                                                                                                {bp.hoursDisplay > 0.001 ? `${formatPerHour((bp.margin / bp.hoursDisplay), 2)}` : '–'}
                                                                                                             </td>
                                                                                                             <td className="py-2.5 px-3 text-right font-mono tabular-nums text-slate-600 text-sm">
-                                                                                                                {bp.projectEhr > 0 ? `${bp.projectEhr.toFixed(2)} €/h` : '–'}
+                                                                                                                {bp.projectEhr > 0 ? `${formatPerHour(bp.projectEhr, 2)}` : '–'}
                                                                                                             </td>
                                                                                                             {(() => {
                                                                                                                 const bpPct = bp.attributedRevenue > 0 ? (bp.margin / bp.attributedRevenue) * 100 : (bp.margin < 0 ? -1 : 0);
@@ -3466,7 +3367,7 @@ export default function FinancialHealthPage() {
                                                                                                                     <td className={cn("py-2.5 px-4 text-right font-mono tabular-nums font-semibold text-sm", bpSem.className)}>
                                                                                                                         <span className="inline-flex items-center justify-end gap-1">
                                                                                                                             {bpSem.showAlert && <AlertTriangle className="h-3 w-3 shrink-0" aria-hidden />}
-                                                                                                                            {bp.margin.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                                                                                                                            {formatMoney(bp.margin)}
                                                                                                                         </span>
                                                                                                                     </td>
                                                                                                                 );
@@ -3489,11 +3390,11 @@ export default function FinancialHealthPage() {
                                                                                                             </td>
                                                                                                             <td className="py-2.5 px-3 text-right font-mono tabular-nums text-sm">{hoursNotAttributed.toFixed(1)} h</td>
                                                                                                             <td className="py-2.5 px-3 text-right font-mono tabular-nums text-sm">—</td>
-                                                                                                            <td className="py-2.5 px-3 text-right font-mono tabular-nums text-sm">{payrollNotAttributed.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</td>
-                                                                                                            <td className="py-2.5 px-3 text-right font-mono tabular-nums text-sm">{overheadNotAttributed.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</td>
+                                                                                                            <td className="py-2.5 px-3 text-right font-mono tabular-nums text-sm">{formatMoney(payrollNotAttributed)}</td>
+                                                                                                            <td className="py-2.5 px-3 text-right font-mono tabular-nums text-sm">{formatMoney(overheadNotAttributed)}</td>
                                                                                                             <td className="py-2.5 px-3 text-right font-mono tabular-nums text-sm">—</td>
                                                                                                             <td className="py-2.5 px-3 text-right font-mono tabular-nums text-sm">—</td>
-                                                                                                            <td className="py-2.5 px-4 text-right font-mono tabular-nums text-sm text-slate-500">{(-costNotAttributed).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</td>
+                                                                                                            <td className="py-2.5 px-4 text-right font-mono tabular-nums text-sm text-slate-500">{formatMoney((-costNotAttributed))}</td>
                                                                                                         </tr>
                                                                                                     )}
                                                                                                     {showStandardIdleRow && (
@@ -3510,19 +3411,19 @@ export default function FinancialHealthPage() {
                                                                                                             </td>
                                                                                                             <td className="py-2.5 px-3 text-right font-mono tabular-nums">—</td>
                                                                                                             <td className="py-2.5 px-3 text-right font-mono tabular-nums">—</td>
-                                                                                                            <td className="py-2.5 px-3 text-right font-mono tabular-nums">{payrollStandardIdleRow.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</td>
+                                                                                                            <td className="py-2.5 px-3 text-right font-mono tabular-nums">{formatMoney(payrollStandardIdleRow)}</td>
                                                                                                             <td className="py-2.5 px-3 text-right font-mono tabular-nums">—</td>
                                                                                                             <td className="py-2.5 px-3 text-right font-mono tabular-nums">—</td>
                                                                                                             <td className="py-2.5 px-3 text-right font-mono tabular-nums">—</td>
-                                                                                                            <td className="py-2.5 px-4 text-right font-mono tabular-nums text-slate-500">{(-payrollStandardIdleRow).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</td>
+                                                                                                            <td className="py-2.5 px-4 text-right font-mono tabular-nums text-slate-500">{formatMoney((-payrollStandardIdleRow))}</td>
                                                                                                         </tr>
                                                                                                     )}
                                                                                                     <tr className="border-t-2 border-slate-200 bg-slate-100/90 font-semibold text-slate-800">
                                                                                                         <td className="py-3 px-4">Total</td>
                                                                                                         <td className="py-3 px-3 text-right font-mono tabular-nums text-sm">{totalHoursRow.toFixed(1)} h</td>
-                                                                                                        <td className="py-3 px-3 text-right font-mono tabular-nums text-sm">{sumAttr.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</td>
-                                                                                                        <td className="py-3 px-3 text-right font-mono tabular-nums text-sm">{totalPayrollRow.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</td>
-                                                                                                        <td className="py-3 px-3 text-right font-mono tabular-nums text-sm">{totalOverheadRow.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</td>
+                                                                                                        <td className="py-3 px-3 text-right font-mono tabular-nums text-sm">{formatMoney(sumAttr)}</td>
+                                                                                                        <td className="py-3 px-3 text-right font-mono tabular-nums text-sm">{formatMoney(totalPayrollRow)}</td>
+                                                                                                        <td className="py-3 px-3 text-right font-mono tabular-nums text-sm">{formatMoney(totalOverheadRow)}</td>
                                                                                                         <td
                                                                                                             className={cn(
                                                                                                                 'py-3 px-3 text-right font-mono tabular-nums text-sm',
@@ -3534,11 +3435,11 @@ export default function FinancialHealthPage() {
                                                                                                             )}
                                                                                                         >
                                                                                                             {totalHoursRow > 0.001
-                                                                                                                ? `${((sumAttr - totalCostRow) / totalHoursRow).toFixed(2)} €/h`
+                                                                                                                ? `${formatPerHour(((sumAttr - totalCostRow) / totalHoursRow), 2)}`
                                                                                                                 : '–'}
                                                                                                         </td>
                                                                                                         <td className="py-3 px-3 text-right font-mono tabular-nums text-sm">—</td>
-                                                                                                        <td className={cn("py-3 px-4 text-right font-mono tabular-nums text-sm", (sumAttr - totalCostRow) >= 0 ? "text-emerald-700" : "text-red-600")}>{(sumAttr - totalCostRow).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</td>
+                                                                                                        <td className={cn("py-3 px-4 text-right font-mono tabular-nums text-sm", (sumAttr - totalCostRow) >= 0 ? "text-emerald-700" : "text-red-600")}>{formatMoney((sumAttr - totalCostRow))}</td>
                                                                                                     </tr>
                                                                                                 </tbody>
                                                                                             </table>
@@ -3559,8 +3460,7 @@ export default function FinancialHealthPage() {
                                                     <td className="px-4 py-3">Total</td>
                                                     <td className="px-4 py-3 text-right font-mono tabular-nums text-slate-700">
                                                         {employeeProfitabilityFilteredBySearch
-                                                            .reduce((s, ep) => s + ep.payrollMonthly, 0)
-                                                            .toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                                                            .reduce((s, ep) => s + ep.payrollMonthly,formatMoney(0))}
                                                     </td>
                                                     <td className="px-4 py-3 text-right font-mono tabular-nums text-slate-700">
                                                         {employeeDisplayTotalsWhenSearch
@@ -3569,13 +3469,13 @@ export default function FinancialHealthPage() {
                                                     </td>
                                                     <td className="px-4 py-3 text-right font-mono tabular-nums text-slate-700">
                                                         {employeeDisplayTotalsWhenSearch
-                                                            ? employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + (employeeDisplayTotalsWhenSearch.get(ep.employeeId)?.attr ?? 0), 0).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })
-                                                            : employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + ep.attributedRevenue, 0).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                                                            ? employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + (employeeDisplayTotalsWhenSearch.get(ep.employeeId)?.attr ?? 0),formatMoney(0))
+                                                            : employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + ep.attributedRevenue,formatMoney(0))}
                                                     </td>
                                                     <td className="px-4 py-3 text-right font-mono tabular-nums text-slate-700">
                                                         {employeeDisplayTotalsWhenSearch
-                                                            ? employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + (employeeDisplayTotalsWhenSearch.get(ep.employeeId)?.cost ?? 0), 0).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })
-                                                            : employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + ep.cost, 0).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                                                            ? employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + (employeeDisplayTotalsWhenSearch.get(ep.employeeId)?.cost ?? 0),formatMoney(0))
+                                                            : employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + ep.cost,formatMoney(0))}
                                                     </td>
                                                     <td className={cn("px-4 py-3 text-right font-mono tabular-nums", (() => {
                                                         const ta = employeeDisplayTotalsWhenSearch ? employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + (employeeDisplayTotalsWhenSearch.get(ep.employeeId)?.attr ?? ep.attributedRevenue), 0) : employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + ep.attributedRevenue, 0);
@@ -3590,8 +3490,8 @@ export default function FinancialHealthPage() {
                                                                 return sem.showAlert && <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden />;
                                                             })()}
                                                             {employeeDisplayTotalsWhenSearch
-                                                                ? employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + (employeeDisplayTotalsWhenSearch.get(ep.employeeId)?.margin ?? ep.margin), 0).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })
-                                                                : employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + ep.margin, 0).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                                                                ? employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + (employeeDisplayTotalsWhenSearch.get(ep.employeeId)?.margin ?? ep.margin),formatMoney(0))
+                                                                : employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + ep.margin,formatMoney(0))}
                                                         </span>
                                                     </td>
                                                     <td className={cn("px-4 py-3 text-right font-mono tabular-nums", (() => {

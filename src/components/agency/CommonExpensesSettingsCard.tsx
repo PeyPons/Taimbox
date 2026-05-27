@@ -28,6 +28,7 @@ import {
   validateSplitPercentParts,
 } from '@/utils/commonExpensesAllocation';
 import { useAppTranslation } from '@/hooks/useAppTranslation';
+import { useFormatMoney } from '@/hooks/useFormatMoney';
 import { toast } from '@/lib/notify';
 
 function newEntryId(): string {
@@ -78,6 +79,8 @@ export function CommonExpensesSettingsCard({
   onRecurringChange,
 }: CommonExpensesSettingsCardProps) {
   const { t } = useAppTranslation();
+  const { inCurrencyParens } = useFormatMoney();
+  const currencyLabels = { currencyParens: inCurrencyParens };
   const [editMonth, setEditMonth] = useState(() => format(new Date(), 'yyyy-MM'));
   const [copyConfirmOpen, setCopyConfirmOpen] = useState(false);
 
@@ -416,7 +419,7 @@ export function CommonExpensesSettingsCard({
                           />
                         </div>
                         <div className="space-y-1.5 min-w-0">
-                          <Label className="text-xs">{t('agency.commonExpenses.amount', 'Importe (€)')}</Label>
+                          <Label className="text-xs">{t('agency.commonExpenses.amount', currencyLabels)}</Label>
                           <Input
                             className="h-10 w-full min-w-0"
                             type="number"
@@ -689,7 +692,7 @@ export function CommonExpensesSettingsCard({
                         />
                       </div>
                       <div className="space-y-1.5 min-w-0">
-                        <Label className="text-xs">{t('agency.commonExpenses.amount', 'Importe (€)')}</Label>
+                        <Label className="text-xs">{t('agency.commonExpenses.amount', currencyLabels)}</Label>
                         <Input
                           className="h-10 w-full min-w-0"
                           type="number"

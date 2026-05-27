@@ -15,6 +15,9 @@ import { useAppTranslation } from "@/hooks/useAppTranslation";
 import { TaimboxMark } from "@/components/brand/TaimboxLogo";
 import { INPUT_LIMITS } from "@/constants/inputLimits";
 import { ONBOARDING_WIZARD_ALLOWED_KEY } from "@/utils/onboardingDefaults";
+import { CurrencySelect } from "@/components/agency/CurrencySelect";
+import { DEFAULT_AGENCY_CURRENCY, type AgencyCurrencyCode } from "@/constants/currencies";
+import { trackGoogleAdsRegistrationConversion } from "@/lib/googleAdsConversion";
 
 type LoginFormValues = {
   email: string;
@@ -27,6 +30,7 @@ type RegisterFormValues = {
   password: string;
   confirmPassword: string;
   agencyName: string;
+  currency: AgencyCurrencyCode;
 };
 
 export default function Login() {
@@ -36,6 +40,7 @@ export default function Login() {
   const tabParam = searchParams.get('tab');
   const [activeTab, setActiveTab] = useState<'login' | 'register'>(tabParam === 'register' ? 'register' : 'login');
   const [isRegistering, setIsRegistering] = useState(false);
+  const [registerCurrency, setRegisterCurrency] = useState<AgencyCurrencyCode>(DEFAULT_AGENCY_CURRENCY);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
   const [isSendingReset, setIsSendingReset] = useState(false);
@@ -86,6 +91,7 @@ export default function Login() {
       password: '',
       confirmPassword: '',
       agencyName: '',
+      currency: DEFAULT_AGENCY_CURRENCY,
     },
   });
 
@@ -202,6 +208,7 @@ export default function Login() {
           password: data.password,
           name: data.name.trim(),
           agencyName: agencyNameTrimmed,
+          currency: registerCurrency,
         },
       });
 
@@ -230,6 +237,13 @@ export default function Login() {
       }
 
       toast.success(t("auth.register.toast.success"));
+
+      void trackGoogleAdsRegistrationConversion({
+        email: data.email,
+        fullName: data.name.trim(),
+        transactionId:
+          typeof responseData?.user?.id === 'string' ? responseData.user.id : undefined,
+      });
 
       const { error: loginError } = await supabase.auth.signInWithPassword({
         email: data.email,
@@ -492,6 +506,23 @@ export default function Login() {
                       </FormItem>
                     )}
                   />
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium leading-none" htmlFor="register-currency">
+                      {t('auth.register.fields.currency.label', 'Moneda de la agencia')}
+                    </label>
+                    <CurrencySelect
+                      id="register-currency"
+                      value={registerCurrency}
+                      onValueChange={setRegisterCurrency}
+                    />
+                    <p className="text-xs text-slate-500">
+                      {t(
+                        'auth.register.fields.currency.hint',
+                        'Rentabilidad, fees y costes del equipo. Puedes cambiarla después en Configuración.',
+                      )}
+                    </p>
+                  </div>
 
                   <Button
                     type="submit"

@@ -27,6 +27,7 @@ import { cn } from '@/lib/utils';
 import { round2 } from '@/utils/numbers';
 import { toast } from '@/lib/notify';
 import { useTranslation } from 'react-i18next';
+import { useFormatMoney } from '@/hooks/useFormatMoney';
 
 const STATUS_ORDER: Record<DeliverableLifecycle['status'], number> = {
     'over-budget': 0,
@@ -48,6 +49,8 @@ export type DeliverableLifecycleTableProps = {
 
 export function DeliverableLifecycleTable(props: DeliverableLifecycleTableProps): JSX.Element {
     const { costMode, onCostModeChange, hoursMode, departmentProjectIds, searchQuery } = props;
+    const { formatMoney, currencySymbol, inCurrencyParens } = useFormatMoney();
+    const currencyLabels = { currencySymbol, currencyParens: inCurrencyParens };
     const { t } = useTranslation('app');
     const { projects, clients } = useApp();
     const { currentAgency } = useAgency();
@@ -271,7 +274,7 @@ export function DeliverableLifecycleTable(props: DeliverableLifecycleTableProps)
                         <CardDescription>{t('deliverableLifecycle.kpi.contract', 'Σ contrato')}</CardDescription>
                     </CardHeader>
                     <CardContent className="py-1 px-3 text-lg font-semibold tabular-nums">
-                        {kpis.sumContract.toLocaleString('es-ES', { maximumFractionDigits: 0 })} €
+                        {formatMoney(kpis.sumContract)}
                     </CardContent>
                 </Card>
                 <Card className="py-2">
@@ -279,7 +282,7 @@ export function DeliverableLifecycleTable(props: DeliverableLifecycleTableProps)
                         <CardDescription>{t('deliverableLifecycle.kpi.accrued', 'Σ devengado')}</CardDescription>
                     </CardHeader>
                     <CardContent className="py-1 px-3 text-lg font-semibold tabular-nums">
-                        {kpis.sumRev.toLocaleString('es-ES', { maximumFractionDigits: 0 })} €
+                        {formatMoney(kpis.sumRev)}
                     </CardContent>
                 </Card>
                 <Card className="py-2">
@@ -287,15 +290,15 @@ export function DeliverableLifecycleTable(props: DeliverableLifecycleTableProps)
                         <CardDescription>{t('deliverableLifecycle.kpi.cost', 'Σ coste')}</CardDescription>
                     </CardHeader>
                     <CardContent className="py-1 px-3 text-lg font-semibold tabular-nums">
-                        {kpis.sumCost.toLocaleString('es-ES', { maximumFractionDigits: 0 })} €
+                        {formatMoney(kpis.sumCost)}
                     </CardContent>
                 </Card>
                 <Card className="py-2">
                     <CardHeader className="py-2 px-3 pb-0">
-                        <CardDescription>{t('deliverableLifecycle.kpi.marginEur', 'Margen €')}</CardDescription>
+                        <CardDescription>{t('deliverableLifecycle.kpi.marginEur', currencyLabels)}</CardDescription>
                     </CardHeader>
                     <CardContent className="py-1 px-3 text-lg font-semibold tabular-nums">
-                        {kpis.sumMargin.toLocaleString('es-ES', { maximumFractionDigits: 0 })} €
+                        {formatMoney(kpis.sumMargin)}
                     </CardContent>
                 </Card>
                 <Card className="py-2">
@@ -348,16 +351,16 @@ export function DeliverableLifecycleTable(props: DeliverableLifecycleTableProps)
                                 </th>
                                 <th className="p-2 font-medium">{t('deliverableLifecycle.col.pacing', 'Avance')}</th>
                                 <th className="p-2 font-medium text-right">
-                                    {t('deliverableLifecycle.col.cost', 'Coste €')}
+                                    {t('deliverableLifecycle.col.cost', currencyLabels)}
                                 </th>
                                 <th className="p-2 font-medium text-right">
-                                    {t('deliverableLifecycle.col.contract', 'Contrato €')}
+                                    {t('deliverableLifecycle.col.contract', currencyLabels)}
                                 </th>
                                 <th className="p-2 font-medium text-right">
-                                    {t('deliverableLifecycle.col.accrued', 'Devengado €')}
+                                    {t('deliverableLifecycle.col.accrued', currencyLabels)}
                                 </th>
                                 <th className="p-2 font-medium text-right">
-                                    {t('deliverableLifecycle.col.marginEur', 'Margen €')}
+                                    {t('deliverableLifecycle.col.marginEur', currencyLabels)}
                                 </th>
                                 <th className="p-2 font-medium text-right">
                                     {t('deliverableLifecycle.col.marginPct', 'Margen %')}
@@ -412,22 +415,13 @@ export function DeliverableLifecycleTable(props: DeliverableLifecycleTableProps)
                                             </div>
                                         </td>
                                         <td className="p-2 text-right tabular-nums">
-                                            {lc.finance.costToDate.toLocaleString('es-ES', {
-                                                maximumFractionDigits: 0,
-                                            })}{' '}
-                                            €
+                                            {formatMoney(lc.finance.costToDate)}
                                         </td>
                                         <td className="p-2 text-right tabular-nums">
-                                            {lc.finance.contractFee.toLocaleString('es-ES', {
-                                                maximumFractionDigits: 0,
-                                            })}{' '}
-                                            €
+                                            {formatMoney(lc.finance.contractFee)}
                                         </td>
                                         <td className="p-2 text-right tabular-nums">
-                                            {lc.finance.revenueAccrued.toLocaleString('es-ES', {
-                                                maximumFractionDigits: 0,
-                                            })}{' '}
-                                            €
+                                            {formatMoney(lc.finance.revenueAccrued)}
                                         </td>
                                         <td
                                             className={cn(
@@ -435,9 +429,7 @@ export function DeliverableLifecycleTable(props: DeliverableLifecycleTableProps)
                                                 mEur != null && semEur?.className
                                             )}
                                         >
-                                            {mEur != null
-                                                ? `${mEur.toLocaleString('es-ES', { maximumFractionDigits: 0 })} €`
-                                                : '—'}
+                                            {mEur != null ? formatMoney(mEur) : '—'}
                                         </td>
                                         <td
                                             className={cn(

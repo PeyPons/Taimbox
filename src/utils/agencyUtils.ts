@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { Agency, AgencySettings } from '@/types';
+import { resolveAgencyCurrency } from '@/utils/currencyUtils';
 import type { AgencyMember } from '@/contexts/AgencyContext';
 import { invokeDeleteAuthUser, purgeEmployeeRowAndRelatedData } from '@/utils/employeeDeletionUtils';
 
@@ -90,6 +91,7 @@ export function normalizeAgencySettings(settings: AgencySettings): AgencySetting
   const { seo: _legacySeo, ...modulesRest } = settings.modules ?? {};
   return {
     ...settings,
+    currency: resolveAgencyCurrency(settings),
     modules: { ...modulesRest, weeklyFeedback: weeklyOn },
     enabledIntegrations: stripLegacyWeeklyIntegration(settings.enabledIntegrations),
   };

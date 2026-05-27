@@ -2,6 +2,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 import { sendWelcomeOrInvitationEmail } from "../_shared/welcome-and-invitation-email.ts"
+import { sendRegistrationAdminNotify } from "../_shared/registration-admin-notify.ts"
 import {
     INPUT_LIMITS,
     parseBoundedString,
@@ -65,7 +66,16 @@ serve(async (req) => {
             RATE_LIMITS.registerByIp,
         )
 
-        const { email, password, name, agencyName } = body
+        const { email, password, name, agencyName, currency: bodyCurrency } = body
+
+        const ALLOWED_CURRENCIES = new Set([
+            'EUR', 'USD', 'GBP', 'MXN', 'ARS', 'COP', 'CLP', 'PEN', 'BRL',
+            'CAD', 'CHF', 'UYU', 'BOB', 'PYG', 'CRC', 'GTQ', 'DOP',
+        ])
+        const agencyCurrency =
+            typeof bodyCurrency === 'string' && ALLOWED_CURRENCIES.has(bodyCurrency.toUpperCase())
+                ? bodyCurrency.toUpperCase()
+                : 'EUR'
 
         const cleanEmail = parseEmail(email)
         await assertRateLimit(
@@ -164,6 +174,7 @@ serve(async (req) => {
                 slug: finalSlug,
                 settings: {
                     ownerUserId: userId,
+                    currency: agencyCurrency,
                     // Módulos mínimos; el onboarding guía el resto según plan (PLAN_MODULES)
                     modules: {
                         deadlines: true,
@@ -285,6 +296,25 @@ serve(async (req) => {
             }
         } catch (emailError) {
             console.warn(`No se pudo enviar email de bienvenida a ${cleanEmail}:`, emailError)
+        }
+
+        // 10b. Aviso interno al administrador (no bloquea el registro)
+        try {
+            const notifyResult = await sendRegistrationAdminNotify({
+                userName: cleanName,
+                userEmail: cleanEmail,
+                agencyName: cleanAgencyName,
+                agencySlug: finalSlug,
+                agencyId: agencyData.id,
+                userId,
+                currency: agencyCurrency,
+                planId: agencyData.plan_id ?? 'business',
+            })
+            if (!notifyResult.success) {
+                console.warn(`No se pudo enviar aviso de registro a admin:`, notifyResult.error)
+            }
+        } catch (notifyError) {
+            console.warn('Error enviando aviso de registro a admin:', notifyError)
         }
 
         // 11. Retornar datos para auto-login

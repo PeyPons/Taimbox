@@ -22,7 +22,7 @@ Funciones serverless que corren en Deno dentro del contenedor `supabase-edge-fun
 | `delete-user` | `supabase/functions/delete-user/index.ts` | Elimina usuario de Auth; antes limpia `user_agencies`, pone `employees.user_id` a null, quita `platform_admins` y `audit_logs` del usuario, y anula `support_tickets.reporter_user_id`. |
 | `admin-delete-agency` | `supabase/functions/admin-delete-agency/index.ts` | Solo si `is_platform_admin`: lista `user_agencies` de la agencia; si hay `stripe_subscription_id` sin `STRIPE_SECRET_KEY`, **503**; cancela Stripe con `subscriptions.cancel` — si falla salvo `resource_missing` (suscripción ya inexistente), **502** y no purga; el RPC `admin_delete_agency` se llama con **JWT del admin** (no service role) para `auth.uid()`; registra `agency_purged` en `platform_audit_logs`. Tras éxito, best-effort: `auth.admin.deleteUser` para usuarios sin más `user_agencies` y que no sean `platform_admins`. **Irreversible.** |
 | `invite-user-to-agency` | `supabase/functions/invite-user-to-agency/index.ts` | Invita a un usuario existente a una agencia. |
-| `register-agency` | `supabase/functions/register-agency/index.ts` | Registra una nueva agencia (alta inicial). Asigna plan Business con trial 14 días por defecto. Inserta `settings` mínimos (módulos base); el asistente en app completa el resto. |
+| `register-agency` | `supabase/functions/register-agency/index.ts` | Registra una nueva agencia (alta inicial). Asigna plan Business con trial 14 días por defecto. Inserta `settings` mínimos (módulos base); el asistente en app completa el resto. Tras el alta, envía aviso interno vía Resend a `REGISTRATION_NOTIFY_EMAIL` (default `alexanderouteiral@gmail.com`; vacío = desactivado). |
 | `add-platform-admin` | `supabase/functions/add-platform-admin/index.ts` | Añade un usuario como admin de plataforma. |
 | `create-checkout-session` | `supabase/functions/create-checkout-session/index.ts` | Crea sesión de Stripe Checkout para suscripción (Pro/Business). Crea o recupera Customer, devuelve URL. Requiere `STRIPE_SECRET_KEY`. |
 | `create-billing-portal-session` | `supabase/functions/create-billing-portal-session/index.ts` | Crea sesión del Stripe Customer Portal (body: `agency_id`). Redirige al portal para gestionar tarjeta, facturas o cancelar suscripción. Requiere `STRIPE_SECRET_KEY`. |
@@ -93,7 +93,7 @@ En Supabase Cloud la URL suele ser `https://<project_ref>.supabase.co/functions/
 - **Pi:** El trabajo es ligero (un POST y lógica en Edge); no debería notarse. Evita escribir logs enormes en la SD sin rotación (`logrotate`). Mantén la Pi con hora NTP correcta (la hora UTC del worker depende del reloj del host que ejecuta las funciones / contenedor).
 
 #### Emails transaccionales (Resend)
-- **Registro**: Al registrar una agencia (`register-agency`), se envía email de bienvenida (fire-and-forget).
+- **Registro**: Al registrar una agencia (`register-agency`), se envía email de bienvenida y un aviso interno al administrador (`_shared/registration-admin-notify.ts`; fire-and-forget).
 - **Crear usuario**: Al crear un usuario desde la app (`create-user`), se envía email de invitación (fire-and-forget).
 - **Invitar usuario**: Al invitar a un usuario existente (`invite-user-to-agency`), se envía email de invitación (fire-and-forget).
 - **Olvidé mi contraseña**: El frontend (`Login.tsx`) llama a `request-password-reset` que genera un enlace de recuperación (`supabase.auth.admin.generateLink`) y lo envía por email. Funciona para cualquier usuario en `auth.users` (empleados, admins de plataforma). El usuario recibe un enlace a `/reset-password?token_hash=...&type=recovery`. La página `ResetPasswordPage.tsx` verifica el token con `supabase.auth.verifyOtp()` y permite establecer nueva contraseña con `supabase.auth.updateUser()`.
@@ -300,7 +300,28 @@ El workspace incluye un servidor MCP para **consultar y auditar** la instancia S
 }
 ```
 
-**Requisito local:** el proxy MCP debe estar activo (`localhost:8080`) y enlazado al Postgres del stack self-hosted (misma máquina o túnel que uses para administrar Supabase). En Cursor, habilita el servidor MCP del proyecto si no aparece en la lista de herramientas.
+**Túnel SSH (desarrollo en Windows → servidor self-hosted):** el proxy MCP solo es alcanzable si reenvías el puerto del stack. En **PowerShell** usa **una sola línea** (no continúes con `\` como en bash):
+
+```powershell
+ssh -p 6561 -L localhost:8080:127.0.0.1:54323 -L localhost:54322:127.0.0.1:5432 alex@192.168.1.131
+```
+
+| Puerto local | → remoto | Para qué |
+|--------------|----------|----------|
+| `8080` | `127.0.0.1:54323` | Supabase Studio, API y MCP (`http://localhost:8080/api/mcp`) — **necesario para el agente** |
+| `54322` | `127.0.0.1:5432` | Postgres directo — `supabase db push`, psql; **no obligatorio** para MCP HTTP |
+
+Mínimo solo Studio/MCP:
+
+```powershell
+ssh -p 6561 -L localhost:8080:127.0.0.1:54323 alex@192.168.1.131
+```
+
+Si las herramientas MCP en Cursor devuelven `Not connected`: comprueba que el túnel sigue abierto, **Settings → MCP → `supabase-self-hosted` → Restart** y abre un chat nuevo. Regla del agente: [`.cursor/rules/supabase-mcp-database.mdc`](../.cursor/rules/supabase-mcp-database.mdc).
+
+**¿Hace falta `.cursor/mcp.env`?** Con el modo **HTTP** de `mcp.json` (URL anterior), **normalmente no**: las credenciales las usa el proxy en el servidor. El archivo [`.cursor/mcp.env.example`](../.cursor/mcp.env.example) solo es necesario si arrancas el MCP en **stdio** con [`scripts/mcp-selfhosted-supabase.mjs`](../scripts/mcp-selfhosted-supabase.mjs) (no commitear secretos; está en `.gitignore`).
+
+**Requisito local:** túnel activo hacia `localhost:8080` y servidor MCP habilitado en Cursor. La app Vite suele ir en otro puerto (p. ej. `5173`) y no depende de este SSH.
 
 **Qué puede hacer el agente / desarrollador vía MCP:**
 

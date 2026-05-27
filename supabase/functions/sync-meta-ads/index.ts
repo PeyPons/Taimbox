@@ -154,12 +154,13 @@ Deno.serve(async (req) => {
 
                 // Update Ad Accounts Config in BULK
                 if (metaAccounts.length > 0) {
-                    const upsertConfigs = metaAccounts.map((acc: any) => ({
+                    const upsertConfigs = metaAccounts.map((acc: { account_id: string; name?: string; currency?: string }) => ({
                         account_id: `act_${acc.account_id}`,
                         account_name: acc.name || `Cuenta ${acc.account_id}`,
                         platform: 'meta',
                         is_active: true,
-                        agency_id: agency.id
+                        agency_id: agency.id,
+                        currency: acc.currency ?? null,
                     }));
 
                     const { error: upsertErr } = await supabase.from('ad_accounts_config').upsert(upsertConfigs, { onConflict: 'account_id,agency_id,platform' });

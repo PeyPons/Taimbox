@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { useFormatMoney } from '@/hooks/useFormatMoney';
 import type { TFunction } from 'i18next';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -133,6 +134,8 @@ export function ProjectMutateDialog({
   onRequestDelete,
 }: ProjectMutateDialogProps) {
   const { t } = useTranslation('app');
+  const { inCurrencyParens } = useFormatMoney();
+  const currencyLabels = { currencyParens: inCurrencyParens };
   const { addProject, updateProject } = useApp();
   const { currentAgency } = useAgency();
 
@@ -368,7 +371,7 @@ export function ProjectMutateDialog({
                   name="monthlyFee"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t('clientsAndProjects.dialogs.newProject.monthlyFee', 'Fee mensual (€)')}</FormLabel>
+                      <FormLabel>{t('clientsAndProjects.dialogs.newProject.monthlyFee', currencyLabels)}</FormLabel>
                       <FormControl>
                         <Input type="number" placeholder="0" {...field} />
                       </FormControl>
@@ -421,7 +424,7 @@ export function ProjectMutateDialog({
                   name="deliverableContractFee"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t('clientsAndProjects.dialogs.newProject.deliverableTotalFee', 'Importe total contrato (€)')}</FormLabel>
+                      <FormLabel>{t('clientsAndProjects.dialogs.newProject.deliverableTotalFee', currencyLabels)}</FormLabel>
                       <FormControl>
                         <Input type="text" inputMode="decimal" placeholder="Ej: 12000" {...field} />
                       </FormControl>

@@ -104,6 +104,7 @@ Deno.serve(async (req) => {
                 platform: 'meta',
                 is_active: true,
                 agency_id,
+                currency: acc.currency ?? null,
             }))
             const { error: upsertErr } = await supabase
                 .from('ad_accounts_config')

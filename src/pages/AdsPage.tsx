@@ -25,7 +25,8 @@ import {
   ArrowUpRight, ArrowDownRight, Eye, EyeOff, X, Check, ChevronDown
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { formatCurrency, cn } from '@/lib/utils';
+import { cn } from '@/lib/utils';
+import { useFormatMoney } from '@/hooks/useFormatMoney';
 import { toast } from '@/lib/notify';
 import { useAnonymizeAds } from '@/hooks/useAnonymizeAds';
 import { AnonymizedContent } from '@/components/ads/AnonymizedContent';
@@ -122,6 +123,7 @@ const getStatusConfig = (status: string, t: any) => {
 
 export default function AdsPage() {
   const { t } = useTranslation('app');
+  const { formatMoney, currencySymbol } = useFormatMoney();
   const { currentAgency } = useAgency();
   const { isActive: isAnonymized, anonymizer } = useAnonymizeAds();
   const [rawData, setRawData] = useState<CampaignData[]>([]);
@@ -613,8 +615,8 @@ export default function AdsPage() {
           <AdsStatCard
             icon={Target}
             label={t('ads.stats.investment', 'Inversión')}
-            value={formatCurrency(globalStats.totalSpent)}
-            subValue={`${t('ads.stats.of', 'de')} ${formatCurrency(globalStats.totalBudget)}`}
+            value={formatMoney(globalStats.totalSpent)}
+            subValue={`${t('ads.stats.of', 'de')} ${formatMoney(globalStats.totalBudget)}`}
             color="blue"
           />
           <AdsStatCard
@@ -628,21 +630,21 @@ export default function AdsPage() {
             icon={TrendingUp}
             label={t('ads.stats.conversions', 'Conversiones')}
             value={globalStats.totalConversions.toFixed(0)}
-            subValue={`CPA ${formatCurrency(globalStats.globalCpa)}`}
+            subValue={`CPA ${formatMoney(globalStats.globalCpa)}`}
             color="emerald"
           />
           <AdsStatCard
             icon={Target}
             label={t('ads.stats.roas', 'ROAS')}
             value={`${globalStats.globalRoas.toFixed(2)}x`}
-            subValue={`CPC ${formatCurrency(globalStats.globalCpc)}`}
+            subValue={`CPC ${formatMoney(globalStats.globalCpc)}`}
             color={globalStats.globalRoas >= 2 ? 'emerald' : globalStats.globalRoas >= 1 ? 'amber' : 'red'}
           />
           <AdsStatCard
             icon={ArrowDownRight}
             label={t('ads.stats.dailyRecommended', 'Diario recomendado')}
-            value={formatCurrency(globalStats.totalRecommendedDaily)}
-            subValue={`${t('common.actual', 'Actual')}: ${formatCurrency(globalStats.totalCurrentDaily)}`}
+            value={formatMoney(globalStats.totalRecommendedDaily)}
+            subValue={`${t('common.actual', 'Actual')}: ${formatMoney(globalStats.totalCurrentDaily)}`}
             color={globalStats.totalRecommendedDaily < globalStats.totalCurrentDaily ? 'amber' : 'emerald'}
           />
           <AdsStatCard
@@ -752,7 +754,7 @@ export default function AdsPage() {
                       <div className="hidden lg:flex flex-col flex-1 max-w-xs mx-4">
                         <div className="flex justify-between text-[10px] text-slate-500 mb-1">
                           <span>{t('ads.pacing.spentPct', { percent: client.progress.toFixed(0), defaultValue: `${client.progress.toFixed(0)}% gastado` })}</span>
-                          <span>{t('ads.pacing.forecast', { amount: formatCurrency(client.forecast), defaultValue: `Proy: ${formatCurrency(client.forecast)}` })}</span>
+                          <span>{t('ads.pacing.forecast', { amount: formatMoney(client.forecast), defaultValue: `Proy: ${formatMoney(client.forecast)}` })}</span>
                         </div>
                         <Progress
                           value={Math.min(client.progress, 100)}
@@ -770,12 +772,12 @@ export default function AdsPage() {
                       {client.isSalesAccount && client.total_conversions_val > 0 && (
                         <div className="text-right hidden sm:block">
                           <div className="text-[10px] uppercase text-slate-400 font-medium">{t('ads.stats.revenue', 'Valor')}</div>
-                          <div className="text-lg font-bold text-emerald-600">{formatCurrency(client.total_conversions_val)}</div>
+                          <div className="text-lg font-bold text-emerald-600">{formatMoney(client.total_conversions_val)}</div>
                         </div>
                       )}
                       <div className="text-right">
                         <div className="text-[10px] uppercase text-slate-400 font-medium">Invertido</div>
-                        <div className="text-xl font-bold text-slate-900">{formatCurrency(client.spent)}</div>
+                        <div className="text-xl font-bold text-slate-900">{formatMoney(client.spent)}</div>
                       </div>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -825,7 +827,7 @@ export default function AdsPage() {
                             )}
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className="text-slate-400">€</span>
+                            <span className="text-slate-400">{currencySymbol}</span>
                             <Input
                               key={`${client.client_id}-${client.budget}`}
                               type="number"
@@ -841,7 +843,7 @@ export default function AdsPage() {
                           <div className="flex justify-between text-xs text-slate-500">
                             <span>{t('common.consumption', 'Consumo')} ({client.progress.toFixed(1)}%)</span>
                             <span className={client.remainingBudget <= 0 ? 'text-red-500 font-bold' : ''}>
-                              {t('ads.pacing.available', { amount: formatCurrency(client.remainingBudget), defaultValue: `Disponible: ${formatCurrency(client.remainingBudget)}` })}
+                              {t('ads.pacing.available', { amount: formatMoney(client.remainingBudget), defaultValue: `Disponible: ${formatMoney(client.remainingBudget)}` })}
                             </span>
                           </div>
                           <Progress
@@ -867,7 +869,7 @@ export default function AdsPage() {
                               "text-xl font-bold",
                               isOverspending ? "text-amber-600" : "text-slate-700"
                             )}>
-                              {formatCurrency(client.currentDailyBudget)}
+                              {formatMoney(client.currentDailyBudget)}
                             </div>
                             <div className="text-[10px] text-slate-400 mt-1">
                               {t('ads.pacing.googleNoteConfig', 'configurado en Google')}
@@ -881,7 +883,7 @@ export default function AdsPage() {
                               {t('ads.pacing.recommendedDaily', 'Diario recomendado')}
                             </div>
                             <div className="text-xl font-bold text-emerald-600">
-                              {formatCurrency(client.recommendedDaily)}
+                              {formatMoney(client.recommendedDaily)}
                             </div>
                             <div className="text-[10px] text-slate-400 mt-1">
                               {t('ads.pacing.recommendedDailySub', 'para cerrar el mes en el presupuesto')}
@@ -915,7 +917,7 @@ export default function AdsPage() {
                             "font-bold shrink-0",
                             client.forecast > client.budget ? "text-red-600" : "text-slate-700"
                           )}>
-                            {formatCurrency(client.forecast)}
+                            {formatMoney(client.forecast)}
                           </span>
                         </div>
                       </div>
@@ -966,10 +968,10 @@ export default function AdsPage() {
                                       </div>
                                     </td>
                                     <td className="px-2 py-2.5 text-right font-mono text-slate-500">
-                                      {camp.daily_budget ? formatCurrency(camp.daily_budget) : '-'}
+                                      {camp.daily_budget ? formatMoney(camp.daily_budget) : '-'}
                                     </td>
                                     <td className={cn("px-2 py-2.5 text-right font-medium", isHighBudget ? "text-amber-600" : "text-slate-900")}>
-                                      {formatCurrency(camp.cost)}
+                                      {formatMoney(camp.cost)}
                                     </td>
                                     <td className="px-2 py-2.5 text-right hidden md:table-cell text-slate-600">
                                       {(camp.clicks || 0).toLocaleString('es-ES')}
@@ -978,7 +980,7 @@ export default function AdsPage() {
                                       {campCtr.toFixed(2)}%
                                     </td>
                                     <td className="px-2 py-2.5 text-right hidden lg:table-cell text-slate-500">
-                                      {formatCurrency(campCpc)}
+                                      {formatMoney(campCpc)}
                                     </td>
                                     <td className="px-2 py-2.5 text-right text-emerald-600">
                                       {(camp.conversions || 0).toFixed(0)}
@@ -1055,7 +1057,7 @@ export default function AdsPage() {
                                         </div>
                                       </td>
                                       <td className="px-2 py-2.5 text-right font-medium text-slate-900">
-                                        {formatCurrency(subSpent)}
+                                        {formatMoney(subSpent)}
                                       </td>
                                       <td className="px-2 py-2.5 text-right text-slate-500">
                                         {pctOfGroup.toFixed(1)}%
@@ -1110,10 +1112,10 @@ export default function AdsPage() {
                                                         </AnonymizedContent>
                                                       </td>
                                                       <td className="px-2 py-2 text-right text-slate-500 font-mono">
-                                                        {camp.daily_budget ? formatCurrency(camp.daily_budget) : '-'}
+                                                        {camp.daily_budget ? formatMoney(camp.daily_budget) : '-'}
                                                       </td>
                                                       <td className={cn("px-2 py-2.5 text-right font-medium", isHighBudget ? "text-amber-600" : "text-slate-900")}>
-                                                        {formatCurrency(camp.cost)}
+                                                        {formatMoney(camp.cost)}
                                                       </td>
                                                       <td className="px-2 py-2 text-right text-emerald-600">
                                                         {(camp.conversions || 0).toFixed(0)}

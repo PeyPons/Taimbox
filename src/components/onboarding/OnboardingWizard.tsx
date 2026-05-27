@@ -60,6 +60,7 @@ import { PhaseDatePickerButton } from '@/components/projects/PhaseDatePickerButt
 import { parseISO } from 'date-fns';
 import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
 import { useAppTranslation } from '@/hooks/useAppTranslation';
+import { useFormatMoney } from '@/hooks/useFormatMoney';
 import { cn } from '@/lib/utils';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -428,6 +429,8 @@ export default function OnboardingWizard() {
   const [searchParams] = useSearchParams();
   const isGuidedMode = searchParams.get('mode') !== 'quick';
   const { t } = useAppTranslation();
+  const { perHourSuffix, inCurrencyParens } = useFormatMoney();
+  const currencyLabels = { perHourSuffix, currencyParens: inCurrencyParens };
   const { planId } = useSubscriptionLimits();
   const {
     currentAgency,
@@ -1227,7 +1230,7 @@ export default function OnboardingWizard() {
                 <div className="space-y-5 min-w-0">
                   <div className="space-y-3 min-w-0">
                     <div className={cn(obPanel, 'p-3 sm:p-4 space-y-2')}>
-                      <Label className="text-sm">{t('onboarding.ehr.label', 'Objetivo precio hora efectivo (€/h)')}</Label>
+                      <Label className="text-sm">{t('onboarding.ehr.label', currencyLabels)}</Label>
                       <OnboardingCallout
                         title={t('onboarding.ehr.calloutTitle', 'Qué es este valor')}
                         bullets={Array.isArray(ehrCalloutBullets) ? (ehrCalloutBullets as string[]) : []}
@@ -2136,7 +2139,7 @@ export default function OnboardingWizard() {
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel>
-                                {t('onboarding.project.deliverableTotal', 'Importe total contrato (€)')}
+                                {t('onboarding.project.deliverableTotal', { currencyParens: inCurrencyParens, defaultValue: `Importe total contrato ${inCurrencyParens}` })}
                               </FormLabel>
                               <FormControl>
                                 <Input type="text" inputMode="decimal" placeholder="Ej: 12000" {...field} />
@@ -2237,7 +2240,7 @@ export default function OnboardingWizard() {
                           name="monthlyFee"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>{t('onboarding.project.monthlyFee', 'Fee mensual (€)')}</FormLabel>
+                              <FormLabel>{t('onboarding.project.monthlyFee', currencyLabels)}</FormLabel>
                               <p className="text-xs text-slate-500 -mt-1 mb-1">
                                 {t(
                                   'onboarding.project.monthlyFeeHint',

@@ -8,16 +8,24 @@ import { toast } from '@/lib/notify';
 import { ArrowRight, Rocket, Sparkles, Loader2 } from 'lucide-react';
 import { useAgency } from '@/contexts/AgencyContext';
 import { ONBOARDING_WIZARD_ALLOWED_KEY } from '@/utils/onboardingDefaults';
+import { CurrencySelect } from '@/components/agency/CurrencySelect';
+import { DEFAULT_AGENCY_CURRENCY, type AgencyCurrencyCode } from '@/constants/currencies';
+import { resolveAgencyCurrency } from '@/utils/currencyUtils';
+import { useState } from 'react';
+import { Label } from '@/components/ui/label';
 
 export default function OnboardingChoicePage() {
   const navigate = useNavigate();
   const { t } = useAppTranslation();
   const { applyQuickOnboardingDefaults, isApplying } = useOnboardingQuickSetup();
   const { currentAgency } = useAgency();
+  const [currency, setCurrency] = useState<AgencyCurrencyCode>(() =>
+    resolveAgencyCurrency(currentAgency?.settings),
+  );
 
   const handleQuick = async () => {
     try {
-      await applyQuickOnboardingDefaults();
+      await applyQuickOnboardingDefaults({ currency });
       toast.success(t('onboarding.choice.quickSuccess', '¡Listo! Explora el planificador cuando quieras.'));
       navigate('/planner', { replace: true });
     } catch {
@@ -62,6 +70,22 @@ export default function OnboardingChoicePage() {
           ) : null}
         </CardHeader>
         <CardContent className="space-y-3 pb-6">
+          <div className="space-y-2 rounded-lg border border-slate-200 bg-slate-50/80 p-3">
+            <Label htmlFor="onboarding-currency">
+              {t('onboarding.choice.currency', 'Moneda de tu agencia')}
+            </Label>
+            <CurrencySelect
+              id="onboarding-currency"
+              value={currency}
+              onValueChange={setCurrency}
+            />
+            <p className="text-xs text-slate-500">
+              {t(
+                'onboarding.choice.currencyHint',
+                'Fees, rentabilidad y costes del equipo. Las cuentas de Ads pueden usar otra divisa.',
+              )}
+            </p>
+          </div>
           <button
             type="button"
             onClick={handleQuick}

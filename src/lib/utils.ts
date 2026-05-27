@@ -1,17 +1,19 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { ProjectAliasingRule } from "@/types";
+import { ProjectAliasingRule, type AgencySettings } from "@/types";
+import { formatMoneyAmount, resolveAgencyCurrency } from '@/utils/currencyUtils';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-// --- NUEVA FUNCIÓN NECESARIA PARA LA PÁGINA DE ADS ---
-export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('es-ES', {
-    style: 'currency',
-    currency: 'EUR',
-  }).format(amount);
+/** @deprecated Prefer `useFormatMoney()` en componentes React. */
+export function formatCurrency(
+  amount: number,
+  settings?: AgencySettings | null,
+  locale = 'es-ES',
+): string {
+  return formatMoneyAmount(amount, resolveAgencyCurrency(settings), locale);
 }
 
 // Default Kit Digital rule for backward compatibility

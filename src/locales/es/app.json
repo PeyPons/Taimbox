@@ -106,6 +106,10 @@
           "label": "Nombre de tu empresa",
           "placeholder": "Mi Agencia"
         },
+        "currency": {
+          "label": "Moneda de la agencia",
+          "hint": "Rentabilidad, fees y costes del equipo. Puedes cambiarla después en Configuración."
+        },
         "agencyNameOptional": {
           "label": "Nombre de empresa (opcional)"
         }
@@ -456,7 +460,7 @@
       "commonOverhead": "G. comunes",
       "payrollImputedHelp": "Nómina cargada al proyecto según el modo de coste (operativo o dinámico).",
       "commonOverheadHelp": "Gastos comunes del mes prorrateados a este proyecto según la configuración de reparto.",
-      "costTotal": "Coste (€)",
+      "costTotal": "Coste {{currencyParens}}",
       "costTotalHelp": "Nómina imputada más gastos comunes imputados (y en empleados: también no imputado y capacidad operativa si aplica).",
       "departmentTableHelp": "Ingreso del mes (devengado si el mes está en curso), costes del mismo criterio que la tabla de proyectos y margen."
     },
@@ -472,7 +476,7 @@
       "openButton": "Objetivo y gastos",
       "dialogTitle": "Objetivo EHR y gastos comunes",
       "dialogDescription": "Define el precio hora objetivo y los gastos que se prorratean en esta página (fijos por mes o puntuales).",
-      "ehrNote": "Mínimo 1 €/h. Si no guardas un valor explícito, se usará el coste cargado o 75 €/h según la lógica de la página.",
+      "ehrNote": "Mínimo 1 {{perHourSuffix}}. Si no guardas un valor explícito, se usará el coste cargado o {{defaultPerHour}} según la lógica de la página.",
       "cancel": "Cancelar",
       "save": "Guardar",
       "saving": "Guardando…",
@@ -505,8 +509,8 @@
       "zeroHourPeers": "Algunos empleados no tienen horas este mes y no reciben prorrateo de gastos comunes: {{names}}"
     },
     "costHour": {
-      "tooltipLoadedStd": "Base operativa (nómina): {{baseH}} h teóricas/mes. Nómina/h: {{p}} €/h; gastos comunes/h: {{o}} €/h; coste cargado/h: {{c}} €/h.",
-      "tooltipLoadedDyn": "Base del mes: {{baseH}} h. Nómina/h: {{p}} €/h; gastos comunes/h: {{o}} €/h; coste cargado/h: {{c}} €/h."
+      "tooltipLoadedStd": "Base operativa (nómina): {{baseH}} h teóricas/mes. Nómina/h: {{p}}; gastos comunes/h: {{o}}; coste cargado/h: {{c}}.",
+      "tooltipLoadedDyn": "Base del mes: {{baseH}} h. Nómina/h: {{p}}; gastos comunes/h: {{o}}; coste cargado/h: {{c}}."
     },
     "costHelp": {
       "commonCosts": "Los gastos comunes (Objetivo y gastos en esta página) se suman al coste por horas del mes. Con coste operativo, la nómina sigue la capacidad teórica; los gastos comunes siguen las horas registradas en el modo elegido."
@@ -995,7 +999,7 @@
       "contract": "Σ contrato",
       "accrued": "Σ devengado",
       "cost": "Σ coste",
-      "marginEur": "Margen €",
+      "marginEur": "Margen {{currencySymbol}}",
       "marginPct": "Margen % pond."
     },
     "col": {
@@ -1004,10 +1008,10 @@
       "phase": "Fase",
       "hours": "Horas",
       "pacing": "Avance",
-      "cost": "Coste €",
-      "contract": "Contrato €",
-      "accrued": "Devengado €",
-      "marginEur": "Margen €",
+      "cost": "Coste {{currencySymbol}}",
+      "contract": "Contrato {{currencySymbol}}",
+      "accrued": "Devengado {{currencySymbol}}",
+      "marginEur": "Margen {{currencySymbol}}",
       "marginPct": "Margen %",
       "status": "Estado"
     },
@@ -1241,6 +1245,9 @@
     "subtitle": "Gestiona empleados, accesos y horarios.",
     "newEmployee": "Nuevo empleado",
     "editEmployee": "Editar empleado",
+    "employee": {
+      "monthlyCostLabel": "Coste mensual (nómina) ({{symbol}})"
+    },
     "departments": "Departamentos",
     "roles": {
       "admin": "Administrador",
@@ -1401,10 +1408,12 @@
       "name": "Nombre de la agencia",
       "slug": "Identificador (slug)",
       "slugNote": "El slug no se puede modificar",
+      "currency": "Moneda de la agencia",
+      "currencyHint": "Rentabilidad, fees, nóminas y gastos comunes se muestran en esta moneda. Las cuentas de Ads pueden usar otra divisa (se indica en Monitor PPC).",
       "profitability": "Rentabilidad",
       "profitabilityDesc": "Objetivo de precio hora efectivo usado en la página Rentabilidad para KPIs y alertas",
-      "ehrTarget": "Objetivo Precio Hora Efectivo (€/h)",
-      "ehrNote": "Solo valores positivos; mínimo 1 €/h. Puedes usar coma o punto como decimal (máx. 2 decimales). Por defecto 75 €/h.",
+      "ehrTarget": "Objetivo Precio Hora Efectivo ({{perHourSuffix}})",
+      "ehrNote": "Solo valores positivos; mínimo 1 {{perHourSuffix}}. Puedes usar coma o punto como decimal (máx. 2 decimales). Por defecto {{defaultPerHour}}.",
       "tracking": "Preferencia de Seguimiento",
       "trackingDesc": "Define si el avance y la rentabilidad se calculan con las horas imputadas al cliente/presupuesto (computadas) o solo con el tiempo real dedicado.",
       "computed": "Horas Computadas",
@@ -1437,7 +1446,7 @@
       "emptyMonth": "No hay líneas para este mes. Añade gastos o cópialos del mes anterior.",
       "label": "Concepto",
       "labelPh": "Ej. Alquiler",
-      "amount": "Importe (€)",
+      "amount": "Importe {{currencyParens}}",
       "allocation": "Reparto",
       "scope": "Alcance",
       "distribution": {
@@ -1767,7 +1776,9 @@
       "quickDesc": "Entras al planificador en ~1 min con valores recomendados. Te guiaremos con una lista corta de pasos.",
       "guidedTitle": "Configurar mi agencia",
       "guidedDesc": "Asistente paso a paso (~8–12 min): módulos, departamentos, equipo, primer cliente y proyecto. Puedes omitir lo opcional.",
-      "quickSuccess": "¡Listo! Explora el planificador cuando quieras."
+      "quickSuccess": "¡Listo! Explora el planificador cuando quieras.",
+      "currency": "Moneda de tu agencia",
+      "currencyHint": "Fees, rentabilidad y costes del equipo. Las cuentas de Ads pueden usar otra divisa."
     },
     "checklist": {
       "title": "Primeros pasos en Taimbox",
@@ -1829,7 +1840,7 @@
       }
     },
     "ehr": {
-      "label": "Objetivo precio hora efectivo (€/h)",
+      "label": "Objetivo precio hora efectivo ({{perHourSuffix}})",
       "calloutTitle": "Qué es este valor",
       "calloutBullets": [
         "Media objetivo ingresos ÷ horas para seguir rentabilidad (Salud financiera).",
@@ -2028,8 +2039,8 @@
       "budgetHelp": "Horas que planeáis dedicar a este proyecto en un mes de media. Sirve para comparar con lo planificado y lo real en informes.",
       "minH": "Mínimo de horas (opcional)",
       "minHHelp": "Suelo mínimo mensual que garantizáis al cliente; puede ser 0 si no aplica.",
-      "fee": "Fee / hora (€)",
-      "monthlyFee": "Fee mensual (€)",
+      "fee": "Fee / hora {{currencyParens}}",
+      "monthlyFee": "Fee mensual {{currencyParens}}",
       "monthlyFeeHint": "Importe total que paga el cliente por este proyecto al mes (no es precio por hora)."
     }
   },

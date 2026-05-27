@@ -1,4 +1,5 @@
 import { PLAN_MODULES, type PlanId } from '@/config/plans';
+import { DEFAULT_AGENCY_CURRENCY } from '@/constants/currencies';
 import type { AgencyModules, AgencySettings, DepartmentDefinition } from '@/types';
 
 export const DEFAULT_EHR_TARGET = 75;
@@ -43,6 +44,7 @@ export function buildRecommendedModules(planId: PlanId): AgencyModules {
 export function buildRecommendedAgencySettings(planId: PlanId): Partial<AgencySettings> {
   const modules = buildRecommendedModules(planId);
   return {
+    currency: DEFAULT_AGENCY_CURRENCY,
     ehrTarget: DEFAULT_EHR_TARGET,
     hoursTrackingPreference: 'computed',
     modules,

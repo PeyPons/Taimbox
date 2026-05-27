@@ -22,6 +22,8 @@ import { toast } from '@/lib/notify';
 import { Briefcase, CalendarClock, Target, Lock, Clock, ShieldCheck, Hash, Key } from 'lucide-react';
 import { useIntegration } from '@/hooks/useIntegration';
 import { INPUT_LIMITS } from '@/constants/inputLimits';
+import { useFormatMoney } from '@/hooks/useFormatMoney';
+import { useAppTranslation } from '@/hooks/useAppTranslation';
 
 import { ScheduleEditor } from './ScheduleEditor';
 import { ProjectsSheet } from './ProjectsSheet';
@@ -66,6 +68,8 @@ const employeeFormSchema = z.object({
 type EmployeeFormValues = z.infer<typeof employeeFormSchema>;
 
 export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeDialogProps) {
+  const { t } = useAppTranslation();
+  const { currencySymbol } = useFormatMoney();
   const { addEmployee, updateEmployee } = useApp();
   const { currentAgency } = useAgency();
   const isCrmUserIdEnabled = useIntegration('crm_user_id');
@@ -502,7 +506,12 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
                     name="monthlyCost"
                     render={({ field }) => (
                       <FormItem className="space-y-2">
-                        <FormLabel>Coste mensual (nómina) €</FormLabel>
+                        <FormLabel>
+                          {t('team.employee.monthlyCostLabel', {
+                            symbol: currencySymbol,
+                            defaultValue: 'Coste mensual (nómina) ({{symbol}})',
+                          })}
+                        </FormLabel>
                         <FormControl>
                           <Input
                             type="number"

@@ -106,6 +106,10 @@
           "label": "Your company's name",
           "placeholder": "My Agency"
         },
+        "currency": {
+          "label": "Agency currency",
+          "hint": "Profitability, fees and team costs. You can change it later in Settings."
+        },
         "agencyNameOptional": {
           "label": "Company name (optional)"
         }
@@ -456,7 +460,7 @@
       "commonOverhead": "Common OH",
       "payrollImputedHelp": "Payroll allocated to the project (operational or dynamic cost mode).",
       "commonOverheadHelp": "Monthly common costs allocated to this project per your distribution rules.",
-      "costTotal": "Cost (€)",
+      "costTotal": "Cost {{currencyParens}}",
       "costTotalHelp": "Allocated payroll plus allocated common costs (employee rows also include unattributed and operational idle where applicable).",
       "departmentTableHelp": "Month revenue (accrued if current month), costs using the same rules as the project table, and margin."
     },
@@ -472,7 +476,7 @@
       "openButton": "Target & costs",
       "dialogTitle": "EHR target and common costs",
       "dialogDescription": "Set your effective hourly target and the costs allocated on this page (fixed per month or one-off).",
-      "ehrNote": "Minimum 1 €/h. If you do not save an explicit value, loaded cost or €75/h applies per page logic.",
+      "ehrNote": "Minimum 1 {{perHourSuffix}}. If you do not save an explicit value, loaded cost or {{defaultPerHour}} applies per page logic.",
       "cancel": "Cancel",
       "save": "Save",
       "saving": "Saving…",
@@ -505,8 +509,8 @@
       "zeroHourPeers": "Some employees have no hours this month and receive no common-cost allocation: {{names}}"
     },
     "costHour": {
-      "tooltipLoadedStd": "Payroll operational base: {{baseH}} h/month theoretical. Payroll/h: {{p}} €/h; common costs/h: {{o}} €/h; loaded cost/h: {{c}} €/h.",
-      "tooltipLoadedDyn": "Month base: {{baseH}} h. Payroll/h: {{p}} €/h; common costs/h: {{o}} €/h; loaded cost/h: {{c}} €/h."
+      "tooltipLoadedStd": "Payroll operational base: {{baseH}} h/month theoretical. Payroll/h: {{p}}; common costs/h: {{o}}; loaded cost/h: {{c}}.",
+      "tooltipLoadedDyn": "Month base: {{baseH}} h. Payroll/h: {{p}}; common costs/h: {{o}}; loaded cost/h: {{c}}."
     },
     "costHelp": {
       "commonCosts": "Common costs (Target & costs on this page) are added to hourly costs. With operational payroll, salary uses theoretical capacity; common costs follow logged hours in the selected mode."
@@ -754,6 +758,9 @@
     "subtitle": "Manage employees, access, and schedules.",
     "newEmployee": "New employee",
     "editEmployee": "Edit employee",
+    "employee": {
+      "monthlyCostLabel": "Monthly payroll cost ({{symbol}})"
+    },
     "departments": "Departments",
     "roles": {
       "admin": "Admin",
@@ -914,10 +921,12 @@
       "name": "Agency Name",
       "slug": "Identifier (slug)",
       "slugNote": "The slug cannot be modified",
+      "currency": "Agency currency",
+      "currencyHint": "Profitability, fees, payroll and common expenses use this currency. Ad accounts may use a different one (shown in PPC Monitor).",
       "profitability": "Profitability",
       "profitabilityDesc": "Effective hourly price target used on the Profitability page for KPIs and alerts",
-      "ehrTarget": "Effective Hourly Price Target (€/h)",
-      "ehrNote": "Positive values only; minimum 1 €/h. Use comma or dot as decimal separator (max 2 decimals). Default 75 €/h.",
+      "ehrTarget": "Effective Hourly Price Target ({{perHourSuffix}})",
+      "ehrNote": "Positive values only; minimum 1 {{perHourSuffix}}. Use comma or dot as decimal separator (max 2 decimals). Default {{defaultPerHour}}.",
       "tracking": "Tracking Preference",
       "trackingDesc": "Choose whether progress and profitability use client/budget hours (computed) or only time actually spent.",
       "computed": "Computed Hours",
@@ -950,7 +959,7 @@
       "emptyMonth": "No lines for this month. Add costs or copy from the previous month.",
       "label": "Label",
       "labelPh": "e.g. Rent",
-      "amount": "Amount (€)",
+      "amount": "Amount {{currencyParens}}",
       "allocation": "Allocation",
       "scope": "Scope",
       "distribution": {
@@ -1566,7 +1575,7 @@
       "contract": "Σ contract",
       "accrued": "Σ accrued",
       "cost": "Σ cost",
-      "marginEur": "Margin €",
+      "marginEur": "Margin {{currencySymbol}}",
       "marginPct": "Weighted margin %"
     },
     "col": {
@@ -1575,10 +1584,10 @@
       "phase": "Phase",
       "hours": "Hours",
       "pacing": "Progress",
-      "cost": "Cost €",
-      "contract": "Contract €",
-      "accrued": "Accrued €",
-      "marginEur": "Margin €",
+      "cost": "Cost {{currencySymbol}}",
+      "contract": "Contract {{currencySymbol}}",
+      "accrued": "Accrued {{currencySymbol}}",
+      "marginEur": "Margin {{currencySymbol}}",
       "marginPct": "Margin %",
       "status": "Status"
     },
@@ -1705,7 +1714,9 @@
       "quickDesc": "Enter the planner in ~1 min with recommended defaults. We'll show a short checklist.",
       "guidedTitle": "Set up my agency",
       "guidedDesc": "Step-by-step assistant (~8–12 min): modules, departments, team, first client and project. Optional steps can be skipped.",
-      "quickSuccess": "You're in! Open the planner whenever you're ready."
+      "quickSuccess": "You're in! Open the planner whenever you're ready.",
+      "currency": "Your agency currency",
+      "currencyHint": "Fees, profitability and team costs. Ad accounts may use a different currency."
     },
     "checklist": {
       "title": "First steps in Taimbox",
@@ -1767,7 +1778,7 @@
       }
     },
     "ehr": {
-      "label": "Target effective hourly rate (€/h)",
+      "label": "Target effective hourly rate ({{perHourSuffix}})",
       "calloutTitle": "What this number means",
       "calloutBullets": [
         "Target average revenue ÷ hours for profitability tracking (Financial health).",
@@ -1966,8 +1977,8 @@
       "budgetHelp": "Hours you plan to spend on this project per month on average. Used to compare plan vs actual in reports.",
       "minH": "Minimum hours (optional)",
       "minHHelp": "Monthly floor you guarantee the client; use 0 if not applicable.",
-      "fee": "Fee / hour (€)",
-      "monthlyFee": "Monthly fee (€)",
+      "fee": "Fee / hour {{currencyParens}}",
+      "monthlyFee": "Monthly fee {{currencyParens}}",
       "monthlyFeeHint": "Total amount the client pays per month for this project (not an hourly rate)."
     }
   },

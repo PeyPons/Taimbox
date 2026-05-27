@@ -29,6 +29,9 @@ import { DEFAULT_FILTERS } from '@/hooks/useProjectFilters';
 import { UserPermissions, DEFAULT_PERMISSIONS } from '@/types/permissions';
 import { normalizeRolesForSave } from '@/utils/agencySettingsPermissions';
 import { sanitizeIntegrationsForSave } from '@/utils/agencyUtils';
+import { CurrencySelect } from '@/components/agency/CurrencySelect';
+import { resolveAgencyCurrency } from '@/utils/currencyUtils';
+import type { AgencyCurrencyCode } from '@/constants/currencies';
 import { RolePermissionsEditor } from '@/components/agency/RolePermissionsEditor';
 import {
   Tooltip,
@@ -303,6 +306,9 @@ export default function AgencySettingsPage() {
   const [hoursTrackingPreference, setHoursTrackingPreference] = useState<'computed' | 'actual'>(
     currentAgency?.settings?.hoursTrackingPreference ?? 'computed'
   );
+  const [agencyCurrency, setAgencyCurrency] = useState<AgencyCurrencyCode>(() =>
+    resolveAgencyCurrency(currentAgency?.settings),
+  );
 
   /** Palabras clave en nombre de proyecto que excluyen del riesgo "Poco avance" en Radar operativo. */
   const [radarLowProgressExcludeKeywords, setRadarLowProgressExcludeKeywords] = useState<string[]>(
@@ -359,6 +365,7 @@ export default function AgencySettingsPage() {
         clientIds: currentAgency.settings?.planningPrecisionExclusions?.clientIds ?? []
       });
       setHoursTrackingPreference(currentAgency.settings?.hoursTrackingPreference ?? 'computed');
+      setAgencyCurrency(resolveAgencyCurrency(currentAgency.settings));
       setRadarLowProgressExcludeKeywords(currentAgency.settings?.radarLowProgressExcludeKeywords ?? []);
       setDependencyUnblockEmailsEnabled(currentAgency.settings?.dependencyUnblockEmailsEnabled !== false);
       fetchConnectedAccounts();
@@ -467,6 +474,7 @@ export default function AgencySettingsPage() {
         planningPrecisionExclusions,
         timeTrackerMaxHours,
         hoursTrackingPreference,
+        currency: agencyCurrency,
         radarLowProgressExcludeKeywords,
         dependencyUnblockEmailsEnabled,
       });
@@ -713,6 +721,21 @@ export default function AgencySettingsPage() {
                       className="bg-slate-50"
                     />
                     <p className="text-xs text-slate-500">{t('agency.general.slugNote', 'El slug no se puede modificar')}</p>
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="agency-currency">{t('agency.general.currency', 'Moneda de la agencia')}</Label>
+                    <CurrencySelect
+                      id="agency-currency"
+                      value={agencyCurrency}
+                      onValueChange={setAgencyCurrency}
+                      className="max-w-md"
+                    />
+                    <p className="text-xs text-slate-500">
+                      {t(
+                        'agency.general.currencyHint',
+                        'Rentabilidad, fees, nóminas y gastos comunes se muestran en esta moneda. Las cuentas de Ads pueden usar otra divisa (se indica en Monitor PPC).',
+                      )}
+                    </p>
                   </div>
                 </div>
               </CardContent>
