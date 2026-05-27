@@ -3,11 +3,11 @@ import { useTranslation } from 'react-i18next';
 
 import {
   AGENCY_CURRENCY_OPTIONS,
-  DEFAULT_AGENCY_CURRENCY,
   type AgencyCurrencyCode,
   isAgencyCurrencyCode,
 } from '@/constants/currencies';
 import {
+  DEFAULT_LANDING_PRICING_CURRENCY,
   LANDING_PRICING_CURRENCIES,
   LANDING_PRICING_CURRENCY_STORAGE_KEY,
 } from '@/config/publicPricing';
@@ -27,9 +27,9 @@ type RatesCache = {
 function readStoredCurrency(): AgencyCurrencyCode {
   try {
     const raw = localStorage.getItem(LANDING_PRICING_CURRENCY_STORAGE_KEY);
-    return isAgencyCurrencyCode(raw) ? raw : DEFAULT_AGENCY_CURRENCY;
+    return isAgencyCurrencyCode(raw) ? raw : DEFAULT_LANDING_PRICING_CURRENCY;
   } catch {
-    return DEFAULT_AGENCY_CURRENCY;
+    return DEFAULT_LANDING_PRICING_CURRENCY;
   }
 }
 
@@ -75,7 +75,6 @@ export function usePublicPricingCurrency() {
   const [rates, setRates] = useState<Record<string, number>>(() =>
     mergePublicPricingRates(readRatesCache()?.rates),
   );
-  const [ratesLive, setRatesLive] = useState(() => readRatesCache()?.live ?? false);
   const [ratesLoading, setRatesLoading] = useState(false);
 
   const setCurrency = useCallback((code: AgencyCurrencyCode) => {
@@ -91,7 +90,6 @@ export function usePublicPricingCurrency() {
     const cached = readRatesCache();
     if (cached) {
       setRates(mergePublicPricingRates(cached.rates));
-      setRatesLive(cached.live);
       return;
     }
 
@@ -102,13 +100,11 @@ export function usePublicPricingCurrency() {
       .then((live) => {
         const merged = mergePublicPricingRates(live ?? undefined);
         setRates(merged);
-        setRatesLive(live != null);
         writeRatesCache(merged, live != null);
       })
       .catch(() => {
         const merged = mergePublicPricingRates(undefined);
         setRates(merged);
-        setRatesLive(false);
         writeRatesCache(merged, false);
       })
       .finally(() => setRatesLoading(false));
@@ -162,18 +158,16 @@ export function usePublicPricingCurrency() {
   );
 
   const billingNote = useMemo(() => {
+    if (currency === 'USD') return t('pricing.currencyBillingUsd');
     if (currency === 'EUR') return t('pricing.currencyBillingEur');
-    const base = t('pricing.currencyBillingConverted', { currency });
-    if (!ratesLive) return `${base} ${t('pricing.currencyFallbackNote')}`;
-    return base;
-  }, [currency, ratesLive, t]);
+    return t('pricing.currencyBillingConverted', { currency });
+  }, [currency, t]);
 
   return {
     currency,
     setCurrency,
     currencyOptions,
     ratesLoading,
-    ratesLive,
     formatEurAmount,
     formatMonthly,
     formatMonthlyWithPeriod,

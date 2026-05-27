@@ -44,10 +44,13 @@ export const PUBLIC_PLAN_PRICING: PublicPlanPricing[] = [
   },
 ];
 
-/** Monedas del selector en páginas públicas (Frankfurter + EUR base). */
+/** Moneda por defecto en home y /precios (cobro real sigue en EUR vía Stripe). */
+export const DEFAULT_LANDING_PRICING_CURRENCY: AgencyCurrencyCode = 'USD';
+
+/** Monedas del selector en páginas públicas (precios base en EUR, visualización convertida). */
 export const LANDING_PRICING_CURRENCIES: readonly AgencyCurrencyCode[] = [
-  'EUR',
   'USD',
+  'EUR',
   'GBP',
   'MXN',
   'BRL',
