@@ -457,8 +457,8 @@
     "earlyTariff": "Early adopter rate · for life",
     "currencyLabel": "Show prices in",
     "currencyBillingUsd": "Prices shown in USD for reference. Subscription charges are processed in EUR.",
-    "currencyBillingEur": "Subscription charges are processed in EUR.",
-    "currencyBillingConverted": "Indicative amounts in {{currency}}. Charges are processed in EUR.",
+    "currencyBillingEur": "Amounts converted from USD. Subscription charges are processed in EUR.",
+    "currencyBillingConverted": "Indicative amounts in {{currency}} (USD base). Charges are processed in EUR.",
     "enterpriseTitle": "More than 50 people or need something custom?",
     "enterpriseSub": "Unlimited Enterprise · SLA · Dedicated support · Custom billing",
     "enterpriseCta": "Talk to sales",
@@ -476,7 +476,7 @@
     "finalCta": "Start free",
     "finalLogin": "Already have an account?",
     "finalLoginLink": "Log in",
-    "rewardBanner": "🎯 We’ll reward the first agencies that trust us by keeping this rate for life, before we move to official pricing of €99 and €249.",
+    "rewardBanner": "🎯 We’ll reward the first agencies that trust us by keeping this rate for life, before we move to official pricing of $99 and $249.",
     "plans": {
       "starter": {
         "period": "forever",
@@ -587,11 +587,11 @@
       },
       {
         "q": "Will early adopter pricing stay?",
-        "a": "Yes. If you subscribe now, your rate is locked for life even if prices rise to €99/€249 later."
+        "a": "Yes. If you subscribe now, your rate is locked for life even if prices rise to $99/$249 later."
       },
       {
         "q": "Does the Business trial require a card?",
-        "a": "Yes, Stripe will ask for a payment method when you start the subscription, but nothing is charged during the 14-day trial. After that it’s €149/month. Cancel before and there’s no charge."
+        "a": "Yes, Stripe will ask for a payment method when you start the subscription, but nothing is charged during the 14-day trial. After that your Business rate applies (billed in EUR via Stripe). Cancel before and there’s no charge."
       },
       {
         "q": "Are there annual discounts?",

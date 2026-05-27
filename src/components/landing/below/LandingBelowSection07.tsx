@@ -158,7 +158,7 @@ export const LandingBelowSection07: FC = () => {
 
     formatMonthly,
 
-    formatEurAmount,
+    formatUsdAmount,
 
     billingNote,
 
@@ -270,23 +270,23 @@ export const LandingBelowSection07: FC = () => {
 
             const hasEarlyDiscount =
 
-              pricing.eurMonthlyOfficial != null && pricing.eurMonthly != null;
+              pricing.usdMonthlyOfficial != null && pricing.usdMonthly != null;
 
 
 
             let priceDisplay: string;
 
-            if (pricing.eurMonthly == null) {
+            if (pricing.usdMonthly == null) {
 
               priceDisplay = tPricing(`pricing.plans.${pricing.id}.customPrice`);
 
-            } else if (pricing.eurMonthly === 0) {
+            } else if (pricing.usdMonthly === 0) {
 
-              priceDisplay = formatEurAmount(0);
+              priceDisplay = formatUsdAmount(0);
 
             } else {
 
-              priceDisplay = formatMonthly(pricing.eurMonthly);
+              priceDisplay = formatMonthly(pricing.usdMonthly);
 
             }
 
@@ -294,9 +294,9 @@ export const LandingBelowSection07: FC = () => {
 
             const priceWasDisplay =
 
-              hasEarlyDiscount && pricing.eurMonthlyOfficial != null
+              hasEarlyDiscount && pricing.usdMonthlyOfficial != null
 
-                ? `${formatMonthly(pricing.eurMonthlyOfficial)}${plan.priceSuffix ? ` ${plan.priceSuffix}` : ""}`
+                ? `${formatMonthly(pricing.usdMonthlyOfficial)}${plan.priceSuffix ? ` ${plan.priceSuffix}` : ""}`
 
                 : null;
 
@@ -426,7 +426,7 @@ export const LandingBelowSection07: FC = () => {
 
                     </span>
 
-                    {plan.priceSuffix && pricing.eurMonthly != null ? (
+                    {plan.priceSuffix && pricing.usdMonthly != null ? (
 
                       <span
 

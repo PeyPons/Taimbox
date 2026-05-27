@@ -494,7 +494,6 @@
         "id": "starter",
         "name": "Starter",
         "desc": "Para probar con un equipo pequeño, sin compromiso.",
-        "price": "0€",
         "priceSuffix": "/mes · siempre gratis",
         "features": [
           "Hasta 5 personas",
@@ -511,8 +510,6 @@
         "id": "pro",
         "name": "Pro",
         "desc": "Para quien ya vive entre Excel y Slack.",
-        "priceWas": "99€/mes",
-        "price": "49€",
         "priceSuffix": "/mes",
         "discountBadge": "−50%",
         "features": [
@@ -531,8 +528,6 @@
         "id": "business",
         "name": "Business",
         "desc": "Para equipos con PPC, plazos ajustados y control financiero fino.",
-        "priceWas": "249€/mes",
-        "price": "149€",
         "priceSuffix": "/mes",
         "features": [
           "Hasta 50 personas",
@@ -550,7 +545,6 @@
         "id": "enterprise",
         "name": "Enterprise",
         "desc": "Para holdings y equipos de más de 50 personas con SLA.",
-        "price": "A medida",
         "features": [
           "Personas sin límite",
           "SLA y soporte dedicado",

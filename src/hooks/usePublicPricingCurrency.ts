@@ -14,7 +14,7 @@ import {
 import { mergePublicPricingRates } from '@/config/publicPricingFxFallback';
 import { localeForAppLanguage } from '@/utils/currencyUtils';
 
-const RATES_CACHE_KEY = 'taimbox-landing-fx-rates-v2';
+const RATES_CACHE_KEY = 'taimbox-landing-fx-rates-usd-v1';
 const RATES_TTL_MS = 24 * 60 * 60 * 1000;
 const FRANKFURTER_URL = 'https://api.frankfurter.app/latest';
 
@@ -60,8 +60,8 @@ function fractionDigitsFor(currency: AgencyCurrencyCode): number {
 }
 
 async function fetchFrankfurterRates(signal: AbortSignal): Promise<Record<string, number> | null> {
-  const targets = LANDING_PRICING_CURRENCIES.filter((c) => c !== 'EUR').join(',');
-  const res = await fetch(`${FRANKFURTER_URL}?from=EUR&to=${targets}`, { signal });
+  const targets = LANDING_PRICING_CURRENCIES.filter((c) => c !== 'USD').join(',');
+  const res = await fetch(`${FRANKFURTER_URL}?from=USD&to=${targets}`, { signal });
   if (!res.ok) return null;
   const data = (await res.json()) as { rates?: Record<string, number> };
   if (!data.rates) return null;
@@ -112,19 +112,19 @@ export function usePublicPricingCurrency() {
     return () => controller.abort();
   }, []);
 
-  const convertEur = useCallback(
-    (eur: number): number => {
-      if (currency === 'EUR') return eur;
+  const convertUsd = useCallback(
+    (usd: number): number => {
+      if (currency === 'USD') return usd;
       const rate = rates[currency];
-      if (!rate || !Number.isFinite(rate)) return eur;
-      return eur * rate;
+      if (!rate || !Number.isFinite(rate)) return usd;
+      return usd * rate;
     },
     [currency, rates],
   );
 
-  const formatEurAmount = useCallback(
-    (eur: number, opts?: { compact?: boolean }): string => {
-      const amount = convertEur(eur);
+  const formatUsdAmount = useCallback(
+    (usd: number, opts?: { compact?: boolean }): string => {
+      const amount = convertUsd(usd);
       const digits = opts?.compact ? 0 : fractionDigitsFor(currency);
       const safe = Number.isFinite(amount) ? amount : 0;
       return new Intl.NumberFormat(locale, {
@@ -134,17 +134,17 @@ export function usePublicPricingCurrency() {
         minimumFractionDigits: digits === 0 ? 0 : undefined,
       }).format(safe);
     },
-    [convertEur, currency, locale],
+    [convertUsd, currency, locale],
   );
 
-  const formatMonthly = useCallback((eur: number) => formatEurAmount(eur), [formatEurAmount]);
+  const formatMonthly = useCallback((usd: number) => formatUsdAmount(usd), [formatUsdAmount]);
 
   const formatMonthlyWithPeriod = useCallback(
-    (eur: number, periodLabel: string) => {
-      if (eur === 0) return formatEurAmount(0);
-      return `${formatEurAmount(eur)} / ${periodLabel}`;
+    (usd: number, periodLabel: string) => {
+      if (usd === 0) return formatUsdAmount(0);
+      return `${formatUsdAmount(usd)} / ${periodLabel}`;
     },
-    [formatEurAmount],
+    [formatUsdAmount],
   );
 
   const currencyOptions = useMemo(
@@ -168,11 +168,11 @@ export function usePublicPricingCurrency() {
     setCurrency,
     currencyOptions,
     ratesLoading,
-    formatEurAmount,
+    formatUsdAmount,
     formatMonthly,
     formatMonthlyWithPeriod,
     locale,
     billingNote,
-    isEur: currency === 'EUR',
+    isUsd: currency === 'USD',
   };
 }

@@ -85,7 +85,7 @@ export default function PreciosPage() {
     currencyOptions,
     ratesLoading,
     formatMonthly,
-    formatEurAmount,
+    formatUsdAmount,
     billingNote,
   } = usePublicPricingCurrency();
 
@@ -184,8 +184,8 @@ export default function PreciosPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 lg:gap-5">
               {plans.map((plan) => {
                 const Icon = plan.icon;
-                const isEnterprise = plan.eurMonthly == null;
-                const hasEarlyDiscount = plan.eurMonthlyOfficial != null && plan.eurMonthly != null;
+                const isEnterprise = plan.usdMonthly == null;
+                const hasEarlyDiscount = plan.usdMonthlyOfficial != null && plan.usdMonthly != null;
                 const registerHref = path(plan.href);
 
                 return (
@@ -214,15 +214,15 @@ export default function PreciosPage() {
                       <div className="flex items-baseline gap-2 flex-wrap">
                         {hasEarlyDiscount && (
                           <span className="text-sm font-medium text-indigo-300/40 line-through tabular-nums">
-                            {formatMonthly(plan.eurMonthlyOfficial!)}
+                            {formatMonthly(plan.usdMonthlyOfficial!)}
                           </span>
                         )}
                         <span className="text-4xl sm:text-[2.35rem] font-black text-white tabular-nums leading-none">
                           {isEnterprise
                             ? plan.customPrice
-                            : plan.eurMonthly === 0
-                              ? formatEurAmount(0)
-                              : formatMonthly(plan.eurMonthly!)}
+                            : plan.usdMonthly === 0
+                              ? formatUsdAmount(0)
+                              : formatMonthly(plan.usdMonthly!)}
                         </span>
                         {!isEnterprise && plan.period ? (
                           <span className="text-sm font-medium text-indigo-300/80">/ {plan.period}</span>
@@ -386,7 +386,7 @@ export default function PreciosPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto mb-10">
                   {[
-                    { num: formatEurAmount(0), label: t('pricing.finalStat1Label') },
+                    { num: formatUsdAmount(0), label: t('pricing.finalStat1Label') },
                     { num: '14', label: t('pricing.finalStat2Label') },
                     { num: '1 min', label: t('pricing.finalStat3Label') },
                   ].map(({ num, label }, i) => (

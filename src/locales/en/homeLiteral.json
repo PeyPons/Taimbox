@@ -494,7 +494,6 @@
         "id": "starter",
         "name": "Starter",
         "desc": "Try it with a small team, no strings attached.",
-        "price": "€0",
         "priceSuffix": "/mo · always free",
         "features": [
           "Up to 5 people",
@@ -511,8 +510,6 @@
         "id": "pro",
         "name": "Pro",
         "desc": "For teams already living between Excel and Slack.",
-        "priceWas": "€99/mo",
-        "price": "€49",
         "priceSuffix": "/mo",
         "discountBadge": "−50%",
         "features": [
@@ -531,8 +528,6 @@
         "id": "business",
         "name": "Business",
         "desc": "For teams with PPC, tight deadlines, and close financial control.",
-        "priceWas": "€249/mo",
-        "price": "€149",
         "priceSuffix": "/mo",
         "features": [
           "Up to 50 people",
@@ -550,7 +545,6 @@
         "id": "enterprise",
         "name": "Enterprise",
         "desc": "For holdings and teams over 50 people with SLA.",
-        "price": "Custom",
         "features": [
           "Unlimited people",
           "SLA and dedicated support",

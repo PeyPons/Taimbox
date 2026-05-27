@@ -1,28 +1,26 @@
 import type { AgencyCurrencyCode } from '@/constants/currencies';
 
 /**
- * Tipos EUR → moneda (1 EUR = X unidades).
- * Respaldo offline si Frankfurter no responde o no publica la divisa (p. ej. ARS).
- * Revisar trimestralmente; fuente orientativa: BCE / mercado spot.
- * Última revisión: 2026-05.
+ * Tipos USD → moneda (1 USD = X unidades).
+ * Respaldo si Frankfurter no responde. Revisar trimestralmente.
  */
-export const PUBLIC_PRICING_FX_FALLBACK_EUR: Partial<Record<AgencyCurrencyCode, number>> = {
-  EUR: 1,
-  USD: 1.08,
-  GBP: 0.85,
-  MXN: 21.4,
-  BRL: 6.15,
-  CAD: 1.48,
-  CHF: 0.94,
-  ARS: 1180,
-  COP: 4550,
-  CLP: 1050,
-  PEN: 4.05,
-  UYU: 42.5,
+export const PUBLIC_PRICING_FX_FALLBACK_USD: Partial<Record<AgencyCurrencyCode, number>> = {
+  USD: 1,
+  EUR: 0.93,
+  GBP: 0.79,
+  MXN: 20.0,
+  BRL: 5.7,
+  CAD: 1.37,
+  CHF: 0.87,
+  ARS: 1100,
+  COP: 4200,
+  CLP: 970,
+  PEN: 3.75,
+  UYU: 39,
 };
 
 export function mergePublicPricingRates(
   live: Record<string, number> | undefined,
 ): Record<string, number> {
-  return { ...PUBLIC_PRICING_FX_FALLBACK_EUR, EUR: 1, ...live };
+  return { ...PUBLIC_PRICING_FX_FALLBACK_USD, USD: 1, ...live };
 }

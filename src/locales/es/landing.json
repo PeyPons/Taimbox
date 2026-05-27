@@ -457,8 +457,8 @@
     "earlyTariff": "Tarifa Early Adopter · de por vida",
     "currencyLabel": "Ver precios en",
     "currencyBillingUsd": "Precios mostrados en USD a título orientativo. El cobro de la suscripción se realiza en EUR.",
-    "currencyBillingEur": "El cobro de la suscripción se realiza en EUR.",
-    "currencyBillingConverted": "Importes orientativos en {{currency}}. El cobro se realiza en EUR.",
+    "currencyBillingEur": "Importes convertidos desde USD. El cobro de la suscripción se realiza en EUR.",
+    "currencyBillingConverted": "Importes orientativos en {{currency}} (base USD). El cobro se realiza en EUR.",
     "enterpriseTitle": "¿Más de 50 personas o necesitas algo a medida?",
     "enterpriseSub": "Enterprise sin límites · SLA · Soporte dedicado · Facturación personalizada",
     "enterpriseCta": "Hablar con ventas",
@@ -476,7 +476,7 @@
     "finalCta": "Empezar gratis",
     "finalLogin": "¿Ya tienes cuenta?",
     "finalLoginLink": "Iniciar sesión",
-    "rewardBanner": "🎯 Premiaremos a las primeras agencias que confíen en nosotros manteniendo esta cuota de por vida, antes de aplicar las tarifas oficiales de 99€ y 249€.",
+    "rewardBanner": "🎯 Premiaremos a las primeras agencias que confíen en nosotros manteniendo esta cuota de por vida, antes de aplicar las tarifas oficiales de $99 y $249.",
     "plans": {
       "starter": {
         "period": "siempre",
@@ -587,11 +587,11 @@
       },
       {
         "q": "¿Los precios de early adopter se mantendrán?",
-        "a": "Sí. Si contratas ahora, tu tarifa queda congelada de por vida aunque los precios suban a 99€/249€ en el futuro."
+        "a": "Sí. Si contratas ahora, tu tarifa queda congelada de por vida aunque los precios suban a $99/$249 en el futuro."
       },
       {
         "q": "¿La prueba de Business requiere tarjeta de crédito?",
-        "a": "Sí, Stripe te pedirá un método de pago al iniciar la suscripción, pero no se cobrará absolutamente nada durante los 14 días de prueba. Al finalizar se cobrarán 149€/mes. Si cancelas antes, no habrá cargo."
+        "a": "Sí, Stripe te pedirá un método de pago al iniciar la suscripción, pero no se cobrará absolutamente nada durante los 14 días de prueba. Al finalizar se aplicará tu tarifa Business (facturación en EUR vía Stripe). Si cancelas antes, no habrá cargo."
       },
       {
         "q": "¿Hay descuentos por pago anual?",
