@@ -7,18 +7,16 @@ import { useLocation } from 'react-router-dom';
  * interferir con los enlaces a secciones específicas (ej: API docs).
  */
 export function ScrollToTop() {
-    const { pathname, hash } = useLocation();
-    const prevPathname = useRef(pathname);
+    const { pathname, hash, search } = useLocation();
+    const routeKey = `${pathname}${search}`;
+    const prevRouteKey = useRef(routeKey);
 
     useEffect(() => {
-        // Solo hacer scroll al top si:
-        // 1. El pathname ha cambiado (navegación entre páginas distintas)
-        // 2. No hay hash en la URL (si hay hash, el navegador/componente lo gestiona)
-        if (pathname !== prevPathname.current && !hash) {
+        if (routeKey !== prevRouteKey.current && !hash) {
             window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
         }
-        prevPathname.current = pathname;
-    }, [pathname, hash]);
+        prevRouteKey.current = routeKey;
+    }, [routeKey, hash]);
 
     return null;
 }

@@ -2,8 +2,10 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAgency } from '@/contexts/AgencyContext';
 import { usePlatformAdmin } from '@/hooks/usePlatformAdmin';
 import { useMemo, useRef, useEffect, useState } from 'react';
+import { RouteContentLoader } from '@/components/layout/PageLoader';
 
 interface PermissionProtectedRouteProps {
   children: React.ReactNode;
@@ -18,6 +20,7 @@ export function PermissionProtectedRoute({ children, requiredPermission }: Permi
   const location = useLocation();
   const { canAccess } = usePermissions();
   const { currentUser, isLoading: isAppLoading, employees } = useApp();
+  const { currentAgency } = useAgency();
   const { session, isInitialized: isAuthInitialized } = useAuth();
   const { isPlatformAdmin, isLoading: isPlatformAdminLoading } = usePlatformAdmin();
   
@@ -38,24 +41,26 @@ export function PermissionProtectedRoute({ children, requiredPermission }: Permi
     }
   }, [session, isAppLoading, employees.length, currentUser, linkWaitComplete]);
 
+  const isAgencySwitchPending = useMemo(() => {
+    if (!session || !currentAgency || isAppLoading || isPlatformAdmin) return false;
+    return employees.length === 0 && !currentUser;
+  }, [session, currentAgency, isAppLoading, isPlatformAdmin, employees.length, currentUser]);
+
   // Determinar si todavía estamos en proceso de carga
   const isStillLoading = useMemo(() => {
     if (!isAuthInitialized) return true;
     if (isAppLoading) return true;
+    if (isAgencySwitchPending) return true;
     // Si puede ser platform admin sin empleado, esperar a saberlo antes de redirigir
     if (session && !currentUser && isPlatformAdminLoading) return true;
     // Si hay sesión pero aún esperamos vinculación (y no es platform admin)
     if (session && employees.length > 0 && !currentUser && !linkWaitComplete && !isPlatformAdmin) return true;
     return false;
-  }, [isAuthInitialized, isAppLoading, session, employees.length, currentUser, linkWaitComplete, isPlatformAdmin, isPlatformAdminLoading]);
+  }, [isAuthInitialized, isAppLoading, isAgencySwitchPending, session, employees.length, currentUser, linkWaitComplete, isPlatformAdmin, isPlatformAdminLoading]);
 
-  // Mientras carga, mostrar spinner
+  // Mientras carga, spinner en el área de contenido (sidebar visible)
   if (isStillLoading) {
-    return (
-      <div className="h-screen w-screen flex flex-col items-center justify-center bg-slate-50">
-        <div className="h-8 w-8 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin opacity-60" />
-      </div>
-    );
+    return <RouteContentLoader />;
   }
 
   // Si no hay sesión, redirigir al login

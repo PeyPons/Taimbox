@@ -871,6 +871,12 @@ export default function GuiaPage() {
     if (section) window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [section]);
 
+  useEffect(() => {
+    if (section && !sections.some((s) => s.slug === section)) {
+      navigate(guideIndexPath, { replace: true });
+    }
+  }, [section, sections, guideIndexPath, navigate]);
+
   if (!section) {
     return (
       <>
@@ -901,7 +907,6 @@ export default function GuiaPage() {
 
   const current = sections.find((s) => s.slug === section);
   if (!current) {
-    navigate(guideIndexPath, { replace: true });
     return null;
   }
 
