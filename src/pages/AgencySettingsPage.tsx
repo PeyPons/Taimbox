@@ -669,7 +669,13 @@ export default function AgencySettingsPage() {
 
       <Tabs
         value={activeTab}
-        onValueChange={(v) => setSearchParams({ tab: v })}
+        onValueChange={(v) => {
+          setSearchParams((prev) => {
+            const next = new URLSearchParams(prev);
+            next.set('tab', v);
+            return next;
+          });
+        }}
         className="mt-6 grid gap-6 lg:grid-cols-[240px_minmax(0,1fr)]"
       >
         <TabsList className="grid grid-flow-col auto-cols-fr lg:grid-flow-row lg:auto-cols-auto lg:w-full h-auto p-2 rounded-xl bg-slate-100 border border-slate-200 lg:sticky lg:top-4 self-start w-full overflow-x-auto lg:overflow-visible">

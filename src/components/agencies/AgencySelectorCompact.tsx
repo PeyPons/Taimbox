@@ -36,13 +36,8 @@ export function AgencySelectorCompact(props: AgencySelectorCompactProps = {}) {
     setIsSwitching(true);
     try {
       await switchAgency(agencyId);
-      // Refrescar agencia para obtener datos actualizados
       await refreshAgency();
       toast.success('Agencia cambiada correctamente');
-      // Pequeño delay para que el contexto se actualice antes de recargar datos
-      setTimeout(() => {
-        window.dispatchEvent(new CustomEvent('agency-changed'));
-      }, 100);
     } catch (error) {
       console.error('Error cambiando agencia:', error);
       toast.error('Error al cambiar de agencia');

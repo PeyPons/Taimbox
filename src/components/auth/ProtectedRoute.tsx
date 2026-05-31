@@ -6,26 +6,25 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { usePlatformAdmin } from "@/hooks/usePlatformAdmin";
 import { ROUTE_PERMISSIONS } from "@/types/permissions";
 import { ONBOARDING_WIZARD_ALLOWED_KEY } from "@/utils/onboardingDefaults";
+import { PageLoader } from "@/components/layout/PageLoader";
 
 export const ProtectedRoute = () => {
   const { session, loading, isInitialized } = useAuth();
   const { currentAgency, isLoading: isAgencyLoading } = useAgency();
   const { canAccess } = usePermissions();
-  const { currentUser, isLoading: appLoading } = useApp();
+  const { currentUser, isLoading: appLoading, employees } = useApp();
   const { isPlatformAdmin, isLoading: platformAdminLoading } = usePlatformAdmin();
   const location = useLocation();
   const pathname = location.pathname;
+
+  const isInitialAppLoad = Boolean(session && appLoading && employees.length === 0);
 
   // Rutas que no dependen de agencia ni de permisos de app: solo exigen sesión
   const adminOrSuspended =
     pathname.startsWith("/admin") || pathname === "/suspended" || pathname === "/account-inactive";
   if (adminOrSuspended) {
     if (!isInitialized || loading) {
-      return (
-        <div className="h-screen w-screen flex flex-col items-center justify-center bg-slate-50">
-          <div className="h-8 w-8 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin opacity-60" />
-        </div>
-      );
+      return <PageLoader />;
     }
     if (!session) {
       return <Navigate to="/login" state={{ from: location }} replace />;
@@ -33,14 +32,9 @@ export const ProtectedRoute = () => {
     return <Outlet />;
   }
 
-  // Mientras se inicializa la autenticación mostrar spinner
-  // Para la agencia, solo mostrar spinner si NO tenemos datos todavía
-  if (!isInitialized || loading || (isAgencyLoading && !currentAgency) || (session && appLoading)) {
-    return (
-      <div className="h-screen w-screen flex flex-col items-center justify-center bg-slate-50">
-        <div className="h-8 w-8 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin opacity-60" />
-      </div>
-    );
+  // Spinner solo en carga inicial (auth, agencia o primer fetch de datos)
+  if (!isInitialized || loading || (isAgencyLoading && !currentAgency) || isInitialAppLoad) {
+    return <PageLoader />;
   }
 
   // Si no hay sesión, redirigir al login preservando la ruta original

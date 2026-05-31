@@ -870,7 +870,6 @@ export default function OnboardingWizard() {
           }
           await refreshAgency();
           await new Promise((r) => setTimeout(r, 200));
-          window.dispatchEvent(new CustomEvent('agency-changed'));
         } catch (err) {
           console.warn(err);
         }

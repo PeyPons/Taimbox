@@ -4,19 +4,42 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Building2, Settings, Loader2, Check, Users, Shield, Plus } from 'lucide-react';
 import { toast } from '@/lib/notify';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Badge } from '@/components/ui/badge';
 import { useAppTranslation } from '@/hooks/useAppTranslation';
+import { CreateAgencyDialog } from '@/components/agencies/CreateAgencyDialog';
 
 export default function AgenciesPage() {
   const { availableAgencies, currentAgency, switchAgency, isLoading } = useAgency();
   const { hasPermission } = usePermissions();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { t } = useAppTranslation();
 
   const [isSwitching, setIsSwitching] = useState<string | null>(null);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+
+  const openCreateDialog = () => {
+    setIsCreateDialogOpen(true);
+    if (searchParams.get('action') !== 'create') {
+      setSearchParams({ action: 'create' }, { replace: true });
+    }
+  };
+
+  const closeCreateDialog = (open: boolean) => {
+    setIsCreateDialogOpen(open);
+    if (!open && searchParams.get('action') === 'create') {
+      setSearchParams({}, { replace: true });
+    }
+  };
+
+  useEffect(() => {
+    if (searchParams.get('action') === 'create') {
+      setIsCreateDialogOpen(true);
+    }
+  }, [searchParams]);
 
   const handleSwitchAgency = async (agencyId: string) => {
     if (agencyId === currentAgency?.id) return;
@@ -25,10 +48,6 @@ export default function AgenciesPage() {
     try {
       await switchAgency(agencyId);
       toast.success(t('agencies.toast.switchSuccess', 'Agencia cambiada correctamente'));
-      // Disparar evento para que AppContext recargue datos
-      setTimeout(() => {
-        window.dispatchEvent(new CustomEvent('agency-changed'));
-      }, 100);
     } catch (error: any) {
       console.error('Error cambiando agencia:', error);
       toast.error(error.message || t('agencies.toast.switchError', 'Error al cambiar de agencia'));
@@ -62,7 +81,7 @@ export default function AgenciesPage() {
           <p className="text-sm text-slate-600 mt-2 leading-relaxed">{t('agencies.hubIntro')}</p>
         </div>
         {hasPermission('can_access_agency_settings') && (
-          <Button onClick={() => navigate('/agencies?action=create')} className="gap-2 shrink-0">
+          <Button onClick={openCreateDialog} className="gap-2 shrink-0">
             <Plus className="h-4 w-4" />
             {t('agencies.createNew', 'Crear nueva agencia')}
           </Button>
@@ -238,6 +257,7 @@ export default function AgenciesPage() {
           })}
         </div>
       )}
+      <CreateAgencyDialog open={isCreateDialogOpen} onOpenChange={closeCreateDialog} />
     </div>
   );
 }

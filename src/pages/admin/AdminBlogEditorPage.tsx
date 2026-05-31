@@ -179,11 +179,19 @@ export default function AdminBlogEditorPage() {
   const importInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (!isNew && existing) {
-      setForm(recordToFormState(existing));
-      setPathEnTouched(true);
+    if (isNew) {
+      setForm(recordToFormState(null));
+      setPathEnTouched(false);
+      return;
     }
-  }, [isNew, existing]);
+    if (!existing) {
+      setForm(recordToFormState(null));
+      setPathEnTouched(false);
+      return;
+    }
+    setForm(recordToFormState(existing));
+    setPathEnTouched(true);
+  }, [isNew, id, existing]);
 
   const handleSlugChange = (slug: string) => {
     if (isNew && !pathEnTouched) {

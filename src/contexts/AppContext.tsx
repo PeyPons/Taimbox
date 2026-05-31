@@ -382,7 +382,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       // Actualizar ref con la agencia actual
       prevAgencyIdRef.current = currentAgency.id;
 
-      fetchData();
+      void fetchData(agencyChanged);
     }
   }, [isAuthInitialized, isAgencyLoading, currentAgency?.id, fetchData]);
 
