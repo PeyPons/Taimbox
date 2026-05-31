@@ -12,6 +12,7 @@ import { DepartmentViewProvider } from "@/contexts/DepartmentViewContext";
 import { AppProvider } from "@/contexts/AppContext";
 import { GoalsProvider } from "@/contexts/GoalsContext";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { PageLoader } from "@/components/layout/PageLoader";
 import { Button } from "@/components/ui/button";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import { NotificationEngineHost } from "@/components/notifications/NotificationEngineHost";
@@ -32,8 +33,6 @@ import AdminDocsPage from "./pages/admin/AdminDocsPage";
 import AdminBlogPage from "./pages/admin/AdminBlogPage";
 import AdminBlogEditorPage from "./pages/admin/AdminBlogEditorPage";
 
-// Página principal (carga inmediata para mejor UX)
-import EmployeeDashboard from "./pages/EmployeeDashboard";
 import LandingPage from "./pages/LandingPage";
 import ArticlePage from "./pages/ArticlePage";
 import BlogPage from "./pages/BlogPage";
@@ -64,13 +63,6 @@ import { PublicLocaleSync } from "@/i18n/PublicLocaleSync";
 import { BlogPathSync } from "@/i18n/BlogPathSync";
 import { RouteHreflangSync } from "@/seo/RouteHreflangSync";
 
-// Loading fallback para páginas lazy
-const PageLoader = () => (
-  <div className="min-h-screen flex items-center justify-center bg-slate-50">
-    <div className="h-8 w-8 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
-  </div>
-);
-
 // Error boundary para lazy loading
 const LazyErrorFallback = ({ error, retry }: { error: Error; retry: () => void }) => (
   <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -98,6 +90,7 @@ const lazyWithRetry = (importFn: () => Promise<{ default: React.ComponentType<un
 
 // Páginas con lazy loading (carga diferida para mejor rendimiento)
 // Usando lazyWithRetry para manejar errores de carga de módulos
+const EmployeeDashboard = lazyWithRetry(() => import("./pages/EmployeeDashboard"));
 const OperationsRadarPage = lazyWithRetry(() => import("./pages/OperationsRadarPage"));
 const FinancialHealthPage = lazyWithRetry(() => import("./pages/FinancialHealthPage"));
 const TeamCapacityDashboard = lazyWithRetry(() => import("./pages/TeamCapacityDashboard"));
@@ -148,7 +141,7 @@ const App = () => (
               <GoalsProvider>
                   <TooltipProvider>
                     <BrandingEffect />
-                    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+                    <BrowserRouter future={{ v7_relativeSplatPath: true }}>
                     <AgencySearchParamSync />
                     <PublicLocaleSync />
                     <BlogPathSync />
@@ -261,7 +254,7 @@ const App = () => (
 
                           <Route element={<AppLayout />}>
                             {/* Dashboard Personal */}
-                            <Route path="/dashboard" element={<EmployeeDashboard />} />
+                            <Route path="/dashboard" element={<Suspense fallback={<PageLoader />}><EmployeeDashboard /></Suspense>} />
 
                             {/* Resto de rutas protegidas por permisos - con Suspense para lazy loading */}
                             <Route path="/planner" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/planner"><Index /></PermissionProtectedRoute></Suspense>} />

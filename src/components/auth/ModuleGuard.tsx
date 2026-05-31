@@ -1,6 +1,7 @@
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAgency } from '@/contexts/AgencyContext';
 import { AgencyModules } from '@/types';
+import { PageLoader } from '@/components/layout/PageLoader';
 
 const MODULE_DEFAULTS: Required<Pick<AgencyModules, 'ppc' | 'weeklyFeedback' | 'professionalGoals' | 'deadlines' | 'timeTracker'>> = {
     ppc: true,
@@ -20,7 +21,7 @@ export function ModuleGuard({ module, redirectTo = '/dashboard', children }: Mod
     const { currentAgency, isLoading } = useAgency();
 
     if (isLoading) {
-        return null; // O un spinner
+        return <PageLoader />;
     }
 
     const modules: AgencyModules = {

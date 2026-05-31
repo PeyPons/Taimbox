@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
+import { PageLoader } from './PageLoader';
 import { Header } from './Header';
 import { ImpersonationProvider } from '@/components/admin/ImpersonationBanner';
 import { DepartmentViewBanner } from '@/components/layout/DepartmentViewBanner';
@@ -42,7 +43,9 @@ export function AppLayout() {
           "lg:ml-64",
           "main-content-area" // En móvil: offset del header fijo (index.css)
         )}>
-          <Outlet key={location.pathname} />
+          <Suspense key={location.pathname} fallback={<PageLoader />}>
+            <Outlet />
+          </Suspense>
         </main>
       </div>
     </div>
