@@ -1,6 +1,9 @@
+import { Suspense } from 'react';
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { Building2, ArrowLeft, MessageSquare, BarChart3, FileText, Shield, Newspaper } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { PageLoader } from '@/components/layout/PageLoader';
+import { RouteErrorBoundary } from '@/components/routing/RouteErrorBoundary';
 
 import { useAppTranslation } from "@/hooks/useAppTranslation";
 
@@ -89,7 +92,11 @@ export function AdminLayout() {
         </nav>
       </header>
       <main className="flex-1 p-6">
-        <Outlet />
+        <RouteErrorBoundary resetKey={location.pathname}>
+          <Suspense key={location.pathname} fallback={<PageLoader />}>
+            <Outlet />
+          </Suspense>
+        </RouteErrorBoundary>
       </main>
     </div>
   );

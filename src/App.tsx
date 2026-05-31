@@ -13,7 +13,6 @@ import { AppProvider } from "@/contexts/AppContext";
 import { GoalsProvider } from "@/contexts/GoalsContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { PageLoader } from "@/components/layout/PageLoader";
-import { Button } from "@/components/ui/button";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import { NotificationEngineHost } from "@/components/notifications/NotificationEngineHost";
 
@@ -62,19 +61,6 @@ import { CookieBanner } from "./components/landing/CookieBanner";
 import { PublicLocaleSync } from "@/i18n/PublicLocaleSync";
 import { BlogPathSync } from "@/i18n/BlogPathSync";
 import { RouteHreflangSync } from "@/seo/RouteHreflangSync";
-
-// Error boundary para lazy loading
-const LazyErrorFallback = ({ error, retry }: { error: Error; retry: () => void }) => (
-  <div className="min-h-screen flex items-center justify-center bg-slate-50">
-    <div className="text-center p-8">
-      <h2 className="text-xl font-semibold text-slate-900 mb-2">Error al cargar la página</h2>
-      <p className="text-slate-600 mb-4">{error.message}</p>
-      <Button onClick={retry} className="bg-primary hover:bg-primary/90">
-        Reintentar
-      </Button>
-    </div>
-  </div>
-);
 
 // Wrapper para lazy loading con manejo de errores
 // DEBE estar ANTES de su uso para evitar "Cannot access before initialization"
