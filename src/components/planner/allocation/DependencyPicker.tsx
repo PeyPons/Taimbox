@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { format } from 'date-fns';
-import { Check, ChevronDown, Link2, User } from 'lucide-react';
+import { Check, ChevronDown, Link2 } from 'lucide-react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -46,7 +46,31 @@ export const DEPENDENCY_NONE = 'none';
 /** Valor interno cmdk: siempre visible aunque haya búsqueda activa */
 const NONE_ITEM_VALUE = '__dependency_none__';
 
-const PICKER_LIST_HEIGHT = 'h-[320px]';
+const PICKER_LIST_MAX_HEIGHT = 'max-h-[min(380px,var(--radix-popover-content-available-height,380px))]';
+
+/** cmdk usa `value` como identificador; debe ser único aunque el texto mostrado se repita */
+function dependencyItemValue(depId: string, searchValue: string) {
+  return `${depId}::${searchValue}`;
+}
+
+function dependencyItemSearchableText(itemValue: string) {
+  const idx = itemValue.indexOf('::');
+  return idx >= 0 ? itemValue.slice(idx + 2) : itemValue;
+}
+
+const dependencyGroupClass =
+  'px-1.5 py-0.5 [&_[cmdk-group-heading]]:sticky [&_[cmdk-group-heading]]:top-0 [&_[cmdk-group-heading]]:z-10 [&_[cmdk-group-heading]]:bg-popover [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-[11px] [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wide [&_[cmdk-group-heading]]:text-slate-400';
+
+/** Filas densas pero legibles: ~46px, hover solo en la fila activa */
+const dependencyRowClass = cn(
+  'relative mx-0.5 my-0.5 gap-2 rounded-lg border border-transparent px-2.5 py-2',
+  'transition-[background-color,border-color,box-shadow] duration-100',
+  'data-[selected=true]:!bg-slate-50 data-[selected=true]:!text-slate-900',
+  'data-[selected=true]:border-slate-200/80 data-[selected=true]:shadow-sm',
+  'hover:border-slate-200/60 hover:bg-slate-50/80',
+);
+
+const dependencyRowSelectedClass = 'border-indigo-200/90 bg-indigo-50/90 shadow-none hover:bg-indigo-50';
 
 function getEmployee(employees: Employee[], id: string) {
   return employees.find((e) => e.id === id);
@@ -131,68 +155,88 @@ function DependencyPickerList({
       filter={(cmdValue, search) => {
         if (cmdValue === NONE_ITEM_VALUE) return 1;
         if (!search.trim()) return 1;
-        return cmdValue.toLowerCase().includes(search.toLowerCase()) ? 1 : 0;
+        const searchable = dependencyItemSearchableText(cmdValue);
+        return searchable.toLowerCase().includes(search.toLowerCase()) ? 1 : 0;
       }}
-      className={cn('flex flex-col', listLayout === 'flex' && 'min-h-0 flex-1', className)}
+      className={cn(
+        'flex flex-col [&_[cmdk-input-wrapper]_svg]:h-4 [&_[cmdk-input-wrapper]_svg]:w-4 [&_[cmdk-input]]:h-10 [&_[cmdk-input]]:text-sm',
+        listLayout === 'flex' && 'min-h-0 flex-1',
+        className,
+      )}
     >
       <CommandInput placeholder="Buscar por tarea, persona o semana…" />
       <CommandList
         className={cn(
-          listLayout === 'fixed' ? PICKER_LIST_HEIGHT : 'min-h-0 flex-1',
+          listLayout === 'fixed' ? PICKER_LIST_MAX_HEIGHT : 'min-h-0 flex-1',
           'overflow-y-auto overscroll-contain',
         )}
       >
         <CommandEmpty>No hay tareas que coincidan.</CommandEmpty>
 
-        <CommandGroup heading="Opción">
+        <CommandGroup heading="Opción" className={dependencyGroupClass}>
           <CommandItem
             value={NONE_ITEM_VALUE}
             onSelect={() => onSelect(DEPENDENCY_NONE)}
-            className="py-2.5"
+            className={cn(
+              dependencyRowClass,
+              'items-center',
+              (!value || value === DEPENDENCY_NONE) && dependencyRowSelectedClass,
+            )}
           >
-            <Check className={cn('mr-2 h-4 w-4 shrink-0', !value || value === DEPENDENCY_NONE ? 'opacity-100' : 'opacity-0')} />
-            <span className="font-medium text-slate-700">Sin dependencia</span>
-            <span className="ml-auto text-xs text-slate-400">Esta tarea no espera a otra</span>
+            <Check
+              className={cn(
+                'h-4 w-4 shrink-0',
+                !value || value === DEPENDENCY_NONE ? 'text-indigo-600 opacity-100' : 'opacity-0',
+              )}
+            />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium text-slate-800">Sin dependencia</p>
+              <p className="truncate text-xs text-slate-500">Esta tarea no espera a otra</p>
+            </div>
           </CommandItem>
         </CommandGroup>
 
         {grouped.length > 0 && <CommandSeparator />}
 
         {grouped.map(({ weekStartDate, weekLabel, items }) => (
-          <CommandGroup key={weekStartDate} heading={weekLabel}>
+          <CommandGroup key={weekStartDate} heading={weekLabel} className={dependencyGroupClass}>
             {items.map((dep) => {
               const owner = getEmployee(employees, dep.employeeId);
               const searchValue = buildSearchValue(dep, owner, weekLabel);
+              const itemValue = dependencyItemValue(dep.id, searchValue);
               const initials = (owner?.name || owner?.first_name || '?').slice(0, 2).toUpperCase();
+              const isSelected = value === dep.id;
 
               return (
                 <CommandItem
                   key={dep.id}
-                  value={searchValue}
+                  value={itemValue}
                   onSelect={() => onSelect(dep.id)}
-                  className="items-start gap-2 py-2.5"
+                  className={cn(dependencyRowClass, 'items-start', isSelected && dependencyRowSelectedClass)}
                 >
                   <Check
                     className={cn(
-                      'mt-0.5 h-4 w-4 shrink-0',
-                      value === dep.id ? 'opacity-100 text-indigo-600' : 'opacity-0',
+                      'mt-1 h-4 w-4 shrink-0',
+                      isSelected ? 'text-indigo-600 opacity-100' : 'opacity-0',
                     )}
                   />
-                  <Avatar className="h-7 w-7 shrink-0 ring-1 ring-white">
+                  <Avatar className="mt-0.5 h-6 w-6 shrink-0 ring-1 ring-white">
                     {owner?.avatarUrl && <AvatarImage src={owner.avatarUrl} alt="" />}
-                    <AvatarFallback className="text-[10px]">{initials}</AvatarFallback>
+                    <AvatarFallback className="text-[9px]">{initials}</AvatarFallback>
                   </Avatar>
                   <div className="min-w-0 flex-1 space-y-0.5">
-                    <p className="text-sm font-medium leading-snug text-slate-900 line-clamp-2" title={dep.taskName}>
+                    <p className="truncate text-sm font-medium leading-snug text-slate-900" title={dep.taskName}>
                       {dep.taskName || 'Sin nombre'}
                     </p>
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-slate-500">
-                      <span className="inline-flex items-center gap-1">
-                        <User className="h-3 w-3 shrink-0" />
-                        {owner?.name || 'Sin asignar'}
-                      </span>
-                      <span>{dep.hoursAssigned}h</span>
-                      <Badge variant={statusVariant(dep.status)} className="h-5 px-1.5 text-[10px] font-normal">
+                      <span className="truncate">{owner?.name || 'Sin asignar'}</span>
+                      <span className="text-slate-300">·</span>
+                      <span className="shrink-0 tabular-nums">{dep.hoursAssigned}h</span>
+                      <span className="text-slate-300">·</span>
+                      <Badge
+                        variant={statusVariant(dep.status)}
+                        className="h-5 shrink-0 px-1.5 text-[10px] font-normal leading-none"
+                      >
                         {statusLabel(dep.status)}
                       </Badge>
                     </div>
@@ -263,7 +307,11 @@ export function DependencyPicker({
     </Button>
   );
 
-  if (isMobile) {
+  // En móvil o filas compactas del batch (dentro de un modal con scroll), un diálogo
+  // centrado evita que el popover quede fuera del viewport.
+  const useDialogPicker = isMobile || compact;
+
+  if (useDialogPicker) {
     return (
       <>
         <Button
@@ -313,12 +361,11 @@ export function DependencyPicker({
     <Popover open={open} onOpenChange={setOpen} modal>
       <PopoverTrigger asChild>{trigger}</PopoverTrigger>
       <PopoverContent
-        className="w-[min(520px,calc(100vw-2rem))] overflow-hidden p-0"
+        className="w-[min(520px,calc(100vw-2rem))] max-h-[min(420px,var(--radix-popover-content-available-height,420px))] overflow-hidden p-0"
         align="start"
         side="bottom"
         sideOffset={4}
-        avoidCollisions={false}
-        collisionPadding={8}
+        collisionPadding={16}
         onOpenAutoFocus={(event) => event.preventDefault()}
       >
         <div className="shrink-0 border-b border-slate-100 px-3 py-2">

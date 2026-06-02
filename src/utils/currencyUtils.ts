@@ -11,6 +11,15 @@ export function resolveAgencyCurrency(settings: AgencySettings | undefined | nul
   return isAgencyCurrencyCode(raw) ? raw : DEFAULT_AGENCY_CURRENCY;
 }
 
+/** Moneda de una cuenta Ads (Meta/Google); cae a la de la agencia si la plataforma devuelve otra no soportada. */
+export function resolveAdAccountCurrency(
+  accountCurrency: string | null | undefined,
+  agencySettings?: AgencySettings | null,
+): AgencyCurrencyCode {
+  if (isAgencyCurrencyCode(accountCurrency)) return accountCurrency;
+  return resolveAgencyCurrency(agencySettings);
+}
+
 /** Locale BCP 47 para formatear números según idioma de la UI. */
 export function localeForAppLanguage(language: string | undefined): string {
   if (!language) return 'es-ES';

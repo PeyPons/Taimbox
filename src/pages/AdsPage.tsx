@@ -26,7 +26,8 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { cn } from '@/lib/utils';
-import { useFormatMoney } from '@/hooks/useFormatMoney';
+import { useAdsFormatMoney } from '@/hooks/useAdsFormatMoney';
+import { addCampaignDailyBudget } from '@/utils/adsBudgetUtils';
 import { toast } from '@/lib/notify';
 import { useAnonymizeAds } from '@/hooks/useAnonymizeAds';
 import { AnonymizedContent } from '@/components/ads/AnonymizedContent';
@@ -47,6 +48,7 @@ interface CampaignData {
   conversions_value?: number;
   conversions?: number;
   daily_budget?: number;
+  budget_id?: string | null;
   clicks?: number;
   impressions?: number;
   original_client_name?: string;
@@ -62,6 +64,7 @@ interface RegisteredAccount {
   account_name: string;
   platform: string;
   is_active: boolean;
+  currency?: string | null;
 }
 
 
@@ -123,12 +126,12 @@ const getStatusConfig = (status: string, t: any) => {
 
 export default function AdsPage() {
   const { t } = useTranslation('app');
-  const { formatMoney, currencySymbol } = useFormatMoney();
   const { currentAgency } = useAgency();
   const { isActive: isAnonymized, anonymizer } = useAnonymizeAds();
   const [rawData, setRawData] = useState<CampaignData[]>([]);
   const [clientSettings, setClientSettings] = useState<Record<string, { budget: number; group_name: string; is_hidden: boolean; is_sales_account: boolean }>>({});
   const [registeredAccounts, setRegisteredAccounts] = useState<RegisteredAccount[]>([]);
+  const { formatMoney, currencySymbolForClient } = useAdsFormatMoney(registeredAccounts);
   const [loading, setLoading] = useState(true);
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
   const [segmentationRules, setSegmentationRules] = useState<SegmentationRule[]>([]);
@@ -379,7 +382,8 @@ export default function AdsPage() {
       total_clicks: number, total_impressions: number, total_conversions: number,
       is_group: boolean, isHidden: boolean, isSalesAccount: boolean,
       realIds: string[], realIdsNames: { id: string, name: string }[],
-      campaigns: CampaignData[], isManualGroupBudget: boolean, autoDailyBudgetSum: number
+      campaigns: CampaignData[], isManualGroupBudget: boolean, autoDailyBudgetSum: number,
+      seenBudgetIds: Set<string>
     }>();
 
     const uniqueAccounts = Array.from(new Set(rawData.map(r => JSON.stringify({ id: r.client_id, name: r.client_name }))))
@@ -404,7 +408,7 @@ export default function AdsPage() {
           total_clicks: 0, total_impressions: 0, total_conversions: 0,
           is_group: false, isHidden: settings.is_hidden, isSalesAccount: settings.is_sales_account !== false,
           realIds: [acc.id], realIdsNames: [{ id: acc.id, name: acc.name }],
-          campaigns: [], isManualGroupBudget: false, autoDailyBudgetSum: 0
+          campaigns: [], isManualGroupBudget: false, autoDailyBudgetSum: 0, seenBudgetIds: new Set<string>()
         });
       }
     });
@@ -450,7 +454,7 @@ export default function AdsPage() {
           name: displayName, spent: 0, budget: 0, total_conversions_val: 0,
           total_clicks: 0, total_impressions: 0, total_conversions: 0,
           is_group: groupKey.startsWith('GROUP-'), isHidden: settings.is_hidden, isSalesAccount: settings.is_sales_account !== false,
-          realIds: [], realIdsNames: [], campaigns: [], isManualGroupBudget: isGroupManual, autoDailyBudgetSum: 0
+          realIds: [], realIdsNames: [], campaigns: [], isManualGroupBudget: isGroupManual, autoDailyBudgetSum: 0, seenBudgetIds: new Set<string>()
         });
       }
 
@@ -463,7 +467,15 @@ export default function AdsPage() {
       entry.total_impressions += (row.impressions || 0);
       entry.total_conversions += (row.conversions || 0);
 
-      if (row.status === 'ENABLED' && row.daily_budget > 0) entry.autoDailyBudgetSum += row.daily_budget;
+      if (row.status === 'ENABLED' && row.daily_budget > 0) {
+        entry.autoDailyBudgetSum = addCampaignDailyBudget(
+          entry.autoDailyBudgetSum,
+          entry.seenBudgetIds,
+          Number(row.daily_budget) || 0,
+          row.budget_id,
+          row.status,
+        );
+      }
 
       if (!entry.realIds.includes(finalId)) {
         entry.realIds.push(finalId);
@@ -754,7 +766,7 @@ export default function AdsPage() {
                       <div className="hidden lg:flex flex-col flex-1 max-w-xs mx-4">
                         <div className="flex justify-between text-[10px] text-slate-500 mb-1">
                           <span>{t('ads.pacing.spentPct', { percent: client.progress.toFixed(0), defaultValue: `${client.progress.toFixed(0)}% gastado` })}</span>
-                          <span>{t('ads.pacing.forecast', { amount: formatMoney(client.forecast), defaultValue: `Proy: ${formatMoney(client.forecast)}` })}</span>
+                          <span>{t('ads.pacing.forecast', { amount: formatMoney(client.forecast, client.client_id), defaultValue: `Proy: ${formatMoney(client.forecast, client.client_id)}` })}</span>
                         </div>
                         <Progress
                           value={Math.min(client.progress, 100)}
@@ -772,12 +784,12 @@ export default function AdsPage() {
                       {client.isSalesAccount && client.total_conversions_val > 0 && (
                         <div className="text-right hidden sm:block">
                           <div className="text-[10px] uppercase text-slate-400 font-medium">{t('ads.stats.revenue', 'Valor')}</div>
-                          <div className="text-lg font-bold text-emerald-600">{formatMoney(client.total_conversions_val)}</div>
+                          <div className="text-lg font-bold text-emerald-600">{formatMoney(client.total_conversions_val, client.client_id)}</div>
                         </div>
                       )}
                       <div className="text-right">
                         <div className="text-[10px] uppercase text-slate-400 font-medium">Invertido</div>
-                        <div className="text-xl font-bold text-slate-900">{formatMoney(client.spent)}</div>
+                        <div className="text-xl font-bold text-slate-900">{formatMoney(client.spent, client.client_id)}</div>
                       </div>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -827,7 +839,7 @@ export default function AdsPage() {
                             )}
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className="text-slate-400">{currencySymbol}</span>
+                            <span className="text-slate-400">{currencySymbolForClient(client.client_id)}</span>
                             <Input
                               key={`${client.client_id}-${client.budget}`}
                               type="number"
@@ -843,7 +855,7 @@ export default function AdsPage() {
                           <div className="flex justify-between text-xs text-slate-500">
                             <span>{t('common.consumption', 'Consumo')} ({client.progress.toFixed(1)}%)</span>
                             <span className={client.remainingBudget <= 0 ? 'text-red-500 font-bold' : ''}>
-                              {t('ads.pacing.available', { amount: formatMoney(client.remainingBudget), defaultValue: `Disponible: ${formatMoney(client.remainingBudget)}` })}
+                              {t('ads.pacing.available', { amount: formatMoney(client.remainingBudget, client.client_id), defaultValue: `Disponible: ${formatMoney(client.remainingBudget, client.client_id)}` })}
                             </span>
                           </div>
                           <Progress
@@ -869,7 +881,7 @@ export default function AdsPage() {
                               "text-xl font-bold",
                               isOverspending ? "text-amber-600" : "text-slate-700"
                             )}>
-                              {formatMoney(client.currentDailyBudget)}
+                              {formatMoney(client.currentDailyBudget, client.client_id)}
                             </div>
                             <div className="text-[10px] text-slate-400 mt-1">
                               {t('ads.pacing.googleNoteConfig', 'configurado en Google')}
@@ -883,7 +895,7 @@ export default function AdsPage() {
                               {t('ads.pacing.recommendedDaily', 'Diario recomendado')}
                             </div>
                             <div className="text-xl font-bold text-emerald-600">
-                              {formatMoney(client.recommendedDaily)}
+                              {formatMoney(client.recommendedDaily, client.client_id)}
                             </div>
                             <div className="text-[10px] text-slate-400 mt-1">
                               {t('ads.pacing.recommendedDailySub', 'para cerrar el mes en el presupuesto')}
@@ -917,7 +929,7 @@ export default function AdsPage() {
                             "font-bold shrink-0",
                             client.forecast > client.budget ? "text-red-600" : "text-slate-700"
                           )}>
-                            {formatMoney(client.forecast)}
+                            {formatMoney(client.forecast, client.client_id)}
                           </span>
                         </div>
                       </div>
@@ -968,10 +980,10 @@ export default function AdsPage() {
                                       </div>
                                     </td>
                                     <td className="px-2 py-2.5 text-right font-mono text-slate-500">
-                                      {camp.daily_budget ? formatMoney(camp.daily_budget) : '-'}
+                                      {camp.daily_budget ? formatMoney(camp.daily_budget, camp.original_client_id || camp.client_id || client.client_id) : '-'}
                                     </td>
                                     <td className={cn("px-2 py-2.5 text-right font-medium", isHighBudget ? "text-amber-600" : "text-slate-900")}>
-                                      {formatMoney(camp.cost)}
+                                      {formatMoney(camp.cost, camp.original_client_id || camp.client_id || client.client_id)}
                                     </td>
                                     <td className="px-2 py-2.5 text-right hidden md:table-cell text-slate-600">
                                       {(camp.clicks || 0).toLocaleString('es-ES')}
@@ -980,7 +992,7 @@ export default function AdsPage() {
                                       {campCtr.toFixed(2)}%
                                     </td>
                                     <td className="px-2 py-2.5 text-right hidden lg:table-cell text-slate-500">
-                                      {formatMoney(campCpc)}
+                                      {formatMoney(campCpc, camp.original_client_id || camp.client_id || client.client_id)}
                                     </td>
                                     <td className="px-2 py-2.5 text-right text-emerald-600">
                                       {(camp.conversions || 0).toFixed(0)}
@@ -1057,7 +1069,7 @@ export default function AdsPage() {
                                         </div>
                                       </td>
                                       <td className="px-2 py-2.5 text-right font-medium text-slate-900">
-                                        {formatMoney(subSpent)}
+                                        {formatMoney(subSpent, sub.id)}
                                       </td>
                                       <td className="px-2 py-2.5 text-right text-slate-500">
                                         {pctOfGroup.toFixed(1)}%
@@ -1112,10 +1124,10 @@ export default function AdsPage() {
                                                         </AnonymizedContent>
                                                       </td>
                                                       <td className="px-2 py-2 text-right text-slate-500 font-mono">
-                                                        {camp.daily_budget ? formatMoney(camp.daily_budget) : '-'}
+                                                        {camp.daily_budget ? formatMoney(camp.daily_budget, sub.id) : '-'}
                                                       </td>
                                                       <td className={cn("px-2 py-2.5 text-right font-medium", isHighBudget ? "text-amber-600" : "text-slate-900")}>
-                                                        {formatMoney(camp.cost)}
+                                                        {formatMoney(camp.cost, sub.id)}
                                                       </td>
                                                       <td className="px-2 py-2 text-right text-emerald-600">
                                                         {(camp.conversions || 0).toFixed(0)}

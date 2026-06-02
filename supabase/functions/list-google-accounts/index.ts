@@ -172,7 +172,9 @@ Deno.serve(async (req) => {
 
         // 6. Obtener nombre descriptivo de cada cuenta (Search en v22)
         const API_VERSION = 'v22'
-        const runSearch = async (customerId: string, loginCustomerId: string): Promise<string | null> => {
+        type CustomerSearchResult = { descriptiveName: string | null; currencyCode: string | null };
+
+        const runSearch = async (customerId: string, loginCustomerId: string): Promise<CustomerSearchResult> => {
             const searchUrl = `https://googleads.googleapis.com/${API_VERSION}/customers/${customerId}/googleAds:search`
             const searchRes = await fetch(searchUrl, {
                 method: 'POST',
@@ -183,40 +185,49 @@ Deno.serve(async (req) => {
                     'login-customer-id': loginCustomerId,
                 },
                 body: JSON.stringify({
-                    query: 'SELECT customer.id, customer.descriptive_name FROM customer LIMIT 1'
+                    query: 'SELECT customer.id, customer.descriptive_name, customer.currency_code FROM customer LIMIT 1'
                 }),
             })
             if (!searchRes.ok) {
                 const errText = await searchRes.text()
                 console.warn(`[list-google-accounts] search ${customerId} login=${loginCustomerId} status=${searchRes.status}: ${errText.slice(0, 200)}`)
-                return null
+                return { descriptiveName: null, currencyCode: null }
             }
             const searchText = await searchRes.text()
             try {
                 const parsed = JSON.parse(searchText)
                 const results = parsed.results || (Array.isArray(parsed) ? parsed[0]?.results : undefined)
                 const row = results?.[0]
-                return row?.customer?.descriptiveName ?? row?.customer?.descriptive_name ?? null
+                const customer = row?.customer
+                return {
+                    descriptiveName: customer?.descriptiveName ?? customer?.descriptive_name ?? null,
+                    currencyCode: customer?.currencyCode ?? customer?.currency_code ?? null,
+                }
             } catch {
                 console.warn(`[list-google-accounts] search ${customerId} respuesta no JSON: ${searchText.slice(0, 150)}`)
-                return null
+                return { descriptiveName: null, currencyCode: null }
             }
         }
 
         const mccId = customerIds[0]
         const accounts = await Promise.all(customerIds.map(async (customerId: string) => {
             let descriptiveName: string | null = null
+            let currencyCode: string | null = null
             try {
-                descriptiveName = await runSearch(customerId, customerId)
-                if (descriptiveName == null && customerId !== mccId)
-                    descriptiveName = await runSearch(customerId, mccId)
+                let details = await runSearch(customerId, customerId)
+                if (details.descriptiveName == null && customerId !== mccId) {
+                    details = await runSearch(customerId, mccId)
+                }
+                descriptiveName = details.descriptiveName
+                currencyCode = details.currencyCode
             } catch (e) {
                 console.warn(`[list-google-accounts] No se pudo obtener nombre para ${customerId}:`, (e as Error).message)
             }
             return {
                 id: customerId,
                 resourceName: `customers/${customerId}`,
-                descriptiveName: descriptiveName || null
+                descriptiveName: descriptiveName || null,
+                currencyCode: currencyCode || null,
             }
         }))
 

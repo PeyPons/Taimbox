@@ -175,6 +175,31 @@ Deno.serve(async (req) => {
             return Array.from(clientsMap.values());
         }
 
+        function parseBudgetId(raw: unknown): string {
+            if (raw == null || raw === '') return '';
+            const s = String(raw);
+            const fromResource = s.match(/campaignBudgets\/(\d+)/i);
+            if (fromResource) return fromResource[1];
+            return s.replace(/\D/g, '') || s;
+        }
+
+        async function upsertGoogleAccountConfig(
+            agencyId: string,
+            accountId: string,
+            accountName: string,
+            currency: string | null,
+        ) {
+            const { error } = await supabase.from('ad_accounts_config').upsert({
+                account_id: accountId,
+                account_name: accountName,
+                platform: 'google',
+                is_active: true,
+                agency_id: agencyId,
+                currency,
+            }, { onConflict: 'account_id,agency_id,platform' });
+            if (error) console.warn(`upsert ad_accounts_config ${accountId}:`, error.message);
+        }
+
         // --- FETCH CAMPAIGNS ---
         async function fetchCampaigns(accessToken, customerId, clientSecret, clientId, developerToken, refreshToken, mccId) {
             const dateRange = getDateRange();
@@ -183,6 +208,7 @@ Deno.serve(async (req) => {
                   campaign.id, 
                   campaign.name, 
                   campaign.status, 
+                  campaign_budget.id,
                   campaign_budget.amount_micros,
                   metrics.cost_micros,
                   metrics.conversions_value,
@@ -226,6 +252,7 @@ Deno.serve(async (req) => {
                         if (!aggregator.has(key)) {
                             const budgetMicros = row.campaignBudget?.amountMicros ?? row.campaign_budget?.amount_micros ?? '0';
                             const dailyBudget = Number(budgetMicros) / 1000000;
+                            const budgetRaw = row.campaignBudget?.id ?? row.campaign_budget?.id ?? '';
                             aggregator.set(key, {
                                 client_id: customerId,
                                 campaign_id: campaignId,
@@ -234,6 +261,7 @@ Deno.serve(async (req) => {
                                 date: dateRange.firstDay,
                                 cost: 0,
                                 daily_budget: dailyBudget,
+                                budget_id: parseBudgetId(budgetRaw),
                                 conversions_value: 0,
                                 conversions: 0,
                                 clicks: 0,
@@ -394,6 +422,15 @@ Deno.serve(async (req) => {
                 await log(`    ⏳ Consultando métricas para ${clients.length} cuentas...`);
 
                 for (const client of clients) {
+                    const customerDetails = await fetchCustomerDetails(accessToken, developerToken, client.account_id, loginCustomerId);
+                    const accountCurrency = customerDetails?.currencyCode ?? customerDetails?.currency_code ?? null;
+                    await upsertGoogleAccountConfig(
+                        agency.id,
+                        client.account_id,
+                        client.account_name,
+                        accountCurrency ? String(accountCurrency) : null,
+                    );
+
                     const campaigns = await fetchCampaigns(accessToken, client.account_id, clientSecret, clientId, developerToken, refreshToken, loginCustomerId);
 
                     const dateRange = getDateRange();
@@ -407,6 +444,7 @@ Deno.serve(async (req) => {
                             date: c.date,
                             cost: c.cost,
                             daily_budget: c.daily_budget,
+                            budget_id: c.budget_id || null,
                             agency_id: agency.id,
                             conversions: c.conversions,
                             conversions_value: c.conversions_value,

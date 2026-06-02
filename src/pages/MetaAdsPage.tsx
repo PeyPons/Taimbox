@@ -15,7 +15,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { RefreshCw, Clock, Search, Settings, Layers, TrendingUp, TrendingDown, Scissors, Plus, Trash2, AlertTriangle, CheckCircle2, Calendar, Target, ArrowDownRight, Eye, EyeOff, X, Facebook, Check, ChevronDown } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { cn } from '@/lib/utils';
-import { useFormatMoney } from '@/hooks/useFormatMoney';
+import { useAdsFormatMoney } from '@/hooks/useAdsFormatMoney';
 import { toast } from '@/lib/notify';
 import { useAnonymizeAds } from '@/hooks/useAnonymizeAds';
 import { AnonymizedContent } from '@/components/ads/AnonymizedContent';
@@ -51,16 +51,17 @@ interface RegisteredAccount {
   account_name: string;
   platform: string;
   is_active: boolean;
+  currency?: string | null;
 }
 
 export default function MetaAdsPage() {
   const { t } = useTranslation('app');
-  const { formatMoney, currencySymbol } = useFormatMoney();
   const { currentAgency } = useAgency();
   const { isActive: isAnonymized, anonymizer } = useAnonymizeAds();
   const [rawData, setRawData] = useState<MetaCampaignData[]>([]);
   const [clientSettings, setClientSettings] = useState<ClientSettingsMap>({});
   const [registeredAccounts, setRegisteredAccounts] = useState<RegisteredAccount[]>([]);
+  const { formatMoney, currencySymbolForClient } = useAdsFormatMoney(registeredAccounts);
   const [loading, setLoading] = useState(true);
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
   const [segmentationRules, setSegmentationRules] = useState<SegmentationRule[]>([]);
@@ -375,10 +376,10 @@ export default function MetaAdsPage() {
                         <div className="flex items-center gap-2 mt-1 flex-wrap">{client.isSalesAccount && client.globalRoas > 0 && <Badge variant="outline" className={cn("text-[10px] h-5", getRoasColor(client.globalRoas))}>ROAS {client.globalRoas.toFixed(2)}</Badge>}{client.isHidden && <Badge variant="outline" className="text-[10px] h-5 gap-1"><EyeOff className="w-3 h-3" /> Oculto</Badge>}</div>
                       </div>
                     </div>
-                    {client.budget > 0 && <div className="hidden lg:flex flex-col flex-1 max-w-xs mx-4"><div className="flex justify-between text-[10px] text-slate-500 mb-1"><span>{client.progress.toFixed(0)}% gastado</span><span>Proy: {formatMoney(client.forecast)}</span></div><Progress value={Math.min(client.progress, 100)} className={cn("h-2", client.status === 'over' && "[&>div]:bg-red-500", client.status === 'risk' && "[&>div]:bg-amber-500", client.status === 'ok' && "[&>div]:bg-blue-500")} /></div>}
+                    {client.budget > 0 && <div className="hidden lg:flex flex-col flex-1 max-w-xs mx-4"><div className="flex justify-between text-[10px] text-slate-500 mb-1"><span>{client.progress.toFixed(0)}% gastado</span><span>Proy: {formatMoney(client.forecast, client.client_id)}</span></div><Progress value={Math.min(client.progress, 100)} className={cn("h-2", client.status === 'over' && "[&>div]:bg-red-500", client.status === 'risk' && "[&>div]:bg-amber-500", client.status === 'ok' && "[&>div]:bg-blue-500")} /></div>}
                     <div className="flex items-center gap-4 lg:gap-6 justify-end">
-                      {client.isSalesAccount && client.total_conversions_val > 0 && <div className="text-right hidden sm:block"><div className="text-[10px] uppercase text-slate-400 font-medium">Valor</div><div className="text-lg font-bold text-emerald-600">{formatMoney(client.total_conversions_val)}</div></div>}
-                      <div className="text-right"><div className="text-[10px] uppercase text-slate-400 font-medium">Invertido</div><div className="text-xl font-bold text-slate-900">{formatMoney(client.spent)}</div></div>
+                      {client.isSalesAccount && client.total_conversions_val > 0 && <div className="text-right hidden sm:block"><div className="text-[10px] uppercase text-slate-400 font-medium">Valor</div><div className="text-lg font-bold text-emerald-600">{formatMoney(client.total_conversions_val, client.client_id)}</div></div>}
+                      <div className="text-right"><div className="text-[10px] uppercase text-slate-400 font-medium">Invertido</div><div className="text-xl font-bold text-slate-900">{formatMoney(client.spent, client.client_id)}</div></div>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <div
@@ -409,7 +410,7 @@ export default function MetaAdsPage() {
                             </Label>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className="text-slate-400">{currencySymbol}</span>
+                            <span className="text-slate-400">{currencySymbolForClient(client.client_id)}</span>
                             <Input
                               key={`${client.client_id}-${client.budget}`}
                               type="number"
@@ -424,7 +425,7 @@ export default function MetaAdsPage() {
                           <div className="flex justify-between text-xs text-slate-500">
                             <span>{t('common.consumption', 'Consumo')} ({client.progress.toFixed(1)}%)</span>
                             <span className={client.remainingBudget <= 0 ? 'text-red-500 font-bold' : ''}>
-                              {t('ads.pacing.available', { amount: formatMoney(client.remainingBudget), defaultValue: `Disponible: ${formatMoney(client.remainingBudget)}` })}
+                              {t('ads.pacing.available', { amount: formatMoney(client.remainingBudget, client.client_id), defaultValue: `Disponible: ${formatMoney(client.remainingBudget, client.client_id)}` })}
                             </span>
                           </div>
                           <Progress value={Math.min(client.progress, 100)} className={cn("h-2.5", client.status === 'over' && "[&>div]:bg-red-500", client.status === 'risk' && "[&>div]:bg-amber-500", client.status === 'ok' && "[&>div]:bg-blue-500")} />
@@ -432,12 +433,12 @@ export default function MetaAdsPage() {
                         <div className="grid grid-cols-2 gap-3">
                           <div className={cn("p-3 rounded-lg border-2 text-center", isPaceTooHigh ? "bg-amber-50 border-amber-200" : "bg-slate-50 border-slate-200")}>
                             <div className="text-[10px] uppercase text-slate-500 font-medium mb-1">{t('common.actualDaily', 'Gasto medio diario')}</div>
-                            <div className={cn("text-xl font-bold", isPaceTooHigh ? "text-amber-600" : "text-slate-700")}>{formatMoney(client.avgDailySpend)}</div>
+                            <div className={cn("text-xl font-bold", isPaceTooHigh ? "text-amber-600" : "text-slate-700")}>{formatMoney(client.avgDailySpend, client.client_id)}</div>
                             <div className="text-[10px] text-slate-400 mt-1">{t('ads.status.soFarThisMonth', 'en lo que va de mes')}</div>
                           </div>
                           <div className="p-3 rounded-lg border-2 text-center bg-emerald-50 border-emerald-200">
                             <div className="text-[10px] uppercase text-slate-500 font-medium mb-1">{t('ads.pacing.recommendedDaily', 'Objetivo medio diario')}</div>
-                            <div className="text-xl font-bold text-emerald-600">{formatMoney(client.recommendedDaily)}</div>
+                            <div className="text-xl font-bold text-emerald-600">{formatMoney(client.recommendedDaily, client.client_id)}</div>
                             <div className="text-[10px] text-slate-400 mt-1">{t('ads.pacing.recommendedDailySub', 'para cerrar el mes en el presupuesto')}</div>
                           </div>
                         </div>
@@ -467,7 +468,7 @@ export default function MetaAdsPage() {
                               {t('ads.pacing.forecastTooltip', 'Usa el gasto medio diario del mes (invertido ÷ días transcurridos) proyectado al calendario completo. Si cambiaste el ritmo recientemente, puede no coincidir con el objetivo medio diario; ese valor es el ritmo para cerrar en el presupuesto objetivo de Taimbox.')}
                             </TooltipContent>
                           </Tooltip>
-                          <span className={cn("font-bold shrink-0", client.forecast > client.budget ? "text-red-600" : "text-slate-700")}>{formatMoney(client.forecast)}</span>
+                          <span className={cn("font-bold shrink-0", client.forecast > client.budget ? "text-red-600" : "text-slate-700")}>{formatMoney(client.forecast, client.client_id)}</span>
                         </div>
                       </div>
                       <div className="bg-white rounded-lg border overflow-hidden">
@@ -504,8 +505,8 @@ export default function MetaAdsPage() {
                                         </div>
                                       </div>
                                     </td>
-                                    <td className="px-2 py-2.5 text-right font-medium text-slate-900">{formatMoney(camp.cost)}</td>
-                                    <td className="px-2 py-2.5 text-right text-emerald-600">{formatMoney(camp.conversions_value || 0)}</td>
+                                    <td className="px-2 py-2.5 text-right font-medium text-slate-900">{formatMoney(camp.cost, camp.original_client_id || camp.client_id || client.client_id)}</td>
+                                    <td className="px-2 py-2.5 text-right text-emerald-600">{formatMoney(camp.conversions_value || 0, camp.original_client_id || camp.client_id || client.client_id)}</td>
                                     {client.isSalesAccount && (
                                       <td className="px-2 py-2.5 text-center">
                                         <Badge variant="outline" className={cn("text-[10px]", getRoasColor(roas))}>
@@ -571,7 +572,7 @@ export default function MetaAdsPage() {
                                           {isAnonymized && <div className="text-[10px] font-mono text-slate-400 mt-0.5">ID: {sub.id}</div>}
                                         </div>
                                       </td>
-                                      <td className="px-2 py-2.5 text-right font-medium text-slate-900">{formatMoney(subSpent)}</td>
+                                      <td className="px-2 py-2.5 text-right font-medium text-slate-900">{formatMoney(subSpent, sub.id)}</td>
                                       <td className="px-2 py-2.5 text-right text-slate-500">{pctOfGroup.toFixed(1)}%</td>
                                       <td className="px-2 py-2.5 text-right text-emerald-600">{subConv.toFixed(0)}</td>
                                       <td className="px-2 py-2.5 text-center"><Badge variant="outline" className={cn("text-[10px]", getRoasColor(subRoas))}>{subRoas.toFixed(2)}</Badge></td>
@@ -608,7 +609,7 @@ export default function MetaAdsPage() {
                                                         </AnonymizedContent>
                                                       </td>
                                                       <td className="px-2 py-2 text-right font-medium text-slate-700">
-                                                        {formatMoney(camp.cost)}
+                                                        {formatMoney(camp.cost, sub.id)}
                                                       </td>
                                                       <td className="px-2 py-2 text-right text-emerald-600">
                                                         {(camp.conversions || 0).toFixed(0)}

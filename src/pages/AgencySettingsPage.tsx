@@ -68,7 +68,7 @@ import {
 } from "@/components/ui/select"
 import React from 'react';
 
-type GoogleAccountRow = { id: string; resourceName: string; descriptiveName?: string | null };
+type GoogleAccountRow = { id: string; resourceName: string; descriptiveName?: string | null; currencyCode?: string | null };
 
 /** Evita ráfagas: HMR de Vite remonta el componente y antes se disparaban decenas de POST al mismo endpoint. */
 const googleAccountsListInflight = new Map<string, Promise<GoogleAccountRow[]>>();
@@ -180,6 +180,7 @@ function GoogleAdsAccountSelect({
       {accounts.map(acc => (
         <SelectItem key={acc.id} value={acc.id}>
           {acc.descriptiveName ? `${acc.descriptiveName} (${acc.id})` : `Cuenta ${acc.id}`}
+          {acc.currencyCode ? ` · ${acc.currencyCode}` : ''}
         </SelectItem>
       ))}
     </>
@@ -1960,7 +1961,7 @@ export default function AgencySettingsPage() {
                                   </div>
                                   <div>
                                     <p className="text-sm font-medium text-slate-900">{acc.account_name || t('agency.integrations.metaAds.title', 'Cuenta de Anuncios')}</p>
-                                    <p className="text-xs font-mono text-slate-500">{acc.account_id}</p>
+                                    <p className="text-xs font-mono text-slate-500">{acc.account_id}{acc.currency ? ` · ${acc.currency}` : ''}</p>
                                   </div>
                                 </div>
                                 <Button
