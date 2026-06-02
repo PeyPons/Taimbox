@@ -33,6 +33,7 @@ import {
     Landmark,
     Settings2,
     Layers,
+    Loader2,
 } from 'lucide-react';
 import { format, startOfMonth, subMonths, addMonths, endOfMonth, isSameMonth, subDays } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -77,10 +78,11 @@ import { DeliverableLifecycleTable } from '@/components/financial/DeliverableLif
 import { deliverablePhaseOverlapsMonth, getDeliverablePhase } from '@/utils/deliverableLifecycle';
 import { PROJECT_TYPE_ENTREGABLE } from '@/config/projectTypePresets';
 import { useFormatMoney } from '@/hooks/useFormatMoney';
+import { useMonthNavigation } from '@/hooks/useMonthNavigation';
+import { useEnsureMonthWithLoading } from '@/hooks/useEnsureMonthWithLoading';
 
 export default function FinancialHealthPage() {
     const { t } = useTranslation('app');
-    const [currentMonth, setCurrentMonth] = useState(startOfMonth(new Date()));
     const [searchQuery, setSearchQuery] = useState('');
     const [hoursMode, setHoursMode] = useState<'actual' | 'computed'>('computed');
     const [costMode, setCostMode] = useState<'standard' | 'dynamic'>('standard');
@@ -94,7 +96,7 @@ export default function FinancialHealthPage() {
     const profitSettingsHydratedRef = useRef(false);
     const [deadlinesRows, setDeadlinesRows] = useState<Deadline[]>([]);
     const [globalAssignmentsForMonth, setGlobalAssignmentsForMonth] = useState<GlobalAssignment[]>([]);
-    const { projects, clients, employees, allocations, ensureMonthLoaded } = useApp();
+    const { projects, clients, employees, allocations, isLoading: isGlobalLoading } = useApp();
     const { currentAgency, updateSettings } = useAgency();
     const { formatMoney, formatPerHour, currencySymbol, inCurrencyParens, perHourSuffix } = useFormatMoney();
     const defaultPerHour = useMemo(() => formatPerHour(75, 0), [formatPerHour]);
@@ -107,15 +109,19 @@ export default function FinancialHealthPage() {
     const { isActive: privacyDemoActive, anonymizer: privacyAnonymizer } = usePrivacyDemo();
     const { canAccess } = usePermissions();
 
+    const {
+        currentMonth,
+        goToPrevMonth: handlePrevMonth,
+        goToNextMonth: handleNextMonth,
+        goToToday: handleToday,
+    } = useMonthNavigation({ minMonth: minReportingMonth ?? undefined });
+    const isLoadingMonth = useEnsureMonthWithLoading(currentMonth, { enabled: !isGlobalLoading });
+
     useEffect(() => {
         if (currentAgency?.settings?.hoursTrackingPreference) {
             setHoursMode(currentAgency.settings.hoursTrackingPreference);
         }
     }, [currentAgency?.settings?.hoursTrackingPreference]);
-
-    useEffect(() => {
-        ensureMonthLoaded(currentMonth);
-    }, [currentMonth, ensureMonthLoaded]);
 
     // Cargar deadlines y globales del mes (presupuesto + visibilidad de inactivos con carga).
     useEffect(() => {
@@ -261,20 +267,6 @@ export default function FinancialHealthPage() {
         });
         return ids;
     }, [allocations, employeesForView, selectedDepartmentId, currentMonth]);
-
-    const handlePrevMonth = () => setCurrentMonth(prev => {
-        const next = subMonths(prev, 1);
-        if (minReportingMonth && next < minReportingMonth) return minReportingMonth;
-        return next;
-    });
-    const handleNextMonth = () => setCurrentMonth(prev => addMonths(prev, 1));
-    const handleToday = () => setCurrentMonth(startOfMonth(new Date()));
-
-    useEffect(() => {
-        if (minReportingMonth && currentMonth < minReportingMonth) {
-            setCurrentMonth(minReportingMonth);
-        }
-    }, [minReportingMonth]);
 
     const {
         projectMetrics,
@@ -1140,6 +1132,9 @@ export default function FinancialHealthPage() {
                                     <ChevronRight className="h-4 w-4" />
                                 </Button>
                             </div>
+                            {isLoadingMonth && (
+                                <Loader2 className="h-4 w-4 animate-spin text-slate-400" aria-label={t('common.loading', 'Cargando')} />
+                            )}
                             {isViewingCurrentMonth ? (
                                 <Badge className="bg-indigo-500 hover:bg-indigo-600 text-white border-0 animate-pulse">
                                     {t('financialHealth.controls.currentMonth', 'Mes en curso')}

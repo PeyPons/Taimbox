@@ -12,12 +12,15 @@ export const ProtectedRoute = () => {
   const { session, loading, isInitialized } = useAuth();
   const { currentAgency, isLoading: isAgencyLoading } = useAgency();
   const { canAccess } = usePermissions();
-  const { currentUser, isLoading: appLoading, employees } = useApp();
+  const { currentUser, isLoading: appLoading, isSecondaryLoading } = useApp();
   const { isPlatformAdmin, isLoading: platformAdminLoading } = usePlatformAdmin();
   const location = useLocation();
   const pathname = location.pathname;
 
-  const isInitialAppLoad = Boolean(session && appLoading && employees.length === 0);
+  /** Datos de agencia + app listos (evita UI con plan/módulos por defecto y allocations vacías). */
+  const isAppBootstrapPending =
+    Boolean(session) &&
+    (appLoading || isSecondaryLoading || (isAgencyLoading && !currentAgency) || !currentAgency);
 
   // Rutas que no dependen de agencia ni de permisos de app: solo exigen sesión
   const adminOrSuspended =
@@ -32,8 +35,8 @@ export const ProtectedRoute = () => {
     return <Outlet />;
   }
 
-  // Spinner solo en carga inicial (auth, agencia o primer fetch de datos)
-  if (!isInitialized || loading || (isAgencyLoading && !currentAgency) || isInitialAppLoad) {
+  // Spinner hasta auth, agencia y carga completa de datos (fases 1+2 de fetchInitialAppData)
+  if (!isInitialized || loading || isAppBootstrapPending) {
     return <PageLoader />;
   }
 

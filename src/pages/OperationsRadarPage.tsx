@@ -4,7 +4,7 @@ import { useApp } from '@/contexts/AppContext';
 import { useAgency } from '@/contexts/AgencyContext';
 import { useDepartmentView } from '@/contexts/DepartmentViewContext';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Activity, ChevronDown, GitBranch, FolderKanban, Pencil } from 'lucide-react';
+import { Activity, ChevronDown, GitBranch, FolderKanban, Pencil, Loader2 } from 'lucide-react';
 import {
     GlobalPlanningInconsistencies,
     type OperationsRadarStatusFilter,
@@ -22,6 +22,7 @@ import type { Allocation } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getEffectiveCompletedHours } from '@/utils/hoursTracking';
 import { useOperationsRadarMonthState } from '@/hooks/useOperationsRadarMonthState';
+import { useEnsureMonthWithLoading } from '@/hooks/useEnsureMonthWithLoading';
 import { useOperationsRadarData, type ProjectRowItem, type ProjectStatusType } from '@/hooks/useOperationsRadarData';
 import { useDeliverableLifecycleBatch } from '@/hooks/useDeliverableLifecycleBatch';
 import { getDeliverablePhase } from '@/utils/deliverableLifecycle';
@@ -36,7 +37,7 @@ import type { Project } from '@/types';
 export default function OperationsRadarPage() {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
-    const { projects, clients, allocations, employees, ensureMonthLoaded } = useApp();
+    const { projects, clients, allocations, employees, isLoading: isGlobalLoading } = useApp();
     const { currentAgency } = useAgency();
     const { selectedDepartmentId, setSelectedDepartmentId } = useDepartmentView();
     const { formatName: formatProjectName } = useProjectAliasing();
@@ -64,9 +65,10 @@ export default function OperationsRadarPage() {
     } = useOperationsRadarMonthState({
         searchParams,
         navigate,
-        ensureMonthLoaded,
         currentAgencyId: currentAgency?.id,
     });
+
+    const isLoadingMonth = useEnsureMonthWithLoading(viewDate, { enabled: !isGlobalLoading });
 
     // Permitir que ?depto= configure la vista por departamento (una sola fuente de verdad)
     useEffect(() => {
@@ -342,6 +344,7 @@ export default function OperationsRadarPage() {
                         </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
+                        {isLoadingMonth && <Loader2 className="h-4 w-4 animate-spin text-slate-400" />}
                         <div className="flex items-center gap-1 bg-white rounded-lg border p-1 shadow-sm">
                             <Button variant="ghost" size="icon" onClick={handlePrevMonth} className="h-9 w-9 text-slate-500" aria-label={t('operationsRadar.prevMonth')}>
                                 &lt;

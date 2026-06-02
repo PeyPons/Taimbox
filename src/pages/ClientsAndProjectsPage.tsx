@@ -34,6 +34,9 @@ import { toast } from '@/lib/notify';
 import { INPUT_LIMITS } from '@/constants/inputLimits';
 import { format, subMonths, addMonths, isSameMonth, parseISO, getDaysInMonth, getDate, startOfMonth } from 'date-fns';
 import { isAllocationInEffectiveMonth, getWeeksForMonth } from '@/utils/dateUtils';
+import { useMonthNavigation } from '@/hooks/useMonthNavigation';
+import { useEnsureMonthWithLoading } from '@/hooks/useEnsureMonthWithLoading';
+import { Loader2 } from 'lucide-react';
 import { es } from 'date-fns/locale';
 import { useProjectFilters } from '@/hooks/useProjectFilters';
 import { useIntegration } from '@/hooks/useIntegration';
@@ -133,7 +136,6 @@ export default function ClientsAndProjectsPage() {
     updateProject, deleteProject,
     getClientTotalHoursForMonth, getProjectHoursForMonth,
     updateAllocation,
-    ensureMonthLoaded,
     getEmployeeLoadForWeek,
   } = useApp();
   const { currentAgency } = useAgency();
@@ -155,7 +157,8 @@ export default function ClientsAndProjectsPage() {
   }, [employees, selectedDepartmentId, departmentOptions]);
 
   // Estados
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const { currentMonth, goToPrevMonth, goToNextMonth, goToToday } = useMonthNavigation();
+  const isLoadingMonth = useEnsureMonthWithLoading(currentMonth);
   const [isAddingClient, setIsAddingClient] = useState(false);
   const [isAddingProject, setIsAddingProject] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
@@ -214,10 +217,6 @@ export default function ClientsAndProjectsPage() {
       }),
     [employeesForView, currentMonth, monthDeadlines, monthGlobalAssignments, allocations]
   );
-
-  useEffect(() => {
-    void ensureMonthLoaded(currentMonth);
-  }, [currentMonth, ensureMonthLoaded]);
 
   const preference = currentAgency?.settings?.hoursTrackingPreference;
   const activeProjectsForPicker = useMemo(
@@ -1020,18 +1019,19 @@ export default function ClientsAndProjectsPage() {
               variant="ghost"
               size="icon"
               className="h-8 w-8"
-              onClick={() => setCurrentMonth(prev => subMonths(prev, 1))}
+              onClick={goToPrevMonth}
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <span className="text-sm font-medium px-2 min-w-[120px] text-center capitalize">
+            <span className="text-sm font-medium px-2 min-w-[120px] text-center capitalize flex items-center justify-center gap-1.5">
+              {isLoadingMonth && <Loader2 className="h-3.5 w-3.5 animate-spin text-slate-400" />}
               {format(currentMonth, 'MMMM yyyy', { locale: es })}
             </span>
             <Button
               variant="ghost"
               size="icon"
               className="h-8 w-8"
-              onClick={() => setCurrentMonth(prev => addMonths(prev, 1))}
+              onClick={goToNextMonth}
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
@@ -1039,7 +1039,7 @@ export default function ClientsAndProjectsPage() {
               variant="ghost"
               size="sm"
               className="h-8 text-xs"
-              onClick={() => setCurrentMonth(new Date())}
+              onClick={goToToday}
               aria-label="Mes actual"
             >
               Mes actual

@@ -14,8 +14,9 @@ export function useIntegration(integrationId: string): boolean {
 
 /** Cierre semanal Weekly (`modules.weeklyFeedback`). */
 export function useWeeklyModuleEnabled(): boolean {
-  const { currentAgency } = useAgency();
-  return resolveWeeklyEnabled(currentAgency?.settings);
+  const { currentAgency, isLoading } = useAgency();
+  if (isLoading || !currentAgency) return false;
+  return resolveWeeklyEnabled(currentAgency.settings);
 }
 
 /**

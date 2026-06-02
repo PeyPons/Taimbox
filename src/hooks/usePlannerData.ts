@@ -1,11 +1,11 @@
 /**
  * usePlannerData Hook
- * 
+ *
  * Extracts date navigation logic, week calculations, and month loading
  * from PlannerGrid component into a reusable hook.
  */
 
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useMemo } from 'react';
 import { format } from 'date-fns';
 import { useApp } from '@/contexts/AppContext';
 import { useDepartmentView } from '@/contexts/DepartmentViewContext';
@@ -13,203 +13,157 @@ import { getWeeksForMonth, isAllocationInEffectiveMonth } from '@/utils/dateUtil
 import { useAgency } from '@/contexts/AgencyContext';
 import { employeeBelongsToDepartment, normalizeDepartments } from '@/utils/departmentUtils';
 import { usePlatformAdmin } from '@/hooks/usePlatformAdmin';
+import { useMonthNavigation } from '@/hooks/useMonthNavigation';
+import { useEnsureMonthWithLoading } from '@/hooks/useEnsureMonthWithLoading';
 import { Employee } from '@/types';
 import {
   employeeIdsWithOperationalWorkloadInMonth,
   filterEmployeesForOperationalMonth,
 } from '@/utils/employeeAssignmentVisibility';
 
-interface WeekData {
-    weekStart: Date;
-    weekEnd: Date;
-    effectiveStart: Date;
-    effectiveEnd: Date;
-}
-
 interface UsePlannerDataOptions {
-    initialDate?: Date;
-    showOnlyMe?: boolean;
-    selectedEmployeeId?: string;
-    selectedProjectId?: string;
+  initialDate?: Date;
+  showOnlyMe?: boolean;
+  selectedEmployeeId?: string;
+  selectedProjectId?: string;
 }
 
 export function usePlannerData(options: UsePlannerDataOptions = {}) {
-    const {
-        employees,
-        projects,
-        allocations,
-        absences,
-        teamEvents,
-        currentUser,
-        ensureMonthLoaded,
-        isLoading: isGlobalLoading,
-        getEmployeeMonthlyLoad
-    } = useApp();
-    const { currentAgency } = useAgency();
-    const { selectedDepartmentId } = useDepartmentView();
-    const { isPlatformAdmin } = usePlatformAdmin();
-    const departments = useMemo(() => normalizeDepartments(currentAgency?.settings?.departments), [currentAgency?.settings?.departments]);
+  const {
+    employees,
+    projects,
+    allocations,
+    absences,
+    teamEvents,
+    currentUser,
+    isLoading: isGlobalLoading,
+    getEmployeeMonthlyLoad,
+  } = useApp();
+  const { currentAgency } = useAgency();
+  const { selectedDepartmentId } = useDepartmentView();
+  const { isPlatformAdmin } = usePlatformAdmin();
+  const departments = useMemo(
+    () => normalizeDepartments(currentAgency?.settings?.departments),
+    [currentAgency?.settings?.departments]
+  );
 
-    // ============================================================
-    // Date State & Navigation
-    // ============================================================
-    const [currentMonth, setCurrentMonth] = useState(() => {
-        const saved = localStorage.getItem('planner_date');
-        return saved ? new Date(saved) : (options.initialDate || new Date());
+  const {
+    currentMonth,
+    setCurrentMonth,
+    goToPrevMonth,
+    goToNextMonth,
+    goToToday,
+    monthKey,
+  } = useMonthNavigation({ initialMonth: options.initialDate });
+
+  const isLoadingMonth = useEnsureMonthWithLoading(currentMonth, { enabled: !isGlobalLoading });
+
+  const weeks = useMemo(() => getWeeksForMonth(currentMonth), [currentMonth]);
+  const year = currentMonth.getFullYear();
+  const month = currentMonth.getMonth();
+
+  const workloadEmployeeIds = useMemo(
+    () =>
+      employeeIdsWithOperationalWorkloadInMonth(monthKey, {
+        allocations: allocations ?? [],
+        deadlines: [],
+        globalAssignments: [],
+        limitToEmployeeIds: new Set((employees ?? []).map((e) => e.id)),
+      }),
+    [monthKey, allocations, employees]
+  );
+
+  const employeesByProject = useMemo(() => {
+    const index = new Map<string, Set<string>>();
+    (allocations || []).forEach((a) => {
+      if (isAllocationInEffectiveMonth(a.weekStartDate, currentMonth)) {
+        if (!index.has(a.projectId)) index.set(a.projectId, new Set());
+        index.get(a.projectId)!.add(a.employeeId);
+      }
     });
+    return index;
+  }, [allocations, currentMonth]);
 
-    const [isLoadingMonth, setIsLoadingMonth] = useState(false);
-    const monthLoadInFlightRef = useRef<string | null>(null);
+  const filteredEmployees = useMemo(() => {
+    const showOnlyMe = options.showOnlyMe ?? false;
+    const selectedEmployeeId = options.selectedEmployeeId ?? 'all';
+    const selectedProjectId = options.selectedProjectId ?? 'all';
 
-    // Persist current month to localStorage
-    useEffect(() => {
-        localStorage.setItem('planner_date', currentMonth.toISOString());
-    }, [currentMonth]);
+    const effectiveShowOnlyMe = showOnlyMe && currentUser != null;
 
-    // Load data for current month using centralized ensureMonthLoaded
-    useEffect(() => {
-        if (isGlobalLoading) return;
+    return (employees || []).filter((e: Employee) => {
+      if (!e.isActive) return false;
+      if (effectiveShowOnlyMe && e.id !== currentUser!.id) return false;
+      if (selectedEmployeeId !== 'all' && e.id !== selectedEmployeeId) return false;
+      if (selectedProjectId !== 'all') {
+        const employeesInProject = employeesByProject.get(selectedProjectId);
+        if (!employeesInProject || !employeesInProject.has(e.id)) return false;
+      }
+      if (selectedDepartmentId && departments.length > 0) {
+        const dept = departments.find(
+          (d) => d.id === selectedDepartmentId || d.name === selectedDepartmentId
+        );
+        if (dept && !employeeBelongsToDepartment(e.department, dept.id, dept.name)) return false;
+      }
+      return true;
+    });
+  }, [
+    employees,
+    options.showOnlyMe,
+    options.selectedEmployeeId,
+    options.selectedProjectId,
+    employeesByProject,
+    currentUser,
+    selectedDepartmentId,
+    departments,
+    isPlatformAdmin,
+    workloadEmployeeIds,
+  ]);
 
-        const monthKey = format(currentMonth, 'yyyy-MM');
-        if (monthLoadInFlightRef.current === monthKey) {
-            return;
-        }
+  const sortedProjects = useMemo(
+    () => [...(projects || [])].sort((a, b) => a.name.localeCompare(b.name)),
+    [projects]
+  );
 
-        monthLoadInFlightRef.current = monthKey;
-        setIsLoadingMonth(true);
-        void ensureMonthLoaded(currentMonth).finally(() => {
-            if (monthLoadInFlightRef.current === monthKey) {
-                monthLoadInFlightRef.current = null;
-            }
-            setIsLoadingMonth(false);
-        });
-    }, [currentMonth, isGlobalLoading, ensureMonthLoaded]);
+  const sortedEmployees = useMemo(
+    () =>
+      filterEmployeesForOperationalMonth(employees ?? [], monthKey, {
+        allocations: allocations ?? [],
+        deadlines: [],
+        globalAssignments: [],
+      }).sort((a, b) => a.name.localeCompare(b.name)),
+    [employees, monthKey, allocations]
+  );
 
-    // ============================================================
-    // Navigation Handlers
-    // ============================================================
-    const goToPrevMonth = useCallback(() => {
-        setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
-    }, []);
+  const monthAllocations = useMemo(
+    () =>
+      (allocations || []).filter((a) =>
+        isAllocationInEffectiveMonth(a.weekStartDate, currentMonth)
+      ),
+    [allocations, currentMonth]
+  );
 
-    const goToNextMonth = useCallback(() => {
-        setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
-    }, []);
-
-    const goToToday = useCallback(() => {
-        setCurrentMonth(new Date());
-    }, []);
-
-    // ============================================================
-    // Computed Values
-    // ============================================================
-    const weeks = useMemo(() => getWeeksForMonth(currentMonth), [currentMonth]);
-    const year = currentMonth.getFullYear();
-    const month = currentMonth.getMonth();
-    const monthKey = format(currentMonth, 'yyyy-MM');
-
-    const workloadEmployeeIds = useMemo(
-      () =>
-        employeeIdsWithOperationalWorkloadInMonth(monthKey, {
-          allocations: allocations ?? [],
-          deadlines: [],
-          globalAssignments: [],
-          limitToEmployeeIds: new Set((employees ?? []).map((e) => e.id)),
-        }),
-      [monthKey, allocations, employees]
-    );
-
-    // Index of employees by project for filtering
-    const employeesByProject = useMemo(() => {
-        const index = new Map<string, Set<string>>();
-        (allocations || []).forEach(a => {
-            if (isAllocationInEffectiveMonth(a.weekStartDate, currentMonth)) {
-                if (!index.has(a.projectId)) index.set(a.projectId, new Set());
-                index.get(a.projectId)!.add(a.employeeId);
-            }
-        });
-        return index;
-    }, [allocations, currentMonth]);
-
-    // ============================================================
-    // Filtered Employees
-    // ============================================================
-    const filteredEmployees = useMemo(() => {
-        const showOnlyMe = options.showOnlyMe ?? false;
-        const selectedEmployeeId = options.selectedEmployeeId ?? 'all';
-        const selectedProjectId = options.selectedProjectId ?? 'all';
-
-        // Si showOnlyMe está activo: para usuarios normales filtrar por currentUser; si es platform admin sin perfil en la agencia, mostrar todos (ver datos de la agencia).
-        const effectiveShowOnlyMe = showOnlyMe && currentUser != null;
-
-        return (employees || []).filter((e: Employee) => {
-            if (!e.isActive) return false;
-            if (effectiveShowOnlyMe && e.id !== currentUser!.id) return false;
-            if (selectedEmployeeId !== 'all' && e.id !== selectedEmployeeId) return false;
-            if (selectedProjectId !== 'all') {
-                const employeesInProject = employeesByProject.get(selectedProjectId);
-                if (!employeesInProject || !employeesInProject.has(e.id)) return false;
-            }
-            // Vista por departamento: solo empleados del departamento seleccionado
-            if (selectedDepartmentId && departments.length > 0) {
-                const dept = departments.find(d => d.id === selectedDepartmentId || d.name === selectedDepartmentId);
-                if (dept && !employeeBelongsToDepartment(e.department, dept.id, dept.name)) return false;
-            }
-            return true;
-        });
-    }, [employees, options.showOnlyMe, options.selectedEmployeeId, options.selectedProjectId, employeesByProject, currentUser, selectedDepartmentId, departments, isPlatformAdmin, workloadEmployeeIds]);
-
-    // Sorted lists for dropdowns
-    const sortedProjects = useMemo(() =>
-        [...(projects || [])].sort((a, b) => a.name.localeCompare(b.name)),
-        [projects]
-    );
-
-    const sortedEmployees = useMemo(
-        () =>
-            filterEmployeesForOperationalMonth(employees ?? [], monthKey, {
-                allocations: allocations ?? [],
-                deadlines: [],
-                globalAssignments: [],
-            }).sort((a, b) => a.name.localeCompare(b.name)),
-        [employees, monthKey, allocations]
-    );
-
-    const monthAllocations = useMemo(() =>
-        (allocations || []).filter(a => isAllocationInEffectiveMonth(a.weekStartDate, currentMonth)),
-        [allocations, currentMonth]
-    );
-
-    return {
-        // Current state
-        currentMonth,
-        year,
-        month,
-        weeks,
-        isLoadingMonth,
-
-        // Navigation
-        goToPrevMonth,
-        goToNextMonth,
-        goToToday,
-        setCurrentMonth,
-
-        // Filtered data
-        filteredEmployees,
-        sortedProjects,
-        sortedEmployees,
-        employeesByProject,
-        monthAllocations,
-
-        // Raw data from context (for components that need it)
-        employees,
-        projects,
-        allocations,
-        absences,
-        teamEvents,
-        currentUser,
-
-        // Utility functions
-        getEmployeeMonthlyLoad
-    };
+  return {
+    currentMonth,
+    year,
+    month,
+    weeks,
+    isLoadingMonth,
+    goToPrevMonth,
+    goToNextMonth,
+    goToToday,
+    setCurrentMonth,
+    filteredEmployees,
+    sortedProjects,
+    sortedEmployees,
+    employeesByProject,
+    monthAllocations,
+    employees,
+    projects,
+    allocations,
+    absences,
+    teamEvents,
+    currentUser,
+    getEmployeeMonthlyLoad,
+  };
 }

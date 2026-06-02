@@ -21,8 +21,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import type { Allocation, Employee } from '@/types';
 import { formatPlannerWeekWorkingRangeLabel } from '@/utils/dateUtils';
@@ -45,8 +43,6 @@ export const DEPENDENCY_NONE = 'none';
 
 /** Valor interno cmdk: siempre visible aunque haya búsqueda activa */
 const NONE_ITEM_VALUE = '__dependency_none__';
-
-const PICKER_LIST_MAX_HEIGHT = 'max-h-[min(380px,var(--radix-popover-content-available-height,380px))]';
 
 /** cmdk usa `value` como identificador; debe ser único aunque el texto mostrado se repita */
 function dependencyItemValue(depId: string, searchValue: string) {
@@ -119,7 +115,6 @@ function DependencyPickerList({
   value,
   onSelect,
   className,
-  listLayout = 'fixed',
 }: {
   dependencies: Allocation[];
   employees: Employee[];
@@ -127,8 +122,6 @@ function DependencyPickerList({
   value: string;
   onSelect: (id: string) => void;
   className?: string;
-  /** fixed: altura estable (popover). flex: rellena el diálogo móvil */
-  listLayout?: 'fixed' | 'flex';
 }) {
   const grouped = useMemo(() => {
     const sorted = [...dependencies].sort((a, b) => {
@@ -159,18 +152,12 @@ function DependencyPickerList({
         return searchable.toLowerCase().includes(search.toLowerCase()) ? 1 : 0;
       }}
       className={cn(
-        'flex flex-col [&_[cmdk-input-wrapper]_svg]:h-4 [&_[cmdk-input-wrapper]_svg]:w-4 [&_[cmdk-input]]:h-10 [&_[cmdk-input]]:text-sm',
-        listLayout === 'flex' && 'min-h-0 flex-1',
+        'flex min-h-0 flex-1 flex-col border-0 [&_[cmdk-input-wrapper]_svg]:h-4 [&_[cmdk-input-wrapper]_svg]:w-4 [&_[cmdk-input]]:h-10 [&_[cmdk-input]]:text-sm',
         className,
       )}
     >
       <CommandInput placeholder="Buscar por tarea, persona o semana…" />
-      <CommandList
-        className={cn(
-          listLayout === 'fixed' ? PICKER_LIST_MAX_HEIGHT : 'min-h-0 flex-1',
-          'overflow-y-auto overscroll-contain',
-        )}
-      >
+      <CommandList className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
         <CommandEmpty>No hay tareas que coincidan.</CommandEmpty>
 
         <CommandGroup heading="Opción" className={dependencyGroupClass}>
@@ -262,7 +249,6 @@ export function DependencyPicker({
   className,
 }: DependencyPickerProps) {
   const [open, setOpen] = useState(false);
-  const isMobile = useIsMobile();
 
   const selectedDep = value && value !== DEPENDENCY_NONE ? dependencies.find((d) => d.id === value) : null;
   const selectedOwner = selectedDep ? getEmployee(employees, selectedDep.employeeId) : null;
@@ -285,105 +271,50 @@ export function DependencyPicker({
     setOpen(false);
   };
 
-  const trigger = (
-    <Button
-      type="button"
-      variant="outline"
-      disabled={disabled}
-      className={cn(
-        'w-full justify-between gap-2 font-normal text-left',
-        compact ? 'h-11 sm:h-9 min-h-[44px] sm:min-h-0 text-xs px-2' : 'h-10 min-h-[44px] sm:min-h-0',
-        className,
-      )}
-    >
-      <span className="flex min-w-0 flex-1 items-center gap-2">
-        <Link2 className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-        <span className="min-w-0 flex-1">
-          <span className="block truncate font-medium text-slate-900">{triggerLabel}</span>
-          {!compact && <span className="block truncate text-xs text-slate-500">{triggerSub}</span>}
-        </span>
-      </span>
-      <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
-    </Button>
-  );
-
-  // En móvil o filas compactas del batch (dentro de un modal con scroll), un diálogo
-  // centrado evita que el popover quede fuera del viewport.
-  const useDialogPicker = isMobile || compact;
-
-  if (useDialogPicker) {
-    return (
-      <>
-        <Button
-          type="button"
-          variant="outline"
-          disabled={disabled}
-          onClick={() => setOpen(true)}
-          className={cn(
-            'w-full justify-between gap-2 font-normal text-left',
-            compact ? 'h-11 sm:h-9 min-h-[44px] sm:min-h-0 text-xs px-2' : 'h-10 min-h-[44px] sm:min-h-0',
-            className,
-          )}
-        >
-          <span className="flex min-w-0 flex-1 items-center gap-2">
-            <Link2 className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-            <span className="min-w-0 flex-1">
-              <span className="block truncate font-medium text-slate-900">{triggerLabel}</span>
-              {!compact && <span className="block truncate text-xs text-slate-500">{triggerSub}</span>}
-            </span>
-          </span>
-          <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
-        </Button>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogContent className="flex h-[min(85vh,460px)] max-h-[85vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-md">
-            <DialogHeader className="border-b border-slate-200 px-4 py-3 text-left">
-              <DialogTitle className="text-base">Depende de otra tarea</DialogTitle>
-              <DialogDescription className="text-xs">
-                Elige la tarea que debe completarse antes. Usa la búsqueda si hay muchas opciones.
-              </DialogDescription>
-            </DialogHeader>
-            <DependencyPickerList
-              dependencies={dependencies}
-              employees={employees}
-              weeks={weeks}
-              value={value}
-              onSelect={handleSelect}
-              listLayout="flex"
-              className="flex min-h-0 flex-1 flex-col border-0"
-            />
-          </DialogContent>
-        </Dialog>
-      </>
-    );
-  }
-
   return (
-    <Popover open={open} onOpenChange={setOpen} modal>
-      <PopoverTrigger asChild>{trigger}</PopoverTrigger>
-      <PopoverContent
-        className="w-[min(520px,calc(100vw-2rem))] max-h-[min(420px,var(--radix-popover-content-available-height,420px))] overflow-hidden p-0"
-        align="start"
-        side="bottom"
-        sideOffset={4}
-        collisionPadding={16}
-        onOpenAutoFocus={(event) => event.preventDefault()}
+    <>
+      <Button
+        type="button"
+        variant="outline"
+        disabled={disabled}
+        onClick={() => setOpen(true)}
+        className={cn(
+          'w-full justify-between gap-2 font-normal text-left',
+          compact ? 'h-11 sm:h-9 min-h-[44px] sm:min-h-0 text-xs px-2' : 'h-10 min-h-[44px] sm:min-h-0',
+          className,
+        )}
       >
-        <div className="shrink-0 border-b border-slate-100 px-3 py-2">
-          <p className="text-xs font-medium text-slate-700">Depende de otra tarea</p>
-          <p className="text-[11px] text-slate-500">
-            {dependencies.length > 0
-              ? `${dependencies.length} candidata${dependencies.length === 1 ? '' : 's'} · agrupadas por semana`
-              : 'No hay otras tareas activas en este proyecto'}
-          </p>
-        </div>
-        <DependencyPickerList
-          dependencies={dependencies}
-          employees={employees}
-          weeks={weeks}
-          value={value}
-          onSelect={handleSelect}
-        />
-      </PopoverContent>
-    </Popover>
+        <span className="flex min-w-0 flex-1 items-center gap-2">
+          <Link2 className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+          <span className="min-w-0 flex-1">
+            <span className="block truncate font-medium text-slate-900">{triggerLabel}</span>
+            {!compact && <span className="block truncate text-xs text-slate-500">{triggerSub}</span>}
+          </span>
+        </span>
+        <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+      </Button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent
+          priority="high"
+          className="flex h-[min(85vh,520px)] max-h-[85vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg"
+        >
+          <DialogHeader className="shrink-0 border-b border-slate-200 px-4 py-3 text-left">
+            <DialogTitle className="text-base">Depende de otra tarea</DialogTitle>
+            <DialogDescription className="text-xs">
+              {dependencies.length > 0
+                ? `${dependencies.length} candidata${dependencies.length === 1 ? '' : 's'} · agrupadas por semana. Usa la búsqueda si hay muchas opciones.`
+                : 'No hay otras tareas activas en este proyecto.'}
+            </DialogDescription>
+          </DialogHeader>
+          <DependencyPickerList
+            dependencies={dependencies}
+            employees={employees}
+            weeks={weeks}
+            value={value}
+            onSelect={handleSelect}
+          />
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

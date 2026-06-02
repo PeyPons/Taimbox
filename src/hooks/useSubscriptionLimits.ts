@@ -40,7 +40,7 @@ export function useSubscriptionLimits() {
   );
   // maxEmployees is null for enterprise (unlimited)
   const isOverLimit = limits.maxEmployees !== null && currentEmployees > limits.maxEmployees;
-  const isSoftLocked = isOverLimit && planId === 'starter';
+  const isSoftLocked = Boolean(currentAgency) && isOverLimit && planId === 'starter';
 
   /**
    * Fecha mínima de histórico para el plan actual.

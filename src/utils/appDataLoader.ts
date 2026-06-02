@@ -331,12 +331,11 @@ export async function fetchInitialAppData({
       ? projRes.data.map((p: SupabaseProject) => mapSupabaseProjectRow(p))
       : [];
 
-    if (!skipLoading) {
-      setIsLoading(false);
-    }
-
     // Phase 2: allocations, absences, events, feedback, routines
-    setIsSecondaryLoading(true);
+    // isLoading sigue true hasta el final para no pintar la app con datos a medias (fase 1 solo).
+    if (!skipLoading) {
+      setIsSecondaryLoading(true);
+    }
     const [allocRes, absRes, evRes, feedbackRes, routinesRes] = await Promise.all([
       supabase
         .from('allocations')
@@ -493,6 +492,9 @@ export async function fetchInitialAppData({
     }
 
     setIsSecondaryLoading(false);
+    if (!skipLoading) {
+      setIsLoading(false);
+    }
   } catch (error) {
     console.error('Error cargando datos:', error);
     const errorMessage =

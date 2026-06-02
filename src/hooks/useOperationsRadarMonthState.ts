@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { addMonths, endOfMonth, format, getDate, isSameMonth, parseISO, startOfMonth, subMonths } from 'date-fns';
+import { writeStoredPlannerMonth } from '@/utils/plannerMonthStorage';
 import { fetchDeadlinesForMonth } from '@/utils/deadlineUtils';
 import { fetchGlobalAssignmentsForMonth } from '@/utils/globalAssignmentsUtils';
 import type { Deadline, GlobalAssignment } from '@/types';
@@ -19,12 +20,11 @@ export function parseMonthFromSearchParams(searchParams: URLSearchParams): Date 
 interface UseOperationsRadarMonthStateParams {
   searchParams: URLSearchParams;
   navigate: (to: { pathname: string; search: string }, options?: { replace?: boolean }) => void;
-  ensureMonthLoaded: (date: Date) => Promise<void>;
   currentAgencyId?: string;
 }
 
 export function useOperationsRadarMonthState(params: UseOperationsRadarMonthStateParams) {
-  const { searchParams, navigate, ensureMonthLoaded, currentAgencyId } = params;
+  const { searchParams, navigate, currentAgencyId } = params;
   const [viewDate, setViewDate] = useState<Date>(() => parseMonthFromSearchParams(searchParams));
   const [deadlines, setDeadlines] = useState<Deadline[]>([]);
   const [globalAssignments, setGlobalAssignments] = useState<GlobalAssignment[]>([]);
@@ -37,8 +37,8 @@ export function useOperationsRadarMonthState(params: UseOperationsRadarMonthStat
   }, [searchParams]);
 
   useEffect(() => {
-    ensureMonthLoaded(viewDate);
-  }, [viewDate, ensureMonthLoaded]);
+    writeStoredPlannerMonth(viewDate);
+  }, [viewDate]);
 
   useEffect(() => {
     const monthKey = format(viewDate, 'yyyy-MM');

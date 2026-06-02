@@ -7,7 +7,7 @@ import { TaskTimer } from '@/components/employee/TaskTimer';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, Clock, Sun, Calendar, ChevronUp, ChevronDown, Search, X, ArrowRight, Undo2, ListChecks } from 'lucide-react';
-import { format, isSameWeek, startOfWeek, getDay, startOfDay } from 'date-fns';
+import { format, isSameWeek, startOfWeek, getDay, startOfDay, startOfMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -70,8 +70,11 @@ export function MyDayView({
   const todayStr = todayKey;
 
   useEffect(() => {
-    void ensureMonthLoaded(viewDate);
-    void ensureMonthLoaded(new Date());
+    void ensureMonthLoaded(startOfMonth(viewDate));
+    const nowMonth = startOfMonth(new Date());
+    if (format(nowMonth, 'yyyy-MM') !== format(startOfMonth(viewDate), 'yyyy-MM')) {
+      void ensureMonthLoaded(nowMonth);
+    }
   }, [ensureMonthLoaded, viewDate]);
 
   const scopedAllocationIds = useMemo(

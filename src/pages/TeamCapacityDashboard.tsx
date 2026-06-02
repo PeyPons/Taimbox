@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '@/contexts/AppContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,21 +15,22 @@ import { getAbsenceHoursInRange } from '@/utils/absenceUtils';
 import { getTeamEventHoursInRange } from '@/utils/teamEventUtils';
 import { WorkSchedule, Allocation, Employee } from '@/types';
 import { filterEmployeesForOperationalMonthDate } from '@/utils/employeeAssignmentVisibility';
+import { useMonthNavigation } from '@/hooks/useMonthNavigation';
+import { useEnsureMonthWithLoading } from '@/hooks/useEnsureMonthWithLoading';
+import { Loader2 } from 'lucide-react';
 
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
 export default function TeamCapacityDashboard() {
     const { t } = useTranslation('app');
-    const [currentMonth, setCurrentMonth] = useState(startOfMonth(new Date()));
-    const { employees, allocations, absences, teamEvents, projects, ensureMonthLoaded } = useApp();
-
-    const handlePrevMonth = () => setCurrentMonth(prev => subMonths(prev, 1));
-    const handleNextMonth = () => setCurrentMonth(prev => addMonths(prev, 1));
-    const handleToday = () => setCurrentMonth(startOfMonth(new Date()));
-
-    useEffect(() => {
-        void ensureMonthLoaded(currentMonth);
-    }, [currentMonth, ensureMonthLoaded]);
+    const { employees, allocations, absences, teamEvents, projects, isLoading: isGlobalLoading } = useApp();
+    const {
+        currentMonth,
+        goToPrevMonth: handlePrevMonth,
+        goToNextMonth: handleNextMonth,
+        goToToday: handleToday,
+    } = useMonthNavigation();
+    const isLoadingMonth = useEnsureMonthWithLoading(currentMonth, { enabled: !isGlobalLoading });
 
     const monthAllocations = useMemo(() => {
         return (allocations || []).filter(a => {
@@ -195,6 +196,7 @@ export default function TeamCapacityDashboard() {
                     </p>
                 </div>
                 <div className="flex items-center gap-2 bg-white rounded-lg border p-1 shadow-sm shrink-0">
+                    {isLoadingMonth && <Loader2 className="h-4 w-4 animate-spin text-slate-400" />}
                     <Button variant="ghost" size="icon" onClick={handlePrevMonth} className="h-8 w-8 text-slate-500">
                         <span className="sr-only">{t('teamCapacityDashboard.controls.prevMonth', 'Mes anterior')}</span>
                         &lt;

@@ -54,6 +54,8 @@ import { NewTaskRow, Deadline } from '@/types';
 import { ChevronLeft, ChevronRight, CalendarDays, TrendingUp, Calendar, Clock, CheckCircle2, Plus, X, Check, ListPlus, AlertTriangle, HelpCircle, RotateCcw, FileDown, CheckSquare, AlertCircle, Trash2, Sun, MoreHorizontal, Users, BarChart3 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { startOfMonth, endOfMonth, format, isSameMonth, parseISO, addDays } from 'date-fns';
+import { useMonthNavigation } from '@/hooks/useMonthNavigation';
+import { useEnsureMonthWithLoading } from '@/hooks/useEnsureMonthWithLoading';
 import { es } from 'date-fns/locale';
 import { toast } from '@/lib/notify';
 import { cn } from '@/lib/utils';
@@ -74,7 +76,7 @@ const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
 export default function EmployeeDashboard() {
   const { t } = useAppTranslation();
-  const { employees, projects, clients, allocations, absences, teamEvents, getEmployeeAllocationsForWeek, getEmployeeLoadForWeek, addAllocation, updateAllocation, deleteAllocation, isLoading: isGlobalLoading, ensureMonthLoaded, weeklyFeedback, getEmployeeMonthlyLoad, currentUser: appCurrentUser } = useApp();
+  const { employees, projects, clients, allocations, absences, teamEvents, getEmployeeAllocationsForWeek, getEmployeeLoadForWeek, addAllocation, updateAllocation, deleteAllocation, isLoading: isGlobalLoading, weeklyFeedback, getEmployeeMonthlyLoad, currentUser: appCurrentUser } = useApp();
 
   const { currentAgency } = useAgency();
   const myEmployeeProfile = appCurrentUser || null;
@@ -87,11 +89,11 @@ export default function EmployeeDashboard() {
   const { agencyId } = useSupportAgencyView();
   const { activeView, showToggle, setView, isSaving: isSavingViewPref } = useDashboardView();
 
-  const [currentMonth, setCurrentMonth] = useState(() => {
-    const saved = localStorage.getItem('planner_date');
-    return saved ? new Date(saved) : new Date();
+  const { currentMonth, goToPrevMonth: handlePrevMonth, goToNextMonth: handleNextMonth, goToToday: handleToday } =
+    useMonthNavigation();
+  const isLoadingMonth = useEnsureMonthWithLoading(currentMonth, {
+    enabled: !isGlobalLoading && !isLoadingProfile,
   });
-  const [isLoadingMonth, setIsLoadingMonth] = useState(false);
   const [selectedCell, setSelectedCell] = useState<{ employeeId: string; weekStart: Date } | null>(null);
 
   const [showGoals, setShowGoals] = useState(false);
@@ -483,14 +485,6 @@ export default function EmployeeDashboard() {
     toast.success(`${monthAllocations.length} tareas exportadas para el CRM`);
   };
 
-  useEffect(() => {
-    localStorage.setItem('planner_date', currentMonth.toISOString());
-  }, [currentMonth]);
-
-  const handlePrevMonth = () => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
-  const handleNextMonth = () => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
-  const handleToday = () => setCurrentMonth(new Date());
-
   const getAvailableDependencies = (projectId: string, currentTaskId?: string) => {
     if (!projectId) return [];
     return allocations.filter(a =>
@@ -596,15 +590,6 @@ export default function EmployeeDashboard() {
       setDialogDeadlines([]);
     }
   }, [isAddingTasks, deadlines]);
-
-  // Load data for current month using centralized ensureMonthLoaded
-  useEffect(() => {
-    if (!isGlobalLoading && !isLoadingProfile) {
-      setIsLoadingMonth(true);
-      ensureMonthLoaded(currentMonth)
-        .finally(() => setIsLoadingMonth(false));
-    }
-  }, [currentMonth, isGlobalLoading, isLoadingProfile, ensureMonthLoaded]);
 
   if (isGlobalLoading || isLoadingProfile) {
     return (

@@ -14,7 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { format, parseISO, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Users, ChevronLeft, ChevronRight, CalendarDays, Check, ChevronDown, Activity } from 'lucide-react';
+import { Users, ChevronLeft, ChevronRight, CalendarDays, Check, ChevronDown, Activity, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { loadPercentageTone } from '@/components/planner/allocation/allocationWeekMetrics';
 import { getStorageKey, getWeeksForMonth } from '@/utils/dateUtils';
@@ -28,9 +28,9 @@ import { useWeeklyForecastRedistribution } from '@/hooks/useWeeklyForecastRedist
 export default function WeeklyForecastPage() {
   const { t } = useTranslation('app');
   const { projects, clients } = useAppProjects();
-  const { allocations, getEmployeeLoadForWeek, ensureMonthLoaded } = useAppAllocations();
+  const { allocations, getEmployeeLoadForWeek } = useAppAllocations();
   const { employees } = useAppEmployees();
-  const { addAllocation, updateAllocation, isLoading: isGlobalLoading } = useAppAllocationActions();
+  const { addAllocation, updateAllocation } = useAppAllocationActions();
   const { currentAgency } = useAgency();
   const { selectedDepartmentId } = useDepartmentView();
 
@@ -41,10 +41,8 @@ export default function WeeklyForecastPage() {
     handlePrevMonth,
     handleNextMonth,
     handleToday,
-  } = useWeeklyForecastMonthData({
-    ensureMonthLoaded,
-    isGlobalLoading,
-  });
+    isLoadingMonth,
+  } = useWeeklyForecastMonthData();
 
   const { employeesForView, employeesForOperationalMonth, filteredProjectsForView } = useWeeklyForecastFilters({
     selectedDepartmentId,
@@ -116,6 +114,7 @@ export default function WeeklyForecastPage() {
 
       <div className="flex items-center gap-4 bg-white p-2 rounded-lg border shadow-sm w-fit">
         <h2 className="text-lg font-bold capitalize text-slate-900 flex items-center gap-2 ml-2">
+          {isLoadingMonth && <Loader2 className="h-4 w-4 animate-spin text-slate-400" />}
           {format(currentMonth, 'MMMM yyyy', { locale: es })}
         </h2>
         <div className="h-6 w-px bg-slate-200 mx-2" />

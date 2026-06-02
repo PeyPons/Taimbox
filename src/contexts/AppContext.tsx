@@ -274,15 +274,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         employeesRef,
       });
 
-      // Recarga inicial sustituye allocations por un solo mes: invalidar caché de meses
-      // para que ensureMonthLoaded no asuma meses previos aún en memoria.
-      if (!skipLoading) {
-        loadedMonthsRef.current.clear();
-        emptyMonthsLoadedRef.current.clear();
-        const today = new Date();
-        const rangeStart = dateRange?.start ?? new Date(today.getFullYear(), today.getMonth(), 1);
-        loadedMonthsRef.current.add(format(startOfMonth(rangeStart), 'yyyy-MM'));
-      }
+      const today = new Date();
+      const rangeStart = dateRange?.start ?? new Date(today.getFullYear(), today.getMonth(), 1);
+      const seededMonthKey = format(startOfMonth(rangeStart), 'yyyy-MM');
+
+      // Recarga sustituye o fusiona allocations del rango pedido: la caché de meses debe alinearse.
+      loadedMonthsRef.current.clear();
+      emptyMonthsLoadedRef.current.clear();
+      loadedMonthsRef.current.add(seededMonthKey);
     },
     [currentAgency?.id]
   );

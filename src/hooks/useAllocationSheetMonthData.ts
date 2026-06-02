@@ -25,8 +25,16 @@ export function useAllocationSheetMonthData(params: UseAllocationSheetMonthDataP
   const [isLoadingTasks, setIsLoadingTasks] = useState(true);
   const [deadlines, setDeadlines] = useState<Deadline[]>([]);
   const loadedMonthsRef = useRef<Set<string>>(new Set());
+  const prevAgencyIdRef = useRef<string | undefined>(currentAgencyId);
 
   const monthKey = useMemo(() => format(startOfMonth(viewDate), 'yyyy-MM'), [viewDate]);
+
+  useEffect(() => {
+    if (prevAgencyIdRef.current !== currentAgencyId) {
+      loadedMonthsRef.current.clear();
+      prevAgencyIdRef.current = currentAgencyId;
+    }
+  }, [currentAgencyId]);
 
   useEffect(() => {
     if (!open || isGlobalLoading) return;

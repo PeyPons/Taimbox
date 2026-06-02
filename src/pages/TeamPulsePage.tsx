@@ -1,12 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '@/contexts/AppContext';
 import { useAgency } from '@/contexts/AgencyContext';
 import { useDepartmentView } from '@/contexts/DepartmentViewContext';
 import { normalizeDepartments, employeeBelongsToDepartment } from '@/utils/departmentUtils';
-import { supabase } from '@/lib/supabase';
-import { Allocation } from '@/types';
-import { format, startOfWeek, isSameDay } from 'date-fns';
+import { format, startOfMonth, startOfWeek } from 'date-fns';
 import { filterEmployeesForOperationalMonth } from '@/utils/employeeAssignmentVisibility';
 import { es } from 'date-fns/locale';
 import { Card } from '@/components/ui/card';
@@ -20,10 +18,9 @@ import { toast } from '@/lib/notify';
 
 export default function TeamPulsePage() {
     const { t } = useTranslation('app');
-    const { employees, allocations, projects, clients, isLoading, refreshData } = useApp();
+    const { employees, allocations, projects, clients, isLoading, refetchMonthData } = useApp();
     const { currentAgency } = useAgency();
     const { selectedDepartmentId } = useDepartmentView();
-    const [realtimeAllocations, setRealtimeAllocations] = useState<Allocation[]>([]);
 
     const departments = useMemo(() => normalizeDepartments(currentAgency?.settings?.departments), [currentAgency?.settings?.departments]);
     const filteredEmployees = useMemo(() => {
@@ -33,39 +30,22 @@ export default function TeamPulsePage() {
         return employees.filter(e => employeeBelongsToDepartment(e.department, dept.id, dept.name));
     }, [employees, selectedDepartmentId, departments]);
 
-    // Sincronizar estado local con contexto inicial
-    useEffect(() => {
-        setRealtimeAllocations(allocations);
-    }, [allocations]);
-
-    // Suscripción Realtime
-    useEffect(() => {
-        const channel = supabase
-            .channel('team-pulse-changes')
-            .on(
-                'postgres_changes',
-                { event: '*', schema: 'public', table: 'allocations' },
-                (payload) => {
-                    // Recargar todo para asegurar consistencia
-                    refreshData(true);  // Skip loading to avoid full spinner overlap
-                }
-            )
-            .subscribe();
-
-        return () => {
-            supabase.removeChannel(channel);
-        };
-    }, [refreshData]);
-
     const today = new Date();
     const weekStart = startOfWeek(today, { weekStartsOn: 1 });
     const weekStartStr = format(weekStart, 'yyyy-MM-dd');
     const weekMonthKey = format(weekStart, 'yyyy-MM');
 
-    // Agrupar datos por empleado (respeta vista por departamento)
+    const handleRefresh = () => {
+        void refetchMonthData(startOfMonth(weekStart)).then((ok) => {
+            if (!ok) toast.error(t('common.errorLoading', 'Error al cargar datos'));
+        });
+    };
+
+    // Agrupar datos por empleado (respeta vista por departamento). Realtime vía AppContext.
     const employeeColumns = useMemo(() => {
+        const monthAllocations = allocations ?? [];
         return filterEmployeesForOperationalMonth(filteredEmployees ?? [], weekMonthKey, {
-            allocations: realtimeAllocations,
+            allocations: monthAllocations,
             deadlines: [],
             globalAssignments: [],
         })
@@ -73,7 +53,7 @@ export default function TeamPulsePage() {
             .sort((a, b) => a.name.localeCompare(b.name)) // Orden alfabético
             .map(employee => {
                 // Tareas de este empleado para esta semana
-                const empAllocations = realtimeAllocations.filter(a =>
+                const empAllocations = monthAllocations.filter(a =>
                     a.employeeId === employee.id &&
                     (a.weekStartDate === weekStartStr ||
                         // Incluir tareas activas aunque sean de semanas pasadas (rollover implícito visual)
@@ -101,7 +81,7 @@ export default function TeamPulsePage() {
                     status: activeTask ? 'busy' : 'idle'
                 };
             });
-    }, [filteredEmployees, realtimeAllocations, weekStartStr, weekMonthKey]);
+    }, [filteredEmployees, allocations, weekStartStr, weekMonthKey]);
 
     const getProjectName = (projectId: string) => {
         const p = projects.find(pr => pr.id === projectId);
@@ -128,7 +108,7 @@ export default function TeamPulsePage() {
                     <p className="text-slate-500 text-sm">{t('team.pulse.teamProgress', 'Progreso del equipo hoy')}</p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" onClick={() => refreshData(true)} disabled={isLoading}>
+                    <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isLoading}>
                         <RefreshCw className={cn("h-4 w-4 mr-2", isLoading && "animate-spin")} />
                         {t('team.pulse.update', 'Actualizar')}
                     </Button>
