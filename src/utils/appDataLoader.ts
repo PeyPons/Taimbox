@@ -547,6 +547,8 @@ export interface LoadMonthDataDeps {
   setTeamEvents: (value: TeamEvent[] | ((prev: TeamEvent[]) => TeamEvent[])) => void;
   setWeeklyFeedback: (value: WeeklyFeedback[] | ((prev: WeeklyFeedback[]) => WeeklyFeedback[])) => void;
   setProjects?: (value: Project[] | ((prev: Project[]) => Project[])) => void;
+  /** Tras fusionar allocations en memoria (p. ej. para caché de mes sin esperar al render). */
+  onAllocationsMerged?: (allocations: Allocation[]) => void;
 }
 
 export async function loadMonthData({
@@ -557,6 +559,7 @@ export async function loadMonthData({
   setTeamEvents,
   setWeeklyFeedback,
   setProjects,
+  onAllocationsMerged,
 }: LoadMonthDataDeps): Promise<boolean> {
   const monthStart = new Date(month.getFullYear(), month.getMonth(), 1);
   const monthEnd = new Date(month.getFullYear(), month.getMonth() + 1, 0);
@@ -655,7 +658,9 @@ export async function loadMonthData({
       const newItems = mappedAllocations.filter(
         a => !prevIds.has(a.id) && isAllocationInEffectiveMonth(a.weekStartDate, month)
       );
-      return [...updatedPrev, ...newItems];
+      const next = [...updatedPrev, ...newItems];
+      onAllocationsMerged?.(next);
+      return next;
     });
 
     if (setProjects && mappedAllocations.length > 0) {

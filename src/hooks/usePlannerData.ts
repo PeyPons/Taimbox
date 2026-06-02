@@ -59,8 +59,7 @@ export function usePlannerData(options: UsePlannerDataOptions = {}) {
     });
 
     const [isLoadingMonth, setIsLoadingMonth] = useState(false);
-    // Meses que ya hemos cargado en esta instancia del hook (evita el flash del spinner al volver a la pestaña)
-    const loadedLocallyRef = useRef<Set<string>>(new Set());
+    const monthLoadInFlightRef = useRef<string | null>(null);
 
     // Persist current month to localStorage
     useEffect(() => {
@@ -69,17 +68,21 @@ export function usePlannerData(options: UsePlannerDataOptions = {}) {
 
     // Load data for current month using centralized ensureMonthLoaded
     useEffect(() => {
-        if (!isGlobalLoading) {
-            const monthKey = format(currentMonth, 'yyyy-MM');
-            // Solo mostrar spinner si este mes aún no ha sido cargado (evita flash al cambiar de pestaña)
-            const needsLoad = !loadedLocallyRef.current.has(monthKey);
-            if (needsLoad) setIsLoadingMonth(true);
-            ensureMonthLoaded(currentMonth)
-                .finally(() => {
-                    loadedLocallyRef.current.add(monthKey);
-                    setIsLoadingMonth(false);
-                });
+        if (isGlobalLoading) return;
+
+        const monthKey = format(currentMonth, 'yyyy-MM');
+        if (monthLoadInFlightRef.current === monthKey) {
+            return;
         }
+
+        monthLoadInFlightRef.current = monthKey;
+        setIsLoadingMonth(true);
+        void ensureMonthLoaded(currentMonth).finally(() => {
+            if (monthLoadInFlightRef.current === monthKey) {
+                monthLoadInFlightRef.current = null;
+            }
+            setIsLoadingMonth(false);
+        });
     }, [currentMonth, isGlobalLoading, ensureMonthLoaded]);
 
     // ============================================================

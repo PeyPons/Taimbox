@@ -225,12 +225,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const lastCurrentUserAgencyRef = useRef<string | null>(null);
   // Ref para acceder a employees sin trigger re-renders
   const employeesRef = useRef<Employee[]>([]);
+  const allocationsRef = useRef<Allocation[]>([]);
   // Ref para trackear meses cargados globalmente (centralizado)
   const loadedMonthsRef = useRef<Set<string>>(new Set());
+  /** Meses confirmados sin allocations tras una carga exitosa (evita recargas en bucle). */
+  const emptyMonthsLoadedRef = useRef<Set<string>>(new Set());
   /** Cargas de mes en curso: misma clave `yyyy-MM` comparte una sola petición. */
   const monthLoadInflightRef = useRef<Map<string, Promise<boolean>>>(new Map());
   // Ref para trackear la agencia anterior y detectar cambios
   const prevAgencyIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    allocationsRef.current = allocations;
+  }, [allocations]);
 
   const fetchData = useCallback(
     async (skipLoading = false, dateRange?: { start: Date; end: Date }) => {
@@ -255,6 +262,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setUserRoutines,
         employeesRef,
       });
+
+      // Recarga inicial sustituye allocations por un solo mes: invalidar caché de meses
+      // para que ensureMonthLoaded no asuma meses previos aún en memoria.
+      if (!skipLoading) {
+        loadedMonthsRef.current.clear();
+        emptyMonthsLoadedRef.current.clear();
+        const today = new Date();
+        const rangeStart = dateRange?.start ?? new Date(today.getFullYear(), today.getMonth(), 1);
+        loadedMonthsRef.current.add(format(startOfMonth(rangeStart), 'yyyy-MM'));
+      }
     },
     [currentAgency?.id]
   );
@@ -272,6 +289,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setTeamEvents,
         setWeeklyFeedback,
         setProjects,
+        onAllocationsMerged: (list) => {
+          allocationsRef.current = list;
+        },
       });
     },
     [currentAgency?.id]
@@ -282,7 +302,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const monthKey = format(date, 'yyyy-MM');
 
     if (loadedMonthsRef.current.has(monthKey)) {
-      return; // Ya lo tenemos, no hacemos nada (Caché hit!)
+      const hasRowsForMonth = allocationsRef.current.some((a) =>
+        isAllocationInEffectiveMonth(a.weekStartDate, date)
+      );
+      if (hasRowsForMonth || emptyMonthsLoadedRef.current.has(monthKey)) {
+        return;
+      }
+      // Mes marcado como cargado pero sin filas en memoria: recargar (caché obsoleta tras fetchData u otro reset)
+      loadedMonthsRef.current.delete(monthKey);
+      emptyMonthsLoadedRef.current.delete(monthKey);
     }
 
     let inflight = monthLoadInflightRef.current.get(monthKey);
@@ -297,6 +325,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const ok = await inflight;
     if (ok) {
       loadedMonthsRef.current.add(monthKey);
+      const hasRowsForMonth = allocationsRef.current.some((a) =>
+        isAllocationInEffectiveMonth(a.weekStartDate, date)
+      );
+      if (!hasRowsForMonth) {
+        emptyMonthsLoadedRef.current.add(monthKey);
+      }
     }
   }, [loadDataForMonth]);
 
@@ -307,9 +341,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const pending = monthLoadInflightRef.current.get(monthKey);
       if (pending) await pending;
       loadedMonthsRef.current.delete(monthKey);
+      emptyMonthsLoadedRef.current.delete(monthKey);
       const ok = await loadDataForMonth(date);
       if (ok) {
         loadedMonthsRef.current.add(monthKey);
+        const hasRowsForMonth = allocationsRef.current.some((a) =>
+          isAllocationInEffectiveMonth(a.weekStartDate, date)
+        );
+        if (!hasRowsForMonth) {
+          emptyMonthsLoadedRef.current.add(monthKey);
+        }
       }
       return ok;
     },
@@ -375,6 +416,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setCurrentUser(undefined);
         hasLinkedUserRef.current = null;
         loadedMonthsRef.current.clear(); // Limpiar caché de meses cargados
+        emptyMonthsLoadedRef.current.clear();
         monthLoadInflightRef.current.clear();
         employeesRef.current = [];
       }
