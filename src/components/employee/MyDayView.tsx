@@ -7,7 +7,7 @@ import { TaskTimer } from '@/components/employee/TaskTimer';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, Clock, Sun, Calendar, ChevronUp, ChevronDown, Search, X, ArrowRight, Undo2, ListChecks } from 'lucide-react';
-import { format, isSameWeek, startOfWeek, getDay } from 'date-fns';
+import { format, isSameWeek, startOfWeek, getDay, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -65,8 +65,9 @@ export function MyDayView({
   const [searchQuery, setSearchQuery] = useState('');
   const [noteSearchHits, setNoteSearchHits] = useState<Set<string>>(new Set());
 
-  const today = new Date();
-  const todayStr = format(today, 'yyyy-MM-dd');
+  const todayKey = format(new Date(), 'yyyy-MM-dd');
+  const today = useMemo(() => startOfDay(new Date(`${todayKey}T12:00:00`)), [todayKey]);
+  const todayStr = todayKey;
 
   useEffect(() => {
     void ensureMonthLoaded(viewDate);

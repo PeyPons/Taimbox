@@ -3,6 +3,7 @@ import { format, startOfMonth } from 'date-fns';
 import type { Allocation } from '@/types';
 import type { Deadline } from '@/types';
 import { fetchDeadlinesForMonth } from '@/utils/deadlineUtils';
+import { isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 
 interface UseAllocationSheetMonthDataParams {
   open: boolean;
@@ -14,6 +15,10 @@ interface UseAllocationSheetMonthDataParams {
   loadDataForMonth: (month: Date) => Promise<boolean>;
 }
 
+function monthHasAllocationRows(viewDate: Date, allocations: Allocation[]): boolean {
+  return allocations.some((a) => isAllocationInEffectiveMonth(a.weekStartDate, viewDate));
+}
+
 export function useAllocationSheetMonthData(params: UseAllocationSheetMonthDataParams) {
   const { open, isFormOpen, viewDate, currentAgencyId, allocations, isGlobalLoading, loadDataForMonth } = params;
 
@@ -21,41 +26,36 @@ export function useAllocationSheetMonthData(params: UseAllocationSheetMonthDataP
   const [deadlines, setDeadlines] = useState<Deadline[]>([]);
   const loadedMonthsRef = useRef<Set<string>>(new Set());
 
-  const monthKey = useMemo(() => `${viewDate.getFullYear()}-${viewDate.getMonth()}`, [viewDate]);
+  const monthKey = useMemo(() => format(startOfMonth(viewDate), 'yyyy-MM'), [viewDate]);
 
   useEffect(() => {
-    if (open && !isGlobalLoading) {
-      if (loadedMonthsRef.current.has(monthKey)) {
-        setIsLoadingTasks(false);
-        return;
-      }
+    if (!open || isGlobalLoading) return;
 
-      const monthStart = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1);
-      const monthEnd = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0);
-      const hasDataInContext = allocations.some(a => {
-        try {
-          const allocDate = new Date(a.weekStartDate);
-          return allocDate >= monthStart && allocDate <= monthEnd;
-        } catch {
-          return false;
-        }
-      });
+    const hasRows = monthHasAllocationRows(viewDate, allocations);
 
-      if (hasDataInContext) {
-        loadedMonthsRef.current.add(monthKey);
-        setIsLoadingTasks(false);
-        return;
-      }
-
-      setIsLoadingTasks(true);
-      loadDataForMonth(viewDate)
-        .then(ok => {
-          if (ok) loadedMonthsRef.current.add(monthKey);
-        })
-        .finally(() => {
-          setIsLoadingTasks(false);
-        });
+    if (loadedMonthsRef.current.has(monthKey) && hasRows) {
+      setIsLoadingTasks(false);
+      return;
     }
+
+    if (loadedMonthsRef.current.has(monthKey) && !hasRows) {
+      loadedMonthsRef.current.delete(monthKey);
+    }
+
+    if (hasRows) {
+      loadedMonthsRef.current.add(monthKey);
+      setIsLoadingTasks(false);
+      return;
+    }
+
+    setIsLoadingTasks(true);
+    loadDataForMonth(viewDate)
+      .then((ok) => {
+        if (ok) loadedMonthsRef.current.add(monthKey);
+      })
+      .finally(() => {
+        setIsLoadingTasks(false);
+      });
   }, [monthKey, viewDate, open, isGlobalLoading, loadDataForMonth, allocations]);
 
   useEffect(() => {
@@ -78,4 +78,3 @@ export function useAllocationSheetMonthData(params: UseAllocationSheetMonthDataP
     deadlines,
   };
 }
-

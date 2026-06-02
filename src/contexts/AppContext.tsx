@@ -237,6 +237,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     allocationsRef.current = allocations;
+    for (const monthKey of emptyMonthsLoadedRef.current) {
+      const [y, m] = monthKey.split('-').map(Number);
+      if (!y || !m) continue;
+      const monthDate = new Date(y, m - 1, 1);
+      const hasRows = allocations.some((a) =>
+        isAllocationInEffectiveMonth(a.weekStartDate, monthDate)
+      );
+      if (hasRows) {
+        emptyMonthsLoadedRef.current.delete(monthKey);
+      }
+    }
   }, [allocations]);
 
   const fetchData = useCallback(

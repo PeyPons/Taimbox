@@ -87,7 +87,10 @@ export default function EmployeeDashboard() {
   const { agencyId } = useSupportAgencyView();
   const { activeView, showToggle, setView, isSaving: isSavingViewPref } = useDashboardView();
 
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [currentMonth, setCurrentMonth] = useState(() => {
+    const saved = localStorage.getItem('planner_date');
+    return saved ? new Date(saved) : new Date();
+  });
   const [isLoadingMonth, setIsLoadingMonth] = useState(false);
   const [selectedCell, setSelectedCell] = useState<{ employeeId: string; weekStart: Date } | null>(null);
 
@@ -479,6 +482,10 @@ export default function EmployeeDashboard() {
     URL.revokeObjectURL(url);
     toast.success(`${monthAllocations.length} tareas exportadas para el CRM`);
   };
+
+  useEffect(() => {
+    localStorage.setItem('planner_date', currentMonth.toISOString());
+  }, [currentMonth]);
 
   const handlePrevMonth = () => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
   const handleNextMonth = () => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));

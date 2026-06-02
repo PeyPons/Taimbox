@@ -1,4 +1,4 @@
-import { endOfMonth, format, startOfMonth, startOfWeek } from 'date-fns';
+import { eachMonthOfInterval, endOfMonth, format, startOfMonth, startOfWeek } from 'date-fns';
 import { supabase } from '@/lib/supabase';
 import {
   Employee,
@@ -267,6 +267,7 @@ export async function fetchInitialAppData({
 
     const startStr = format(startDate, 'yyyy-MM-dd');
     const endStr = format(endDate, 'yyyy-MM-dd');
+    const { minWeekStart, maxWeekStart } = getAllocationWeekFetchBoundsForRange(startDate, endDate);
 
     // Phase 1: empleados, clientes y catálogo completo de proyectos (active/archived/completed)
     // para que el planificador resuelva nombres aunque el proyecto ya no esté activo.
@@ -341,8 +342,8 @@ export async function fetchInitialAppData({
         .from('allocations')
         .select('*, employees!allocations_employee_id_fkey!inner(agency_id)')
         .eq('employees.agency_id', agencyId)
-        .gte('week_start_date', startStr)
-        .lte('week_start_date', endStr),
+        .gte('week_start_date', minWeekStart)
+        .lte('week_start_date', maxWeekStart),
       supabase
         .from('absences')
         .select('*, employees!inner(agency_id)')
@@ -359,8 +360,8 @@ export async function fetchInitialAppData({
         .from('weekly_feedback')
         .select('*, employees!inner(agency_id)')
         .eq('employees.agency_id', agencyId)
-        .gte('week_start_date', startStr)
-        .lte('week_start_date', endStr),
+        .gte('week_start_date', minWeekStart)
+        .lte('week_start_date', maxWeekStart),
       supabase.from('user_routines').select('*, employees!inner(agency_id)').eq('employees.agency_id', agencyId),
     ]);
 
@@ -539,6 +540,47 @@ export async function fetchAbsencesOverlappingRange(
   }
 }
 
+/** Rango de `week_start_date` alineado con `getWeeksForMonth` (incl. semanas partidas y legacy). */
+export function getAllocationWeekFetchBounds(month: Date): {
+  minWeekStart: string;
+  maxWeekStart: string;
+} {
+  const monthStart = startOfMonth(month);
+  const monthEnd = endOfMonth(month);
+  const weeks = getWeeksForMonth(month);
+  const weekStartDates = weeks.map((w) => format(w.weekStart, 'yyyy-MM-dd'));
+  const minWeekStart =
+    weekStartDates.length > 0 ? weekStartDates[0] : format(monthStart, 'yyyy-MM-dd');
+  const maxWeekStart =
+    weekStartDates.length > 0
+      ? weekStartDates[weekStartDates.length - 1]
+      : format(monthEnd, 'yyyy-MM-dd');
+  const isoMondayOfMonth = format(startOfWeek(monthStart, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+  return {
+    minWeekStart: [minWeekStart, isoMondayOfMonth].sort()[0]!,
+    maxWeekStart,
+  };
+}
+
+export function getAllocationWeekFetchBoundsForRange(
+  startDate: Date,
+  endDate: Date
+): { minWeekStart: string; maxWeekStart: string } {
+  const rangeStart = startOfMonth(startDate);
+  const rangeEnd = startOfMonth(endDate);
+  if (rangeStart > rangeEnd) {
+    return getAllocationWeekFetchBounds(rangeStart);
+  }
+  let minWeekStart = format(rangeStart, 'yyyy-MM-dd');
+  let maxWeekStart = format(endOfMonth(rangeEnd), 'yyyy-MM-dd');
+  for (const m of eachMonthOfInterval({ start: rangeStart, end: rangeEnd })) {
+    const b = getAllocationWeekFetchBounds(m);
+    minWeekStart = [minWeekStart, b.minWeekStart].sort()[0]!;
+    maxWeekStart = [maxWeekStart, b.maxWeekStart].sort().slice(-1)[0]!;
+  }
+  return { minWeekStart, maxWeekStart };
+}
+
 export interface LoadMonthDataDeps {
   agencyId: string;
   month: Date;
@@ -563,18 +605,7 @@ export async function loadMonthData({
 }: LoadMonthDataDeps): Promise<boolean> {
   const monthStart = new Date(month.getFullYear(), month.getMonth(), 1);
   const monthEnd = new Date(month.getFullYear(), month.getMonth() + 1, 0);
-
-  const weeks = getWeeksForMonth(month);
-  const weekStartDates = weeks.map(w => format(w.weekStart, 'yyyy-MM-dd'));
-  const minWeekStart =
-    weekStartDates.length > 0 ? weekStartDates[0] : format(monthStart, 'yyyy-MM-dd');
-  const maxWeekStart =
-    weekStartDates.length > 0
-      ? weekStartDates[weekStartDates.length - 1]
-      : format(monthEnd, 'yyyy-MM-dd');
-  /** Incluir el lunes ISO de la semana que contiene el día 1 (filas legacy con week_start del mes anterior). */
-  const isoMondayOfMonth = format(startOfWeek(monthStart, { weekStartsOn: 1 }), 'yyyy-MM-dd');
-  const minFetchWeek = [minWeekStart, isoMondayOfMonth].sort()[0];
+  const { minWeekStart: minFetchWeek, maxWeekStart } = getAllocationWeekFetchBounds(month);
 
   try {
     const startStr = format(monthStart, 'yyyy-MM-dd');
