@@ -8,28 +8,24 @@ alwaysApply: false
 
 Cuando el usuario pida instrucciones para actualizar las Edge Functions en el servidor, o comandos para desplegar funciones, responde con los comandos listos para copiar y pegar. Usa la documentación del proyecto como referencia.
 
-**Documento de referencia:** [docs/05-integraciones-automatizacion.md](../../docs/05-integraciones-automatizacion.md) (§ 5.1 Edge Functions, subsección Despliegue de Edge Functions self-hosted).
+**Documento de referencia:** [docs/05-integraciones-automatizacion.md](../../docs/05-integraciones-automatizacion.md) (§ Despliegue de Edge Functions self-hosted).
 
-**Comandos estándar para dar al usuario (servidor SSH):**
-
-```bash
-cd ~/Timeboxing
-git pull
-chmod +x supabase/scripts/deploy-edge-functions-supabase-pi.sh
-./supabase/scripts/deploy-edge-functions-supabase-pi.sh
-```
-
-Si el usuario indica otra ruta del proyecto en el servidor (por ejemplo `/home/alex/Timeboxing`), usa esa ruta en el `cd`. Si indica rutas distintas para Supabase, incluir también:
+**Comando estándar (servidor SSH, una línea):**
 
 ```bash
-export TIMBOXING_DIR=/home/alex/Timeboxing
-export SUPABASE_DOCKER_DIR=/home/alex/supabase-pi/supabase/docker
+cd /home/alex/Timeboxing && git pull && rsync -a ./supabase/functions/ /home/alex/supabase-pi/supabase/docker/volumes/functions/ && docker restart supabase-edge-functions
 ```
 
-**Resumen una línea (opcional):**
+Si la ruta del repo en el servidor es otra, sustituye `/home/alex/Timeboxing`. El volumen de destino es `/home/alex/supabase-pi/supabase/docker/volumes/functions/`.
+
+**Para una sola función:**
 
 ```bash
-cd ~/Timeboxing && git pull && chmod +x supabase/scripts/deploy-edge-functions-supabase-pi.sh && ./supabase/scripts/deploy-edge-functions-supabase-pi.sh
+rsync -a /home/alex/Timeboxing/supabase/functions/<nombre-funcion> \
+      /home/alex/supabase-pi/supabase/docker/volumes/functions/ \
+   && docker restart supabase-edge-functions
 ```
 
-**Para ver logs tras el deploy:** `docker logs supabase-edge-functions --tail 50`
+**Ver logs tras el deploy:** `docker logs supabase-edge-functions --tail 50`
+
+**No recomendar** `deploy-edge-functions-supabase-pi.sh` como flujo habitual: el comando con `rsync -a` es el que usa el equipo. El script hace esencialmente lo mismo (copia + reinicio) pero vía `docker compose restart functions` y añade comprobaciones extra (permisos con `sudo rsync`, alias DNS `functions`); solo mencionarlo si falla el alias de red Kong → Edge Runtime.

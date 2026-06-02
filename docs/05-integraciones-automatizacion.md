@@ -353,21 +353,39 @@ Variables: ver `packages/review-agents/deploy/env.example`. Esquema y RLS: [13-e
 
 #### Despliegue de Edge Functions (self-hosted)
 
-El entorno usa Supabase self-hosted con Docker. El contenedor `supabase-edge-functions` lee las funciones desde un volumen montado. Rutas: repo Taimbox `/home/alex/Timeboxing`, volumen de funciones `/home/alex/supabase-pi/supabase/docker/volumes/functions/`.
+El entorno usa Supabase self-hosted con Docker. El contenedor `supabase-edge-functions` lee las funciones desde un volumen montado.
 
-**Comando para desplegar (copiar y pegar en el servidor):**
+| Concepto | Ruta |
+|----------|------|
+| Repo en el servidor | `/home/alex/Timeboxing` |
+| Origen (código) | `./supabase/functions/` (incluye `_shared/`) |
+| Volumen Docker | `/home/alex/supabase-pi/supabase/docker/volumes/functions/` |
+
+**Comando habitual de despliegue (copiar y pegar en el servidor):**
+
 ```bash
 cd /home/alex/Timeboxing && git pull && rsync -a ./supabase/functions/ /home/alex/supabase-pi/supabase/docker/volumes/functions/ && docker restart supabase-edge-functions
 ```
 
-> **⚠️ No usar el script `deploy-edge-functions-supabase-pi.sh`** — el comando de arriba es más directo y fiable. `rsync -a` copia todo (funciones + `_shared/`) y `docker restart` aplica los cambios.
+Pasos que ejecuta: actualizar el repo → copiar todas las funciones al volumen → reiniciar el contenedor `supabase-edge-functions` para que cargue el código nuevo.
 
 **Para una sola función (más rápido):**
+
 ```bash
 rsync -a /home/alex/Timeboxing/supabase/functions/<nombre-funcion> \
       /home/alex/supabase-pi/supabase/docker/volumes/functions/ \
    && docker restart supabase-edge-functions
 ```
+
+**Script opcional `supabase/scripts/deploy-edge-functions-supabase-pi.sh`**
+
+No es el flujo habitual. Hace **lo mismo en esencia** (`rsync` del directorio `supabase/functions/` al volumen + reinicio del servicio), pero:
+
+- Usa `docker compose restart functions` en lugar de `docker restart supabase-edge-functions` (equivalente si el servicio Compose se llama `functions` y el contenedor es `supabase-edge-functions`).
+- Añade `sudo rsync` si el volumen no es escribible por el usuario.
+- Tras el reinicio, comprueba y repara el alias DNS `functions` en la red Docker (útil si Kong devuelve `name resolution failed`).
+
+Usar el comando de una línea de arriba salvo que necesites esas comprobaciones extra.
 
 **Verificar variables de entorno del contenedor:**
 ```bash

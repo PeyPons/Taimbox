@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
 #
-# Despliegue de Edge Functions para Timeboxing cuando Supabase está en ~/supabase-pi.
-# Ejecutar en el servidor (donde están /home/alex/supabase-pi y /home/alex/Timeboxing).
+# Despliegue opcional de Edge Functions para Supabase en ~/supabase-pi.
+# Flujo habitual del equipo (preferido):
+#   cd /home/alex/Timeboxing && git pull && rsync -a ./supabase/functions/ /home/alex/supabase-pi/supabase/docker/volumes/functions/ && docker restart supabase-edge-functions
+#
+# Este script hace esencialmente lo mismo (rsync + reinicio) y añade:
+#   - sudo rsync si el volumen no es escribible
+#   - comprobación/reparación del alias DNS "functions" en la red Docker
 #
 # Uso:
 #   cd ~/Timeboxing

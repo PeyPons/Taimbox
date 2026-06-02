@@ -86,4 +86,4 @@ fi
 echo ""
 echo "========== Fin =========="
 echo "Si admin-set-agency-plan falla con 'entrypoint': despliega con:"
-echo "  cd $PROJECT && ./supabase/scripts/deploy-edge-functions-supabase-pi.sh"
+echo "  cd $PROJECT && git pull && rsync -a ./supabase/functions/ /home/alex/supabase-pi/supabase/docker/volumes/functions/ && docker restart supabase-edge-functions"
