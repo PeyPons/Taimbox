@@ -997,7 +997,39 @@
   "static": {
     "contact": {
       "seoTitle": "Contacto | Taimbox",
-      "seoDescription": "Ponte en contacto con el equipo de Taimbox."
+      "seoDescription": "Ponte en contacto con el equipo de Taimbox.",
+      "heroBefore": "¿En qué podemos ",
+      "heroHighlight": "ayudarte?",
+      "heroSubtitle": "Estamos aquí para resolver tus dudas, escuchar tus sugerencias o ayudarte a dar el salto al siguiente nivel con Taimbox.",
+      "sidebarTitle": "Ponte en contacto",
+      "sidebarDesc": "Escríbenos directamente o utiliza el formulario. Te responderemos lo antes posible.",
+      "directEmail": "Email directo",
+      "supportTitle": "Soporte técnico",
+      "supportDesc": "Si ya eres cliente, usa el panel de Soporte en tu área de Agencia con prioridad alta.",
+      "form": {
+        "nameLabel": "Nombre completo",
+        "namePlaceholder": "Tu nombre",
+        "emailLabel": "Email de trabajo",
+        "emailPlaceholder": "tu@empresa.com",
+        "subjectLabel": "Asunto",
+        "subjectPlaceholder": "¿Sobre qué quieres hablarnos?",
+        "messageLabel": "Mensaje",
+        "messagePlaceholder": "Escribe tu mensaje aquí...",
+        "submit": "Enviar mensaje",
+        "submitting": "Preparando envío..."
+      },
+      "toasts": {
+        "validationError": "Faltan datos o el email no es válido",
+        "fieldLengthError": "Revisa la longitud de los campos",
+        "sentSuccess": "Enviado correctamente",
+        "sendError": "Error al enviar"
+      },
+      "status": {
+        "validationError": "Revisa los campos: nombre, email válido, asunto y mensaje.",
+        "fieldLengthError": "Uno o más campos superan la longitud máxima permitida.",
+        "sentSuccess": "Mensaje enviado correctamente. Te responderemos lo antes posible.",
+        "sendError": "No se pudo enviar el mensaje. Inténtalo de nuevo más tarde."
+      }
     },
     "pitch": {
       "seoTitle": "Presentación Taimbox | ROI y Operaciones para Agencias",

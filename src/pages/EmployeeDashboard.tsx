@@ -244,7 +244,7 @@ export default function EmployeeDashboard() {
   const getOrCreateInternalProject = async (): Promise<string | null> => {
     if (internalProject) return internalProject.id;
     if (!currentAgency?.id) {
-      toast.error('No hay agencia seleccionada.');
+      toast.error(t('team.dashboard.toasts.noAgency'));
       return null;
     }
     setIsCreatingProject(true);
@@ -255,7 +255,7 @@ export default function EmployeeDashboard() {
           .from('clients').insert({ name: INTERNAL_CLIENT_NAME, color: '#6b7280', agency_id: currentAgency.id }).select().single();
         if (clientError) throw clientError;
         clientId = clientData.id;
-        toast.success(`Cliente "${INTERNAL_CLIENT_NAME}" creado`);
+        toast.success(t('team.dashboard.toasts.internalClientCreated', { name: INTERNAL_CLIENT_NAME }));
       }
 
       const { data: projectData, error: projectError } = await supabase
@@ -263,12 +263,12 @@ export default function EmployeeDashboard() {
         .select().single();
 
       if (projectError) throw projectError;
-      toast.success(`Proyecto "${INTERNAL_PROJECT_NAME}" creado`);
+      toast.success(t('team.dashboard.toasts.internalProjectCreated', { name: INTERNAL_PROJECT_NAME }));
       return projectData.id;
 
     } catch (error) {
       console.error('Error creando proyecto interno:', error);
-      const errorMessage = (error as Error)?.message || 'Error al crear proyecto interno';
+      const errorMessage = (error as Error)?.message || t('team.dashboard.toasts.internalProjectError');
       toast.error(errorMessage);
       return null;
     } finally {
@@ -281,14 +281,14 @@ export default function EmployeeDashboard() {
     if (isSavingExtraTask || isCreatingProject) return;
 
     if (!myEmployeeProfile) return;
-    if (!extraTaskName.trim()) { toast.error("Escribe un nombre para la tarea"); return; }
+    if (!extraTaskName.trim()) { toast.error(t('team.dashboard.toasts.taskNameRequired')); return; }
     const hours = Number(extraHours);
-    if (isNaN(hours) || hours <= 0) { toast.error("Las horas deben ser mayores a 0"); return; }
+    if (isNaN(hours) || hours <= 0) { toast.error(t('team.dashboard.toasts.hoursMustBePositive')); return; }
 
     setIsSavingExtraTask(true);
     try {
       const projectId = await getOrCreateInternalProject();
-      if (!projectId) { toast.error("No se pudo obtener el proyecto interno"); return; }
+      if (!projectId) { toast.error(t('team.dashboard.toasts.internalProjectMissing')); return; }
       const today = new Date();
       const formattedDate = normalizeWeekStart(today, startOfMonth(today));
 
@@ -297,13 +297,13 @@ export default function EmployeeDashboard() {
         hoursAssigned: hours, hoursActual: hours, hoursComputed: hours,
         taskName: extraTaskName, status: 'completed'
       });
-      toast.success(`"${extraTaskName}" registrada (${hours}h)`);
+      toast.success(t('team.dashboard.toasts.internalTaskRegistered', { name: extraTaskName, hours }));
       setExtraTaskName('');
       setExtraHours('1');
       setIsAddingExtra(false);
     } catch (error) {
       console.error('Error añadiendo tarea interna:', error);
-      toast.error((error as Error)?.message || 'Error al registrar la tarea');
+      toast.error((error as Error)?.message || t('team.dashboard.toasts.internalTaskError'));
     } finally {
       setIsSavingExtraTask(false);
     }
@@ -423,7 +423,7 @@ export default function EmployeeDashboard() {
       return;
     }
     const validTasks = newTasks.filter(t => t.projectId && t.taskName.trim() && parseFloat(t.hours) > 0);
-    if (validTasks.length === 0) { toast.error("Añade al menos una tarea válida"); return; }
+    if (validTasks.length === 0) { toast.error(t('team.dashboard.addValidTaskError')); return; }
 
     batchCommitPreview.captureSnapshot(validTasks);
     setIsSavingTasks(true);
@@ -440,12 +440,12 @@ export default function EmployeeDashboard() {
           status: 'planned'
         });
       }
-      toast.success(`${validTasks.length} tarea(s) añadida(s)`);
+      toast.success(t('team.dashboard.toasts.tasksAdded', { count: validTasks.length }));
       setIsAddingTasks(false);
       setNewTasks([]);
     } catch (error) {
       console.error('Error guardando tareas:', error);
-      toast.error('Error al guardar las tareas');
+      toast.error(t('team.dashboard.toasts.saveTasksError'));
     } finally {
       batchCommitPreview.clearSnapshot();
       setIsSavingTasks(false);
@@ -453,13 +453,13 @@ export default function EmployeeDashboard() {
   };
 
   const handleExportCRM = () => {
-    if (!myEmployeeProfile?.crmUserId) { toast.error("Configura tu ID de CRM en el perfil"); return; }
+    if (!myEmployeeProfile?.crmUserId) { toast.error(t('team.dashboard.toasts.crmIdRequired')); return; }
     const monthAllocations = allocations.filter(a =>
       a.employeeId === myEmployeeProfile.id &&
       isAllocationInEffectiveMonth(a.weekStartDate, currentMonth) &&
       a.status !== 'completed'
     );
-    if (monthAllocations.length === 0) { toast.warning("No hay tareas pendientes para exportar"); return; }
+    if (monthAllocations.length === 0) { toast.warning(t('team.dashboard.toasts.noPendingExport')); return; }
 
     const csvRows: string[] = [];
     monthAllocations.forEach(alloc => {
@@ -483,7 +483,7 @@ export default function EmployeeDashboard() {
     link.download = `tareas_crm_${format(currentMonth, 'yyyy-MM')}.csv`;
     link.click();
     URL.revokeObjectURL(url);
-    toast.success(`${monthAllocations.length} tareas exportadas para el CRM`);
+    toast.success(t('team.dashboard.toasts.exportSuccess', { count: monthAllocations.length }));
   };
 
   const getAvailableDependencies = (projectId: string, currentTaskId?: string) => {
@@ -1191,7 +1191,7 @@ export default function EmployeeDashboard() {
           <DialogContent className="sm:max-w-[1100px] h-[80vh] flex flex-col p-0 gap-0 overflow-hidden">
             <DialogHeader className="px-6 py-4 border-b shrink-0">
               <DialogTitle className="flex items-center gap-2"><ListPlus className="h-5 w-5 text-primary" />{t('team.dashboard.addTasks', 'Añadir tareas')}</DialogTitle>
-              <DialogDescription>{t('team.dashboard.addTasksDescription', { month: getMonthName(currentMonth), defaultValue: 'Planifica múltiples tareas para {{month}}.' })}</DialogDescription>
+              <DialogDescription>{t('team.dashboard.addTasksDescription', { month: getMonthName(currentMonth, dateLocale) })}</DialogDescription>
             </DialogHeader>
 
             <div className="flex flex-1 overflow-hidden">

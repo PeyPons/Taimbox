@@ -40,12 +40,11 @@ export default function ContactoPage() {
         const cleanSubject = (formData.subject || '').trim();
         const cleanMessage = formData.message.trim();
 
-        // Validación mínima (frontend) para mejorar UX
         const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail);
         if (!cleanName || !emailOk || !cleanSubject || !cleanMessage) {
             setStatus('error');
-            setStatusMessage('Revisa los campos: nombre, email válido, asunto y mensaje.');
-            toast.error('Faltan datos o el email no es válido');
+            setStatusMessage(t('static.contact.status.validationError'));
+            toast.error(t('static.contact.toasts.validationError'));
             return;
         }
 
@@ -56,8 +55,8 @@ export default function ContactoPage() {
             || cleanMessage.length > INPUT_LIMITS.contactMessage
         ) {
             setStatus('error');
-            setStatusMessage('Uno o más campos superan la longitud máxima permitida.');
-            toast.error('Revisa la longitud de los campos');
+            setStatusMessage(t('static.contact.status.fieldLengthError'));
+            toast.error(t('static.contact.toasts.fieldLengthError'));
             return;
         }
 
@@ -80,14 +79,14 @@ export default function ContactoPage() {
             }
 
             setStatus('sent');
-            setStatusMessage('Mensaje enviado correctamente. Te responderemos lo antes posible.');
-            toast.success('Enviado correctamente');
+            setStatusMessage(t('static.contact.status.sentSuccess'));
+            toast.success(t('static.contact.toasts.sentSuccess'));
             setFormData({ name: '', email: '', subject: '', message: '' });
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('[ContactoPage] Error enviando contacto:', err);
             setStatus('error');
-            setStatusMessage('No se pudo enviar el mensaje. Inténtalo de nuevo más tarde.');
-            toast.error('Error al enviar');
+            setStatusMessage(t('static.contact.status.sendError'));
+            toast.error(t('static.contact.toasts.sendError'));
         } finally {
             setIsSubmitting(false);
         }
@@ -123,23 +122,25 @@ export default function ContactoPage() {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center max-w-2xl mx-auto mb-16">
                         <h1 className="text-4xl sm:text-5xl font-extrabold text-white tracking-tight mb-6 mt-4">
-                            ¿En qué podemos <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">ayudarte?</span>
+                            {t('static.contact.heroBefore')}
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">
+                                {t('static.contact.heroHighlight')}
+                            </span>
                         </h1>
                         <p className="text-lg text-indigo-100/80">
-                            Estamos aquí para resolver tus dudas, escuchar tus sugerencias o ayudarte a dar el salto al siguiente nivel con Taimbox.
+                            {t('static.contact.heroSubtitle')}
                         </p>
                     </div>
 
                     <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-5 gap-8 lg:gap-12">
 
-                        {/* Contact Info Sidebar */}
                         <div className="lg:col-span-2 space-y-6">
                             <Card className="bg-white/5 border-white/10 backdrop-blur-xl">
                                 <CardContent className="p-8 space-y-8">
                                     <div>
-                                        <h3 className="text-xl font-semibold text-white mb-2">Ponte en contacto</h3>
+                                        <h3 className="text-xl font-semibold text-white mb-2">{t('static.contact.sidebarTitle')}</h3>
                                         <p className="text-slate-300 text-sm">
-                                            Escríbenos directamente o utiliza el formulario. Te responderemos lo antes posible.
+                                            {t('static.contact.sidebarDesc')}
                                         </p>
                                     </div>
 
@@ -149,7 +150,7 @@ export default function ContactoPage() {
                                                 <Mail className="w-5 h-5" />
                                             </div>
                                             <div>
-                                                <p className="text-sm font-medium text-slate-400 mb-1">Email directo</p>
+                                                <p className="text-sm font-medium text-slate-400 mb-1">{t('static.contact.directEmail')}</p>
                                                 <a href="mailto:hello@taimbox.com" className="text-base font-semibold text-white hover:text-indigo-400 transition-colors">
                                                     hello@taimbox.com
                                                 </a>
@@ -161,9 +162,9 @@ export default function ContactoPage() {
                                                 <CheckCircle2 className="w-5 h-5" />
                                             </div>
                                             <div>
-                                                <p className="text-sm font-medium text-slate-400 mb-1">Soporte Técnico</p>
+                                                <p className="text-sm font-medium text-slate-400 mb-1">{t('static.contact.supportTitle')}</p>
                                                 <p className="text-base text-white">
-                                                    Si ya eres cliente, usa el panel de Soporte en tu área de Agencia con prioridad alta.
+                                                    {t('static.contact.supportDesc')}
                                                 </p>
                                             </div>
                                         </div>
@@ -172,14 +173,13 @@ export default function ContactoPage() {
                             </Card>
                         </div>
 
-                        {/* Form — panel claro para mejor legibilidad */}
                         <div className="lg:col-span-3">
                             <Card className="bg-white border-slate-200/80 shadow-xl shadow-black/10">
                                 <CardContent className="p-8">
                                     <form onSubmit={handleSubmit} className="space-y-6">
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                             <div className="space-y-2">
-                                                <label htmlFor="name" className="text-sm font-medium text-slate-700">Nombre completo</label>
+                                                <label htmlFor="name" className="text-sm font-medium text-slate-700">{t('static.contact.form.nameLabel')}</label>
                                                 <Input
                                                     id="name"
                                                     name="name"
@@ -187,12 +187,12 @@ export default function ContactoPage() {
                                                     onChange={handleChange}
                                                     required
                                                     maxLength={INPUT_LIMITS.personName}
-                                                    placeholder="Tu nombre"
+                                                    placeholder={t('static.contact.form.namePlaceholder')}
                                                     className="bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus-visible:ring-indigo-500"
                                                 />
                                             </div>
                                             <div className="space-y-2">
-                                                <label htmlFor="email" className="text-sm font-medium text-slate-700">Email de trabajo</label>
+                                                <label htmlFor="email" className="text-sm font-medium text-slate-700">{t('static.contact.form.emailLabel')}</label>
                                                 <Input
                                                     id="email"
                                                     name="email"
@@ -201,14 +201,14 @@ export default function ContactoPage() {
                                                     onChange={handleChange}
                                                     required
                                                     maxLength={INPUT_LIMITS.email}
-                                                    placeholder="tu@empresa.com"
+                                                    placeholder={t('static.contact.form.emailPlaceholder')}
                                                     className="bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus-visible:ring-indigo-500"
                                                 />
                                             </div>
                                         </div>
 
                                         <div className="space-y-2">
-                                            <label htmlFor="subject" className="text-sm font-medium text-slate-700">Asunto</label>
+                                            <label htmlFor="subject" className="text-sm font-medium text-slate-700">{t('static.contact.form.subjectLabel')}</label>
                                             <Input
                                                 id="subject"
                                                 name="subject"
@@ -216,13 +216,13 @@ export default function ContactoPage() {
                                                 onChange={handleChange}
                                                 required
                                                 maxLength={INPUT_LIMITS.contactSubject}
-                                                placeholder="¿Sobre qué quieres hablarnos?"
+                                                placeholder={t('static.contact.form.subjectPlaceholder')}
                                                 className="bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus-visible:ring-indigo-500"
                                             />
                                         </div>
 
                                         <div className="space-y-2">
-                                            <label htmlFor="message" className="text-sm font-medium text-slate-700">Mensaje</label>
+                                            <label htmlFor="message" className="text-sm font-medium text-slate-700">{t('static.contact.form.messageLabel')}</label>
                                             <Textarea
                                                 id="message"
                                                 name="message"
@@ -230,7 +230,7 @@ export default function ContactoPage() {
                                                 onChange={handleChange}
                                                 required
                                                 maxLength={INPUT_LIMITS.contactMessage}
-                                                placeholder="Escribe tu mensaje aquí..."
+                                                placeholder={t('static.contact.form.messagePlaceholder')}
                                                 className="min-h-[150px] bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus-visible:ring-indigo-500 resize-y"
                                             />
                                         </div>
@@ -243,11 +243,11 @@ export default function ContactoPage() {
                                             {isSubmitting ? (
                                                 <>
                                                     <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                                                    Preparando envío...
+                                                    {t('static.contact.form.submitting')}
                                                 </>
                                             ) : (
                                                 <>
-                                                    Enviar mensaje
+                                                    {t('static.contact.form.submit')}
                                                     <Send className="w-4 h-4 ml-2" />
                                                 </>
                                             )}

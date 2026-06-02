@@ -286,12 +286,12 @@ export default function AdminSupportPage() {
         <div>
           <h1 className="text-2xl font-bold text-slate-900">{t("admin.support.title", "Soporte")}</h1>
           <p className="text-slate-600 mt-1">
-            Tickets de soporte por agencia. Crear y gestionar estado.
+            {t('admin.support.subtitle')}
           </p>
         </div>
         <Button onClick={() => setFormOpen(true)} className="gap-2">
           <MessageSquarePlus className="h-4 w-4" />
-          Nuevo ticket
+          {t('admin.support.newTicket')}
         </Button>
       </div>
 
@@ -331,7 +331,7 @@ export default function AdminSupportPage() {
                 key={createMessageKey}
                 value={createMessage}
                 onChange={setCreateMessage}
-                placeholder="Descripción o notas internas"
+                placeholder={t('admin.support.createMessagePlaceholder')}
                 minHeight="120px"
                 className="mt-1"
               />
@@ -353,13 +353,13 @@ export default function AdminSupportPage() {
           <div className="flex flex-wrap gap-4 items-center">
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="Estado" />
+                <SelectValue placeholder={t('common.status')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                <SelectItem value="open">Abiertos</SelectItem>
-                <SelectItem value="in_progress">En curso</SelectItem>
-                <SelectItem value="closed">Cerrados</SelectItem>
+                <SelectItem value="all">{t('admin.support.filterStatusAll')}</SelectItem>
+                <SelectItem value="open">{t('admin.support.filterStatusOpen')}</SelectItem>
+                <SelectItem value="in_progress">{t('admin.support.filterStatusInProgress')}</SelectItem>
+                <SelectItem value="closed">{t('admin.support.filterStatusClosed')}</SelectItem>
               </SelectContent>
             </Select>
             <Select value={agencyFilter} onValueChange={setAgencyFilter}>
@@ -367,7 +367,7 @@ export default function AdminSupportPage() {
                 <SelectValue placeholder={t("common.agency", "Agencia")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todas las agencias</SelectItem>
+                <SelectItem value="all">{t('admin.support.allAgencies')}</SelectItem>
                 {agencies.map((a) => (
                   <SelectItem key={a.id} value={a.id}>
                     {a.name}
@@ -376,7 +376,7 @@ export default function AdminSupportPage() {
               </SelectContent>
             </Select>
             <Button variant="outline" size="sm" onClick={fetchTickets} disabled={loading}>
-              Actualizar
+              {t('common.refresh')}
             </Button>
           </div>
         </CardHeader>
@@ -386,16 +386,16 @@ export default function AdminSupportPage() {
               <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
             </div>
           ) : tickets.length === 0 ? (
-            <p className="text-slate-500 text-center py-8">No hay tickets.</p>
+            <p className="text-slate-500 text-center py-8">{t('admin.support.noTickets')}</p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>{t("common.agency", "Agencia")}</TableHead>
                   <TableHead>{t("admin.support.subject", "Asunto")}</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead>Creado</TableHead>
-                  <TableHead className="text-right">Acciones</TableHead>
+                  <TableHead>{t('common.status')}</TableHead>
+                  <TableHead>{t('common.createdAt')}</TableHead>
+                  <TableHead className="text-right">{t('common.actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -450,9 +450,9 @@ export default function AdminSupportPage() {
                             )}
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="open">Abierto</SelectItem>
-                            <SelectItem value="in_progress">En curso</SelectItem>
-                            <SelectItem value="closed">Cerrado</SelectItem>
+                            <SelectItem value="open">{t('admin.support.statusOpen')}</SelectItem>
+                            <SelectItem value="in_progress">{t('admin.support.statusInProgress')}</SelectItem>
+                            <SelectItem value="closed">{t('admin.support.statusClosed')}</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -503,22 +503,22 @@ export default function AdminSupportPage() {
                       )}
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="open">Abierto</SelectItem>
-                      <SelectItem value="in_progress">En curso</SelectItem>
-                      <SelectItem value="closed">Cerrado</SelectItem>
+                      <SelectItem value="open">{t('admin.support.statusOpen')}</SelectItem>
+                      <SelectItem value="in_progress">{t('admin.support.statusInProgress')}</SelectItem>
+                      <SelectItem value="closed">{t('admin.support.statusClosed')}</SelectItem>
                     </SelectContent>
                   </Select>
                   <span className="text-xs text-slate-500">
-                    Creado {formatDate(ticketDetail.created_at)}
+                    {t('admin.support.createdAt', { date: formatDate(ticketDetail.created_at) })}
                     {ticketDetail.updated_at !== ticketDetail.created_at && (
-                      <> · Actualizado {formatDate(ticketDetail.updated_at)}</>
+                      <> · {t('admin.support.updatedAt', { date: formatDate(ticketDetail.updated_at) })}</>
                     )}
                   </span>
                 </div>
               </div>
 
               <div className="border-t border-slate-200 pt-4">
-                <h3 className="text-sm font-semibold text-slate-800 mb-3">Conversación</h3>
+                <h3 className="text-sm font-semibold text-slate-800 mb-3">{t('admin.support.conversation')}</h3>
                 {replies.length === 0 ? (
                   <p className="text-slate-500 text-sm py-4">{t("admin.support.noReplies", "Sin comentarios aún.")}</p>
                 ) : (
@@ -539,13 +539,13 @@ export default function AdminSupportPage() {
                         <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-center gap-2 mb-1">
                             <span className="font-medium text-slate-900">
-                              {r.author_display || "Usuario"}
+                              {r.author_display || t('common.user')}
                             </span>
                             <Badge
                               variant={r.is_internal ? "secondary" : "default"}
                               className="text-[10px] px-1.5 py-0"
                             >
-                              {r.is_internal ? "Interno" : "Al usuario"}
+                              {r.is_internal ? t('admin.support.replyBadgeInternal') : t('admin.support.replyBadgeUser')}
                             </Badge>
                             <span className="text-xs text-slate-500">{formatDate(r.created_at)}</span>
                           </div>
@@ -571,7 +571,7 @@ export default function AdminSupportPage() {
                         onChange={(e) => setReplyIsInternal(e.target.checked)}
                         className="rounded border-slate-300 text-primary focus:ring-primary"
                       />
-                      Solo interno (no visible para la agencia)
+                      {t('admin.support.internalOnlyLabel')}
                     </label>
                     <Button size="sm" onClick={addReply} disabled={addingReply || !replyMessage?.trim()}>
                       {addingReply ? <Loader2 className="h-4 w-4 animate-spin" /> : replyIsInternal ? t("admin.support.sendInternal", "Enviar comentario interno") : t("admin.support.sendReply", "Enviar respuesta al usuario")}
@@ -581,7 +581,7 @@ export default function AdminSupportPage() {
               </div>
             </div>
           ) : (
-            <p className="text-slate-500 py-8">No se pudo cargar el ticket.</p>
+            <p className="text-slate-500 py-8">{t('admin.support.loadTicketFailed')}</p>
           )}
         </SheetContent>
       </Sheet>

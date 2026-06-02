@@ -4,10 +4,11 @@
  * No crea suscripciones Realtime.
  */
 
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import type { TFunction } from 'i18next';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,15 +19,23 @@ import { Save } from 'lucide-react';
 import type { GlobalAssignment } from '@/types';
 import type { Employee } from '@/types';
 import { INPUT_LIMITS } from '@/constants/inputLimits';
+import { useAppTranslation } from '@/hooks/useAppTranslation';
 
-const schema = z.object({
-  name: z.string().min(1, 'El nombre es obligatorio').max(INPUT_LIMITS.assignmentName),
-  hours: z.number().min(0.1, 'Las horas deben ser mayores a 0'),
-  affectsAll: z.boolean(),
-  affectedEmployeeIds: z.array(z.string()).optional().default([]),
-});
+function createGlobalAssignmentSchema(t: TFunction) {
+  return z.object({
+    name: z.string().min(1, t('deadlines.globalAssignmentDialog.validation.nameRequired')).max(INPUT_LIMITS.assignmentName),
+    hours: z.number().min(0.1, t('deadlines.globalAssignmentDialog.validation.hoursMin')),
+    affectsAll: z.boolean(),
+    affectedEmployeeIds: z.array(z.string()).optional().default([]),
+  });
+}
 
-export type GlobalAssignmentFormValues = z.infer<typeof schema>;
+export type GlobalAssignmentFormValues = {
+  name: string;
+  hours: number;
+  affectsAll: boolean;
+  affectedEmployeeIds: string[];
+};
 
 export interface GlobalAssignmentDialogProps {
   open: boolean;
@@ -44,6 +53,9 @@ export function GlobalAssignmentDialog({
   onSave,
   employees,
 }: GlobalAssignmentDialogProps) {
+  const { t } = useAppTranslation();
+  const schema = useMemo(() => createGlobalAssignmentSchema(t), [t]);
+
   const form = useForm<GlobalAssignmentFormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -84,19 +96,17 @@ export function GlobalAssignmentDialog({
       <DialogContent className="max-w-[95vw] sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>
-            {initialData ? 'Editar asignación global' : 'Nueva asignación global'}
+            {initialData ? t('deadlines.globalAssignmentDialog.editTitle') : t('deadlines.globalAssignmentDialog.createTitle')}
           </DialogTitle>
           <DialogDescription>
-            Tareas internas que suman horas a la carga del mes (reuniones, formación interna, deadlines
-            transversales…).
+            {t('deadlines.globalAssignmentDialog.description')}
           </DialogDescription>
         </DialogHeader>
 
         {!initialData && (
           <p className="text-xs text-slate-600 rounded-lg border border-amber-200/80 bg-amber-50/60 px-3 py-2 leading-relaxed">
-            <span className="font-medium text-slate-800">¿Vacaciones o festivo?</span> No lo registres aquí. En el
-            panel lateral de Deadlines usa «Vacaciones o ausencia» o «Festivo / evento del equipo» — restan
-            disponibilidad, no suman carga.
+            <span className="font-medium text-slate-800">{t('deadlines.globalAssignmentDialog.vacationHintTitle')}</span>{' '}
+            {t('deadlines.globalAssignmentDialog.vacationHintBody')}
           </p>
         )}
 
@@ -107,9 +117,9 @@ export function GlobalAssignmentDialog({
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nombre de la tarea</FormLabel>
+                  <FormLabel>{t('deadlines.globalAssignmentDialog.nameLabel')}</FormLabel>
                   <FormControl>
-                    <Input placeholder="Ej: deadline afecta a todos, creación timeboxing" {...field} />
+                    <Input placeholder={t('deadlines.globalAssignmentDialog.namePlaceholder')} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -121,13 +131,13 @@ export function GlobalAssignmentDialog({
               name="hours"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Horas</FormLabel>
+                  <FormLabel>{t('deadlines.globalAssignmentDialog.hoursLabel')}</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
                       min="0"
                       step="0.5"
-                      placeholder="Ej: 2.5"
+                      placeholder={t('deadlines.globalAssignmentDialog.hoursPlaceholder')}
                       {...field}
                       onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                       value={field.value ?? ''}
@@ -151,7 +161,7 @@ export function GlobalAssignmentDialog({
                     />
                   </FormControl>
                   <FormLabel htmlFor="affects-all" className="cursor-pointer">
-                    Afecta a todos los empleados
+                    {t('deadlines.globalAssignmentDialog.affectsAllLabel')}
                   </FormLabel>
                   <FormMessage />
                 </FormItem>
@@ -164,7 +174,7 @@ export function GlobalAssignmentDialog({
                 name="affectedEmployeeIds"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Seleccionar empleados</FormLabel>
+                    <FormLabel>{t('deadlines.globalAssignmentDialog.selectEmployeesLabel')}</FormLabel>
                     <div className="space-y-2 max-h-[200px] overflow-y-auto border rounded-lg p-3">
                       {employees.map(emp => (
                         <div key={emp.id} className="flex items-center gap-2">
@@ -196,11 +206,11 @@ export function GlobalAssignmentDialog({
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                Cancelar
+                {t('common.cancel')}
               </Button>
               <Button type="submit" className="bg-primary hover:bg-primary/90">
                 <Save className="h-4 w-4 mr-2" />
-                Guardar
+                {t('common.save')}
               </Button>
             </DialogFooter>
           </form>

@@ -997,7 +997,39 @@
   "static": {
     "contact": {
       "seoTitle": "Contact | Taimbox",
-      "seoDescription": "Get in touch with the Taimbox team."
+      "seoDescription": "Get in touch with the Taimbox team.",
+      "heroBefore": "How can we ",
+      "heroHighlight": "help you?",
+      "heroSubtitle": "We are here to answer your questions, hear your suggestions, or help you take the next step with Taimbox.",
+      "sidebarTitle": "Get in touch",
+      "sidebarDesc": "Email us directly or use the form. We will reply as soon as possible.",
+      "directEmail": "Direct email",
+      "supportTitle": "Technical support",
+      "supportDesc": "If you are already a customer, use the Support panel in your Agency area for priority handling.",
+      "form": {
+        "nameLabel": "Full name",
+        "namePlaceholder": "Your name",
+        "emailLabel": "Work email",
+        "emailPlaceholder": "you@company.com",
+        "subjectLabel": "Subject",
+        "subjectPlaceholder": "What would you like to talk about?",
+        "messageLabel": "Message",
+        "messagePlaceholder": "Write your message here...",
+        "submit": "Send message",
+        "submitting": "Sending..."
+      },
+      "toasts": {
+        "validationError": "Missing data or invalid email",
+        "fieldLengthError": "Check field lengths",
+        "sentSuccess": "Sent successfully",
+        "sendError": "Failed to send"
+      },
+      "status": {
+        "validationError": "Check the fields: name, valid email, subject, and message.",
+        "fieldLengthError": "One or more fields exceed the maximum allowed length.",
+        "sentSuccess": "Message sent successfully. We will reply as soon as possible.",
+        "sendError": "Could not send the message. Please try again later."
+      }
     },
     "pitch": {
       "seoTitle": "Taimbox Presentation | ROI and Operations for Agencies",

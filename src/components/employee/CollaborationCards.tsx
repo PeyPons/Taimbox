@@ -1,5 +1,6 @@
 import { useMemo, memo } from 'react';
 import { useAppOrDemo } from '@/hooks/useAppOrDemo';
+import { useAppTranslation } from '@/hooks/useAppTranslation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -18,6 +19,7 @@ interface CollaborationCardsProps {
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
 export const CollaborationCards = memo(function CollaborationCards({ employeeId, viewDate }: CollaborationCardsProps) {
+  const { t } = useAppTranslation();
   const { allocations, employees, getEmployeeMonthlyLoad } = useAppOrDemo();
 
   // Memoizado: mapa de empleados para acceso O(1)
@@ -148,10 +150,13 @@ export const CollaborationCards = memo(function CollaborationCards({ employeeId,
 
   // Función helper para mostrar disponibilidad de forma amigable
   const getAvailabilityText = (occupancy: number) => {
-    if (occupancy < 50) return "Muy disponible";
-    if (occupancy < 70) return "Disponible";
-    return "Algo ocupado";
+    if (occupancy < 50) return t('team.collaboration.availability.veryAvailable');
+    if (occupancy < 70) return t('team.collaboration.availability.available');
+    return t('team.collaboration.availability.somewhatBusy');
   };
+
+  const formatProjectsTogether = (count: number, hours: number) =>
+    `${t('team.collaboration.project', { count })} · ${t('team.collaboration.hoursTogether', { hours: round2(hours) })}`;
 
   // Función para mostrar nombre distintivo cuando hay nombres duplicados
   const getDisplayName = (fullName: string, allCollaborators: typeof frequentCollaborators) => {
@@ -192,18 +197,18 @@ export const CollaborationCards = memo(function CollaborationCards({ employeeId,
           <Card className="relative overflow-hidden">
             <div className="absolute top-2 right-2 z-10">
               <Badge variant="outline" className="text-[9px] bg-amber-50 border-amber-200 text-amber-700">
-                Ejemplo
+                {t('team.collaboration.exampleBadge')}
               </Badge>
             </div>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-primary" />
-                Tu equipo este mes
+                {t('team.collaboration.teamThisMonth')}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <p className="text-xs text-slate-500">
-                Compañeros con los que compartes proyectos este mes:
+                {t('team.collaboration.teammatesIntro')}
               </p>
               <div className="space-y-2 opacity-75">
                 {mockCollaborators.map(collab => (
@@ -214,17 +219,17 @@ export const CollaborationCards = memo(function CollaborationCards({ employeeId,
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{collab.name.split(' ')[0]}</p>
                       <p className="text-xs text-muted-foreground">
-                        {collab.sharedProjects} proyectos · {round2(collab.totalHoursTogether)}h juntos
+                        {formatProjectsTogether(collab.sharedProjects, collab.totalHoursTogether)}
                       </p>
                     </div>
                     <Badge variant="outline" className="text-[10px] text-emerald-600 border-emerald-200">
-                      {collab.occupancy}% carga
+                      {t('team.collaboration.loadPct', { pct: collab.occupancy })}
                     </Badge>
                   </div>
                 ))}
               </div>
               <p className="text-[10px] text-amber-600 text-center pt-1">
-                ↑ Estos son datos de ejemplo. Planifica tareas para ver tu equipo real.
+                {t('team.collaboration.exampleTeamHint')}
               </p>
             </CardContent>
           </Card>
@@ -233,18 +238,18 @@ export const CollaborationCards = memo(function CollaborationCards({ employeeId,
           <Card className="border-emerald-200 bg-emerald-50/30 relative overflow-hidden">
             <div className="absolute top-2 right-2 z-10">
               <Badge variant="outline" className="text-[9px] bg-amber-50 border-amber-200 text-amber-700">
-                Ejemplo
+                {t('team.collaboration.exampleBadge')}
               </Badge>
             </div>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm flex items-center gap-2 text-emerald-700">
                 <HeartHandshake className="h-4 w-4" />
-                ¿Necesitas apoyo?
+                {t('team.collaboration.needSupport')}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <p className="text-xs text-emerald-600">
-                Estos compañeros comparten proyectos contigo y tienen margen para ayudarte:
+                {t('team.collaboration.helpersIntro')}
               </p>
               <div className="space-y-2 opacity-75">
                 {mockHelpers.map(helper => (
@@ -255,17 +260,17 @@ export const CollaborationCards = memo(function CollaborationCards({ employeeId,
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{helper.name.split(' ')[0]}</p>
                       <p className="text-xs text-muted-foreground">
-                        {helper.occupancy}% de carga
+                        {t('team.collaboration.loadPct', { pct: helper.occupancy })}
                       </p>
                     </div>
                     <Badge className="bg-emerald-100 text-emerald-700 border-0">
-                      Disponible
+                      {t('team.collaboration.availableBadge')}
                     </Badge>
                   </div>
                 ))}
               </div>
               <p className="text-[10px] text-amber-600 text-center pt-1">
-                ↑ Estos son datos de ejemplo. Planifica tareas para ver quién puede ayudarte.
+                {t('team.collaboration.exampleHelpersHint')}
               </p>
             </CardContent>
           </Card>
@@ -283,12 +288,12 @@ export const CollaborationCards = memo(function CollaborationCards({ employeeId,
             <CardHeader className="pb-2">
               <CardTitle className="text-sm flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-primary" />
-                Tu equipo este mes
+                {t('team.collaboration.teamThisMonth')}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <p className="text-xs text-slate-500">
-                Compañeros con los que compartes proyectos este mes:
+                {t('team.collaboration.teammatesIntro')}
               </p>
               <div className="space-y-2">
                 {frequentCollaborators.map(collab => (
@@ -304,7 +309,7 @@ export const CollaborationCards = memo(function CollaborationCards({ employeeId,
                         </SensitiveText>
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {collab.sharedProjects} {collab.sharedProjects === 1 ? 'proyecto' : 'proyectos'} · {round2(collab.totalHoursTogether)}h juntos
+                        {formatProjectsTogether(collab.sharedProjects, collab.totalHoursTogether)}
                       </p>
                     </div>
                     <Badge variant="outline" className={cn(
@@ -313,7 +318,7 @@ export const CollaborationCards = memo(function CollaborationCards({ employeeId,
                         : collab.occupancy > 85 ? "text-amber-600 border-amber-200"  // Muy ocupado
                           : "text-emerald-600 border-emerald-200"  // Disponible/Productivo
                     )}>
-                      {collab.occupancy < 80 ? getAvailabilityText(collab.occupancy) : `${Math.round(collab.occupancy)}% carga`}
+                      {collab.occupancy < 80 ? getAvailabilityText(collab.occupancy) : t('team.collaboration.loadPct', { pct: Math.round(collab.occupancy) })}
                     </Badge>
                   </div>
                 ))}
@@ -328,12 +333,12 @@ export const CollaborationCards = memo(function CollaborationCards({ employeeId,
             <CardHeader className="pb-2">
               <CardTitle className="text-sm flex items-center gap-2 text-emerald-700">
                 <HeartHandshake className="h-4 w-4" />
-                ¿Necesitas apoyo?
+                {t('team.collaboration.needSupport')}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <p className="text-xs text-emerald-600">
-                Estos compañeros comparten proyectos contigo y tienen margen para ayudarte:
+                {t('team.collaboration.helpersIntro')}
               </p>
 
               {/* Helpers disponibles (< 80%) */}
@@ -356,7 +361,7 @@ export const CollaborationCards = memo(function CollaborationCards({ employeeId,
                         </p>
                       </div>
                       <Badge className="bg-emerald-100 text-emerald-700 border-0">
-                        Disponible
+                        {t('team.collaboration.availableBadge')}
                       </Badge>
                     </div>
                   ))}
@@ -368,7 +373,7 @@ export const CollaborationCards = memo(function CollaborationCards({ employeeId,
                 <div className="space-y-2">
                   {availableHelpers.length > 0 && (
                     <p className="text-[10px] text-amber-600 font-medium uppercase tracking-wide pt-1">
-                      Con un pequeño esfuerzo extra...
+                      {t('team.collaboration.extraEffortHeader')}
                     </p>
                   )}
                   {busyButWillingHelpers.map(helper => (
@@ -386,12 +391,12 @@ export const CollaborationCards = memo(function CollaborationCards({ employeeId,
                               </SensitiveText>
                             </p>
                             <p className="text-xs text-amber-600">
-                              {Math.round(helper.occupancy)}% de carga
+                              {t('team.collaboration.loadPct', { pct: Math.round(helper.occupancy) })}
                             </p>
                           </div>
                           <Badge className="bg-amber-100 text-amber-700 border-0 gap-1">
                             <Heart className="h-3 w-3" />
-                            Valóralo
+                            {t('team.collaboration.considerBadge')}
                           </Badge>
                         </div>
                       </TooltipTrigger>
@@ -404,12 +409,12 @@ export const CollaborationCards = memo(function CollaborationCards({ employeeId,
                             <Heart className="h-3.5 w-3.5 text-amber-500" />
                             <SensitiveText kind="employee" id={helper.id}>
                               {getDisplayName(helper.name, frequentCollaborators)}
-                            </SensitiveText>{' '}
-                            está bastante ocupado/a
+                            </SensitiveText>
+                            {' '}
+                            {t('team.collaboration.busyTooltipSuffix')}
                           </p>
                           <p className="text-xs leading-relaxed text-amber-800">
-                            Aún así, podría echarte una mano si realmente lo necesitas.
-                            Si le pides ayuda, <strong>agradéceselo de corazón</strong> — ¡está haciendo un esfuerzo extra por ti! 💛
+                            {t('team.collaboration.busyTooltipBody')}
                           </p>
                         </div>
                       </TooltipContent>

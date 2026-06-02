@@ -408,7 +408,7 @@ export default function AgencySettingsPage() {
   const deleteRole = (index: number) => {
     const role = roles[index];
     if (role.is_system_role || isSystemRole(role.name)) {
-      toast.error('No puedes eliminar el rol de Administrador');
+      toast.error(t('agency.toasts.cannotDeleteAdminRole'));
       return;
     }
     const newRoles = [...roles];
@@ -438,7 +438,7 @@ export default function AgencySettingsPage() {
     const name = newDepartment.trim();
     if (!name) return;
     if (departments.some(d => d.name.toLowerCase() === name.toLowerCase())) {
-      toast.error('Ya existe un departamento con ese nombre');
+      toast.error(t('agency.toasts.departmentExists'));
       return;
     }
     const id = `dept-${Date.now()}-${name.replace(/\s+/g, '-').toLowerCase().slice(0, 12)}`;
@@ -460,7 +460,7 @@ export default function AgencySettingsPage() {
 
   const handleSave = async () => {
     if (!currentAgency?.id) {
-      toast.error('No hay agencia seleccionada');
+      toast.error(t('agency.toasts.noAgencySelected'));
       return;
     }
 
@@ -498,22 +498,22 @@ export default function AgencySettingsPage() {
 
       const notificationsOk = await notificationRulesRef.current?.saveAllRules();
       if (notificationsOk === false) {
-        toast.error('La configuración general se guardó, pero falló guardar alguna regla de notificación.');
+        toast.error(t('agency.toasts.savePartialNotificationsError'));
         return;
       }
 
       setRoles(rolesToSave);
-      toast.success('Configuración de agencia guardada');
+      toast.success(t('agency.toasts.configSaved'));
     } catch (error) {
       console.error('Error guardando agencia:', error);
-      toast.error('Error al guardar la configuración');
+      toast.error(t('agency.toasts.saveError'));
     } finally {
       setSaving(false);
     }
   };
 
   const handleAddAccount = async () => {
-    if (!newAccountId) return toast.error("Por favor, escribe un ID de cuenta.");
+    if (!newAccountId) return toast.error(t('agency.toasts.accountIdRequired'));
 
     setIsAddingAccount(true);
     // Insertamos en la tabla de configuración
@@ -527,12 +527,12 @@ export default function AgencySettingsPage() {
     if (error) {
       console.error('Error guardando cuenta:', error);
       if (error.code === '23505') {
-        toast.error("Esta cuenta ya está registrada.");
+        toast.error(t('agency.toasts.accountAlreadyRegistered'));
       } else {
-        toast.error(error.message || 'Error al guardar la cuenta');
+        toast.error(error.message || t('agency.toasts.accountSaveError'));
       }
     } else {
-      toast.success('Cuenta añadida correctamente.');
+      toast.success(t('agency.toasts.accountAdded'));
       setNewAccountId('');
       fetchConnectedAccounts();
     }
@@ -552,10 +552,10 @@ export default function AgencySettingsPage() {
       .eq('id', accountToDelete);
 
     if (error) {
-      toast.error('Error al eliminar cuenta');
+      toast.error(t('agency.toasts.accountDeleteError'));
       console.error(error);
     } else {
-      toast.success('Cuenta eliminada');
+      toast.success(t('agency.toasts.accountDeleted'));
       fetchConnectedAccounts();
     }
     setAccountToDelete(null);
@@ -614,7 +614,7 @@ export default function AgencySettingsPage() {
 
   const resetToDefaults = () => {
     setProjectFilters(DEFAULT_FILTERS);
-    toast.info('Filtros restablecidos a valores por defecto');
+    toast.info(t('agency.toasts.filtersReset'));
   };
 
   const updateAliasingRule = (ruleId: string, updates: Partial<ProjectAliasingRule>) => {

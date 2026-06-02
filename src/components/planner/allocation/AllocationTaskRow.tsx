@@ -100,7 +100,8 @@ export function AllocationTaskRow({
         ownerEmployeeId,
         outgoingTransfers,
         weeklyFeedback,
-        employees
+        employees,
+        t
     );
     const { pendingTransfer, isReadOnly: transferReadOnly } = transferUi;
     const depTask = alloc.dependencyId ? allocations.find(a => a.id === alloc.dependencyId) : null;
@@ -118,7 +119,7 @@ export function AllocationTaskRow({
     const monthHourInputClass =
         'min-w-[2.75rem] w-[4.5ch] max-w-[3.25rem] text-center bg-transparent border-0 border-b border-slate-200 focus:outline-none font-medium font-mono text-slate-700 text-[10px] py-0.5 leading-normal [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none';
 
-    const displayTaskName = cleanTransferredTaskName(alloc.taskName);
+    const displayTaskName = cleanTransferredTaskName(alloc.taskName, t('transfers.unnamedTask'));
 
     const transferMenuLabel = pendingTransfer
         ? t('planner.allocationSheet.transfer.pendingMenu', 'Transfer pending')
@@ -196,7 +197,7 @@ export function AllocationTaskRow({
                                 )}
                                 {transferUi.showWeeklyBadge && (
                                     <Badge variant="outline" className="h-5 px-1.5 text-[9px] bg-primary/10 text-indigo-700 border-indigo-200 shrink-0">
-                                        Weekly
+                                        {t('planner.allocationSheet.weeklyBadge')}
                                     </Badge>
                                 )}
                             </div>
@@ -282,7 +283,7 @@ export function AllocationTaskRow({
                     <div className="flex flex-col gap-1">
                         {blockingTasks.map(bt => {
                             const blockedUser = employees.find(e => e.id === bt.employeeId);
-                            const firstName = blockedUser?.name?.split(' ')[0] || 'Compañero';
+                            const firstName = blockedUser?.name?.split(' ')[0] || t('planner.allocationSheet.teammateFallback');
                             return (
                                 <div key={bt.id} className="flex items-center gap-1.5 text-[10px] text-amber-700 bg-amber-50 px-2 py-1 rounded-md w-fit border border-amber-200">
                                     <Users className="w-3 h-3 shrink-0" />
@@ -449,7 +450,7 @@ export function AllocationTaskRow({
                                 <div
                                     key={`${alloc.id}-timer-readonly-${trackedHoursFromTimer}`}
                                     className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md border font-mono font-medium tabular-nums bg-slate-50 border-slate-200 text-slate-600 text-[10px]"
-                                    title="Tiempo imputado con el cronómetro"
+                                    title={t('planner.allocationTaskRowTimerTitle')}
                                     role="status"
                                 >
                                     <Clock className="h-3 w-3 text-slate-400 shrink-0" aria-hidden />

@@ -917,7 +917,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                         <span className="text-[10px] opacity-80 shrink-0">({projAllocations.length})</span>
                                       </div>
                                       <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs sm:text-sm shrink-0 min-w-0">
-                                        <span className="opacity-80">{projEst}h est</span>
+                                        <span className="opacity-80">{projEst}h {t('planner.allocationSheet.estShort')}</span>
                                         {projReal > 0 && <span>{projReal}h real</span>}
                                         {preference !== 'actual' && projComp > 0 && <span className="font-bold">{projComp}h comp</span>}
                                       </div>
@@ -934,10 +934,11 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                             employeeId,
                                             outgoingTransfers,
                                             weeklyFeedback,
-                                            employees
+                                            employees,
+                                            t
                                           );
                                           const transferReadOnlyMobile = transferUiMobile.isReadOnly;
-                                          const cleanName = cleanTransferredTaskName(alloc.taskName);
+                                          const cleanName = cleanTransferredTaskName(alloc.taskName, t('transfers.unnamedTask'));
                                           const transferMenuLabelMobile = transferUiMobile.pendingTransfer
                                             ? t('planner.allocationSheet.transfer.pendingMenu', 'Transfer pending')
                                             : t('planner.allocationSheet.transfer.transferredMenu', 'Task transferred');
@@ -977,7 +978,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                     </div>
                                                     <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-500">
                                                       <span className="shrink-0 font-mono text-base">{alloc.hoursAssigned}h</span>
-                                                      <span className="shrink-0 text-slate-400">est</span>
+                                                      <span className="shrink-0 text-slate-400">{t('planner.allocationSheet.estShort')}</span>
                                                       {isTimeTrackerEnabled && !isCompleted && (
                                                         <TaskTimer
                                                           employeeId={alloc.employeeId}
@@ -1072,7 +1073,8 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                 employeeId,
                                                 outgoingTransfers,
                                                 weeklyFeedback,
-                                                employees
+                                                employees,
+                                                t
                                               );
                                               const transferReadOnly = transferUi.isReadOnly;
                                               const transferMenuLabel = transferUi.pendingTransfer
@@ -1129,7 +1131,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                             // Limpiar nombre de tarea removiendo información de transferencia
                                                             <div className="flex items-center gap-2 min-w-0">
                                                               <span className="truncate">
-                                                                {cleanTransferredTaskName(alloc.taskName)}
+                                                                {cleanTransferredTaskName(alloc.taskName, t('transfers.unnamedTask'))}
                                                               </span>
                                                             </div>
                                                           )}
@@ -1145,7 +1147,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                         )}
                                                         {transferUi.showWeeklyBadge && (
                                                           <Badge variant="outline" className="h-4 px-1.5 text-[9px] bg-primary/10 text-indigo-700 border-indigo-200 shrink-0">
-                                                            Weekly
+                                                            {t('planner.allocationSheet.weeklyBadge')}
                                                           </Badge>
                                                         )}
                                                         <TaskNotesTrigger
@@ -1190,7 +1192,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                       {/* Badge Weekly si horas=0 por ajuste de weekly */}
                                                       {transferUi.showWeeklyBadge && (
                                                         <Badge variant="outline" className="h-3.5 px-1 text-[8px] bg-primary/10 text-indigo-700 border-indigo-200">
-                                                          Weekly
+                                                          {t('planner.allocationSheet.weeklyBadge')}
                                                         </Badge>
                                                       )}
                                                     </div>
@@ -1545,14 +1547,14 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                 'h-auto self-stretch rounded-none border-l px-2.5 shrink-0 hover:bg-indigo-50 hover:text-indigo-700',
                                                 isSelected && 'bg-indigo-50 text-indigo-700'
                                               )}
-                                              aria-label="Ver equipo y presupuesto del proyecto"
+                                              aria-label={t('planner.allocationSheet.teamAndBudgetAria')}
                                               onClick={() => setSelectedProjectId(isSelected ? null : projId)}
                                             >
                                               <Users className="w-3.5 h-3.5" />
                                             </Button>
                                           </TooltipTrigger>
                                           <TooltipContent side="left" className="text-xs">
-                                            Equipo y presupuesto
+                                            {t('planner.allocationSheet.teamAndBudget')}
                                           </TooltipContent>
                                         </Tooltip>
                                       )}
@@ -1645,7 +1647,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                               return (
                                 <div className="space-y-2">
                                   <div className="text-[10px] font-semibold text-slate-500 uppercase">
-                                    Mis proyectos esta semana ({projectIds.length})
+                                    {t('planner.allocationSheet.myProjectsThisWeek', { count: projectIds.length })}
                                   </div>
                                   <div className="space-y-1.5 max-h-[40vh] overflow-y-auto">
                                     {projectIds.map(projId => {

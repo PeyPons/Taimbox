@@ -6,14 +6,14 @@ const TRANSFER_BADGE_CLASS =
   'h-5 px-1.5 text-[9px] bg-orange-50 text-orange-800 border-orange-200 shrink-0';
 
 interface AllocationTransferBadgeProps {
-  label?: string;
+  label: string;
   tooltip?: string;
   className?: string;
   compact?: boolean;
 }
 
 export function AllocationTransferBadge({
-  label = 'Transferida',
+  label,
   tooltip,
   className,
   compact = false,

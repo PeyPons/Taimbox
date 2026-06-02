@@ -14,7 +14,7 @@ import {
   sumPendingHoursForProject,
   type PlannerBatchPreviewContext,
 } from '@/utils/plannerBatchPreview';
-import { round2 } from '@/utils/numbers';
+import { useAppTranslation } from '@/hooks/useAppTranslation';
 import { DependencyPicker, DEPENDENCY_NONE } from '@/components/planner/allocation/DependencyPicker';
 import { ProjectPicker } from '@/components/planner/allocation/ProjectPicker';
 import { WeekPicker } from '@/components/planner/allocation/WeekPicker';
@@ -59,6 +59,7 @@ export function BatchTaskRow({
     allocations = [],
     viewDate = batchPreview.viewDate,
 }: BatchTaskRowProps) {
+    const { t } = useAppTranslation();
     const pendingRows = batchPreview.pendingRows;
     const [showInitialNote, setShowInitialNote] = useState(() => Boolean(task.initialNote?.trim()));
 
@@ -167,7 +168,7 @@ export function BatchTaskRow({
                         (showInitialNote || task.initialNote?.trim()) && 'text-amber-600 bg-amber-50'
                     )}
                     onClick={() => setShowInitialNote(v => !v)}
-                    title="Anotación inicial"
+                    title={t('planner.batchTaskRow.initialNoteTitle')}
                 >
                     <StickyNote className="h-4 w-4" />
                 </Button>
@@ -176,7 +177,7 @@ export function BatchTaskRow({
                 <Textarea
                     className="text-sm resize-none"
                     rows={2}
-                    placeholder="Detalle: qué subir en ES / EN / DE, enlaces, criterios…"
+                    placeholder={t('planner.batchTaskRow.initialNotePlaceholder')}
                     value={task.initialNote ?? ''}
                     onChange={e => updateTaskRow(task.id, 'initialNote', e.target.value)}
                 />

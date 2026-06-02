@@ -168,16 +168,16 @@ export function ProfessionalGoalsSheet({ open, onOpenChange, employeeId }: Profe
 
       if (editingId) {
         await updateProfessionalGoal({ ...goalData, id: editingId, employeeId } as ProfessionalGoal);
-        toast.success("Objetivo actualizado");
+        toast.success(t('team.professionalGoals.goalUpdated'));
       } else {
         await addProfessionalGoal({ ...goalData, employeeId } as Omit<ProfessionalGoal, 'id'>);
-        toast.success("Objetivo creado");
+        toast.success(t('team.professionalGoals.goalCreated'));
       }
 
       resetForm();
     } catch (error) {
       console.error('Error guardando objetivo:', error);
-      const errorMessage = (error as Error)?.message || 'Error al guardar el objetivo';
+      const errorMessage = (error as Error)?.message || t('team.professionalGoals.saveError');
       toast.error(errorMessage);
     }
   };

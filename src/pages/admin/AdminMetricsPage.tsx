@@ -32,14 +32,14 @@ export default function AdminMetricsPage() {
       } catch (e) {
         if (!cancelled) {
           console.error("[AdminMetricsPage] Error:", e);
-          toast.error("Error al cargar métricas");
+          toast.error(t("admin.metrics.errLoad"));
         }
       } finally {
         if (!cancelled) setLoading(false);
       }
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [t]);
 
   if (loading) {
     return (
@@ -52,36 +52,36 @@ export default function AdminMetricsPage() {
   if (!metrics) {
     return (
       <div className="text-center py-12 text-slate-500">
-        No se pudieron cargar las métricas.
+        {t("admin.metrics.loadFailed")}
       </div>
     );
   }
 
   const cards = [
     {
-      title: "Agencias",
+      title: t("admin.metrics.cards.agencies.title"),
       icon: Building2,
       items: [
-        { label: "Total", value: metrics.total_agencies },
-        { label: "Activas", value: metrics.active_agencies },
-        { label: "Suspendidas", value: metrics.suspended_agencies },
+        { label: t("admin.metrics.cards.agencies.total"), value: metrics.total_agencies },
+        { label: t("admin.metrics.cards.agencies.active"), value: metrics.active_agencies },
+        { label: t("admin.metrics.cards.agencies.suspended"), value: metrics.suspended_agencies },
       ],
     },
     {
-      title: "Usuarios y empleados",
+      title: t("admin.metrics.cards.users.title"),
       icon: Users,
       items: [
-        { label: "Empleados (total)", value: metrics.total_employees },
-        { label: "Usuarios con agencia", value: metrics.total_users_with_agency },
+        { label: t("admin.metrics.cards.users.employees"), value: metrics.total_employees },
+        { label: t("admin.metrics.cards.users.withAgency"), value: metrics.total_users_with_agency },
       ],
     },
     {
-      title: "Tickets de soporte",
+      title: t("admin.metrics.cards.support.title"),
       icon: MessageSquare,
       items: [
-        { label: "Abiertos", value: metrics.support_tickets_open },
-        { label: "En curso", value: metrics.support_tickets_in_progress },
-        { label: "Cerrados", value: metrics.support_tickets_closed },
+        { label: t("admin.metrics.cards.support.open"), value: metrics.support_tickets_open },
+        { label: t("admin.metrics.cards.support.inProgress"), value: metrics.support_tickets_in_progress },
+        { label: t("admin.metrics.cards.support.closed"), value: metrics.support_tickets_closed },
       ],
     },
   ];
@@ -89,10 +89,8 @@ export default function AdminMetricsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Métricas de plataforma</h1>
-        <p className="text-slate-600 mt-1">
-          Resumen de agencias, usuarios y tickets de soporte.
-        </p>
+        <h1 className="text-2xl font-bold text-slate-900">{t("admin.metrics.title")}</h1>
+        <p className="text-slate-600 mt-1">{t("admin.metrics.subtitle")}</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -109,7 +107,7 @@ export default function AdminMetricsPage() {
                 {items.map(({ label, value }) => (
                   <li key={label} className="flex justify-between text-sm">
                     <span className="text-slate-600">{label}</span>
-                    <span className="font-medium tabular-nums">{value}</span>
+                    <span className="font-semibold tabular-nums">{value}</span>
                   </li>
                 ))}
               </ul>

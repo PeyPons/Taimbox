@@ -3,7 +3,7 @@ import { useMouseWheelScroll } from '@/hooks/useMouseWheelScroll';
 import { formatDistanceToNow } from 'date-fns';
 import { useDateLocale } from '@/hooks/useDateLocale';
 import { StickyNote, Trash2, Loader2 } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
+import { useAppTranslation } from '@/hooks/useAppTranslation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -34,9 +34,9 @@ function NoteItem({
   onDelete: (id: string) => void;
   isDeleting: boolean;
 }) {
-  const { t } = useTranslation('app');
+  const { t } = useAppTranslation();
   const dateLocale = useDateLocale();
-  const authorLabel = note.authorName ?? t('taskNotes.authorFallback', 'Usuario');
+  const authorLabel = note.authorName ?? t('taskNotes.authorFallback');
   const when = formatDistanceToNow(new Date(note.createdAt), { addSuffix: true, locale: dateLocale });
 
   return (
@@ -62,7 +62,7 @@ function NoteItem({
             className="h-7 w-7 shrink-0 text-slate-400 hover:text-red-600"
             disabled={isDeleting}
             onClick={() => onDelete(note.id)}
-            aria-label={t('taskNotes.deleteAria', 'Eliminar anotación')}
+            aria-label={t('taskNotes.deleteAria')}
           >
             <Trash2 className="h-3.5 w-3.5" />
           </Button>
@@ -78,7 +78,7 @@ function NoteItem({
 }
 
 export function TaskNotesPanel({ allocationId, className, compact = false, autoFocusDraft = false }: TaskNotesPanelProps) {
-  const { t } = useTranslation();
+  const { t } = useAppTranslation();
   const { currentUser } = useApp();
   const { hasPermission } = usePermissions();
   const { data: notes = [], isLoading } = useAllocationNotes(allocationId);
@@ -100,7 +100,7 @@ export function TaskNotesPanel({ allocationId, className, compact = false, autoF
       await addNote(trimmed);
       setDraft('');
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('taskNotes.saveError', 'No se pudo guardar la anotación'));
+      toast.error(err instanceof Error ? err.message : t('taskNotes.saveError'));
     }
   };
 
@@ -108,7 +108,7 @@ export function TaskNotesPanel({ allocationId, className, compact = false, autoF
     try {
       await deleteNote(noteId);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('taskNotes.deleteError', 'No se pudo eliminar la anotación'));
+      toast.error(err instanceof Error ? err.message : t('taskNotes.deleteError'));
     }
   };
 
@@ -117,16 +117,13 @@ export function TaskNotesPanel({ allocationId, className, compact = false, autoF
       <div className="flex items-center gap-2">
         <StickyNote className="h-4 w-4 text-amber-600 shrink-0" />
         <h4 className="text-sm font-semibold text-slate-800">
-          {t('taskNotes.title', 'Anotaciones')}
+          {t('taskNotes.title')}
         </h4>
       </div>
 
       {!compact && (
         <p className="text-xs text-slate-500 leading-relaxed">
-          {t(
-            'taskNotes.hint',
-            'Usa un título corto en la tarea y pon aquí el detalle (idiomas, enlaces, criterios…).'
-          )}
+          {t('taskNotes.hint')}
         </p>
       )}
 
@@ -137,7 +134,7 @@ export function TaskNotesPanel({ allocationId, className, compact = false, autoF
       ) : notes.length === 0 ? (
         compact ? null : (
           <p className="text-xs text-slate-400 italic py-1">
-            {t('taskNotes.empty', 'Sin anotaciones todavía.')}
+            {t('taskNotes.empty')}
           </p>
         )
       ) : (
@@ -168,10 +165,7 @@ export function TaskNotesPanel({ allocationId, className, compact = false, autoF
               void handleSubmit();
             }
           }}
-          placeholder={t(
-            'taskNotes.placeholder',
-            'Detalle: qué hacer en ES / EN / DE, enlaces, criterios…'
-          )}
+          placeholder={t('taskNotes.placeholder')}
           rows={compact ? 2 : 3}
           maxLength={maxLength}
           className={cn('text-sm resize-none', compact ? 'min-h-[56px]' : 'min-h-[72px]')}
@@ -184,7 +178,7 @@ export function TaskNotesPanel({ allocationId, className, compact = false, autoF
             )}
           </span>
           <Button type="button" size="sm" disabled={isAdding || !draft.trim()} onClick={() => void handleSubmit()}>
-            {isAdding ? <Loader2 className="h-4 w-4 animate-spin" /> : t('taskNotes.add', 'Añadir anotación')}
+            {isAdding ? <Loader2 className="h-4 w-4 animate-spin" /> : t('taskNotes.add')}
           </Button>
         </div>
       </div>

@@ -112,7 +112,7 @@ export function TransferAcceptanceDialog({ open, onOpenChange, transfer, onSucce
 
     const handleReject = async () => {
         if (!rejectReason.trim()) {
-            toast.error("Por favor indica un motivo para el rechazo");
+            toast.error(t('transfers.acceptance.rejectReasonRequired'));
             return;
         }
         if (isSubmitting) return;
@@ -124,7 +124,7 @@ export function TransferAcceptanceDialog({ open, onOpenChange, transfer, onSucce
             onSuccess();
         } catch (error) {
             console.error(error);
-            toast.error("Error al rechazar la transferencia");
+            toast.error(t('transfers.acceptance.rejectError'));
         } finally {
             setIsSubmitting(false);
         }
@@ -142,9 +142,9 @@ export function TransferAcceptanceDialog({ open, onOpenChange, transfer, onSucce
                 const success = await acceptTransfer(transfer.id, 'keep', [], {
                     refetchWeekStarts: [baseWeek]
                 });
-                if (!success) throw new Error("Error al aceptar la transferencia base");
+                if (!success) throw new Error(t('transfers.acceptance.acceptBaseError'));
 
-                toast.success("Tarea aceptada correctamente");
+                toast.success(t('transfers.acceptance.acceptedKeep'));
                 onOpenChange(false);
                 onSuccess();
                 return;
@@ -155,7 +155,7 @@ export function TransferAcceptanceDialog({ open, onOpenChange, transfer, onSucce
                     targetWeek: targetWeekDate,
                     refetchWeekStarts: [baseWeek, targetWeekDate]
                 });
-                if (!success) throw new Error("Error al aceptar la transferencia base");
+                if (!success) throw new Error(t('transfers.acceptance.acceptBaseError'));
 
                 await addWeeklyFeedback({
                     employeeId: transfer.toEmployeeId,
@@ -163,19 +163,24 @@ export function TransferAcceptanceDialog({ open, onOpenChange, transfer, onSucce
                     projectId: transfer.projectId,
                     allocationId: allocationId,
                     reason: 'other',
-                    comments: `Transferencia recibida y movida a la semana del ${format(parseISO(targetWeekDate), 'dd/MM')}`
+                    comments: t('transfers.acceptance.activityMoveComment', {
+                        date: format(parseISO(targetWeekDate), 'dd/MM'),
+                    }),
                 });
 
-                toast.success("Tarea aceptada y movida");
+                toast.success(t('transfers.acceptance.acceptedMove'));
             }
 
             if (mode === 'distribute') {
                 if (Math.abs(totalDistributedHours - transfer.hours) > 0.1) {
-                    throw new Error(`Las horas distribuidas (${totalDistributedHours.toFixed(1)}h) no coinciden con las recibidas (${transfer.hours}h)`);
+                    throw new Error(t('transfers.acceptance.hoursMismatch', {
+                        distributed: totalDistributedHours.toFixed(1),
+                        received: transfer.hours,
+                    }));
                 }
 
                 const validRows = distributionRows.filter(r => r.taskName.trim() && parseFloat(r.hours) > 0);
-                if (validRows.length === 0) throw new Error("Añade al menos una tarea válida");
+                if (validRows.length === 0) throw new Error(t('transfers.acceptance.addValidTask'));
 
                 const createdAllocations = await Promise.all(validRows.map(row =>
                     addAllocation({
@@ -200,7 +205,7 @@ export function TransferAcceptanceDialog({ open, onOpenChange, transfer, onSucce
                     distributionWeekStarts: distWeeks,
                     refetchWeekStarts: [baseWeek, ...distWeeks]
                 });
-                if (!success) throw new Error("Error al aceptar la transferencia");
+                if (!success) throw new Error(t('transfers.acceptance.acceptError'));
 
                 await addWeeklyFeedback({
                     employeeId: transfer.toEmployeeId,
@@ -208,10 +213,10 @@ export function TransferAcceptanceDialog({ open, onOpenChange, transfer, onSucce
                     projectId: transfer.projectId,
                     allocationId: allocationId,
                     reason: 'other',
-                    comments: `Transferencia recibida y distribuida en ${validRows.length} tareas.`
+                    comments: t('transfers.acceptance.activityDistributeComment', { count: validRows.length }),
                 });
 
-                toast.success("Tarea aceptada y distribuida");
+                toast.success(t('transfers.acceptance.acceptedDistribute'));
             }
 
             if (mode === 'rollover') {
@@ -219,7 +224,7 @@ export function TransferAcceptanceDialog({ open, onOpenChange, transfer, onSucce
                 const success = await acceptTransfer(transfer.id, 'rollover', [], {
                     refetchWeekStarts: [baseWeek, nextWeekStr]
                 });
-                if (!success) throw new Error("Error al aceptar la transferencia");
+                if (!success) throw new Error(t('transfers.acceptance.acceptError'));
 
                 await addWeeklyFeedback({
                     employeeId: transfer.toEmployeeId,
@@ -227,10 +232,10 @@ export function TransferAcceptanceDialog({ open, onOpenChange, transfer, onSucce
                     projectId: transfer.projectId,
                     allocationId: allocationId,
                     reason: 'other',
-                    comments: `Transferencia recibida: copia planificada en la semana siguiente (rollover).`
+                    comments: t('transfers.acceptance.activityRolloverComment'),
                 });
 
-                toast.success("Tarea aceptada: copia en la semana siguiente");
+                toast.success(t('transfers.acceptance.acceptedRollover'));
             }
 
             onOpenChange(false);
@@ -238,7 +243,7 @@ export function TransferAcceptanceDialog({ open, onOpenChange, transfer, onSucce
 
         } catch (error) {
             console.error(error);
-            toast.error(error instanceof Error ? error.message : "Error al procesar la solicitud");
+            toast.error(error instanceof Error ? error.message : t('transfers.acceptance.processError'));
         } finally {
             setIsSubmitting(false);
         }
@@ -252,18 +257,18 @@ export function TransferAcceptanceDialog({ open, onOpenChange, transfer, onSucce
                     <DialogHeader>
                         <DialogTitle className="text-red-600 flex items-center gap-2">
                             <Ban className="h-5 w-5" />
-                            Rechazar Transferencia
+                            {t('transfers.acceptance.rejectTitle')}
                         </DialogTitle>
                         <DialogDescription>
-                            Explica brevemente por qué no puedes aceptar esta tarea.
+                            {t('transfers.acceptance.rejectDescription')}
                         </DialogDescription>
                     </DialogHeader>
 
                     <div className="py-4 space-y-4">
                         <div className="space-y-2">
-                            <Label>Motivo del rechazo <span className="text-red-500">*</span></Label>
+                            <Label>{t('transfers.acceptance.rejectReasonLabel')} <span className="text-red-500">*</span></Label>
                             <Textarea
-                                placeholder="Ej: No tengo capacidad esta semana..."
+                                placeholder={t('transfers.reject.placeholder')}
                                 value={rejectReason}
                                 onChange={(e) => setRejectReason(e.target.value)}
                                 className="min-h-[100px]"
@@ -273,10 +278,10 @@ export function TransferAcceptanceDialog({ open, onOpenChange, transfer, onSucce
 
                     <DialogFooter className="gap-2 sm:gap-0">
                         <Button variant="ghost" onClick={() => setIsRejecting(false)} disabled={isSubmitting}>
-                            Volver
+                            {t('transfers.acceptance.back')}
                         </Button>
                         <Button variant="destructive" onClick={handleReject} disabled={isSubmitting}>
-                            {isSubmitting ? 'Rechazando...' : 'Confirmar Rechazo'}
+                            {isSubmitting ? t('transfers.acceptance.rejecting') : t('transfers.acceptance.rejectConfirm')}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -288,9 +293,9 @@ export function TransferAcceptanceDialog({ open, onOpenChange, transfer, onSucce
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[750px] max-h-[90vh] overflow-hidden flex flex-col p-6">
                 <DialogHeader>
-                    <DialogTitle className="sr-only">Aceptar Transferencia</DialogTitle>
+                    <DialogTitle className="sr-only">{t('transfers.acceptance.acceptTitle')}</DialogTitle>
                     <DialogDescription className="sr-only">
-                        Opciones para aceptar y gestionar la tarea transferida.
+                        {t('transfers.acceptance.acceptDescription')}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -304,7 +309,7 @@ export function TransferAcceptanceDialog({ open, onOpenChange, transfer, onSucce
                         </div>
                     </div>
                     <div className="text-right">
-                        <div className="text-xs text-slate-400 uppercase font-medium mb-1">Pendiente</div>
+                        <div className="text-xs text-slate-400 uppercase font-medium mb-1">{t('transfers.acceptance.pendingLabel')}</div>
                         <Badge variant="secondary" className="text-amber-600 bg-amber-50 border-amber-100 text-sm px-2.5 py-0.5">
                             {transfer.hours}h
                         </Badge>
@@ -325,7 +330,7 @@ export function TransferAcceptanceDialog({ open, onOpenChange, transfer, onSucce
                                 <div className="h-5 w-5 rounded-full border border-slate-300 flex items-center justify-center peer-data-[state=checked]:border-indigo-600 peer-data-[state=checked]:text-indigo-600">
                                     {mode === 'keep' && <div className="h-2.5 w-2.5 rounded-full bg-indigo-600" />}
                                 </div>
-                                <span className="font-medium text-slate-700">Mantener (Aceptar tal cual)</span>
+                                <span className="font-medium text-slate-700">{t('transfers.acceptance.optionKeep')}</span>
                             </Label>
                         </div>
 
@@ -336,7 +341,7 @@ export function TransferAcceptanceDialog({ open, onOpenChange, transfer, onSucce
                                 <div className="h-5 w-5 rounded-full border border-slate-300 flex items-center justify-center peer-data-[state=checked]:border-indigo-600 peer-data-[state=checked]:text-indigo-600">
                                     {mode === 'rollover' && <div className="h-2.5 w-2.5 rounded-full bg-indigo-600" />}
                                 </div>
-                                <span className="font-medium text-slate-700">Registrar horas y seguir la semana siguiente</span>
+                                <span className="font-medium text-slate-700">{t('transfers.acceptance.optionRollover')}</span>
                             </Label>
                         </div>
 
@@ -347,7 +352,7 @@ export function TransferAcceptanceDialog({ open, onOpenChange, transfer, onSucce
                                 <div className="h-5 w-5 rounded-full border border-slate-300 flex items-center justify-center peer-data-[state=checked]:border-indigo-600 peer-data-[state=checked]:text-indigo-600">
                                     {mode === 'move' && <div className="h-2.5 w-2.5 rounded-full bg-indigo-600" />}
                                 </div>
-                                <span className="font-medium text-slate-700">Mover a otra semana</span>
+                                <span className="font-medium text-slate-700">{t('transfers.acceptance.optionMove')}</span>
                             </Label>
                         </div>
 
@@ -358,7 +363,7 @@ export function TransferAcceptanceDialog({ open, onOpenChange, transfer, onSucce
                                 <div className="h-5 w-5 rounded-full border border-slate-300 flex items-center justify-center peer-data-[state=checked]:border-indigo-600 peer-data-[state=checked]:text-indigo-600">
                                     {mode === 'distribute' && <div className="h-2.5 w-2.5 rounded-full bg-indigo-600" />}
                                 </div>
-                                <span className="font-medium text-slate-700">Distribuir horas</span>
+                                <span className="font-medium text-slate-700">{t('transfers.acceptance.optionDistribute')}</span>
                             </Label>
                         </div>
                     </RadioGroup>
@@ -367,7 +372,7 @@ export function TransferAcceptanceDialog({ open, onOpenChange, transfer, onSucce
                     <div className="min-h-[100px] animate-in slide-in-from-top-2 duration-200">
                         {mode === 'move' && (
                             <div className="p-4 bg-indigo-50/50 rounded-lg border border-indigo-100 mt-2 space-y-3">
-                                <Label className="text-indigo-900 font-medium text-sm">¿A qué semana?</Label>
+                                <Label className="text-indigo-900 font-medium text-sm">{t('transfers.acceptance.whichWeek')}</Label>
                                 <div className="relative">
                                     <select
                                         value={targetWeekDate}
@@ -402,11 +407,13 @@ export function TransferAcceptanceDialog({ open, onOpenChange, transfer, onSucce
                         {mode === 'distribute' && (
                             <div className="p-4 bg-indigo-50/50 rounded-lg border border-indigo-100 mt-2 space-y-4">
                                 <div className="flex justify-between items-center text-sm font-medium text-indigo-900">
-                                    <span>Distribuir {totalDistributedHours.toFixed(2)}h:</span>
+                                    <span>{t('transfers.acceptance.distributeHours', { hours: totalDistributedHours.toFixed(2) })}</span>
                                     <span className={cn(
                                         Math.abs(totalDistributedHours - transfer.hours) < 0.01 ? "text-emerald-600" : "text-amber-600"
                                     )}>
-                                        Falta: {(transfer.hours - totalDistributedHours).toFixed(2)}h
+                                        {t('transfers.acceptance.remainingHours', {
+                                            hours: (transfer.hours - totalDistributedHours).toFixed(2),
+                                        })}
                                     </span>
                                 </div>
 
@@ -417,7 +424,7 @@ export function TransferAcceptanceDialog({ open, onOpenChange, transfer, onSucce
                                                 <Input
                                                     value={row.taskName}
                                                     onChange={e => handleDistributeChange(row.id, 'taskName', e.target.value)}
-                                                    placeholder="Nombre subtarea *"
+                                                    placeholder={t('transfers.acceptance.subtaskPlaceholder')}
                                                     className="flex-1 bg-white border-indigo-200 h-9"
                                                 />
                                                 <Input
@@ -471,7 +478,7 @@ export function TransferAcceptanceDialog({ open, onOpenChange, transfer, onSucce
                                         onClick={handleDistributeAddRow}
                                         className="w-full border-dashed border-indigo-300 text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700 bg-white"
                                     >
-                                        <Plus className="h-3 w-3 mr-1" /> Añadir distribución
+                                        <Plus className="h-3 w-3 mr-1" /> {t('transfers.acceptance.addDistribution')}
                                     </Button>
                                     {/* Nota eliminada porque ahora es explícito por tarea */}
                                 </div>
@@ -482,7 +489,7 @@ export function TransferAcceptanceDialog({ open, onOpenChange, transfer, onSucce
                             <div className="p-4 bg-indigo-50/50 rounded-lg border border-indigo-100 mt-2">
                                 <p className="text-sm text-indigo-800 flex items-center gap-2">
                                     <ArrowRight className="h-4 w-4" />
-                                    Se registran las horas en la semana actual de la tarea y se crea la misma tarea en la <strong>semana siguiente</strong> (calendario).
+                                    {t('transfers.acceptance.rolloverHint')}
                                 </p>
                             </div>
                         )}
@@ -497,14 +504,14 @@ export function TransferAcceptanceDialog({ open, onOpenChange, transfer, onSucce
                         className="text-red-500 hover:text-red-600 hover:bg-red-50 gap-2 px-2"
                     >
                         <Ban className="h-4 w-4" />
-                        Rechazar
+                        {t('transfers.acceptance.rejectButton')}
                     </Button>
                     <div className="flex gap-3">
                         <Button variant="outline" onClick={() => onOpenChange(false)} className="border-slate-200">
-                            Cancelar
+                            {t('common.cancel')}
                         </Button>
                         <Button onClick={handleAccept} disabled={isSubmitting} className="bg-indigo-600 hover:bg-indigo-700 text-white min-w-[100px]">
-                            {isSubmitting ? '...' : (mode === 'keep' ? 'Aceptar' : 'Confirmar')}
+                            {isSubmitting ? '...' : (mode === 'keep' ? t('transfers.acceptance.acceptButton') : t('transfers.acceptance.confirmButton'))}
                         </Button>
                     </div>
                 </div>

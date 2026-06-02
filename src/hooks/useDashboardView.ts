@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useApp } from '@/contexts/AppContext';
 import { useAgency } from '@/contexts/AgencyContext';
+import { useAppTranslation } from '@/hooks/useAppTranslation';
 import { ViewMode, DepartmentConfig } from '@/types';
 import { toast } from '@/lib/notify';
 
@@ -162,6 +163,7 @@ export function useDashboardView() {
  */
 export function useDepartmentConfigs() {
     const { currentAgency } = useAgency();
+    const { t } = useAppTranslation();
 
     const [configs, setConfigs] = useState<DepartmentConfig[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -243,12 +245,12 @@ export function useDepartmentConfigs() {
             return true;
         } catch (error) {
             console.error('[useDepartmentConfigs] Error saving config:', error);
-            toast.error('Error al guardar la configuración del departamento');
+            toast.error(t('team.dashboardView.toasts.saveConfigError'));
             return false;
         } finally {
             setIsSaving(false);
         }
-    }, [currentAgency?.id, loadConfigs]);
+    }, [currentAgency?.id, loadConfigs, t]);
 
     // Eliminar configuración de un departamento
     const deleteDepartmentConfig = useCallback(async (departmentName: string): Promise<boolean> => {
@@ -269,12 +271,12 @@ export function useDepartmentConfigs() {
             return true;
         } catch (error) {
             console.error('[useDepartmentConfigs] Error deleting config:', error);
-            toast.error('Error al eliminar la configuración');
+            toast.error(t('team.dashboardView.toasts.deleteConfigError'));
             return false;
         } finally {
             setIsSaving(false);
         }
-    }, [currentAgency?.id, loadConfigs]);
+    }, [currentAgency?.id, loadConfigs, t]);
 
     return {
         configs,

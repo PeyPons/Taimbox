@@ -782,10 +782,7 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
                   </TooltipTrigger>
                   <TooltipContent side="bottom" className="max-w-[240px] text-center">
                     <p className="text-xs">
-                      {t(
-                        'operationsRadar.tooltipLifecycleRisk',
-                        'Entregables con consumo o proyección de riesgo a lo largo de la fase (no sustituye al estado del mes).'
-                      )}
+                      {t('operationsRadar.tooltipLifecycleRisk')}
                     </p>
                   </TooltipContent>
                 </Tooltip>
@@ -930,10 +927,7 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
                       )}
                       {inc.totalDeadlineHours === 0 && (
                         <div className="mt-1.5 text-[11px] text-amber-800 font-medium px-2 py-1 rounded border border-amber-200 bg-amber-50/80">
-                          {t(
-                            'operationsRadar.coherenceNoDeadlineBanner',
-                            'Este proyecto no figura en el deadline del mes; la fila de abajo resume planificación y computo del equipo.'
-                          )}
+                          {t('operationsRadar.coherenceNoDeadlineBanner')}
                         </div>
                       )}
                       <div className="flex items-center gap-3 mt-1.5 text-xs flex-wrap gap-y-1">
@@ -1487,19 +1481,16 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
                           onClick={() => setShowDeliverablePhaseTotals(s => !s)}
                         >
                           {showDeliverablePhaseTotals
-                            ? t('operationsRadar.coherencePhaseTotalsToggleHide', 'Ocultar dedicación total en la fase')
-                            : t('operationsRadar.coherencePhaseTotalsToggleShow', 'Ver dedicación total en la fase')}
+                            ? t('operationsRadar.coherencePhaseTotalsToggleHide')
+                            : t('operationsRadar.coherencePhaseTotalsToggleShow')}
                         </Button>
                         {showDeliverablePhaseTotals && (
                           <div className="rounded-md border border-slate-200 bg-slate-50/90 p-3 text-xs">
                             <p className="mb-2 font-semibold text-slate-800">
-                              {t('operationsRadar.coherencePhaseTotalsTitle', 'Horas en la fase (por persona)')}
+                              {t('operationsRadar.coherencePhaseTotalsTitle')}
                             </p>
                             <p className="mb-2 text-[10px] leading-snug text-slate-500">
-                              {t(
-                                'operationsRadar.coherencePhaseTotalsFootnote',
-                                '«Operativas»: cerradas según la preferencia de seguimiento de la agencia; abiertas = estimadas asignadas.'
-                              )}
+                              {t('operationsRadar.coherencePhaseTotalsFootnote')}
                             </p>
                             {phaseModalLoading ? (
                               <div className="flex items-center gap-2 py-4 text-slate-500">

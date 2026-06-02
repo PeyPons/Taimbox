@@ -1,6 +1,7 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePlatformAdmin } from "@/hooks/usePlatformAdmin";
+import { useAppTranslation } from "@/hooks/useAppTranslation";
 import { toast } from "@/lib/notify";
 
 /**
@@ -11,6 +12,7 @@ export function PlatformAdminRoute() {
   const { session, loading: authLoading, isInitialized } = useAuth();
   const { isPlatformAdmin, isLoading: adminLoading } = usePlatformAdmin();
   const location = useLocation();
+  const { t } = useAppTranslation();
 
   if (!isInitialized || authLoading) {
     return (
@@ -33,7 +35,7 @@ export function PlatformAdminRoute() {
   }
 
   if (!isPlatformAdmin) {
-    toast.error("No tienes permisos para acceder al panel de administración.");
+    toast.error(t('admin.route.noPermission'));
     return <Navigate to="/dashboard" replace />;
   }
 

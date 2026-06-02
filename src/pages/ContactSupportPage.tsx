@@ -66,9 +66,9 @@ export default function ContactSupportPage() {
   const [sendingReply, setSendingReply] = useState(false);
 
   const getStatusLabel = (status: string) => {
-    if (status === "open") return t("app.support.contact.status.open");
-    if (status === "in_progress") return t("app.support.contact.status.inProgress");
-    if (status === "closed") return t("app.support.contact.status.closed");
+    if (status === "open") return t("support.contact.status.open");
+    if (status === "in_progress") return t("support.contact.status.inProgress");
+    if (status === "closed") return t("support.contact.status.closed");
     return status;
   };
 
@@ -89,7 +89,7 @@ export default function ContactSupportPage() {
       setMyTickets((data as MyTicketRow[]) || []);
     } catch (e) {
       console.error("[ContactSupportPage] Error listing tickets:", e);
-      toast.error(t("app.support.contact.toasts.loadTicketsError"));
+      toast.error(t("support.contact.toasts.loadTicketsError"));
       setMyTickets([]);
     } finally {
       setLoadingTickets(false);
@@ -135,23 +135,23 @@ export default function ContactSupportPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentAgency?.id) {
-      toast.error(t("app.support.contact.toasts.agencyRequired"));
+      toast.error(t("support.contact.toasts.agencyRequired"));
       return;
     }
     if (!subject.trim()) {
-      toast.error(t("app.support.contact.toasts.subjectRequired"));
+      toast.error(t("support.contact.toasts.subjectRequired"));
       return;
     }
     if (subject.trim().length > INPUT_LIMITS.supportSubject) {
-      toast.error(t("app.support.contact.toasts.subjectTooLong", { max: INPUT_LIMITS.supportSubject, defaultValue: `El asunto no puede superar ${INPUT_LIMITS.supportSubject} caracteres` }));
+      toast.error(t("support.contact.toasts.subjectTooLong", { max: INPUT_LIMITS.supportSubject }));
       return;
     }
     if (!message.trim()) {
-      toast.error(t("app.support.contact.toasts.messageRequired"));
+      toast.error(t("support.contact.toasts.messageRequired"));
       return;
     }
     if (message.trim().length > INPUT_LIMITS.supportMessage) {
-      toast.error(t("app.support.contact.toasts.messageTooLong", { max: INPUT_LIMITS.supportMessage, defaultValue: `El mensaje no puede superar ${INPUT_LIMITS.supportMessage} caracteres` }));
+      toast.error(t("support.contact.toasts.messageTooLong", { max: INPUT_LIMITS.supportMessage }));
       return;
     }
     setLoading(true);
@@ -166,11 +166,11 @@ export default function ContactSupportPage() {
       setSubject("");
       setMessage("");
       setMessageKey((k) => k + 1);
-      toast.success(t("app.support.contact.toasts.createSuccess"));
+      toast.success(t("support.contact.toasts.createSuccess"));
       fetchMyTickets();
     } catch (e: unknown) {
       console.error("[ContactSupportPage] Error:", e);
-      toast.error(t("app.support.contact.toasts.createError"));
+      toast.error(t("support.contact.toasts.createError"));
     } finally {
       setLoading(false);
     }
@@ -178,11 +178,11 @@ export default function ContactSupportPage() {
 
   const sendReply = async () => {
     if (!selectedTicketId || !replyText?.trim()) {
-      toast.error(t("app.support.contact.toasts.replyRequired"));
+      toast.error(t("support.contact.toasts.replyRequired"));
       return;
     }
     if (replyText.trim().length > INPUT_LIMITS.supportMessage) {
-      toast.error(t("app.support.contact.toasts.messageTooLong", { max: INPUT_LIMITS.supportMessage, defaultValue: `El mensaje no puede superar ${INPUT_LIMITS.supportMessage} caracteres` }));
+      toast.error(t("support.contact.toasts.messageTooLong", { max: INPUT_LIMITS.supportMessage }));
       return;
     }
     setSendingReply(true);
@@ -192,7 +192,7 @@ export default function ContactSupportPage() {
         p_message: replyText.trim(),
       });
       if (error) throw error;
-      toast.success(t("app.support.contact.toasts.replySuccess"));
+      toast.success(t("support.contact.toasts.replySuccess"));
       setReplyText("");
       setReplyKey((k) => k + 1);
       const { data } = await supabase.rpc("list_my_support_ticket_replies", {
@@ -201,7 +201,7 @@ export default function ContactSupportPage() {
       setReplies((data as MyTicketReply[]) || []);
     } catch (e: unknown) {
       console.error("[ContactSupportPage] Error sending reply:", e);
-      toast.error(t("app.support.contact.toasts.replyError"));
+      toast.error(t("support.contact.toasts.replyError"));
     } finally {
       setSendingReply(false);
     }
@@ -213,7 +213,7 @@ export default function ContactSupportPage() {
         <Card>
           <CardContent className="pt-6">
             <p className="text-slate-600">
-              {t("app.support.contact.noAgencySelected")}
+              {t("support.contact.noAgencySelected")}
             </p>
           </CardContent>
         </Card>
@@ -225,10 +225,10 @@ export default function ContactSupportPage() {
     <div className="max-w-3xl mx-auto p-6 space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-slate-900">
-          {t("app.support.contact.title")}
+          {t("support.contact.title")}
         </h1>
         <p className="text-slate-600 mt-1">
-          {t("app.support.contact.subtitle", { agency: currentAgency.name })}
+          {t("support.contact.subtitle", { agency: currentAgency.name })}
         </p>
       </div>
 
@@ -238,36 +238,36 @@ export default function ContactSupportPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
               <MessageCircle className="h-5 w-5 text-primary" />
-              {t("app.support.contact.form.title")}
+              {t("support.contact.form.title")}
             </CardTitle>
             <CardDescription>
-              {t("app.support.contact.form.description")}
+              {t("support.contact.form.description")}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="subject">
-                  {t("app.support.contact.form.subjectLabel")}
+                  {t("support.contact.form.subjectLabel")}
                 </Label>
                 <Input
                   id="subject"
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
-                  placeholder={t("app.support.contact.form.subjectPlaceholder")}
+                  placeholder={t("support.contact.form.subjectPlaceholder")}
                   maxLength={INPUT_LIMITS.supportSubject}
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="message">
-                  {t("app.support.contact.form.messageLabel")}
+                  {t("support.contact.form.messageLabel")}
                 </Label>
                 <SupportMessageEditor
                   key={messageKey}
                   id="message"
                   value={message}
                   onChange={setMessage}
-                  placeholder={t("app.support.contact.form.messagePlaceholder")}
+                  placeholder={t("support.contact.form.messagePlaceholder")}
                   minHeight="140px"
                   maxLength={INPUT_LIMITS.supportMessage}
                 />
@@ -276,10 +276,10 @@ export default function ContactSupportPage() {
                 {loading ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    {t("app.support.contact.form.submitting")}
+                    {t("support.contact.form.submitting")}
                   </>
                 ) : (
-                  t("app.support.contact.form.submit")
+                  t("support.contact.form.submit")
                 )}
               </Button>
             </form>
@@ -291,14 +291,14 @@ export default function ContactSupportPage() {
             <CheckCircle className="h-12 w-12 text-emerald-500" />
             <div>
               <h2 className="text-lg font-semibold text-slate-900">
-                {t("app.support.contact.form.successTitle")}
+                {t("support.contact.form.successTitle")}
               </h2>
               <p className="text-slate-600 mt-1">
-                {t("app.support.contact.form.successBody")}
+                {t("support.contact.form.successBody")}
               </p>
             </div>
             <Button variant="outline" onClick={() => setSent(false)}>
-              {t("app.support.contact.form.successCta")}
+              {t("support.contact.form.successCta")}
             </Button>
           </CardContent>
         </Card>
@@ -308,10 +308,10 @@ export default function ContactSupportPage() {
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">
-            {t("app.support.contact.tickets.title")}
+            {t("support.contact.tickets.title")}
           </CardTitle>
           <CardDescription>
-            {t("app.support.contact.tickets.description")}
+            {t("support.contact.tickets.description")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -321,20 +321,20 @@ export default function ContactSupportPage() {
             </div>
           ) : myTickets.length === 0 ? (
             <p className="text-slate-500 text-center py-6">
-              {t("app.support.contact.tickets.empty")}
+              {t("support.contact.tickets.empty")}
             </p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>
-                    {t("app.support.contact.tickets.columns.subject")}
+                    {t("support.contact.tickets.columns.subject")}
                   </TableHead>
                   <TableHead>
-                    {t("app.support.contact.tickets.columns.status")}
+                    {t("support.contact.tickets.columns.status")}
                   </TableHead>
                   <TableHead>
-                    {t("app.support.contact.tickets.columns.createdAt")}
+                    {t("support.contact.tickets.columns.createdAt")}
                   </TableHead>
                   <TableHead className="w-[80px]" />
                 </TableRow>
@@ -372,7 +372,7 @@ export default function ContactSupportPage() {
                         onClick={() => setSelectedTicketId(t.id)}
                       >
                         <Eye className="h-4 w-4" />
-                        {t("app.support.contact.tickets.view")}
+                        {t("support.contact.tickets.view")}
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -387,7 +387,7 @@ export default function ContactSupportPage() {
       <Sheet open={!!selectedTicketId} onOpenChange={(open) => !open && setSelectedTicketId(null)}>
         <SheetContent side="right" className="w-full sm:max-w-xl overflow-y-auto">
           <SheetHeader>
-            <SheetTitle>{t("app.support.contact.detail.title")}</SheetTitle>
+            <SheetTitle>{t("support.contact.detail.title")}</SheetTitle>
           </SheetHeader>
           {loadingDetail ? (
             <div className="flex items-center justify-center py-12">
@@ -398,13 +398,13 @@ export default function ContactSupportPage() {
               <div className="rounded-lg border border-slate-200 bg-slate-50/50 p-4 space-y-3">
                 <div>
                   <p className="text-xs font-medium uppercase tracking-wide text-slate-400 mb-0.5">
-                    {t("app.support.contact.detail.subjectLabel")}
+                    {t("support.contact.detail.subjectLabel")}
                   </p>
                   <p className="font-medium text-slate-900">{ticketDetail.subject}</p>
                 </div>
                 <div>
                   <p className="text-xs font-medium uppercase tracking-wide text-slate-400 mb-0.5">
-                    {t("app.support.contact.detail.initialMessageLabel")}
+                    {t("support.contact.detail.initialMessageLabel")}
                   </p>
                   <SupportMessageContent content={ticketDetail.message} />
                 </div>
@@ -421,7 +421,7 @@ export default function ContactSupportPage() {
                     {getStatusLabel(ticketDetail.status)}
                   </Badge>
                   <span className="text-xs text-slate-500">
-                    {t("app.support.contact.detail.status.createdAtPrefix")}{" "}
+                    {t("support.contact.detail.status.createdAtPrefix")}{" "}
                     {formatDate(ticketDetail.created_at)}
                   </span>
                 </div>
@@ -429,11 +429,11 @@ export default function ContactSupportPage() {
 
               <div className="border-t border-slate-200 pt-4">
                 <h3 className="text-sm font-semibold text-slate-800 mb-3">
-                  {t("app.support.contact.detail.conversationTitle")}
+                  {t("support.contact.detail.conversationTitle")}
                 </h3>
                 {replies.length === 0 ? (
                   <p className="text-slate-500 text-sm py-4">
-                    {t("app.support.contact.detail.conversationEmpty")}
+                    {t("support.contact.detail.conversationEmpty")}
                   </p>
                 ) : (
                   <ul className="space-y-4 mb-5">
@@ -443,11 +443,11 @@ export default function ContactSupportPage() {
                         (r.author_display === authUser.email ||
                           r.author_display?.toLowerCase() === authUser.email?.toLowerCase());
                       const displayName = isCurrentUser
-                        ? t("app.support.contact.author.you")
+                        ? t("support.contact.author.you")
                         : r.author_display ||
                           (r.is_from_support
-                            ? t("app.support.contact.author.support")
-                            : t("app.support.contact.author.you"));
+                            ? t("support.contact.author.support")
+                            : t("support.contact.author.you"));
                       return (
                         <li
                           key={r.id}
@@ -484,7 +484,7 @@ export default function ContactSupportPage() {
                       key={replyKey}
                       value={replyText}
                       onChange={setReplyText}
-                      placeholder={t("app.support.contact.detail.replyPlaceholder")}
+                      placeholder={t("support.contact.detail.replyPlaceholder")}
                       minHeight="100px"
                       maxLength={INPUT_LIMITS.supportMessage}
                     />
@@ -499,7 +499,7 @@ export default function ContactSupportPage() {
                       ) : (
                         <>
                           <Send className="h-4 w-4" />
-                          {t("app.support.contact.detail.replyButton")}
+                          {t("support.contact.detail.replyButton")}
                         </>
                       )}
                     </Button>
@@ -509,7 +509,7 @@ export default function ContactSupportPage() {
             </div>
           ) : (
             <p className="text-slate-500 py-8">
-              {t("app.support.contact.detail.loadError")}
+              {t("support.contact.detail.loadError")}
             </p>
           )}
         </SheetContent>

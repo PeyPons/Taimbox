@@ -169,7 +169,7 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
           return;
         }
         if (!hasPassword) {
-          toast.error("La contraseña es obligatoria (mínimo 6 caracteres) para crear un nuevo empleado");
+          toast.error(t('team.employeeDialog.passwordRequired'));
           form.setError('password', { message: 'La contraseña debe tener al menos 6 caracteres' });
           setIsProcessing(false);
           return;
@@ -211,18 +211,18 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
 
         if (!authData?.user?.id) {
           console.error('[EmployeeDialog] No se recibió user.id. Respuesta completa:', authData);
-          throw new Error('No se pudo crear la cuenta de acceso. La función no devolvió un ID de usuario. Verifica que la Edge Function "create-user" esté desplegada en Supabase.');
+          throw new Error(t('team.employeeDialog.createUserNoId'));
         }
 
         authUserId = authData.user.id;
-        authMessage = "Empleado y cuenta de acceso creados.";
+        authMessage = t('team.employeeDialog.toasts.employeeAndAccessCreated');
         console.log('[EmployeeDialog] Usuario Auth creado:', authUserId);
       }
       // Para empleados EXISTENTES, solo actualizar si hay nueva contraseña
       else if (hasPassword) {
         if (!emailValue) {
-          toast.error("Debes proporcionar un email para actualizar el acceso");
-          form.setError('email', { message: 'El email es obligatorio' });
+          toast.error(t('team.employeeDialog.toasts.emailRequiredForAccess'));
+          form.setError('email', { message: t('team.employeeDialog.toasts.emailRequiredField') });
           setIsProcessing(false);
           return;
         }
@@ -233,7 +233,7 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
             body: { userId: employeeToEdit.user_id, password: data.password, email: emailValue }
           });
           if (error) throw error;
-          authMessage = "Credenciales actualizadas.";
+          authMessage = t('team.employeeDialog.toasts.credentialsUpdated');
         } else {
           // Empleado existente SIN cuenta de auth -> crear nueva
           console.log('[EmployeeDialog] Creando cuenta Auth para empleado existente:', emailValue);
@@ -246,7 +246,7 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
             console.error('[EmployeeDialog] Error en create-user:', error);
 
             // Intentar obtener más detalles del error
-            let errorMessage = 'Error al crear cuenta de acceso';
+            let errorMessage = t('team.employeeDialog.toasts.createAccessError');
             if (error.message) {
               errorMessage = error.message;
             } else if (error.context) {
@@ -276,7 +276,7 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
           }
 
           authUserId = newAuthData.user.id;
-          authMessage = "Cuenta de acceso creada.";
+          authMessage = t('team.employeeDialog.toasts.accessAccountCreated');
         }
       }
 
@@ -299,10 +299,10 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
 
       if (employeeToEdit) {
         await updateEmployee({ ...employeeToEdit, ...employeeData });
-        toast.success(authMessage || "Empleado actualizado");
+        toast.success(authMessage || t('team.employeeDialog.toasts.employeeUpdated'));
       } else {
         await addEmployee(employeeData);
-        toast.success(authMessage || "Empleado creado");
+        toast.success(authMessage || t('team.employeeDialog.toasts.employeeCreated'));
       }
       onOpenChange(false);
 
@@ -310,7 +310,7 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
       console.error("Error completo:", error);
 
       // Intentar extraer el mensaje de error más descriptivo
-      let errorMsg = "Error al guardar";
+      let errorMsg = t('team.employeeDialog.toasts.saveError');
 
       const err = error as { message?: string; error?: { message?: string } };
       if (err?.message) {
@@ -323,13 +323,13 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
 
       // Mensajes específicos para errores comunes
       if (errorMsg.includes("already been registered") || errorMsg.includes("already exists") || errorMsg.includes("duplicate")) {
-        toast.error("Este usuario ya está registrado en Taimbox");
+        toast.error(t('team.employeeDialog.userAlreadyRegistered'));
       } else if (errorMsg.includes("invalid email") || errorMsg.includes("email")) {
-        toast.error("El formato del email no es válido.");
+        toast.error(t('team.employeeDialog.invalidEmailFormat'));
       } else if (errorMsg.includes("password") && errorMsg.includes("weak")) {
-        toast.error("La contraseña es demasiado débil. Usa al menos 6 caracteres.");
+        toast.error(t('team.employeeDialog.weakPassword'));
       } else if (errorMsg.includes("Edge Function") || errorMsg.includes("desplegada")) {
-        toast.error("Error: La función 'create-user' no está desplegada. Contacta al administrador.");
+        toast.error(t('team.employeeDialog.createUserNotDeployed'));
       } else {
         toast.error(errorMsg);
       }

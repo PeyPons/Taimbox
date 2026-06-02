@@ -159,7 +159,23 @@
         "transferred": "Transferred",
         "pendingMenu": "Transfer pending",
         "transferredMenu": "Task transferred"
-      }
+      },
+      "weeklyBadge": "Weekly",
+      "estShort": "Est.",
+      "teamAndBudget": "Team and budget",
+      "teamAndBudgetAria": "View project team and budget",
+      "myProjectsThisWeek": "My projects this week ({{count}})"
+    },
+    "toasts": {
+      "weeklyPastEditBlocked": "You cannot edit tasks from past weeks. Use the \"Weekly\" button to manage them.",
+      "starterPlanSoftLock": "Your agency exceeds Starter Plan limits. Upgrade to Pro or Business to edit.",
+      "batchAddReviewRows": "Check project, task name and hours in each row.",
+      "batchAddSelectProject": "Select a project in each row that has a name or hours.",
+      "batchAddCompleteOneRow": "Complete at least one row: project, task name and hours.",
+      "titleTooLong": "The title is very long. Consider shortening it and using notes for details.",
+      "noValidTasks": "There are no valid tasks to save.",
+      "saveTasksError": "Error saving tasks",
+      "stopwatchCloseOnCompleteError": "Could not stop the timer when completing. Stop the timer and try again."
     },
     "allocationTaskRow": {
       "focusTodayTitle": "Employee marked this task as today's focus",
@@ -175,6 +191,15 @@
     },
     "employeePicker": {
       "notFound": "Employee not found."
+    },
+    "batchTaskRow": {
+      "initialNoteTitle": "Initial note",
+      "initialNotePlaceholder": "Details: what to deliver in ES / EN / DE, links, criteria…"
+    },
+    "allocationTaskRowTimerTitle": "Time logged with the timer",
+    "monthWeekScroll": {
+      "prevWeekAria": "Previous week",
+      "nextWeekAria": "Next week"
     },
     "loadIndicator": {
       "assignedHours": "Assigned hours:",
@@ -218,7 +243,11 @@
       "sortProjectsSection": "SORT PROJECTS"
     },
     "tour": {
-      "nav": { "skip": "Skip", "next": "Next", "done": "Done!" },
+      "nav": {
+        "skip": "Skip",
+        "next": "Next",
+        "done": "Done!"
+      },
       "finish": {
         "intro": "You know the planner tools. Remember:",
         "tip1": "Double-click to edit names quickly",
@@ -228,18 +257,54 @@
         "cta": "Start planning!"
       },
       "steps": {
-        "welcome": { "title": "Welcome to the Planner! 📋", "description": "Organize your tasks visually. See what's pending, mark complete, and manage your time efficiently." },
-        "view-toggle": { "title": "Switch view", "description": "Toggle weekly view (one week) and monthly view (all weeks). In month view you can expand or collapse each project." },
-        "week-nav": { "title": "Navigate weeks", "description": "Change weeks to see past tasks or plan ahead. Arrows move to the previous or next week in the month." },
-        "project-list": { "title": "Your projects", "description": "Each project shows estimated, actual, and computed hours and budget status. Colors indicate on track (green), tight (amber), or over (red). Click a project for details." },
-        "task-row": { "title": "Your tasks", "description": "Each task shows name, planned and computed hours, and dependencies. Color icons indicate status." },
-        "inline-edit": { "title": "Quick edit", "description": "Double-click any task name to edit inline. Press Enter to save or Escape to cancel. Try it after the tour!" },
-        "checkbox-complete": { "title": "Mark complete", "description": "Check the box when a task is done. It moves to the bottom after a few seconds so you can adjust computed hours." },
-        "hours-input": { "title": "Log hours", "description": "Enter planned and computed (actual) hours. Totals update automatically and you get alerts if you exceed contracted hours." },
-        "dependencies": { "title": "Dependencies", "description": "If a task depends on another, you'll see who you're waiting on. If you block someone, you'll see \"waiting on you\" with their name." },
-        "sort-options": { "title": "Sort and display", "description": "In week view, sort projects by contracted or your hours. In month view you can also enable \"Expanded projects\"." },
-        "add-task": { "title": "Add task", "description": "Use + to add a task to the project: name, hours, week, and optional dependency." },
-        "finish": { "title": "Ready to plan! 🚀", "description": "" }
+        "welcome": {
+          "title": "Welcome to the Planner! 📋",
+          "description": "Organize your tasks visually. See what's pending, mark complete, and manage your time efficiently."
+        },
+        "view-toggle": {
+          "title": "Switch view",
+          "description": "Toggle weekly view (one week) and monthly view (all weeks). In month view you can expand or collapse each project."
+        },
+        "week-nav": {
+          "title": "Navigate weeks",
+          "description": "Change weeks to see past tasks or plan ahead. Arrows move to the previous or next week in the month."
+        },
+        "project-list": {
+          "title": "Your projects",
+          "description": "Each project shows estimated, actual, and computed hours and budget status. Colors indicate on track (green), tight (amber), or over (red). Click a project for details."
+        },
+        "task-row": {
+          "title": "Your tasks",
+          "description": "Each task shows name, planned and computed hours, and dependencies. Color icons indicate status."
+        },
+        "inline-edit": {
+          "title": "Quick edit",
+          "description": "Double-click any task name to edit inline. Press Enter to save or Escape to cancel. Try it after the tour!"
+        },
+        "checkbox-complete": {
+          "title": "Mark complete",
+          "description": "Check the box when a task is done. It moves to the bottom after a few seconds so you can adjust computed hours."
+        },
+        "hours-input": {
+          "title": "Log hours",
+          "description": "Enter planned and computed (actual) hours. Totals update automatically and you get alerts if you exceed contracted hours."
+        },
+        "dependencies": {
+          "title": "Dependencies",
+          "description": "If a task depends on another, you'll see who you're waiting on. If you block someone, you'll see \"waiting on you\" with their name."
+        },
+        "sort-options": {
+          "title": "Sort and display",
+          "description": "In week view, sort projects by contracted or your hours. In month view you can also enable \"Expanded projects\"."
+        },
+        "add-task": {
+          "title": "Add task",
+          "description": "Use + to add a task to the project: name, hours, week, and optional dependency."
+        },
+        "finish": {
+          "title": "Ready to plan! 🚀",
+          "description": ""
+        }
       }
     }
   },
@@ -550,6 +615,32 @@
         "success": "If the email exists in our system, you'll receive a recovery link."
       }
     },
+    "resetPassword": {
+      "invalidLink": "The recovery link is invalid or has expired.",
+      "linkUsed": "The link has expired or was already used. Request a new one.",
+      "verifyError": "Unexpected error verifying the link.",
+      "passwordMinLength": "Password must be at least 6 characters",
+      "passwordMismatch": "Passwords do not match",
+      "updateError": "Failed to update password: {{message}}",
+      "successToast": "Password updated successfully!",
+      "unexpectedError": "Unexpected error. Please try again.",
+      "verifyingTitle": "Verifying link...",
+      "formTitle": "New password",
+      "successTitle": "Password updated!",
+      "errorTitle": "Invalid link",
+      "verifyingDesc": "We are verifying your recovery link",
+      "formDesc": "Set a new password for your account",
+      "successDesc": "Redirecting to sign in...",
+      "newPasswordLabel": "New password",
+      "newPasswordPlaceholder": "At least 6 characters",
+      "confirmPasswordLabel": "Confirm password",
+      "confirmPasswordPlaceholder": "Repeat password",
+      "submitting": "Updating...",
+      "submit": "Set new password",
+      "successBody": "Your password has been updated. You will be redirected to sign in in a few seconds.",
+      "goToLogin": "Go to sign in",
+      "backToLogin": "Back to sign in"
+    },
     "register": {
       "mode": {
         "quick": "Quick",
@@ -693,7 +784,9 @@
         "loadTicketsError": "Error loading your tickets",
         "agencyRequired": "Select an agency to send the request.",
         "subjectRequired": "Subject is required.",
+        "subjectTooLong": "Subject cannot exceed {{max}} characters.",
         "messageRequired": "Message is required.",
+        "messageTooLong": "Message cannot exceed {{max}} characters.",
         "createSuccess": "Request sent. We'll reply as soon as possible.",
         "createError": "Error sending the request. Please try again.",
         "replyRequired": "Write a message",
@@ -723,7 +816,12 @@
     },
     "tour": {
       "stepOf": "Step {{current}} of {{total}}",
-      "nav": { "skip": "Skip tour", "prev": "Back", "next": "Next", "start": "Let's go!" },
+      "nav": {
+        "skip": "Skip tour",
+        "prev": "Back",
+        "next": "Next",
+        "start": "Let's go!"
+      },
       "finish": {
         "intro": "You know the Deadlines basics. Remember:",
         "tip1": "Click projects to edit them directly",
@@ -732,16 +830,56 @@
         "tip4": "Use suggestions to redistribute work"
       },
       "steps": {
-        "welcome": { "title": "Welcome to Deadlines! 📅", "description": "Assign hours per project and person each month. We'll guide you through the features.", "interactionHint": "" },
-        "month-selector": { "title": "Month selector", "description": "Switch months to view and edit deadlines. Changes are saved per month.", "interactionHint": "👆 Try: click the arrows to change month" },
-        "filters": { "title": "Filters and search", "description": "Search by project or client, filter by type, show hidden projects, or only unassigned. Sort by client or employee.", "interactionHint": "🔍 Try: type in the search bar" },
-        "availability-panel": { "title": "Live availability", "description": "Sticky panel showing each person's load. Hover for absences and events. Colors show occupancy.", "interactionHint": "🖱️ Hover over someone for details" },
-        "project-list": { "title": "Project list", "description": "Projects grouped by client. Click any project to edit assignments and hours. Changes save automatically.", "interactionHint": "👆 Try: click any project to open the editor" },
-        "inline-editing": { "title": "Inline editing", "description": "Opens the editor to assign hours, adjust budget regularization, or hide projects.", "interactionHint": "" },
-        "global-assignments": { "title": "Other assignments", "description": "Internal tasks that add monthly load (meetings, cross-cutting deadlines…). Use absences/holidays below—they reduce availability, not here.", "interactionHint": "" },
-        "suggestions": { "title": "Redistribution suggestions", "description": "Detects overloaded people and suggests reassignments based on shared projects.", "interactionHint": "" },
-        "concurrent-editing": { "title": "Collaborative editing", "description": "If someone else is editing, you'll see their name. Changes sync in real time.", "interactionHint": "" },
-        "finish": { "title": "Ready to start! 🚀", "description": "", "interactionHint": "" }
+        "welcome": {
+          "title": "Welcome to Deadlines! 📅",
+          "description": "Assign hours per project and person each month. We'll guide you through the features.",
+          "interactionHint": ""
+        },
+        "month-selector": {
+          "title": "Month selector",
+          "description": "Switch months to view and edit deadlines. Changes are saved per month.",
+          "interactionHint": "👆 Try: click the arrows to change month"
+        },
+        "filters": {
+          "title": "Filters and search",
+          "description": "Search by project or client, filter by type, show hidden projects, or only unassigned. Sort by client or employee.",
+          "interactionHint": "🔍 Try: type in the search bar"
+        },
+        "availability-panel": {
+          "title": "Live availability",
+          "description": "Sticky panel showing each person's load. Hover for absences and events. Colors show occupancy.",
+          "interactionHint": "🖱️ Hover over someone for details"
+        },
+        "project-list": {
+          "title": "Project list",
+          "description": "Projects grouped by client. Click any project to edit assignments and hours. Changes save automatically.",
+          "interactionHint": "👆 Try: click any project to open the editor"
+        },
+        "inline-editing": {
+          "title": "Inline editing",
+          "description": "Opens the editor to assign hours, adjust budget regularization, or hide projects.",
+          "interactionHint": ""
+        },
+        "global-assignments": {
+          "title": "Other assignments",
+          "description": "Internal tasks that add monthly load (meetings, cross-cutting deadlines…). Use absences/holidays below—they reduce availability, not here.",
+          "interactionHint": ""
+        },
+        "suggestions": {
+          "title": "Redistribution suggestions",
+          "description": "Detects overloaded people and suggests reassignments based on shared projects.",
+          "interactionHint": ""
+        },
+        "concurrent-editing": {
+          "title": "Collaborative editing",
+          "description": "If someone else is editing, you'll see their name. Changes sync in real time.",
+          "interactionHint": ""
+        },
+        "finish": {
+          "title": "Ready to start! 🚀",
+          "description": "",
+          "interactionHint": ""
+        }
       }
     },
     "filters": {
@@ -953,12 +1091,28 @@
       "upToHours": "up to {{hours}}h",
       "projectsWithSuggestions": "{{count}} project(s) with suggestions",
       "showMoreProjects": "Show {{count}} more project(s)",
-      "showLess": "Show less",
       "projectsTransfersSummary": "{{projects}} project(s) · {{transfers}} suggested move(s)",
       "panelTitleIntent": "Redistribute monthly load"
     },
     "globalAssignments": {
       "button": "Global"
+    },
+    "globalAssignmentDialog": {
+      "editTitle": "Edit global assignment",
+      "createTitle": "New global assignment",
+      "description": "Internal tasks that add monthly load (meetings, internal training, cross-cutting deadlines…).",
+      "vacationHintTitle": "Vacation or public holiday?",
+      "vacationHintBody": "Do not register it here. In the Deadlines side panel use «Vacation or absence» or «Team holiday / event» — they reduce availability, they do not add load.",
+      "nameLabel": "Task name",
+      "namePlaceholder": "E.g.: deadline affects everyone, timeboxing creation",
+      "hoursLabel": "Hours",
+      "hoursPlaceholder": "E.g.: 2.5",
+      "affectsAllLabel": "Affects all employees",
+      "selectEmployeesLabel": "Select employees",
+      "validation": {
+        "nameRequired": "Name is required",
+        "hoursMin": "Hours must be greater than 0"
+      }
     },
     "toasts": {
       "globalAssignment": {
@@ -986,7 +1140,11 @@
         "noDeadlines": "There are no deadlines in the previous month",
         "copyError": "Error copying deadlines",
         "checkError": "Error checking previous deadlines",
-        "copySuccess": "{{count}} deadlines were copied"
+        "copySuccess": "{{count}} deadlines were copied",
+        "copySuccessWithSkipped": "{{count}} deadlines copied ({{skipped}} skipped: already existed or other reason).",
+        "allAlreadyExist": "All deadlines from the previous month already exist this month (or the project is no longer in the agency).",
+        "noneApplicable": "There are no applicable deadlines to copy.",
+        "noneNewToCopy": "There are no new deadlines to copy (all from the previous month are already in this month)."
       },
       "noConfigToDelete": "There is no saved configuration to delete"
     }
@@ -1721,7 +1879,19 @@
       "passwordPlaceholderMin": "Minimum 6 characters",
       "passwordHintNoChange": "Leave the password empty if you do not want to change it.",
       "passwordHintEnableAccess": "This employee cannot access the system. Enter email and password to enable access.",
-      "passwordHintRequired": "Email and password are required for the employee to access the system."
+      "passwordHintRequired": "Email and password are required for the employee to access the system.",
+      "toasts": {
+        "employeeUpdated": "Employee updated",
+        "employeeCreated": "Employee created",
+        "employeeAndAccessCreated": "Employee and login account created.",
+        "credentialsUpdated": "Credentials updated.",
+        "accessAccountCreated": "Login account created.",
+        "emailRequiredForAccess": "You must provide an email to update access",
+        "emailRequiredField": "Email is required",
+        "saveError": "Failed to save",
+        "createAccessError": "Failed to create login account",
+        "emailSyncWarning": "Employee updated, but there was an error syncing the login email."
+      }
     },
     "professionalGoalsForm": {
       "titleRequired": "Title is required",
@@ -1739,7 +1909,10 @@
       "keyResults": "Key results:",
       "cancel": "Cancel",
       "due": "Due: {{date}}",
-      "training": "Training"
+      "training": "Training",
+      "goalUpdated": "Goal updated",
+      "goalCreated": "Goal created",
+      "saveError": "Failed to save goal"
     },
     "limits": {
       "starterLimit": "Your agency exceeds the Starter Plan limit. Upgrade to Pro or Business to add more employees.",
@@ -1795,6 +1968,7 @@
       "addOtherRow": "Add another row",
       "saveTasks": "Save tasks",
       "addTasksDescription": "Plan multiple tasks for {{month}}.",
+      "addValidTaskError": "Add at least one valid task",
       "taskList": "Task list",
       "readyToSave": "Ready to save complete rows.",
       "registerInternal": "Register internal management",
@@ -1821,6 +1995,28 @@
         "estimatedClosed": "Estimated (closed)",
         "vsPlan": "vs plan",
         "adjustment": "Adjustment"
+      },
+      "toasts": {
+        "noAgency": "No agency selected.",
+        "internalClientCreated": "Client \"{{name}}\" created",
+        "internalProjectCreated": "Project \"{{name}}\" created",
+        "internalProjectError": "Failed to create internal project",
+        "taskNameRequired": "Enter a name for the task",
+        "hoursMustBePositive": "Hours must be greater than 0",
+        "internalProjectMissing": "Could not get the internal project",
+        "internalTaskRegistered": "\"{{name}}\" logged ({{hours}}h)",
+        "internalTaskError": "Failed to log the task",
+        "tasksAdded": "{{count}} task(s) added",
+        "saveTasksError": "Failed to save tasks",
+        "crmIdRequired": "Set your CRM ID in your profile",
+        "noPendingExport": "No pending tasks to export",
+        "exportSuccess": "{{count}} tasks exported for CRM"
+      }
+    },
+    "dashboardView": {
+      "toasts": {
+        "saveConfigError": "Failed to save department configuration",
+        "deleteConfigError": "Failed to delete configuration"
       }
     },
     "schedule": {
@@ -1832,6 +2028,29 @@
       "saturdayShort": "Sat",
       "sundayShort": "Sun",
       "weeklyTotal": "Weekly total"
+    },
+    "collaboration": {
+      "exampleBadge": "Example",
+      "teamThisMonth": "Your team this month",
+      "teammatesIntro": "Teammates you share projects with this month:",
+      "project_one": "{{count}} project",
+      "project_other": "{{count}} projects",
+      "hoursTogether": "{{hours}}h together",
+      "loadPct": "{{pct}}% load",
+      "availability": {
+        "veryAvailable": "Very available",
+        "available": "Available",
+        "somewhatBusy": "Somewhat busy"
+      },
+      "exampleTeamHint": "↑ Sample data. Plan tasks to see your real team.",
+      "needSupport": "Need help?",
+      "helpersIntro": "These teammates share projects with you and have capacity to help:",
+      "availableBadge": "Available",
+      "extraEffortHeader": "With a little extra effort...",
+      "considerBadge": "Worth asking",
+      "busyTooltipSuffix": "is quite busy",
+      "busyTooltipBody": "They may still help if you really need it. If you ask, show genuine appreciation — they're making an extra effort for you!",
+      "exampleHelpersHint": "↑ Sample data. Plan tasks to see who can help."
     }
   },
   "common": {
@@ -1853,7 +2072,24 @@
     "discardChanges": "Discard changes?",
     "discardDescription": "You have unsaved tasks. If you close now, you will lose the data entered.",
     "keepEditing": "Keep editing",
-    "yesDiscard": "Yes, discard"
+    "yesDiscard": "Yes, discard",
+    "agencies": "Agencies",
+    "administrators": "Administrators",
+    "support": "Support",
+    "metrics": "Metrics",
+    "add": "Add",
+    "subscription": "Subscription",
+    "createdAt": "Created",
+    "status": "Status",
+    "actions": "Actions",
+    "plan": "Plan",
+    "agency": "Agency",
+    "refresh": "Refresh",
+    "updated": "Updated",
+    "all": "All",
+    "user": "User",
+    "pending": "Pending",
+    "slug": "Slug"
   },
   "settings": {
     "title": "Settings",
@@ -2330,6 +2566,21 @@
       "confirmChange": "Confirm change",
       "cancel": "Cancel"
     },
+    "toasts": {
+      "cannotDeleteAdminRole": "You cannot delete the Administrator role",
+      "departmentExists": "A department with that name already exists",
+      "noAgencySelected": "No agency selected",
+      "savePartialNotificationsError": "General settings were saved, but some notification rules failed to save.",
+      "configSaved": "Agency settings saved",
+      "saveError": "Error saving settings",
+      "accountIdRequired": "Please enter an account ID.",
+      "accountAlreadyRegistered": "This account is already registered.",
+      "accountSaveError": "Error saving account",
+      "accountAdded": "Account added successfully.",
+      "accountDeleteError": "Error deleting account",
+      "accountDeleted": "Account deleted",
+      "filtersReset": "Filters reset to default values"
+    },
     "saveChanges": "Save Changes",
     "saving": "Saving..."
   },
@@ -2422,6 +2673,18 @@
     "toast": {
       "switchSuccess": "Agency switched successfully",
       "switchError": "Error switching agency"
+    },
+    "inviteDialog": {
+      "title": "Invite user to agency",
+      "description": "Invite someone to join {{agency}}. If they already have an account, they will be assigned to this agency. Otherwise a new account will be created.",
+      "emailRequired": "Email is required",
+      "invalidEmail": "Invalid email format",
+      "success": "User invited successfully",
+      "error": "Failed to invite user",
+      "rolePlaceholder": "Select a role (optional)",
+      "departmentPlaceholder": "Select a department (optional)",
+      "inviting": "Inviting...",
+      "inviteButton": "Invite user"
     },
     "description": "Manage your agencies or create a new one.",
     "newAgency": "New Agency"
@@ -3040,6 +3303,9 @@
     }
   },
   "ads": {
+    "toasts": {
+      "configSaved": "Settings saved"
+    },
     "google": "Google Ads",
     "meta": "Meta Ads",
     "lastSync": "Last sync: {{time}}",
@@ -3163,6 +3429,44 @@
     }
   },
   "transfers": {
+    "acceptance": {
+      "addDistribution": "Add distribution",
+      "rejectReasonRequired": "Please provide a reason for rejection",
+      "rejectError": "Failed to reject the transfer",
+      "acceptBaseError": "Failed to accept the base transfer",
+      "acceptError": "Failed to accept the transfer",
+      "processError": "Failed to process the request",
+      "acceptedKeep": "Task accepted",
+      "acceptedMove": "Task accepted and moved",
+      "acceptedDistribute": "Task accepted and split",
+      "acceptedRollover": "Task accepted: copy in the next week",
+      "hoursMismatch": "Distributed hours ({{distributed}}h) do not match received hours ({{received}}h)",
+      "addValidTask": "Add at least one valid task",
+      "rejectTitle": "Reject transfer",
+      "rejectDescription": "Briefly explain why you cannot accept this task.",
+      "rejectReasonLabel": "Rejection reason",
+      "rejectConfirm": "Confirm rejection",
+      "rejecting": "Rejecting...",
+      "back": "Back",
+      "acceptTitle": "Accept transfer",
+      "acceptDescription": "Options to accept and manage the transferred task.",
+      "pendingLabel": "Pending",
+      "optionKeep": "Keep (accept as is)",
+      "optionRollover": "Log hours and continue next week",
+      "optionMove": "Move to another week",
+      "optionDistribute": "Split hours",
+      "whichWeek": "Which week?",
+      "distributeHours": "Split {{hours}}h:",
+      "remainingHours": "Remaining: {{hours}}h",
+      "subtaskPlaceholder": "Subtask name *",
+      "rolloverHint": "Hours are logged in the task's current week and the same task is created in the next calendar week.",
+      "rejectButton": "Reject",
+      "acceptButton": "Accept",
+      "confirmButton": "Confirm",
+      "activityMoveComment": "Transfer received and moved to week of {{date}}",
+      "activityDistributeComment": "Transfer received and split into {{count}} tasks.",
+      "activityRolloverComment": "Transfer received: copy planned in the next week (rollover)."
+    },
     "unnamedTask": "Unnamed task",
     "pending": {
       "loading": "Loading transfers...",
@@ -3193,7 +3497,72 @@
       "reasonLabel": "Reason (optional)",
       "reasonPlaceholder": "E.g. I have no time this week...",
       "submit": "Send request"
+    },
+    "badge": {
+      "defaultLabel": "Transferred",
+      "teammateFallback": "teammate",
+      "pendingAcceptance": "Transfer pending acceptance by {{name}}",
+      "transferredDistributed": "Task transferred and split. Kept as reference (0h). Recipient: {{name}}",
+      "transferredRollover": "Continuation transferred to {{name}} next week",
+      "transferredTo": "Transferred to {{name}}",
+      "transferredFrom": "Transferred from {{name}}",
+      "readOnlyShell": "Transferred task (read-only in your panel)",
+      "receivedFromWithOriginal": "Transferred from {{source}}\nOriginal task: {{original}}",
+      "receivedFrom": "Transferred from {{source}}"
     }
+  },
+  "activityLog": {
+    "loadError": "Error loading history (verify audit_logs migration)",
+    "noChanges": "No changes recorded",
+    "unknownTask": "Unknown task",
+    "unknownEmployee": "Unknown",
+    "deletedEmployee": "Deleted employee",
+    "noProject": "No project",
+    "deletedProject": "Deleted project",
+    "otherSource": "other",
+    "unnamedTask": "Unnamed",
+    "defaultTask": "Task",
+    "actions": {
+      "created": "New",
+      "transferred": "Transferred",
+      "distributed": "Redistributed",
+      "continued": "Continuation",
+      "completed": "Completed",
+      "deleted": "Deleted",
+      "updated": "Edited"
+    },
+    "details": {
+      "receivedFrom": "Received from {{source}} by {{recipient}} ({{hours}}h)",
+      "distributionReceived": "Redistribution received ({{hours}}h)",
+      "continuedFromPrevWeek": "Continuation from previous week ({{hours}}h)",
+      "createdFor": "Created for {{name}} ({{hours}}h)",
+      "deletedFrom": "Removed from {{name}}",
+      "distributedToTeammates": "Distributed to teammates by {{name}}",
+      "completedBy": "Completed by {{name}} ({{hours}}h)",
+      "distributedIntoSubtasks": "Distributed into {{count}} sub-task(s)"
+    },
+    "changes": {
+      "hours": "Hours: {{from}}h → {{to}}h",
+      "week": "Week: S{{from}} → S{{to}}",
+      "project": "Project: {{from}} → {{to}}",
+      "name": "Name: \"{{from}}\" → \"{{to}}\"",
+      "descriptionAdded": "Description added",
+      "descriptionRemoved": "Description removed",
+      "descriptionModified": "Description updated",
+      "blockAdded": "Block added",
+      "blockRemoved": "Block removed",
+      "blockChanged": "Block changed",
+      "priority": "Priority: {{from}} → {{to}}",
+      "priorityRemoved": "Priority removed",
+      "status": "Status: {{from}} → {{to}}",
+      "actualHours": "Actual hours: {{from}}h → {{to}}h",
+      "computedHours": "Computed hours: {{from}}h → {{to}}h",
+      "other": "Other: {{fields}}",
+      "noDetectableChanges": "Saved with no detectable changes"
+    },
+    "eventsCount_one": "{{count}} event",
+    "eventsCount_other": "{{count}} events",
+    "subTasksCount": ", {{count}} sub-tasks"
   },
   "routeError": {
     "title": "Error loading page",
@@ -3202,22 +3571,70 @@
   },
   "welcomeTour": {
     "steps": {
-      "welcome": { "title": "Welcome to Taimbox! 🎉", "description": "This is your personal dashboard. We'll walk you through the main features so you can get started." },
-      "addTasks": { "title": "Add tasks", "description": "Plan your work here. Add multiple tasks at once, pick the project, hours and week. You'll see alerts if you exceed contracted hours." },
-      "weekly": { "title": "Weekly — task review", "description": "Review tasks left open from last week and ones teammates transferred to you. Move, transfer or split them as needed." },
-      "crmExport": { "title": "Export planning (CSV)", "description": "When you have planned tasks, export them to CSV in one click to match your ERP or other tools. You need your external ID set in your profile." },
-      "internalTasks": { "title": "Internal management", "description": "Meetings, training, deadlines… Any time not tied to a client goes here. It is logged automatically as completed." },
-      "goals": { "title": "Your goals", "description": "View and manage your professional goals (OKRs). Stay focused on what matters for your growth." },
-      "absences": { "title": "Absences", "description": "Log vacations, sick leave or time off so the planner reflects your real availability. Capacity adjusts automatically." },
-      "calendar": { "title": "Your calendar", "description": "Monthly view of your workload. Colors show occupancy: green (OK), amber (almost full), red (overloaded). Click any week for details." },
-      "priorityWidget": { "title": "Smart alerts", "description": "We highlight what matters: if you're blocking someone, tasks almost done, or where to start. Watch the red alerts!" },
-      "dependenciesWidget": { "title": "Dependency status", "description": "See who is waiting on you and who you are waiting on. Green dependencies are ready for you to start." },
-      "planningInconsistencies": { "title": "Planning coherence", "description": "Check whether your planned hours match deadlines. If not, we suggest possible task swaps with teammates." },
-      "collaborationCards": { "title": "Your team & support", "description": "See who you collaborate with most this month and ask teammates for help. One click notifies someone who can lend a hand." },
-      "projectsSummary": { "title": "Projects summary", "description": "All your projects this month with assigned, completed hours and contracted status. Click any week to view and edit tasks." },
-      "monthlyBalance": { "title": "Monthly balance", "description": "Overview of your workload vs capacity. Helps you spot overload early." },
-      "reliability": { "title": "Reliability index", "description": "Tracks how consistently you close weeks and report hours. Useful for self-review." },
-      "finish": { "title": "You're all set! 🚀", "description": "Explore the dashboard at your pace. You can repeat this tour anytime from the menu." }
+      "welcome": {
+        "title": "Welcome to Taimbox! 🎉",
+        "description": "This is your personal dashboard. We'll walk you through the main features so you can get started."
+      },
+      "addTasks": {
+        "title": "Add tasks",
+        "description": "Plan your work here. Add multiple tasks at once, pick the project, hours and week. You'll see alerts if you exceed contracted hours."
+      },
+      "weekly": {
+        "title": "Weekly — task review",
+        "description": "Review tasks left open from last week and ones teammates transferred to you. Move, transfer or split them as needed."
+      },
+      "crmExport": {
+        "title": "Export planning (CSV)",
+        "description": "When you have planned tasks, export them to CSV in one click to match your ERP or other tools. You need your external ID set in your profile."
+      },
+      "internalTasks": {
+        "title": "Internal management",
+        "description": "Meetings, training, deadlines… Any time not tied to a client goes here. It is logged automatically as completed."
+      },
+      "goals": {
+        "title": "Your goals",
+        "description": "View and manage your professional goals (OKRs). Stay focused on what matters for your growth."
+      },
+      "absences": {
+        "title": "Absences",
+        "description": "Log vacations, sick leave or time off so the planner reflects your real availability. Capacity adjusts automatically."
+      },
+      "calendar": {
+        "title": "Your calendar",
+        "description": "Monthly view of your workload. Colors show occupancy: green (OK), amber (almost full), red (overloaded). Click any week for details."
+      },
+      "priorityWidget": {
+        "title": "Smart alerts",
+        "description": "We highlight what matters: if you're blocking someone, tasks almost done, or where to start. Watch the red alerts!"
+      },
+      "dependenciesWidget": {
+        "title": "Dependency status",
+        "description": "See who is waiting on you and who you are waiting on. Green dependencies are ready for you to start."
+      },
+      "planningInconsistencies": {
+        "title": "Planning coherence",
+        "description": "Check whether your planned hours match deadlines. If not, we suggest possible task swaps with teammates."
+      },
+      "collaborationCards": {
+        "title": "Your team & support",
+        "description": "See who you collaborate with most this month and ask teammates for help. One click notifies someone who can lend a hand."
+      },
+      "projectsSummary": {
+        "title": "Projects summary",
+        "description": "All your projects this month with assigned, completed hours and contracted status. Click any week to view and edit tasks."
+      },
+      "monthlyBalance": {
+        "title": "Monthly balance",
+        "description": "Overview of your workload vs capacity. Helps you spot overload early."
+      },
+      "reliability": {
+        "title": "Reliability index",
+        "description": "Tracks how consistently you close weeks and report hours. Useful for self-review."
+      },
+      "finish": {
+        "title": "You're all set! 🚀",
+        "description": "Explore the dashboard at your pace. You can repeat this tour anytime from the menu."
+      }
     },
     "finishCustom": {
       "intro": "You know the basics. Remember:",
@@ -3226,22 +3643,72 @@
       "tip3": "Review your reliability index to improve",
       "tip4": "Collaborate with teammates who need help"
     },
-    "nav": { "skip": "Skip tour", "prev": "Previous", "next": "Next", "finish": "Finish", "stepOf": "Step {{current}} of {{total}}" }
+    "nav": {
+      "skip": "Skip tour",
+      "prev": "Previous",
+      "next": "Next",
+      "finish": "Finish",
+      "stepOf": "Step {{current}} of {{total}}"
+    }
   },
   "weeklyReport": {
     "actions": {
-      "keep": { "label": "Close task", "hint": "Log hours and finish" },
-      "postpone": { "label": "Continue another week", "hint": "Log progress here; the rest moves to the week you choose (0 if you did not advance)" },
-      "distribute": { "label": "Split into tasks", "hint": "Split into several tasks in your planning" },
-      "moveToEmployee": { "label": "Reassign to teammate", "hint": "Pass pending hours to someone else" },
-      "cancel": { "label": "Cancel / will not do", "hint": "Close the task and remove pending balance from the plan" },
-      "justify": { "label": "Note only", "hint": "Explanation without changing hours or planning" }
+      "keep": {
+        "label": "Close task",
+        "hint": "Log hours and finish"
+      },
+      "postpone": {
+        "label": "Continue another week",
+        "hint": "Log progress here; the rest moves to the week you choose (0 if you did not advance)"
+      },
+      "distribute": {
+        "label": "Split into tasks",
+        "hint": "Split into several tasks in your planning"
+      },
+      "moveToEmployee": {
+        "label": "Reassign to teammate",
+        "hint": "Pass pending hours to someone else"
+      },
+      "cancel": {
+        "label": "Cancel / will not do",
+        "hint": "Close the task and remove pending balance from the plan"
+      },
+      "justify": {
+        "label": "Note only",
+        "hint": "Explanation without changing hours or planning"
+      }
     },
     "outcomes": {
-      "done": { "label": "I'm done", "hint": "Log hours and close", "actions": ["keep"] },
-      "continue": { "label": "I'll continue later", "hint": "Move to another week (0 h if you did not advance) or split into tasks", "actions": ["postpone", "distribute"] },
-      "handoff": { "label": "Someone else will do it", "hint": "Pass pending work to a teammate", "actions": ["moveToEmployee"] },
-      "blocked": { "label": "Does not apply", "hint": "Cancel or leave a note", "actions": ["cancel", "justify"] }
+      "done": {
+        "label": "I'm done",
+        "hint": "Log hours and close",
+        "actions": [
+          "keep"
+        ]
+      },
+      "continue": {
+        "label": "I'll continue later",
+        "hint": "Move to another week (0 h if you did not advance) or split into tasks",
+        "actions": [
+          "postpone",
+          "distribute"
+        ]
+      },
+      "handoff": {
+        "label": "Someone else will do it",
+        "hint": "Pass pending work to a teammate",
+        "actions": [
+          "moveToEmployee"
+        ]
+      },
+      "blocked": {
+        "label": "Does not apply",
+        "hint": "Cancel or leave a note",
+        "actions": [
+          "cancel",
+          "justify"
+        ]
+      }
     },
     "notes": {
       "optionalLabel": "Note (optional)",
@@ -3266,7 +3733,10 @@
       "currentWeekEmptyTitle": "No tasks in the current week",
       "currentWeekEmptyDesc": "Tasks for the current week will appear here when you want proactive adjustments."
     },
-    "tabs": { "requireClose": "Need closing", "currentWeek": "Current week" },
+    "tabs": {
+      "requireClose": "Need closing",
+      "currentWeek": "Current week"
+    },
     "sidebar": {
       "filterPlaceholder": "Filter...",
       "filterAria": "Filter tasks",
@@ -3280,6 +3750,30 @@
       "writeExplanation": "\"{{taskName}}\": write an explanation",
       "cancelReason": "\"{{taskName}}\": state the reason for cancellation",
       "chooseColleague": "Choose teammate"
+    },
+    "mutations": {
+      "selectTargetWeek": "Select a target week",
+      "noBalanceToMove": "No remaining balance to move to another week",
+      "taskCloseFailed": "Failed to register task close",
+      "moveErrorRevert": "Error moving task; change was reverted",
+      "selectColleagueWeek": "Select teammate and target week",
+      "noHoursToTransfer": "No pending hours to transfer to another teammate",
+      "capacityExceededWarning": "{{name}} would exceed their capacity. The task will still be created.",
+      "transferRegisterFailed": "Failed to register transfer",
+      "transferErrorRevert": "Transfer error; change was reverted",
+      "justifyExplanationRequired": "Write an explanation to justify the task",
+      "justifyRegisterFailed": "Failed to register justification",
+      "cancelReasonRequired": "State the reason for cancellation",
+      "cancelRegisterFailed": "Failed to register cancellation",
+      "selectDestWeekForTask": "\"{{taskName}}\": choose target week",
+      "negativeActualHours": "\"{{taskName}}\": actual hours cannot be negative",
+      "needsPlannedHours": "\"{{taskName}}\" needs planned hours > 0",
+      "partialCloseFailed": "Failed to complete partial close (is the migration applied in Supabase?)",
+      "addValidTask": "Add at least one valid task",
+      "hoursSumMismatch": "Sum {{distributed}}h ≠ {{pending}}h pending",
+      "projectBudgetExceeded": "Project exceeds budget ({{total}}h/{{budget}}h). It will still be created.",
+      "weekOverCapacity": "Week {{date}} over capacity.",
+      "distributionRegisterFailed": "Failed to register distribution"
     },
     "consequences": {
       "keepUnplanned": "The task will close with {{actual}}h logged. {{unplanned}}h will remain unplanned if you confirm.",
@@ -3321,7 +3815,12 @@
       "overCapShort": "Over cap.",
       "selectFromList": "Select a task from the list"
     },
-    "footer": { "configured": "{{resolved}}/{{total}} configured", "cancel": "Cancel", "processing": "Processing…", "confirmClose": "Confirm close" },
+    "footer": {
+      "configured": "{{resolved}}/{{total}} configured",
+      "cancel": "Cancel",
+      "processing": "Processing…",
+      "confirmClose": "Confirm close"
+    },
     "keepConfirm": {
       "title": "Close with unplanned hours?",
       "singleDesc": "One task will close with fewer hours than estimated:",
@@ -3331,8 +3830,12 @@
       "confirmAnyway": "Yes, close anyway",
       "continueLaterHint": "If work continues, choose <strong>I'll continue later</strong> instead of closing short."
     },
-    "toast": { "updateError": "Could not update weekly" },
-    "errors": { "andMore": " and {{count}} more" },
+    "toast": {
+      "updateError": "Could not update weekly"
+    },
+    "errors": {
+      "andMore": " and {{count}} more"
+    },
     "capacityWarning": "Warning: {{warnings}}"
   },
   "apiKeys": {
@@ -3440,5 +3943,248 @@
     "clickToAdd": "Click to add",
     "saveError": "Could not save the note",
     "deleteError": "Could not delete the note"
+  },
+  "admin": {
+    "route": {
+      "noPermission": "You do not have permission to access the admin panel."
+    },
+    "admins": {
+      "addBtn": "Add administrator",
+      "cannotRemoveSelf": "You cannot remove yourself",
+      "createdAt": "Date added",
+      "emailPlaceholder": "user@example.com",
+      "errAdd": "Failed to add",
+      "errEmail": "Enter an email",
+      "errLoad": "Failed to load administrators",
+      "errRemove": "Failed to remove",
+      "errServer": " Check on the server: docker logs supabase-edge-functions",
+      "nameOptional": "Name (optional)",
+      "namePlaceholder": "Display name",
+      "pwdOptional": "Password (optional)",
+      "pwdPlaceholder": "Min. 6 characters to create a new account",
+      "removeAccess": "Remove administrator access",
+      "roleOptional": "Role (optional)",
+      "successAdd": "Administrator added successfully",
+      "successRemove": "Administrator removed from the panel",
+      "you": "(you)"
+    },
+    "agencies": {
+      "pageTitle": "Agency management",
+      "pageSubtitle": "List and status of agencies. Suspending blocks access without deleting data.",
+      "filterStatusAll": "All",
+      "filterStatusActive": "Active",
+      "filterStatusSuspended": "Suspended",
+      "filterPlanAll": "All plans",
+      "emptySearch": "No matching agencies.",
+      "emptyPlanFilter": "No agencies with the selected plan.",
+      "active": "Active",
+      "completed": "Completed",
+      "employees": "Employees",
+      "errAuth": "You must sign in",
+      "errImpersonate": "Could not access as this agency",
+      "errLoad": "Failed to load agencies",
+      "errPlan": "Failed to change plan",
+      "errStatus": "Failed to update status",
+      "impersonate": "View the app as if you belonged to this agency",
+      "projects": "Projects",
+      "purgeConfirm": "Delete permanently",
+      "purgeConfirmSlug": "Type the agency slug to confirm:",
+      "purgeDialogBody": "The Stripe subscription will be canceled if it exists, and employees, projects, assignments, and all other data for this agency will be deleted. This cannot be undone.",
+      "purgeDialogTitle": "Delete agency forever",
+      "purgeError": "Could not delete the agency",
+      "purgeSuccess": "Agency permanently removed from the database",
+      "purgeTitle": "Delete agency and all its data (irreversible)",
+      "reactivated": "Agency reactivated",
+      "redirecting": "Redirecting to the app with the selected agency",
+      "searchPlaceholder": "Search by name or slug...",
+      "setup": "Setup",
+      "suspended": "Suspended",
+      "suspendedSuccess": "Agency suspended",
+      "trialEnd": "Trial until"
+    },
+    "blog": {
+      "addBlock": "Add block.",
+      "addItem": "Add item",
+      "anchorId": "anchorId (TOC)",
+      "backToList": "List",
+      "block": "Block",
+      "blockCount": "blocks",
+      "blockType": "Type",
+      "blocksCountLabel": "blocks",
+      "blocksDraftWarning": "Complete required fields before saving:",
+      "blocksJsonAdvanced": "Advanced JSON",
+      "blocksJsonAdvancedHint": "For bulk edits or partial imports only. The visual editor is recommended.",
+      "blocksJsonBroken": "JSON is invalid. Fix it in Advanced JSON to restore the visual editor.",
+      "cols": {
+        "date": "Date",
+        "slug": "Slug",
+        "status": "Status",
+        "title": "Title"
+      },
+      "contentTabEdit": "Editor",
+      "contentTabPreview": "Preview",
+      "created": "Post created",
+      "date": "Date",
+      "deleteConfirmBody": "This action cannot be undone. The post will disappear from the public blog.",
+      "deleteConfirmTitle": "Delete this post?",
+      "deleted": "Post deleted",
+      "description": "Description",
+      "editorTitleEdit": "Edit post",
+      "editorTitleNew": "New post",
+      "empty": "No posts.",
+      "errBlocksEn": "Error in EN blocks: ",
+      "errBlocksEs": "Error in ES blocks: ",
+      "errDelete": "Failed to delete",
+      "errDescriptions": "Descriptions in both languages are required.",
+      "errJsonLdEn": "Error in EN JSON-LD: ",
+      "errJsonLdEs": "Error in ES JSON-LD: ",
+      "errLoad": "Failed to load posts.",
+      "errPathEn": "EN path must start with /en/blog/.",
+      "errPathEs": "ES path must start with /blog/.",
+      "errSave": "Failed to save",
+      "errSlugFormat": "Slug may only contain lowercase letters, numbers, and hyphens.",
+      "errSlugRequired": "Slug is required.",
+      "errTitles": "Titles in both languages are required.",
+      "exportSeed": "Export seed JSON",
+      "exportSeedInvalid": "Fix blocks before exporting.",
+      "faqA": "Answer",
+      "faqQ": "Question",
+      "href": "Link",
+      "html": "Content",
+      "htmlHint": "You can use basic HTML: <strong>, <a href=\".\">, <em>.",
+      "importSeed": "Import seed JSON",
+      "importSeedErr": "Could not read the JSON file.",
+      "importSeedOk": "Content imported. Review date and status before saving.",
+      "items": "items",
+      "jsonLd": "JSON-LD (optional)",
+      "jsonLdHint": "Empty = a basic Article is generated automatically.",
+      "level": "Level",
+      "listDescription": "Manage blog articles: SEO, routes, translations, and content blocks.",
+      "listTitle": "Blog",
+      "metaDescription": "Meta description (SEO)",
+      "metaDescriptionHint": "If empty, uses the regular description.",
+      "metaTitle": "Meta title (SEO)",
+      "metaTitleHint": "If empty, uses the regular title.",
+      "moveDown": "Move down",
+      "moveUp": "Move up",
+      "newPost": "New post",
+      "openJsonEditor": "Open JSON editor",
+      "orderedList": "Numbered list",
+      "pathEn": "EN path",
+      "pathEs": "ES path",
+      "preview": "Preview",
+      "previewHint": "Preview uses the same BlockRenderer as the public site. fullPage visualRefs are not pre-rendered here.",
+      "readingMinutes": "Reading min.",
+      "relatedSlug": "Related slug (optional)",
+      "relatedSlugField": "Related slug",
+      "saved": "Changes saved",
+      "searchPlaceholder": "Search by slug or title.",
+      "sectionContent": "Article content",
+      "sectionGeneral": "Identity and routes",
+      "sectionLocale": "Translations and SEO",
+      "slug": "Internal slug",
+      "slugHelp": "Stable internal identifier. Not the URL; other posts reference it in relatedSlug.",
+      "status": "Status",
+      "statusDraft": "Draft",
+      "statusPublished": "Published",
+      "tableHeaders": "Headers",
+      "tableRows": "Rows",
+      "text": "Text",
+      "title": "Title",
+      "tocHint": "The table of contents is generated automatically from headings with anchorId.",
+      "tone": "Tone",
+      "variant": "Variant",
+      "viewLive": "View published",
+      "visualId": "Infographic",
+      "visualRefIds": "Available visualIds",
+      "langEs": "Spanish",
+      "langEn": "English",
+      "defaultParagraphEs": "Escribe aquí el primer párrafo del artículo.",
+      "defaultParagraphEn": "Write the first paragraph of the article here.",
+      "invalidJson": "Invalid JSON"
+    },
+    "docs": {
+      "title": "Internal documentation",
+      "subtitle": "Procedures and reference for the platform admin team.",
+      "agenciesTitle": "Agencies",
+      "agenciesSuspend": "Suspend an agency: In Admin → Agencies, find the agency and set status to \"Suspended\". Users of that agency will be redirected to /suspended on sign in.",
+      "agenciesReactivate": "Reactivate: Set status to \"Active\" from the same list.",
+      "supportTitle": "Support",
+      "supportTickets": "Tickets: Users submit requests from Settings → Contact support. In Admin → Support you can list tickets, view details (View button), add internal comments, and change status (Open / In progress / Closed).",
+      "supportCreate": "Create a ticket on behalf of an agency: Use \"New ticket\", select the agency, and fill in subject and message.",
+      "metricsTitle": "Metrics",
+      "metricsBody": "Metrics: Admin → Metrics shows totals for agencies (active/suspended), employees, users with an agency, and support tickets.",
+      "adminsTitle": "Platform administrators",
+      "adminsBody": "In Admin → Administrators you can list who has access to the /admin panel, add a new administrator by email (if they already exist) or create a new account with email and password, and remove access. You cannot remove the last admin. These users are not linked to any agency.",
+      "accessTitle": "Admin access",
+      "accessBody": "Only users listed in the platform_admins table can access /admin. The first admin is added by inserting their auth.users.id into platform_admins (SQL or Dashboard). Other app routes use role and agency permissions (user_agencies, employees)."
+    },
+    "layout": {
+      "backApp": "Back to app",
+      "blog": "Blog",
+      "title": "Administration panel",
+      "docs": "Docs"
+    },
+    "support": {
+      "subtitle": "Support tickets by agency. Create and manage status.",
+      "newTicket": "New ticket",
+      "allAgencies": "All agencies",
+      "noTickets": "No tickets.",
+      "conversation": "Conversation",
+      "loadTicketFailed": "Could not load the ticket.",
+      "replyBadgeInternal": "Internal",
+      "replyBadgeUser": "To user",
+      "internalOnlyLabel": "Internal only (not visible to the agency)",
+      "createdAt": "Created {{date}}",
+      "updatedAt": "Updated {{date}}",
+      "createMessagePlaceholder": "Description or internal notes",
+      "filterStatusAll": "All",
+      "filterStatusOpen": "Open",
+      "filterStatusInProgress": "In progress",
+      "filterStatusClosed": "Closed",
+      "allFieldsReq": "Agency, subject, and message are required",
+      "createTitle": "Create ticket",
+      "detailTitle": "Ticket details",
+      "errAddReply": "Failed to add reply",
+      "errCreateTicket": "Failed to create ticket",
+      "errLoad": "Failed to load tickets",
+      "errLoadTicket": "Failed to load ticket",
+      "errUpdateStatus": "Failed to update status",
+      "initialMessage": "Initial message",
+      "internalNotePlaceholder": "Internal note (visible to admins only).",
+      "internalReplyAdded": "Internal comment added",
+      "noReplies": "No comments yet.",
+      "replyAdded": "Reply sent to the user",
+      "replyPlaceholder": "Reply visible to the agency.",
+      "selectAgency": "Select agency",
+      "sendInternal": "Send internal comment",
+      "sendReply": "Send reply to user",
+      "statusClosed": "Closed",
+      "statusInProgress": "In progress",
+      "statusOpen": "Open",
+      "statusUpdated": "Status updated",
+      "subject": "Subject",
+      "subjectPlaceholder": "Ticket subject",
+      "ticketCreated": "Ticket created",
+      "title": "Support",
+      "writeMessage": "Write a message"
+    },
+    "metrics": {
+      "title": "Platform metrics",
+      "subtitle": "Summary of agencies, users, and support tickets.",
+      "errLoad": "Failed to load metrics",
+      "loadFailed": "Could not load metrics.",
+      "cardAgencies": "Agencies",
+      "cardUsers": "Users and employees",
+      "cardSupport": "Support tickets",
+      "total": "Total",
+      "activeAgencies": "Active",
+      "suspendedAgencies": "Suspended",
+      "employeesTotal": "Employees (total)",
+      "usersWithAgency": "Users with an agency",
+      "ticketsOpen": "Open",
+      "ticketsInProgress": "In progress",
+      "ticketsClosed": "Closed"
+    }
   }
 }

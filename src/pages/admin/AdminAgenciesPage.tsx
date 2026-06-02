@@ -277,9 +277,9 @@ export default function AdminAgenciesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Gestión de agencias</h1>
+        <h1 className="text-2xl font-bold text-slate-900">{t('admin.agencies.pageTitle')}</h1>
         <p className="text-slate-600 mt-1">
-          Listado y estado de agencias. Suspender bloquea el acceso sin borrar datos.
+          {t('admin.agencies.pageSubtitle')}
         </p>
       </div>
 
@@ -298,20 +298,20 @@ export default function AdminAgenciesPage() {
               </div>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-[140px]">
-                  <SelectValue placeholder="Estado" />
+                  <SelectValue placeholder={t('common.status')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="active">Activas</SelectItem>
-                  <SelectItem value="suspended">Suspendidas</SelectItem>
+                  <SelectItem value="all">{t('admin.agencies.filterStatusAll')}</SelectItem>
+                  <SelectItem value="active">{t('admin.agencies.filterStatusActive')}</SelectItem>
+                  <SelectItem value="suspended">{t('admin.agencies.filterStatusSuspended')}</SelectItem>
                 </SelectContent>
               </Select>
               <Select value={planFilter} onValueChange={setPlanFilter}>
                 <SelectTrigger className="w-[130px]">
-                  <SelectValue placeholder="Plan" />
+                  <SelectValue placeholder={t('common.plan')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos los planes</SelectItem>
+                  <SelectItem value="all">{t('admin.agencies.filterPlanAll')}</SelectItem>
                   <SelectItem value="starter">Starter</SelectItem>
                   <SelectItem value="pro">Pro</SelectItem>
                   <SelectItem value="business">Business</SelectItem>
@@ -319,7 +319,7 @@ export default function AdminAgenciesPage() {
               </Select>
             </div>
             <Button variant="outline" size="sm" onClick={fetchAgencies} disabled={loading}>
-              Actualizar
+              {t('common.refresh')}
             </Button>
           </div>
         </CardHeader>
@@ -329,9 +329,9 @@ export default function AdminAgenciesPage() {
               <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
             </div>
           ) : agencies.length === 0 ? (
-            <p className="text-slate-500 text-center py-8">No hay agencias que coincidan.</p>
+            <p className="text-slate-500 text-center py-8">{t('admin.agencies.emptySearch')}</p>
           ) : filteredAgencies.length === 0 ? (
-            <p className="text-slate-500 text-center py-8">Ninguna agencia con el plan seleccionado.</p>
+            <p className="text-slate-500 text-center py-8">{t('admin.agencies.emptyPlanFilter')}</p>
           ) : (
             <Table>
               <TableHeader>

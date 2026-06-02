@@ -22,6 +22,7 @@ import { round2 } from '@/utils/numbers';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAgency } from '@/contexts/AgencyContext';
 import { toast } from '@/lib/notify';
+import i18n from '@/i18n/config';
 import { logCreate, logUpdate, logDelete } from '@/services/auditService';
 import { countAuthLinksForUser, invokeDeleteAuthUser, purgeEmployeeRowAndRelatedData } from '@/utils/employeeDeletionUtils';
 
@@ -768,7 +769,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
         if (fnError) {
           console.error('Error sincronizando Auth (update-user):', fnError);
-          toast.warning('Empleado actualizado, pero hubo un error sincronizando el email de acceso.');
+          toast.warning(i18n.t('team.employeeForm.toasts.emailSyncWarning', { ns: 'app' }));
         }
       } catch (err) {
         console.error('Error invocando update-user:', err);

@@ -342,10 +342,10 @@ export default function DeadlinesPage() {
 
       setDeadlines(prev => prev.filter(d => d.id !== editingDeadline.id));
       setEditingDeadline(null);
-      toast.success('Deadline eliminado');
+      toast.success(t('deadlines.toasts.deadline.deleted'));
     } catch (error) {
       console.error('Error eliminando deadline:', error);
-      toast.error('Error al eliminar deadline');
+      toast.error(t('deadlines.toasts.deadline.deleteError'));
     }
   };
 
@@ -359,11 +359,11 @@ export default function DeadlinesPage() {
       if (error) throw error;
 
       setGlobalAssignments(prev => prev.filter(a => a.id !== id));
-      toast.success('Asignación eliminada');
+      toast.success(t('deadlines.toasts.global.deleted'));
       if (isGlobalDialogOpen) setIsGlobalDialogOpen(false);
     } catch (error) {
       console.error('Error eliminando asignación global:', error);
-      toast.error('Error al eliminar asignación global');
+      toast.error(t('deadlines.toasts.global.deleteError'));
     }
   };
 
@@ -371,13 +371,13 @@ export default function DeadlinesPage() {
 
   const handleDeleteGlobal = (id: string) => {
     if (!currentUser) {
-      toast.error('No hay usuario autenticado');
+      toast.error(t('deadlines.toasts.global.noUser'));
       return;
     }
 
     const assignment = globalAssignments.find(a => a.id === id);
     if (!assignment) {
-      toast.error('Asignación no encontrada');
+      toast.error(t('deadlines.toasts.global.notFound'));
       return;
     }
 
@@ -386,7 +386,7 @@ export default function DeadlinesPage() {
       assignment.employeeId &&
       assignment.employeeId !== currentUser.id
     ) {
-      toast.error('Solo puedes eliminar tus propias asignaciones');
+      toast.error(t('deadlines.toasts.global.notOwner'));
       return;
     }
 
@@ -412,7 +412,7 @@ export default function DeadlinesPage() {
 
   const handleDeleteMonth = () => {
     if (deadlines.length === 0) {
-      toast.info('No hay deadlines para eliminar en este mes');
+      toast.info(t('deadlines.toasts.month.noDeadlinesToDelete'));
       return;
     }
     setConfirmAction({
@@ -443,10 +443,10 @@ export default function DeadlinesPage() {
 
       setDeadlines([]);
       setHiddenProjects(new Set());
-      toast.success('Mes reseteado correctamente');
+      toast.success(t('deadlines.toasts.month.resetSuccess'));
     } catch (error) {
       console.error('Error reseteando mes:', error);
-      toast.error('Error al resetear el mes');
+      toast.error(t('deadlines.toasts.month.resetError'));
     } finally {
       setIsLoading(false);
     }
@@ -468,7 +468,7 @@ export default function DeadlinesPage() {
       if (fetchError) throw fetchError;
 
       if (!previousDeadlines || previousDeadlines.length === 0) {
-        toast.info('No hay deadlines en el mes anterior');
+        toast.info(t('deadlines.toasts.previousMonth.noDeadlines'));
         return;
       }
 
@@ -482,8 +482,8 @@ export default function DeadlinesPage() {
       if (sourceDeadlines.length === 0) {
         toast.info(
           skippedExisting > 0
-            ? 'Todos los deadlines del mes anterior ya existen en este mes (o el proyecto ya no está en la agencia).'
-            : 'No hay deadlines aplicables para copiar.'
+            ? t('deadlines.toasts.previousMonth.allAlreadyExist')
+            : t('deadlines.toasts.previousMonth.noneApplicable')
         );
         return;
       }
@@ -520,12 +520,12 @@ export default function DeadlinesPage() {
       const insertedCount = insertedData?.length ?? 0;
       toast.success(
         skippedExisting > 0
-          ? `Se copiaron ${insertedCount} deadlines (${skippedExisting} omitidos: ya existían u otro motivo).`
-          : `Se copiaron ${insertedCount} deadlines`
+          ? t('deadlines.toasts.previousMonth.copySuccessWithSkipped', { count: insertedCount, skipped: skippedExisting })
+          : t('deadlines.toasts.previousMonth.copySuccess', { count: insertedCount })
       );
     } catch (error) {
       console.error('Error copiando deadlines:', error);
-      toast.error('Error al copiar deadlines');
+      toast.error(t('deadlines.toasts.previousMonth.copyError'));
     } finally {
       setIsLoading(false);
     }
@@ -539,7 +539,7 @@ export default function DeadlinesPage() {
       if (fetchError) throw fetchError;
 
       if (!previousDeadlines || previousDeadlines.length === 0) {
-        toast.info('No hay deadlines en el mes anterior');
+        toast.info(t('deadlines.toasts.previousMonth.noDeadlines'));
         return;
       }
 
@@ -550,7 +550,7 @@ export default function DeadlinesPage() {
       ).length;
 
       if (copyableCount === 0) {
-        toast.info('No hay deadlines nuevos para copiar (todos los del mes anterior ya están en este mes).');
+        toast.info(t('deadlines.toasts.previousMonth.noneNewToCopy'));
         return;
       }
 
@@ -560,7 +560,7 @@ export default function DeadlinesPage() {
       });
     } catch (error) {
       console.error('Error checking previous deadlines:', error);
-      toast.error('Error al verificar deadlines anteriores');
+      toast.error(t('deadlines.toasts.previousMonth.checkError'));
     } finally {
       setIsLoading(false);
     }

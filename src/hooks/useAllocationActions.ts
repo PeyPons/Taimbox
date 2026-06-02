@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import { useApp } from '@/contexts/AppContext';
 import { Allocation, NewTaskRow } from '@/types';
@@ -17,10 +18,10 @@ import { round2 } from '@/utils/numbers';
 import { mergeActualWithTimeEntriesSum } from '@/utils/timerReconcile';
 import { createAllocationNote } from '@/services/allocationNotesService';
 
+import i18n from '@/i18n/config';
+
 const TASK_NAME_SOFT_LIMIT = 100;
 
-const WEEKLY_PAST_EDIT_TOAST =
-    'No puedes editar tareas de semanas pasadas. Usa el botón "Weekly" para gestionarlas.';
 /** Evita doble toast (p. ej. React Strict Mode o efecto duplicado) para el mismo bloqueo en poco tiempo. */
 let weeklyPastEditToastLast: { allocationId: string; at: number } | null = null;
 const WEEKLY_PAST_EDIT_TOAST_DEDUP_MS = 2500;
@@ -35,7 +36,7 @@ function toastWeeklyPastEditBlockedOnce(allocationId: string): void {
         return;
     }
     weeklyPastEditToastLast = { allocationId, at: now };
-    toast.error(WEEKLY_PAST_EDIT_TOAST);
+    toast.error(i18n.t('planner.toasts.weeklyPastEditBlocked', { ns: 'app' }));
 }
 
 export interface UseAllocationActionsBatchPreviewDeps {
@@ -65,6 +66,7 @@ export function useAllocationActions(
 ) {
     const allowEditPastWeeks = options?.allowEditPastWeeks === true;
     const batchPreviewDeps = options?.batchPreview;
+    const { t } = useTranslation('app');
     const { addAllocation, updateAllocation, deleteAllocation, currentUser } = useApp();
     const queryClient = useQueryClient();
     const weeklyCloseDay = useWeeklyCloseDay();
@@ -75,7 +77,7 @@ export function useAllocationActions(
     // Guard: block all write operations when agency exceeds plan limits
     const guardSoftLock = (): boolean => {
         if (isSoftLocked) {
-            toast.error('Tu agencia excede los límites del Plan Starter. Pasa a Pro o Business para editar.');
+            toast.error(t('planner.toasts.starterPlanSoftLock'));
             return true;
         }
         return false;
@@ -174,20 +176,20 @@ export function useAllocationActions(
 
     const batchAddHint = useMemo(() => {
         if (newTasks.some(t => rowHasPartialData(t) && !t.projectId)) {
-            return 'Selecciona un proyecto en cada fila que tenga nombre u horas.';
+            return t('planner.toasts.batchAddSelectProject');
         }
         if (!newTasks.some(t => Boolean(t.projectId) && t.taskName.trim() && parseFloat(t.hours) > 0)) {
-            return 'Completa al menos una fila: proyecto, nombre de tarea y horas.';
+            return t('planner.toasts.batchAddCompleteOneRow');
         }
         return null;
-    }, [newTasks]);
+    }, [newTasks, t]);
 
     const handleSave = async () => {
         if (isSaving || guardSoftLock()) return;
 
         if (!editingAllocation) {
             if (!canSubmitBatchAdd) {
-                toast.error(batchAddHint || 'Revisa proyecto, nombre y horas en cada fila.');
+                toast.error(batchAddHint || t('planner.toasts.batchAddReviewRows'));
                 return;
             }
         }
@@ -211,16 +213,14 @@ export function useAllocationActions(
                         : {}),
                 });
                 if (editTaskName.trim().length > TASK_NAME_SOFT_LIMIT) {
-                    toast.info(
-                        'El título es muy largo. Considera acortarlo y usar anotaciones para el detalle.'
-                    );
+                    toast.info(t('planner.toasts.titleTooLong'));
                 }
             } else {
                 const validTasks = newTasks.filter(
                     t => t.projectId && t.taskName.trim() && parseFloat(t.hours) > 0
                 );
                 if (validTasks.length === 0) {
-                    toast.error('No hay tareas válidas para guardar.');
+                    toast.error(t('planner.toasts.noValidTasks'));
                     setIsSaving(false);
                     return;
                 }
@@ -249,9 +249,7 @@ export function useAllocationActions(
                         void queryClient.invalidateQueries({ queryKey: ['allocation-notes'] });
                     }
                     if (task.taskName.trim().length > TASK_NAME_SOFT_LIMIT) {
-                        toast.info(
-                            'El título es muy largo. Considera acortarlo y usar anotaciones para el detalle.'
-                        );
+                        toast.info(t('planner.toasts.titleTooLong'));
                     }
                 }
                 setNewTasks([]);
@@ -260,7 +258,7 @@ export function useAllocationActions(
             setEditingAllocation(null);
         } catch (error) {
             console.error('Error guardando tareas:', error);
-            toast.error('Error al guardar las tareas');
+            toast.error(t('planner.toasts.saveTasksError'));
         } finally {
             if (batchPreviewDeps) {
                 batchCommitPreview.clearSnapshot();
@@ -355,7 +353,7 @@ export function useAllocationActions(
                     p_date: pDate,
                 });
                 if (error) {
-                    toast.error('No se pudo cerrar el cronómetro al completar. Para el cronómetro e inténtalo de nuevo.');
+                    toast.error(t('planner.toasts.stopwatchCloseOnCompleteError'));
                     setRecentlyToggled(prev => { const newSet = new Set(prev); newSet.delete(allocation.id); return newSet; });
                     return;
                 }

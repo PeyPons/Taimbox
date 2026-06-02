@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { RefObject, useCallback, useEffect, useState } from 'react';
+import { useAppTranslation } from '@/hooks/useAppTranslation';
 
 interface MonthWeekScrollControlsProps {
   containerRef: RefObject<HTMLDivElement | null>;
@@ -14,6 +15,7 @@ export function MonthWeekScrollControls({
   active = true,
   className,
 }: MonthWeekScrollControlsProps) {
+  const { t } = useAppTranslation();
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
 
@@ -94,7 +96,7 @@ export function MonthWeekScrollControls({
           !canScrollLeft && 'opacity-40 pointer-events-none'
         )}
         onClick={() => scrollByPage(-1)}
-        aria-label="Semana anterior"
+        aria-label={t('planner.monthWeekScroll.prevWeekAria')}
         disabled={!canScrollLeft}
       >
         <ChevronLeft className="h-4 w-4" />
@@ -108,7 +110,7 @@ export function MonthWeekScrollControls({
           !canScrollRight && 'opacity-40 pointer-events-none'
         )}
         onClick={() => scrollByPage(1)}
-        aria-label="Semana siguiente"
+        aria-label={t('planner.monthWeekScroll.nextWeekAria')}
         disabled={!canScrollRight}
       >
         <ChevronRight className="h-4 w-4" />

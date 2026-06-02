@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAppTranslation } from "@/hooks/useAppTranslation";
+import { useTranslation } from "react-i18next";
 import { useAllPostSummaries, useDeletePost } from "@/hooks/useBlogPosts";
 import type { BlogPostSummary } from "@/lib/blog/types";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -28,9 +29,9 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, Plus, Pencil, Trash2, ExternalLink, Search } from "lucide-react";
 import { toast } from "@/lib/notify";
 
-function formatDate(dateStr: string): string {
+function formatDate(dateStr: string, locale: string): string {
   try {
-    return new Date(dateStr).toLocaleDateString("es-ES", {
+    return new Date(dateStr).toLocaleDateString(locale.startsWith("en") ? "en-GB" : "es-ES", {
       year: "numeric",
       month: "short",
       day: "numeric",
@@ -42,6 +43,7 @@ function formatDate(dateStr: string): string {
 
 export default function AdminBlogPage() {
   const { t } = useAppTranslation();
+  const { i18n } = useTranslation();
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [postToDelete, setPostToDelete] = useState<BlogPostSummary | null>(null);
@@ -65,10 +67,10 @@ export default function AdminBlogPage() {
     if (!postToDelete) return;
     try {
       await deleteMutation.mutateAsync(postToDelete.id);
-      toast.success(t("admin.blog.deleted", "Post eliminado"));
+      toast.success(t("admin.blog.deleted"));
       setPostToDelete(null);
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : t("admin.blog.errDelete", "Error al eliminar");
+      const msg = e instanceof Error ? e.message : t("admin.blog.errDelete");
       toast.error(msg);
     }
   };
@@ -78,18 +80,15 @@ export default function AdminBlogPage() {
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">
-            {t("admin.blog.listTitle", "Blog")}
+            {t("admin.blog.listTitle")}
           </h1>
           <p className="text-slate-600 mt-1">
-            {t(
-              "admin.blog.listDescription",
-              "Gestiona los artículos del blog: SEO, rutas, traducciones y bloques de contenido.",
-            )}
+            {t("admin.blog.listDescription")}
           </p>
         </div>
         <Button onClick={() => navigate("/admin/blog/new")} className="gap-1">
           <Plus className="h-4 w-4" />
-          {t("admin.blog.newPost", "Nuevo post")}
+          {t("admin.blog.newPost")}
         </Button>
       </div>
 
@@ -101,7 +100,7 @@ export default function AdminBlogPage() {
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder={t("admin.blog.searchPlaceholder", "Buscar por slug o título…")}
+              placeholder={t("admin.blog.searchPlaceholder")}
               className="pl-9"
             />
           </div>
@@ -113,22 +112,22 @@ export default function AdminBlogPage() {
             </div>
           ) : isError ? (
             <p className="text-red-600 text-center py-8">
-              {t("admin.blog.errLoad", "Error al cargar los posts.")}
+              {t("admin.blog.errLoad")}
             </p>
           ) : filtered.length === 0 ? (
             <p className="text-slate-500 text-center py-8">
-              {t("admin.blog.empty", "No hay posts.")}
+              {t("admin.blog.empty")}
             </p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>{t("admin.blog.cols.title", "Título")}</TableHead>
-                  <TableHead>{t("admin.blog.cols.slug", "Slug")}</TableHead>
-                  <TableHead>{t("admin.blog.cols.status", "Estado")}</TableHead>
-                  <TableHead>{t("admin.blog.cols.date", "Fecha")}</TableHead>
+                  <TableHead>{t("admin.blog.cols.title")}</TableHead>
+                  <TableHead>{t("admin.blog.cols.slug")}</TableHead>
+                  <TableHead>{t("admin.blog.cols.status")}</TableHead>
+                  <TableHead>{t("admin.blog.cols.date")}</TableHead>
                   <TableHead className="text-right">
-                    {t("common.actions", "Acciones")}
+                    {t("common.actions")}
                   </TableHead>
                 </TableRow>
               </TableHeader>
@@ -145,15 +144,15 @@ export default function AdminBlogPage() {
                     <TableCell>
                       {post.status === "published" ? (
                         <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-0">
-                          {t("admin.blog.statusPublished", "Publicado")}
+                          {t("admin.blog.statusPublished")}
                         </Badge>
                       ) : (
                         <Badge variant="secondary">
-                          {t("admin.blog.statusDraft", "Borrador")}
+                          {t("admin.blog.statusDraft")}
                         </Badge>
                       )}
                     </TableCell>
-                    <TableCell className="text-slate-500">{formatDate(post.date)}</TableCell>
+                    <TableCell className="text-slate-500">{formatDate(post.date, i18n.language)}</TableCell>
                     <TableCell className="text-right">
                       <div className="inline-flex gap-1">
                         {post.status === "published" && (
@@ -161,7 +160,7 @@ export default function AdminBlogPage() {
                             size="sm"
                             variant="ghost"
                             asChild
-                            title={t("admin.blog.viewLive", "Ver publicado")}
+                            title={t("admin.blog.viewLive")}
                           >
                             <Link to={post.pathEs} target="_blank" rel="noopener noreferrer">
                               <ExternalLink className="h-4 w-4" />
@@ -172,7 +171,7 @@ export default function AdminBlogPage() {
                           size="sm"
                           variant="ghost"
                           onClick={() => navigate(`/admin/blog/edit/${post.id}`)}
-                          title={t("common.edit", "Editar")}
+                          title={t("common.edit")}
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
@@ -181,7 +180,7 @@ export default function AdminBlogPage() {
                           variant="ghost"
                           className="text-red-600 hover:text-red-700 hover:bg-red-50"
                           onClick={() => setPostToDelete(post)}
-                          title={t("common.delete", "Eliminar")}
+                          title={t("common.delete")}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -199,13 +198,10 @@ export default function AdminBlogPage() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {t("admin.blog.deleteConfirmTitle", "¿Eliminar este post?")}
+              {t("admin.blog.deleteConfirmTitle")}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {t(
-                "admin.blog.deleteConfirmBody",
-                "Esta acción no se puede deshacer. El post desaparecerá del blog público.",
-              )}
+              {t("admin.blog.deleteConfirmBody")}
               {postToDelete != null && (
                 <span className="block mt-2 font-mono text-xs text-slate-700">
                   {postToDelete.slug}
@@ -214,7 +210,7 @@ export default function AdminBlogPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>{t("common.cancel", "Cancelar")}</AlertDialogCancel>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               className="bg-red-600 hover:bg-red-700"
               onClick={handleDelete}
@@ -223,7 +219,7 @@ export default function AdminBlogPage() {
               {deleteMutation.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                t("common.delete", "Eliminar")
+                t("common.delete")
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

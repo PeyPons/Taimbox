@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAgency } from '@/contexts/AgencyContext';
+import { useAppTranslation } from '@/hooks/useAppTranslation';
 import {
   Dialog,
   DialogContent,
@@ -29,6 +30,7 @@ interface InviteUserDialogProps {
 
 export function InviteUserDialog({ open, onOpenChange, onSuccess }: InviteUserDialogProps) {
   const { currentAgency, inviteUserToAgency } = useAgency();
+  const { t } = useAppTranslation();
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<string>('');
   const [department, setDepartment] = useState<string>('');
@@ -51,14 +53,14 @@ export function InviteUserDialog({ open, onOpenChange, onSuccess }: InviteUserDi
 
   const handleInvite = async () => {
     if (!email.trim()) {
-      toast.error('El email es obligatorio');
+      toast.error(t('agencies.inviteDialog.emailRequired'));
       return;
     }
 
     // Validar formato de email básico
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email.trim())) {
-      toast.error('El formato del email no es válido');
+      toast.error(t('agencies.inviteDialog.invalidEmail'));
       return;
     }
 
@@ -69,7 +71,7 @@ export function InviteUserDialog({ open, onOpenChange, onSuccess }: InviteUserDi
         role || undefined,
         department || undefined
       );
-      toast.success('Usuario invitado correctamente');
+      toast.success(t('agencies.inviteDialog.success'));
       setEmail('');
       setRole('');
       setDepartment('');
@@ -77,7 +79,7 @@ export function InviteUserDialog({ open, onOpenChange, onSuccess }: InviteUserDi
       onSuccess?.();
     } catch (error: any) {
       console.error('Error invitando usuario:', error);
-      toast.error(error.message || 'Error al invitar usuario');
+      toast.error(error.message || t('agencies.inviteDialog.error'));
     } finally {
       setIsInviting(false);
     }
@@ -89,11 +91,10 @@ export function InviteUserDialog({ open, onOpenChange, onSuccess }: InviteUserDi
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <UserPlus className="h-5 w-5" />
-            Invitar Usuario a la Agencia
+            {t('agencies.inviteDialog.title')}
           </DialogTitle>
           <DialogDescription>
-            Invita un usuario a unirse a {currentAgency?.name}. Si el usuario ya existe en el sistema,
-            se le asignará a esta agencia. Si no existe, se creará una nueva cuenta.
+            {t('agencies.inviteDialog.description', { agency: currentAgency?.name })}
           </DialogDescription>
         </DialogHeader>
 
@@ -119,7 +120,7 @@ export function InviteUserDialog({ open, onOpenChange, onSuccess }: InviteUserDi
               <Label htmlFor="invite-role">Rol</Label>
               <Select value={role || undefined} onValueChange={(value) => setRole(value || '')}>
                 <SelectTrigger id="invite-role">
-                  <SelectValue placeholder="Selecciona un rol (opcional)" />
+                  <SelectValue placeholder={t('agencies.inviteDialog.rolePlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
                   {roleNames.map((roleName) => (
@@ -137,7 +138,7 @@ export function InviteUserDialog({ open, onOpenChange, onSuccess }: InviteUserDi
               <Label htmlFor="invite-department">Departamento</Label>
               <Select value={department || undefined} onValueChange={(value) => setDepartment(value || '')}>
                 <SelectTrigger id="invite-department">
-                  <SelectValue placeholder="Selecciona un departamento (opcional)" />
+                  <SelectValue placeholder={t('agencies.inviteDialog.departmentPlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
                   {availableDepartments.map((dept: { id: string; name: string }) => (
@@ -162,18 +163,18 @@ export function InviteUserDialog({ open, onOpenChange, onSuccess }: InviteUserDi
             }}
             disabled={isInviting}
           >
-            Cancelar
+            {t('common.cancel')}
           </Button>
           <Button onClick={handleInvite} disabled={isInviting || !email.trim()}>
             {isInviting ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Invitando...
+                {t('agencies.inviteDialog.inviting')}
               </>
             ) : (
               <>
                 <UserPlus className="h-4 w-4 mr-2" />
-                Invitar Usuario
+                {t('agencies.inviteDialog.inviteButton')}
               </>
             )}
           </Button>

@@ -6,10 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/lib/notify";
 import { KeyRound, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import { useAppTranslation } from "@/hooks/useAppTranslation";
 
 type PageState = 'verifying' | 'form' | 'success' | 'error';
 
 export default function ResetPasswordPage() {
+    const { t } = useAppTranslation();
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     const [pageState, setPageState] = useState<PageState>('verifying');
@@ -26,7 +28,7 @@ export default function ResetPasswordPage() {
             const type = searchParams.get('type') as 'recovery' | undefined;
 
             if (!tokenHash || type !== 'recovery') {
-                setErrorMessage('El enlace de recuperación no es válido o ha expirado.');
+                setErrorMessage(t('auth.resetPassword.invalidLink'));
                 setPageState('error');
                 return;
             }
@@ -39,7 +41,7 @@ export default function ResetPasswordPage() {
 
                 if (error) {
                     console.error('Error verificando token:', error);
-                    setErrorMessage('El enlace ha expirado o ya fue utilizado. Solicita uno nuevo.');
+                    setErrorMessage(t('auth.resetPassword.linkUsed'));
                     setPageState('error');
                     return;
                 }
@@ -47,24 +49,24 @@ export default function ResetPasswordPage() {
                 setPageState('form');
             } catch (err) {
                 console.error('Error inesperado:', err);
-                setErrorMessage('Error inesperado al verificar el enlace.');
+                setErrorMessage(t('auth.resetPassword.verifyError'));
                 setPageState('error');
             }
         };
 
         verifyToken();
-    }, [searchParams]);
+    }, [searchParams, t]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
         if (newPassword.length < 6) {
-            toast.error('La contraseña debe tener al menos 6 caracteres');
+            toast.error(t('auth.resetPassword.passwordMinLength'));
             return;
         }
 
         if (newPassword !== confirmPassword) {
-            toast.error('Las contraseñas no coinciden');
+            toast.error(t('auth.resetPassword.passwordMismatch'));
             return;
         }
 
@@ -77,7 +79,7 @@ export default function ResetPasswordPage() {
 
             if (error) {
                 console.error('Error actualizando contraseña:', error);
-                toast.error('Error al actualizar la contraseña: ' + error.message);
+                toast.error(t('auth.resetPassword.updateError', { message: error.message }));
                 return;
             }
 
@@ -86,7 +88,7 @@ export default function ResetPasswordPage() {
             // Cerrar la sesión para que el usuario inicie sesión con la nueva contraseña
             await supabase.auth.signOut();
 
-            toast.success('¡Contraseña actualizada correctamente!');
+            toast.success(t('auth.resetPassword.successToast'));
 
             // Redirigir al login después de 3 segundos
             setTimeout(() => {
@@ -94,7 +96,7 @@ export default function ResetPasswordPage() {
             }, 3000);
         } catch (err) {
             console.error('Error inesperado:', err);
-            toast.error('Error inesperado. Inténtalo de nuevo.');
+            toast.error(t('auth.resetPassword.unexpectedError'));
         } finally {
             setIsSubmitting(false);
         }
@@ -110,15 +112,15 @@ export default function ResetPasswordPage() {
                         </div>
                     </div>
                     <CardTitle className="text-2xl text-center font-bold text-slate-900">
-                        {pageState === 'verifying' && 'Verificando enlace...'}
-                        {pageState === 'form' && 'Nueva contraseña'}
-                        {pageState === 'success' && '¡Contraseña actualizada!'}
-                        {pageState === 'error' && 'Enlace no válido'}
+                        {pageState === 'verifying' && t('auth.resetPassword.verifyingTitle')}
+                        {pageState === 'form' && t('auth.resetPassword.formTitle')}
+                        {pageState === 'success' && t('auth.resetPassword.successTitle')}
+                        {pageState === 'error' && t('auth.resetPassword.errorTitle')}
                     </CardTitle>
                     <CardDescription className="text-center text-slate-500">
-                        {pageState === 'verifying' && 'Estamos verificando tu enlace de recuperación'}
-                        {pageState === 'form' && 'Establece una nueva contraseña para tu cuenta'}
-                        {pageState === 'success' && 'Redirigiendo al inicio de sesión...'}
+                        {pageState === 'verifying' && t('auth.resetPassword.verifyingDesc')}
+                        {pageState === 'form' && t('auth.resetPassword.formDesc')}
+                        {pageState === 'success' && t('auth.resetPassword.successDesc')}
                         {pageState === 'error' && errorMessage}
                     </CardDescription>
                 </CardHeader>
@@ -135,11 +137,11 @@ export default function ResetPasswordPage() {
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div className="space-y-2">
                                 <label className="text-sm font-medium text-slate-700">
-                                    Nueva contraseña
+                                    {t('auth.resetPassword.newPasswordLabel')}
                                 </label>
                                 <Input
                                     type="password"
-                                    placeholder="Mínimo 6 caracteres"
+                                    placeholder={t('auth.resetPassword.newPasswordPlaceholder')}
                                     value={newPassword}
                                     onChange={(e) => setNewPassword(e.target.value)}
                                     className="bg-slate-50 border-slate-200 focus:border-indigo-500"
@@ -150,11 +152,11 @@ export default function ResetPasswordPage() {
                             </div>
                             <div className="space-y-2">
                                 <label className="text-sm font-medium text-slate-700">
-                                    Confirmar contraseña
+                                    {t('auth.resetPassword.confirmPasswordLabel')}
                                 </label>
                                 <Input
                                     type="password"
-                                    placeholder="Repite la contraseña"
+                                    placeholder={t('auth.resetPassword.confirmPasswordPlaceholder')}
                                     value={confirmPassword}
                                     onChange={(e) => setConfirmPassword(e.target.value)}
                                     className="bg-slate-50 border-slate-200 focus:border-indigo-500"
@@ -170,10 +172,10 @@ export default function ResetPasswordPage() {
                                 {isSubmitting ? (
                                     <>
                                         <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                                        Actualizando...
+                                        {t('auth.resetPassword.submitting')}
                                     </>
                                 ) : (
-                                    'Establecer nueva contraseña'
+                                    t('auth.resetPassword.submit')
                                 )}
                             </Button>
                         </form>
@@ -186,14 +188,14 @@ export default function ResetPasswordPage() {
                                 <CheckCircle2 className="h-8 w-8 text-green-600" />
                             </div>
                             <p className="text-sm text-slate-500 text-center">
-                                Tu contraseña ha sido actualizada. Serás redirigido al inicio de sesión en unos segundos.
+                                {t('auth.resetPassword.successBody')}
                             </p>
                             <Button
                                 variant="outline"
                                 onClick={() => navigate('/login', { replace: true })}
                                 className="mt-2"
                             >
-                                Ir al inicio de sesión
+                                {t('auth.resetPassword.goToLogin')}
                             </Button>
                         </div>
                     )}
@@ -212,7 +214,7 @@ export default function ResetPasswordPage() {
                                 onClick={() => navigate('/login', { replace: true })}
                                 className="mt-2"
                             >
-                                Volver al inicio de sesión
+                                {t('auth.resetPassword.backToLogin')}
                             </Button>
                         </div>
                     )}

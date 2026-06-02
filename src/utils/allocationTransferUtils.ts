@@ -1,6 +1,11 @@
 import { Allocation, TaskTransfer, WeeklyFeedback } from '@/types';
 import { round2 } from '@/utils/numbers';
 
+export type TransferTooltipTranslate = (
+  key: string,
+  options?: Record<string, unknown>
+) => string;
+
 export interface AllocationTransferUiState {
   pendingTransfer?: TaskTransfer;
   acceptedOutgoing?: TaskTransfer;
@@ -47,6 +52,7 @@ export function isReceivedTransferredAllocation(
 ): boolean {
   if (alloc.transferredFromAllocationId) return true;
   if (alloc.taskName?.includes('(transferida de')) return true;
+  if (alloc.taskName?.includes('(transferred from')) return true;
   if (
     alloc.transferSourceEmployeeId &&
     alloc.transferSourceEmployeeId !== ownerEmployeeId
@@ -111,28 +117,56 @@ export function getTransferBadgeTooltip(
   employees: { id: string; name: string }[],
   outgoingTransfers: TaskTransfer[] | undefined,
   pending?: TaskTransfer,
-  accepted?: TaskTransfer
+  accepted?: TaskTransfer,
+  translate?: TransferTooltipTranslate
 ): string | undefined {
+  const tr: TransferTooltipTranslate =
+    translate ??
+    ((key, options) => {
+      const fallbacks: Record<string, string> = {
+        'transfers.badge.teammateFallback': 'teammate',
+        'transfers.badge.pendingAcceptance': 'Transfer pending acceptance by {{name}}',
+        'transfers.badge.transferredDistributed':
+          'Task transferred and split. Kept as reference (0h). Recipient: {{name}}',
+        'transfers.badge.transferredRollover': 'Continuation transferred to {{name}} next week',
+        'transfers.badge.transferredTo': 'Transferred to {{name}}',
+        'transfers.badge.transferredFrom': 'Transferred from {{name}}',
+        'transfers.badge.readOnlyShell': 'Transferred task (read-only in your panel)',
+        'transfers.badge.receivedFromWithOriginal':
+          'Transferred from {{source}}\nOriginal task: {{original}}',
+        'transfers.badge.receivedFrom': 'Transferred from {{source}}',
+      };
+      let text = fallbacks[key] ?? key;
+      if (options) {
+        Object.entries(options).forEach(([k, v]) => {
+          text = text.replace(new RegExp(`\\{\\{${k}\\}\\}`, 'g'), String(v ?? ''));
+        });
+      }
+      return text;
+    });
+
+  const teammateFallback = tr('transfers.badge.teammateFallback');
+
   if (pending) {
     const toName =
       pending.toEmployeeName ||
       employees.find(e => e.id === pending.toEmployeeId)?.name ||
-      'compañero';
-    return `Transferencia pendiente de aceptación por ${toName}`;
+      teammateFallback;
+    return tr('transfers.badge.pendingAcceptance', { name: toName });
   }
 
   if (accepted) {
     const toName =
       accepted.toEmployeeName ||
       employees.find(e => e.id === accepted.toEmployeeId)?.name ||
-      'compañero';
+      teammateFallback;
     if (accepted.acceptanceMode === 'distribute') {
-      return `Tarea transferida y repartida. Queda como referencia (0h). Receptor: ${toName}`;
+      return tr('transfers.badge.transferredDistributed', { name: toName });
     }
     if (accepted.acceptanceMode === 'rollover') {
-      return `Continuación transferida a ${toName} en la semana siguiente`;
+      return tr('transfers.badge.transferredRollover', { name: toName });
     }
-    return `Transferida a ${toName}`;
+    return tr('transfers.badge.transferredTo', { name: toName });
   }
 
   if (isSenderTransferShell(alloc, ownerEmployeeId, outgoingTransfers)) {
@@ -141,23 +175,26 @@ export function getTransferBadgeTooltip(
       ? employees.find(e => e.id === sourceId)?.name
       : undefined;
     if (sourceName && sourceId !== ownerEmployeeId) {
-      return `Transferida desde ${sourceName}`;
+      return tr('transfers.badge.transferredFrom', { name: sourceName });
     }
-    return 'Tarea transferida (solo lectura en tu panel)';
+    return tr('transfers.badge.readOnlyShell');
   }
 
   if (isReceivedTransferredAllocation(alloc, ownerEmployeeId)) {
     const sourceId = alloc.transferSourceEmployeeId;
     const sourceName = sourceId
       ? employees.find(e => e.id === sourceId)?.name
-      : alloc.taskName?.match(/\(transferida de (.+?)(?:,|$)/)?.[1];
+      : alloc.taskName?.match(/\(transferida de (.+?)(?:,|$)/)?.[1] ??
+        alloc.taskName?.match(/\(transferred from (.+?)(?:,|$)/)?.[1];
     const original =
       alloc.originalTransferredTaskName ||
-      alloc.taskName?.replace(/\s*\(transferida de .+?\)/g, '').trim();
+      alloc.taskName
+        ?.replace(/\s*\((?:transferida de|transferred from) .+?\)/g, '')
+        .trim();
     if (sourceName && original) {
-      return `Transferida de ${sourceName}\nTarea original: ${original}`;
+      return tr('transfers.badge.receivedFromWithOriginal', { source: sourceName, original });
     }
-    if (sourceName) return `Transferida de ${sourceName}`;
+    if (sourceName) return tr('transfers.badge.receivedFrom', { source: sourceName });
   }
 
   return undefined;
@@ -197,7 +234,8 @@ export function getAllocationTransferUiState(
   ownerEmployeeId: string,
   outgoingTransfers: TaskTransfer[] | undefined,
   weeklyFeedback: WeeklyFeedback[] | undefined,
-  employees: { id: string; name: string }[] = []
+  employees: { id: string; name: string }[] = [],
+  translate?: TransferTooltipTranslate
 ): AllocationTransferUiState {
   const pendingTransfer = getPendingOutgoingTransfer(outgoingTransfers, alloc.id);
   const acceptedOutgoing = getAcceptedOutgoingTransferFromOwner(
@@ -226,17 +264,21 @@ export function getAllocationTransferUiState(
           employees,
           outgoingTransfers,
           pendingTransfer,
-          acceptedOutgoing
+          acceptedOutgoing,
+          translate
         )
       : undefined,
     showWeeklyBadge: shouldShowWeeklyBadge(alloc, ownerEmployeeId, weeklyFeedback),
   };
 }
 
-export function cleanTransferredTaskName(taskName?: string): string {
-  let cleanName = taskName || 'Tarea';
+export function cleanTransferredTaskName(
+  taskName?: string,
+  fallbackTask = 'Task'
+): string {
+  let cleanName = taskName || fallbackTask;
   cleanName = cleanName
-    .replace(/\s*\(transferida de .+?(?:, original: .+?)?\)/g, '')
+    .replace(/\s*\((?:transferida de|transferred from) .+?(?:, original: .+?)?\)/g, '')
     .trim();
-  return cleanName || 'Tarea';
+  return cleanName || fallbackTask;
 }

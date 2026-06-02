@@ -62,13 +62,13 @@ interface FormState {
   jsonLdEnRaw: string;
 }
 
-function defaultBlocksJson(): string {
+function defaultBlocksJson(paragraphHtml: string): string {
   return JSON.stringify(
     [
       {
         id: crypto.randomUUID(),
         type: "paragraph",
-        html: "Escribe aquí el primer párrafo del artículo.",
+        html: paragraphHtml,
       },
     ],
     null,
@@ -76,7 +76,15 @@ function defaultBlocksJson(): string {
   );
 }
 
-function recordToFormState(record: BlogPostRecord | null): FormState {
+const FALLBACK_DEFAULT_PARAGRAPH_ES = "Escribe aquí el primer párrafo del artículo.";
+const FALLBACK_DEFAULT_PARAGRAPH_EN = "Write the first paragraph of the article here.";
+
+function recordToFormState(
+  record: BlogPostRecord | null,
+  defaultParagraphs?: { es: string; en: string },
+): FormState {
+  const paragraphEs = defaultParagraphs?.es ?? FALLBACK_DEFAULT_PARAGRAPH_ES;
+  const paragraphEn = defaultParagraphs?.en ?? FALLBACK_DEFAULT_PARAGRAPH_EN;
   if (!record) {
     return {
       slug: "",
@@ -94,8 +102,8 @@ function recordToFormState(record: BlogPostRecord | null): FormState {
       metaTitleEn: "",
       metaDescriptionEs: "",
       metaDescriptionEn: "",
-      blocksEsRaw: defaultBlocksJson(),
-      blocksEnRaw: defaultBlocksJson(),
+      blocksEsRaw: defaultBlocksJson(paragraphEs),
+      blocksEnRaw: defaultBlocksJson(paragraphEn),
       jsonLdEsRaw: "",
       jsonLdEnRaw: "",
     };
@@ -129,7 +137,7 @@ function tryParseJson<T>(raw: string): { ok: true; value: T } | { ok: false; err
   try {
     return { ok: true, value: JSON.parse(trimmed) as T };
   } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : "JSON invalido" };
+    return { ok: false, error: e instanceof Error ? e.message : "Invalid JSON" };
   }
 }
 
@@ -161,6 +169,14 @@ export default function AdminBlogEditorPage() {
   const { id } = useParams<{ id?: string }>();
   const isNew = id == null;
 
+  const defaultParagraphs = useMemo(
+    () => ({
+      es: t("admin.blog.defaultParagraphEs"),
+      en: t("admin.blog.defaultParagraphEn"),
+    }),
+    [t],
+  );
+
   // Cargar el post existente por id (no por slug, porque el slug puede cambiar).
   const { data: existing, isLoading } = useQuery({
     queryKey: id != null ? ["blog", "by-id", id] : ["blog", "by-id", "__noop"],
@@ -171,7 +187,7 @@ export default function AdminBlogEditorPage() {
     enabled: id != null,
   });
 
-  const [form, setForm] = useState<FormState>(() => recordToFormState(null));
+  const [form, setForm] = useState<FormState>(() => recordToFormState(null, defaultParagraphs));
   const [activeLang, setActiveLang] = useState<"es" | "en">("es");
   const [contentPane, setContentPane] = useState<"edit" | "preview">("edit");
   const [jsonDialogLang, setJsonDialogLang] = useState<"es" | "en" | null>(null);
@@ -180,18 +196,18 @@ export default function AdminBlogEditorPage() {
 
   useEffect(() => {
     if (isNew) {
-      setForm(recordToFormState(null));
+      setForm(recordToFormState(null, defaultParagraphs));
       setPathEnTouched(false);
       return;
     }
     if (!existing) {
-      setForm(recordToFormState(null));
+      setForm(recordToFormState(null, defaultParagraphs));
       setPathEnTouched(false);
       return;
     }
     setForm(recordToFormState(existing));
     setPathEnTouched(true);
-  }, [isNew, id, existing]);
+  }, [isNew, id, existing, defaultParagraphs]);
 
   const handleSlugChange = (slug: string) => {
     if (isNew && !pathEnTouched) {
@@ -219,10 +235,10 @@ export default function AdminBlogEditorPage() {
       setForm((prev) => ({ ...prev, ...patch }));
       setPathEnTouched(true);
       toast.success(
-        t("admin.blog.importSeedOk", "Contenido importado. Revisa fecha y estado antes de guardar."),
+        t("admin.blog.importSeedOk"),
       );
     } catch {
-      toast.error(t("admin.blog.importSeedErr", "No se pudo leer el archivo JSON."));
+      toast.error(t("admin.blog.importSeedErr"));
     }
   };
 
@@ -237,7 +253,7 @@ export default function AdminBlogEditorPage() {
 
   const handleExportSeed = () => {
     if (blocksEsError || blocksEnError) {
-      toast.error(t("admin.blog.exportSeedInvalid", "Corrige los bloques antes de exportar."));
+      toast.error(t("admin.blog.exportSeedInvalid"));
       return;
     }
     const jsonLdEs = tryParseJson<Record<string, unknown> | Record<string, unknown>[]>(
@@ -286,24 +302,24 @@ export default function AdminBlogEditorPage() {
   const isSaving = createMutation.isPending || updateMutation.isPending;
 
   const validateForm = (): string | null => {
-    if (!form.slug.trim()) return t("admin.blog.errSlugRequired", "El slug es obligatorio.");
+    if (!form.slug.trim()) return t("admin.blog.errSlugRequired");
     if (!/^[a-z0-9-]+$/.test(form.slug)) {
-      return t("admin.blog.errSlugFormat", "El slug solo puede contener minusculas, numeros y guiones.");
+      return t("admin.blog.errSlugFormat");
     }
-    if (!form.pathEs.startsWith("/blog/")) return t("admin.blog.errPathEs", "La ruta ES debe empezar por /blog/.");
-    if (!form.pathEn.startsWith("/en/blog/")) return t("admin.blog.errPathEn", "La ruta EN debe empezar por /en/blog/.");
+    if (!form.pathEs.startsWith("/blog/")) return t("admin.blog.errPathEs");
+    if (!form.pathEn.startsWith("/en/blog/")) return t("admin.blog.errPathEn");
     if (!form.titleEs.trim() || !form.titleEn.trim()) {
-      return t("admin.blog.errTitles", "Los títulos en ambos idiomas son obligatorios.");
+      return t("admin.blog.errTitles");
     }
     if (!form.descriptionEs.trim() || !form.descriptionEn.trim()) {
-      return t("admin.blog.errDescriptions", "Las descripciones en ambos idiomas son obligatorias.");
+      return t("admin.blog.errDescriptions");
     }
-    if (blocksEsError) return t("admin.blog.errBlocksEs", "Error en bloques ES: ") + blocksEsError;
-    if (blocksEnError) return t("admin.blog.errBlocksEn", "Error en bloques EN: ") + blocksEnError;
+    if (blocksEsError) return t("admin.blog.errBlocksEs") + blocksEsError;
+    if (blocksEnError) return t("admin.blog.errBlocksEn") + blocksEnError;
     const jsonLdEs = tryParseJson(form.jsonLdEsRaw);
-    if (!jsonLdEs.ok) return t("admin.blog.errJsonLdEs", "Error en JSON-LD ES: ") + jsonLdEs.error;
+    if (!jsonLdEs.ok) return t("admin.blog.errJsonLdEs") + jsonLdEs.error;
     const jsonLdEn = tryParseJson(form.jsonLdEnRaw);
-    if (!jsonLdEn.ok) return t("admin.blog.errJsonLdEn", "Error en JSON-LD EN: ") + jsonLdEn.error;
+    if (!jsonLdEn.ok) return t("admin.blog.errJsonLdEn") + jsonLdEn.error;
     return null;
   };
 
@@ -339,14 +355,14 @@ export default function AdminBlogEditorPage() {
     try {
       if (isNew) {
         const created = await createMutation.mutateAsync(input);
-        toast.success(t("admin.blog.created", "Post creado"));
+        toast.success(t("admin.blog.created"));
         navigate(`/admin/blog/edit/${created.id}`, { replace: true });
       } else if (existing) {
         await updateMutation.mutateAsync({ id: existing.id, input });
-        toast.success(t("admin.blog.saved", "Cambios guardados"));
+        toast.success(t("admin.blog.saved"));
       }
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : t("admin.blog.errSave", "Error al guardar");
+      const msg = e instanceof Error ? e.message : t("admin.blog.errSave");
       toast.error(msg);
     }
   };
@@ -365,12 +381,12 @@ export default function AdminBlogEditorPage() {
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="sm" onClick={() => navigate("/admin/blog")}>
             <ArrowLeft className="h-4 w-4 mr-1" />
-            {t("admin.blog.backToList", "Lista")}
+            {t("admin.blog.backToList")}
           </Button>
           <h1 className="text-2xl font-bold text-slate-900">
             {isNew
-              ? t("admin.blog.editorTitleNew", "Nuevo post")
-              : t("admin.blog.editorTitleEdit", "Editar post")}
+              ? t("admin.blog.editorTitleNew")
+              : t("admin.blog.editorTitleEdit")}
           </h1>
         </div>
         <div className="flex items-center gap-2 flex-wrap justify-end">
@@ -392,11 +408,11 @@ export default function AdminBlogEditorPage() {
             onClick={() => importInputRef.current?.click()}
           >
             <Upload className="h-4 w-4 mr-1" />
-            {t("admin.blog.importSeed", "Importar seed JSON")}
+            {t("admin.blog.importSeed")}
           </Button>
           <Button type="button" variant="outline" size="sm" onClick={handleExportSeed}>
             <Download className="h-4 w-4 mr-1" />
-            {t("admin.blog.exportSeed", "Exportar seed JSON")}
+            {t("admin.blog.exportSeed")}
           </Button>
           <Button onClick={handleSave} disabled={isSaving}>
             {isSaving ? (
@@ -404,7 +420,7 @@ export default function AdminBlogEditorPage() {
             ) : (
               <Save className="h-4 w-4 mr-1" />
             )}
-            {t("common.save", "Guardar")}
+            {t("common.save")}
           </Button>
         </div>
       </div>
@@ -413,11 +429,11 @@ export default function AdminBlogEditorPage() {
         {/* Metadatos comunes */}
         <Card>
             <CardHeader>
-              <CardTitle>{t("admin.blog.sectionGeneral", "Identidad y rutas")}</CardTitle>
+              <CardTitle>{t("admin.blog.sectionGeneral")}</CardTitle>
             </CardHeader>
             <CardContent className="grid gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="bp-slug">{t("admin.blog.slug", "Slug interno")}</Label>
+                <Label htmlFor="bp-slug">{t("admin.blog.slug")}</Label>
                 <Input
                   id="bp-slug"
                   value={form.slug}
@@ -425,15 +441,12 @@ export default function AdminBlogEditorPage() {
                   placeholder="mi-articulo-2026"
                 />
                 <p className="text-xs text-slate-500">
-                  {t(
-                    "admin.blog.slugHelp",
-                    "Identificador estable interno. No es la URL; otros posts lo referencian en relatedSlug.",
-                  )}
+                  {t("admin.blog.slugHelp")}
                 </p>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="bp-pathEs">{t("admin.blog.pathEs", "Ruta ES")}</Label>
+                  <Label htmlFor="bp-pathEs">{t("admin.blog.pathEs")}</Label>
                   <Input
                     id="bp-pathEs"
                     value={form.pathEs}
@@ -442,7 +455,7 @@ export default function AdminBlogEditorPage() {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="bp-pathEn">{t("admin.blog.pathEn", "Ruta EN")}</Label>
+                  <Label htmlFor="bp-pathEn">{t("admin.blog.pathEn")}</Label>
                   <Input
                     id="bp-pathEn"
                     value={form.pathEn}
@@ -456,7 +469,7 @@ export default function AdminBlogEditorPage() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="bp-status">{t("admin.blog.status", "Estado")}</Label>
+                  <Label htmlFor="bp-status">{t("admin.blog.status")}</Label>
                   <Select
                     value={form.status}
                     onValueChange={(v) => setForm({ ...form, status: v as BlogPostStatus })}
@@ -466,16 +479,16 @@ export default function AdminBlogEditorPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="draft">
-                        {t("admin.blog.statusDraft", "Borrador")}
+                        {t("admin.blog.statusDraft")}
                       </SelectItem>
                       <SelectItem value="published">
-                        {t("admin.blog.statusPublished", "Publicado")}
+                        {t("admin.blog.statusPublished")}
                       </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="bp-date">{t("admin.blog.date", "Fecha")}</Label>
+                  <Label htmlFor="bp-date">{t("admin.blog.date")}</Label>
                   <Input
                     id="bp-date"
                     type="date"
@@ -485,7 +498,7 @@ export default function AdminBlogEditorPage() {
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="bp-mins">
-                    {t("admin.blog.readingMinutes", "Min. lectura")}
+                    {t("admin.blog.readingMinutes")}
                   </Label>
                   <Input
                     id="bp-mins"
@@ -501,7 +514,7 @@ export default function AdminBlogEditorPage() {
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="bp-relatedSlug">
-                  {t("admin.blog.relatedSlug", "Slug relacionado (opcional)")}
+                  {t("admin.blog.relatedSlug")}
                 </Label>
                 <Input
                   id="bp-relatedSlug"
@@ -516,19 +529,19 @@ export default function AdminBlogEditorPage() {
           {/* Tabs ES / EN para textos */}
           <Card>
             <CardHeader>
-              <CardTitle>{t("admin.blog.sectionLocale", "Traducciones y SEO")}</CardTitle>
+              <CardTitle>{t("admin.blog.sectionLocale")}</CardTitle>
             </CardHeader>
             <CardContent>
               <Tabs value={activeLang} onValueChange={(v) => setActiveLang(v as "es" | "en")}>
                 <TabsList>
-                  <TabsTrigger value="es">Español</TabsTrigger>
-                  <TabsTrigger value="en">English</TabsTrigger>
+                  <TabsTrigger value="es">{t("admin.blog.langEs")}</TabsTrigger>
+                  <TabsTrigger value="en">{t("admin.blog.langEn")}</TabsTrigger>
                 </TabsList>
                 {(["es", "en"] as const).map((lng) => (
                   <TabsContent key={lng} value={lng} className="space-y-4 pt-4">
                     <div className="grid gap-2">
                       <Label>
-                        {t("admin.blog.title", "Título")} ({lng.toUpperCase()})
+                        {t("admin.blog.title")} ({lng.toUpperCase()})
                       </Label>
                       <Input
                         value={lng === "es" ? form.titleEs : form.titleEn}
@@ -544,7 +557,7 @@ export default function AdminBlogEditorPage() {
                     </div>
                     <div className="grid gap-2">
                       <Label>
-                        {t("admin.blog.description", "Descripción")} ({lng.toUpperCase()})
+                        {t("admin.blog.description")} ({lng.toUpperCase()})
                       </Label>
                       <Textarea
                         rows={3}
@@ -561,7 +574,7 @@ export default function AdminBlogEditorPage() {
                     </div>
                     <div className="grid gap-2">
                       <Label>
-                        {t("admin.blog.metaTitle", "Meta title (SEO)")} ({lng.toUpperCase()})
+                        {t("admin.blog.metaTitle")} ({lng.toUpperCase()})
                       </Label>
                       <Input
                         value={lng === "es" ? form.metaTitleEs : form.metaTitleEn}
@@ -573,15 +586,12 @@ export default function AdminBlogEditorPage() {
                               : { metaTitleEn: e.target.value }),
                           })
                         }
-                        placeholder={t(
-                          "admin.blog.metaTitleHint",
-                          "Si está vacío usa el título normal.",
-                        )}
+                        placeholder={t("admin.blog.metaTitleHint")}
                       />
                     </div>
                     <div className="grid gap-2">
                       <Label>
-                        {t("admin.blog.metaDescription", "Meta description (SEO)")} (
+                        {t("admin.blog.metaDescription")} (
                         {lng.toUpperCase()})
                       </Label>
                       <Textarea
@@ -595,23 +605,17 @@ export default function AdminBlogEditorPage() {
                               : { metaDescriptionEn: e.target.value }),
                           })
                         }
-                        placeholder={t(
-                          "admin.blog.metaDescriptionHint",
-                          "Si está vacío usa la descripción normal.",
-                        )}
+                        placeholder={t("admin.blog.metaDescriptionHint")}
                       />
                     </div>
                     <div className="grid gap-2">
                       <Label>
-                        {t("admin.blog.jsonLd", "JSON-LD (opcional)")} ({lng.toUpperCase()})
+                        {t("admin.blog.jsonLd")} ({lng.toUpperCase()})
                       </Label>
                       <Textarea
                         rows={6}
                         className="font-mono text-xs"
-                        placeholder={t(
-                          "admin.blog.jsonLdHint",
-                          "Vacío = se genera Article básico automáticamente.",
-                        )}
+                        placeholder={t("admin.blog.jsonLdHint")}
                         value={lng === "es" ? form.jsonLdEsRaw : form.jsonLdEnRaw}
                         onChange={(e) =>
                           setForm({
@@ -632,11 +636,11 @@ export default function AdminBlogEditorPage() {
         {/* Contenido del artículo — editor visual + preview */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between gap-4 flex-wrap">
-            <CardTitle>{t("admin.blog.sectionContent", "Contenido del artículo")}</CardTitle>
+            <CardTitle>{t("admin.blog.sectionContent")}</CardTitle>
             <Tabs value={activeLang} onValueChange={(v) => setActiveLang(v as "es" | "en")}>
               <TabsList>
-                <TabsTrigger value="es">Español</TabsTrigger>
-                <TabsTrigger value="en">English</TabsTrigger>
+                <TabsTrigger value="es">{t("admin.blog.langEs")}</TabsTrigger>
+                <TabsTrigger value="en">{t("admin.blog.langEn")}</TabsTrigger>
               </TabsList>
             </Tabs>
           </CardHeader>
@@ -655,11 +659,11 @@ export default function AdminBlogEditorPage() {
                       <TabsList className="h-8 xl:hidden">
                         <TabsTrigger value="edit" className="h-7 text-xs gap-1">
                           <Pencil className="h-3.5 w-3.5" />
-                          {t("admin.blog.contentTabEdit", "Editor")}
+                          {t("admin.blog.contentTabEdit")}
                         </TabsTrigger>
                         <TabsTrigger value="preview" className="h-7 text-xs gap-1">
                           <Eye className="h-3.5 w-3.5" />
-                          {t("admin.blog.contentTabPreview", "Vista previa")}
+                          {t("admin.blog.contentTabPreview")}
                         </TabsTrigger>
                       </TabsList>
                     </Tabs>
@@ -671,17 +675,14 @@ export default function AdminBlogEditorPage() {
                       onClick={() => setJsonDialogLang(lng)}
                     >
                       <Code2 className="h-3.5 w-3.5 mr-1" />
-                      {t("admin.blog.blocksJsonAdvanced", "JSON avanzado")}
+                      {t("admin.blog.blocksJsonAdvanced")}
                     </Button>
                   </div>
 
                   {publishError != null && jsonError == null && (
                     <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2 inline-flex items-start gap-1.5">
                       <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-                      {t(
-                        "admin.blog.blocksDraftWarning",
-                        "Completa los campos obligatorios antes de guardar:",
-                      )}{" "}
+                      {t("admin.blog.blocksDraftWarning")}{" "}
                       {publishError}
                     </p>
                   )}
@@ -692,10 +693,7 @@ export default function AdminBlogEditorPage() {
                         <div className="space-y-2 rounded-lg border border-red-200 bg-red-50/50 p-4">
                           <p className="text-xs text-red-700 inline-flex items-start gap-1">
                             <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-                            {t(
-                              "admin.blog.blocksJsonBroken",
-                              "El JSON no es válido. Corrígelo en JSON avanzado para recuperar el editor visual.",
-                            )}{" "}
+                            {t("admin.blog.blocksJsonBroken")}{" "}
                             {jsonError}
                           </p>
                           <Button
@@ -705,7 +703,7 @@ export default function AdminBlogEditorPage() {
                             className="h-8 text-xs"
                             onClick={() => setJsonDialogLang(lng)}
                           >
-                            {t("admin.blog.openJsonEditor", "Abrir editor JSON")}
+                            {t("admin.blog.openJsonEditor")}
                           </Button>
                         </div>
                       ) : (
@@ -719,37 +717,31 @@ export default function AdminBlogEditorPage() {
                             })
                           }
                           labels={{
-                            addBlock: t("admin.blog.addBlock", "Añadir bloque…"),
-                            block: t("admin.blog.block", "Bloque"),
-                            remove: t("common.delete", "Eliminar"),
-                            moveUp: t("admin.blog.moveUp", "Subir"),
-                            moveDown: t("admin.blog.moveDown", "Bajar"),
-                            type: t("admin.blog.blockType", "Tipo"),
-                            html: t("admin.blog.html", "Contenido"),
-                            htmlHint: t(
-                              "admin.blog.htmlHint",
-                              "Puedes usar HTML básico: <strong>, <a href=\"…\">, <em>…",
-                            ),
-                            text: t("admin.blog.text", "Texto"),
-                            level: t("admin.blog.level", "Nivel"),
-                            anchorId: t("admin.blog.anchorId", "anchorId (TOC)"),
-                            tone: t("admin.blog.tone", "Tono"),
-                            ordered: t("admin.blog.orderedList", "Lista numerada"),
-                            items: t("admin.blog.items", "Ítems"),
-                            headers: t("admin.blog.tableHeaders", "Cabeceras"),
-                            rows: t("admin.blog.tableRows", "Filas"),
-                            question: t("admin.blog.faqQ", "Pregunta"),
-                            answer: t("admin.blog.faqA", "Respuesta"),
-                            slug: t("admin.blog.relatedSlugField", "Slug relacionado"),
-                            href: t("admin.blog.href", "Enlace"),
-                            variant: t("admin.blog.variant", "Variante"),
-                            visualId: t("admin.blog.visualId", "Infografía"),
-                            addItem: t("admin.blog.addItem", "Añadir ítem"),
-                            tocHint: t(
-                              "admin.blog.tocHint",
-                              "El índice se genera automáticamente desde los títulos con anchorId.",
-                            ),
-                            blocksCount: t("admin.blog.blocksCountLabel", "bloques"),
+                            addBlock: t("admin.blog.addBlock"),
+                            block: t("admin.blog.block"),
+                            remove: t("common.delete"),
+                            moveUp: t("admin.blog.moveUp"),
+                            moveDown: t("admin.blog.moveDown"),
+                            type: t("admin.blog.blockType"),
+                            html: t("admin.blog.html"),
+                            htmlHint: t("admin.blog.htmlHint"),
+                            text: t("admin.blog.text"),
+                            level: t("admin.blog.level"),
+                            anchorId: t("admin.blog.anchorId"),
+                            tone: t("admin.blog.tone"),
+                            ordered: t("admin.blog.orderedList"),
+                            items: t("admin.blog.items"),
+                            headers: t("admin.blog.tableHeaders"),
+                            rows: t("admin.blog.tableRows"),
+                            question: t("admin.blog.faqQ"),
+                            answer: t("admin.blog.faqA"),
+                            slug: t("admin.blog.relatedSlugField"),
+                            href: t("admin.blog.href"),
+                            variant: t("admin.blog.variant"),
+                            visualId: t("admin.blog.visualId"),
+                            addItem: t("admin.blog.addItem"),
+                            tocHint: t("admin.blog.tocHint"),
+                            blocksCount: t("admin.blog.blocksCountLabel"),
                           }}
                         />
                       )}
@@ -763,10 +755,10 @@ export default function AdminBlogEditorPage() {
                     >
                       <Label className="inline-flex items-center gap-2 text-sm">
                         <Eye className="h-4 w-4" />
-                        {t("admin.blog.preview", "Previsualización")}
+                        {t("admin.blog.preview")}
                         <span className="text-xs font-normal text-slate-500">
                           ({previewBlocks.length}{" "}
-                          {t("admin.blog.blockCount", "bloques")})
+                          {t("admin.blog.blockCount")})
                         </span>
                       </Label>
                       <div className="rounded-2xl border border-slate-300 bg-gradient-to-br from-indigo-950 via-purple-950 to-indigo-900 p-4 sm:p-6 max-h-[70vh] overflow-y-auto">
@@ -779,10 +771,7 @@ export default function AdminBlogEditorPage() {
                         <BlockRenderer blocks={previewBlocks} />
                       </div>
                       <p className="text-xs text-slate-500">
-                        {t(
-                          "admin.blog.previewHint",
-                          "La previsualización usa el mismo BlockRenderer que la web pública. Los visualRef de tipo fullPage no se pre-renderizan aquí.",
-                        )}
+                        {t("admin.blog.previewHint")}
                       </p>
                     </div>
                   </div>
@@ -794,7 +783,7 @@ export default function AdminBlogEditorPage() {
 
         <details className="rounded-lg border border-slate-200 bg-white">
           <summary className="cursor-pointer px-4 py-3 text-sm font-medium text-slate-700">
-            {t("admin.blog.visualRefIds", "visualIds disponibles")}
+            {t("admin.blog.visualRefIds")}
           </summary>
           <div className="px-4 pb-4">
             <ul className="text-xs text-slate-700 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1">
@@ -813,14 +802,11 @@ export default function AdminBlogEditorPage() {
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {t("admin.blog.blocksJsonAdvanced", "JSON avanzado")}{" "}
+              {t("admin.blog.blocksJsonAdvanced")}{" "}
               ({jsonDialogLang?.toUpperCase()})
             </DialogTitle>
             <DialogDescription>
-              {t(
-                "admin.blog.blocksJsonAdvancedHint",
-                "Solo para edición masiva o importación parcial. El editor visual es la forma recomendada.",
-              )}
+              {t("admin.blog.blocksJsonAdvancedHint")}
             </DialogDescription>
           </DialogHeader>
           <Textarea

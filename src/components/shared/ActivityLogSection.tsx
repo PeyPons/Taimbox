@@ -164,8 +164,8 @@ export function ActivityLogSection({ currentMonth, maxItems = 200 }: ActivityLog
 
     // --- Helpers ---
     const getEmployeeName = (id: unknown) => {
-        if (typeof id !== 'string') return 'Desconocido';
-        return employees.find(e => e.id === id)?.name || 'Empleado eliminado';
+        if (typeof id !== 'string') return t('activityLog.unknownEmployee');
+        return employees.find(e => e.id === id)?.name || t('activityLog.deletedEmployee');
     };
 
     const getEmployeeAvatar = (id: unknown) => {
@@ -174,8 +174,8 @@ export function ActivityLogSection({ currentMonth, maxItems = 200 }: ActivityLog
     };
 
     const getProjectName = (id: unknown) => {
-        if (typeof id !== 'string') return 'Sin proyecto';
-        return projects.find(p => p.id === id)?.name || 'Proyecto eliminado';
+        if (typeof id !== 'string') return t('activityLog.noProject');
+        return projects.find(p => p.id === id)?.name || t('activityLog.deletedProject');
     };
 
     const getClientName = (projectId: string) => {
@@ -220,13 +220,13 @@ export function ActivityLogSection({ currentMonth, maxItems = 200 }: ActivityLog
                 if (fetchError) throw fetchError;
                 setLogs(data || []);
             } catch (err: any) {
-                setError('Error al cargar historial (verificar migración audit_logs)');
+                setError(t('activityLog.loadError'));
             } finally {
                 setIsLoading(false);
             }
         }
         fetchLogs();
-    }, [currentAgency?.id, currentMonth, maxItems]);
+    }, [currentAgency?.id, currentMonth, maxItems, t]);
 
     // --- Recursive Tree Building ---
     const rootNodes = useMemo(() => {
@@ -238,7 +238,7 @@ export function ActivityLogSection({ currentMonth, maxItems = 200 }: ActivityLog
             if (!nodes.has(id)) {
                 nodes.set(id, {
                     id,
-                    taskName: 'Tarea desconocida',
+                    taskName: t('activityLog.unknownTask'),
                     projectId: '',
                     projectName: '',
                     clientName: '',
@@ -328,32 +328,50 @@ export function ActivityLogSection({ currentMonth, maxItems = 200 }: ActivityLog
 
             if (log.action === 'CREATE') {
                 // Nuevo sistema de tracking + Legacy regex fallback
-                const isTransfer = (data.transferSourceEmployeeId) || rawTaskName.includes('transferida de');
+                const isTransfer =
+                    data.transferSourceEmployeeId ||
+                    rawTaskName.includes('transferida de') ||
+                    rawTaskName.includes('transferred from');
 
                 if (isTransfer) {
                     action = 'transferred';
-                    let sourceName = 'otro';
+                    let sourceName = t('activityLog.otherSource');
                     if (data.transferSourceEmployeeId) {
                         sourceName = getEmployeeName(data.transferSourceEmployeeId);
                     } else {
-                        const match = rawTaskName.match(/transferida de (.+?)\)/);
+                        const match =
+                            rawTaskName.match(/transferida de (.+?)\)/) ??
+                            rawTaskName.match(/transferred from (.+?)\)/);
                         if (match) sourceName = match[1];
                     }
                     const recipientName = getEmployeeName(employeeId);
-                    details = `Recibida de ${sourceName} por ${recipientName} (${data.hoursAssigned}h)`;
+                    details = t('activityLog.details.receivedFrom', {
+                        source: sourceName,
+                        recipient: recipientName,
+                        hours: data.hoursAssigned,
+                    });
                 } else if (data.distributionSourceAllocationId) {
                     action = 'distributed';
-                    details = `Redistribución recibida (${data.hoursAssigned}h)`;
+                    details = t('activityLog.details.distributionReceived', {
+                        hours: data.hoursAssigned,
+                    });
                 } else if (data.parentAllocationId) {
                     action = 'continued';
-                    details = `Continuación de semana previa (${data.hoursAssigned}h)`;
+                    details = t('activityLog.details.continuedFromPrevWeek', {
+                        hours: data.hoursAssigned,
+                    });
                 } else {
                     action = 'created';
-                    details = `Creada para ${getEmployeeName(employeeId)} (${data.hoursAssigned}h)`;
+                    details = t('activityLog.details.createdFor', {
+                        name: getEmployeeName(employeeId),
+                        hours: data.hoursAssigned,
+                    });
                 }
             } else if (log.action === 'DELETE') {
                 action = 'deleted';
-                details = `Eliminada de ${getEmployeeName(employeeId)}`;
+                details = t('activityLog.details.deletedFrom', {
+                    name: getEmployeeName(employeeId),
+                });
             } else if (log.action === 'UPDATE') {
                 const oldVal = log.details?.previousValue;
                 const newVal = log.details?.newValue;
@@ -365,8 +383,13 @@ export function ActivityLogSection({ currentMonth, maxItems = 200 }: ActivityLog
                     const isRedistributedCompletion = (newVal?.hoursActual || newVal?.hoursAssigned || 0) === 0;
                     action = isRedistributedCompletion ? 'distributed' : 'completed';
                     details = isRedistributedCompletion
-                        ? `Distribuida a compañeros por ${getEmployeeName(employeeId)}`
-                        : `Completada por ${getEmployeeName(employeeId)} (${newVal?.hoursActual || newVal?.hoursAssigned}h)`;
+                        ? t('activityLog.details.distributedToTeammates', {
+                            name: getEmployeeName(employeeId),
+                        })
+                        : t('activityLog.details.completedBy', {
+                            name: getEmployeeName(employeeId),
+                            hours: newVal?.hoursActual || newVal?.hoursAssigned,
+                        });
                 } else if (oldVal?.employeeId !== newVal?.employeeId) {
                     action = 'transferred';
                     details = `${getEmployeeName(oldVal?.employeeId)} → ${getEmployeeName(newVal?.employeeId)}`;
@@ -376,12 +399,18 @@ export function ActivityLogSection({ currentMonth, maxItems = 200 }: ActivityLog
 
                     // Cambio de horas asignadas
                     if (oldVal?.hoursAssigned !== newVal?.hoursAssigned) {
-                        changes.push(`Horas: ${oldVal?.hoursAssigned ?? 0}h → ${newVal?.hoursAssigned}h`);
+                        changes.push(t('activityLog.changes.hours', {
+                            from: oldVal?.hoursAssigned ?? 0,
+                            to: newVal?.hoursAssigned,
+                        }));
                     }
 
                     // Cambio de semana
                     if (oldVal?.weekStartDate !== newVal?.weekStartDate) {
-                        changes.push(`Semana: S${getWeekNumber(oldVal?.weekStartDate)} → S${getWeekNumber(newVal?.weekStartDate)}`);
+                        changes.push(t('activityLog.changes.week', {
+                            from: getWeekNumber(oldVal?.weekStartDate),
+                            to: getWeekNumber(newVal?.weekStartDate),
+                        }));
                     }
 
                     // Cambio de proyecto
@@ -389,24 +418,27 @@ export function ActivityLogSection({ currentMonth, maxItems = 200 }: ActivityLog
                     if (projectChanged) {
                         const oldProjectName = getProjectName(oldVal?.projectId);
                         const newProjectName = getProjectName(newVal?.projectId);
-                        changes.push(`Proyecto: ${oldProjectName} → ${newProjectName}`);
+                        changes.push(t('activityLog.changes.project', {
+                            from: oldProjectName,
+                            to: newProjectName,
+                        }));
                     }
 
                     // Cambio de nombre de tarea
                     if (oldVal?.taskName !== newVal?.taskName && newVal?.taskName) {
-                        const oldName = String(oldVal?.taskName || 'Sin nombre');
+                        const oldName = String(oldVal?.taskName || t('activityLog.unnamedTask'));
                         const newName = String(newVal?.taskName);
-                        changes.push(`Nombre: "${oldName}" → "${newName}"`);
+                        changes.push(t('activityLog.changes.name', { from: oldName, to: newName }));
                     }
 
                     // Cambio de descripción
                     if (oldVal?.description !== newVal?.description) {
                         if (newVal?.description && !oldVal?.description) {
-                            changes.push(`Descripción añadida`);
+                            changes.push(t('activityLog.changes.descriptionAdded'));
                         } else if (!newVal?.description && oldVal?.description) {
-                            changes.push(`Descripción eliminada`);
+                            changes.push(t('activityLog.changes.descriptionRemoved'));
                         } else if (newVal?.description) {
-                            changes.push(`Descripción modificada`);
+                            changes.push(t('activityLog.changes.descriptionModified'));
                         }
                     }
 
@@ -414,36 +446,48 @@ export function ActivityLogSection({ currentMonth, maxItems = 200 }: ActivityLog
                     // y no es un efecto secundario de cambiar de proyecto (que resetea la dependencia)
                     if (oldVal?.dependencyId !== newVal?.dependencyId && !projectChanged) {
                         if (newVal?.dependencyId && !oldVal?.dependencyId) {
-                            changes.push(`Bloqueo añadido`);
+                            changes.push(t('activityLog.changes.blockAdded'));
                         } else if (!newVal?.dependencyId && oldVal?.dependencyId) {
-                            changes.push(`Bloqueo eliminado`);
+                            changes.push(t('activityLog.changes.blockRemoved'));
                         } else if (newVal?.dependencyId && oldVal?.dependencyId) {
-                            changes.push(`Bloqueo cambiado`);
+                            changes.push(t('activityLog.changes.blockChanged'));
                         }
                     }
 
                     // Cambio de prioridad
                     if (oldVal?.userPriority !== newVal?.userPriority) {
                         if (newVal?.userPriority !== null && newVal?.userPriority !== undefined) {
-                            changes.push(`Prioridad: ${oldVal?.userPriority ?? '–'} → ${newVal?.userPriority}`);
+                            changes.push(t('activityLog.changes.priority', {
+                                from: oldVal?.userPriority ?? '–',
+                                to: newVal?.userPriority,
+                            }));
                         } else if (oldVal?.userPriority !== null && oldVal?.userPriority !== undefined) {
-                            changes.push(`Prioridad eliminada`);
+                            changes.push(t('activityLog.changes.priorityRemoved'));
                         }
                     }
 
                     // Cambio de estado (que no sea a completada, eso ya se detecta arriba)
                     if (oldVal?.status !== newVal?.status && newVal?.status !== 'completed') {
-                        changes.push(`Estado: ${oldVal?.status || 'planned'} → ${newVal?.status}`);
+                        changes.push(t('activityLog.changes.status', {
+                            from: oldVal?.status || 'planned',
+                            to: newVal?.status,
+                        }));
                     }
 
                     // Cambio de horas actuales - SIEMPRE mostrar con valores
                     if (oldVal?.hoursActual !== newVal?.hoursActual) {
-                        changes.push(`Horas reales: ${oldVal?.hoursActual ?? 0}h → ${newVal?.hoursActual ?? 0}h`);
+                        changes.push(t('activityLog.changes.actualHours', {
+                            from: oldVal?.hoursActual ?? 0,
+                            to: newVal?.hoursActual ?? 0,
+                        }));
                     }
 
                     // Cambio de horas computadas - SIEMPRE mostrar con valores
                     if (oldVal?.hoursComputed !== newVal?.hoursComputed) {
-                        changes.push(`Horas computadas: ${oldVal?.hoursComputed ?? 0}h → ${newVal?.hoursComputed ?? 0}h`);
+                        changes.push(t('activityLog.changes.computedHours', {
+                            from: oldVal?.hoursComputed ?? 0,
+                            to: newVal?.hoursComputed ?? 0,
+                        }));
                     }
 
                     // Fallback mejorado: detectar otros campos y mostrar valores si es posible
@@ -472,9 +516,11 @@ export function ActivityLogSection({ currentMonth, maxItems = 200 }: ActivityLog
                                 }
                                 return field;
                             });
-                            changes.push(`Otros: ${detailedChanges.slice(0, 3).join(', ')}${changedFields.length > 3 ? '...' : ''}`);
+                            changes.push(t('activityLog.changes.other', {
+                                fields: `${detailedChanges.slice(0, 3).join(', ')}${changedFields.length > 3 ? '...' : ''}`,
+                            }));
                         } else {
-                            changes.push('Guardada sin cambios detectables');
+                            changes.push(t('activityLog.changes.noDetectableChanges'));
                         }
                     }
 
@@ -521,7 +567,7 @@ export function ActivityLogSection({ currentMonth, maxItems = 200 }: ActivityLog
             parentLinks.set(nodeId, parentId);
             if (!nodes.has(parentId)) {
                 const childAlloc = allocations.find(a => a.id === nodeId);
-                const fallbackTaskName = childAlloc?.originalTransferredTaskName || pAlloc?.taskName || 'Tarea';
+                const fallbackTaskName = childAlloc?.originalTransferredTaskName || pAlloc?.taskName || t('activityLog.defaultTask');
 
                 getNode(parentId, pAlloc ? {
                     taskName: pAlloc.taskName || fallbackTaskName,
@@ -585,7 +631,9 @@ export function ActivityLogSection({ currentMonth, maxItems = 200 }: ActivityLog
                 const lastMod = node.modifications[node.modifications.length - 1];
                 if (lastMod && (lastMod.action === 'completed' || lastMod.action === 'deleted')) {
                     lastMod.action = 'distributed';
-                    lastMod.details = `Distribuida en ${node.children.length} sub-tarea(s)`;
+                    lastMod.details = t('activityLog.details.distributedIntoSubtasks', {
+                        count: node.children.length,
+                    });
                 }
             }
 
@@ -612,7 +660,7 @@ export function ActivityLogSection({ currentMonth, maxItems = 200 }: ActivityLog
         return roots
             .filter(r => r.modifications.length > 0 || r.children.length > 0)
             .sort((a, b) => getDeepLatest(b) - getDeepLatest(a));
-    }, [logs, allocations, filterEmployee, filterProject, employees, projects, clients, selectedDepartmentId, employeesForView, filteredProjectsForView]);
+    }, [logs, allocations, filterEmployee, filterProject, employees, projects, clients, selectedDepartmentId, employeesForView, filteredProjectsForView, t]);
 
     // --- Group roots by project (filtro cierre semanal + búsqueda texto) ---
     const projectGroups = useMemo(() => {
@@ -678,8 +726,13 @@ export function ActivityLogSection({ currentMonth, maxItems = 200 }: ActivityLog
             updated: 'bg-slate-100 text-slate-700'
         };
         const labels: Record<string, string> = {
-            created: 'Nueva', transferred: 'Transferida', distributed: 'Redistribuida',
-            continued: 'Continuación', completed: 'Completada', deleted: 'Eliminada', updated: 'Editada'
+            created: t('activityLog.actions.created'),
+            transferred: t('activityLog.actions.transferred'),
+            distributed: t('activityLog.actions.distributed'),
+            continued: t('activityLog.actions.continued'),
+            completed: t('activityLog.actions.completed'),
+            deleted: t('activityLog.actions.deleted'),
+            updated: t('activityLog.actions.updated'),
         };
         return <Badge className={cn('text-[9px] px-1.5 py-0', styles[action])}>{labels[action]}</Badge>;
     };
@@ -690,8 +743,8 @@ export function ActivityLogSection({ currentMonth, maxItems = 200 }: ActivityLog
 
         // Clean task name of artifacts
         const displayTaskName = node.taskName
-            .replace(/\s*\(transferida de .+\)/, '')
-            .replace(/\s*\(continuación\)/, '');
+            .replace(/\s*\((?:transferida de|transferred from) .+\)/, '')
+            .replace(/\s*\((?:continuación|continuation)\)/, '');
 
         return (
             <Collapsible open={isOpen} onOpenChange={() => toggleNode(node.id)} className="w-full">
@@ -730,8 +783,9 @@ export function ActivityLogSection({ currentMonth, maxItems = 200 }: ActivityLog
                                     {getActionBadge(node.latestAction)}
                                 </div>
                                 <div className="text-[10px] text-slate-500">
-                                    {node.modifications.length} event{node.modifications.length !== 1 ? 'os' : ''}
-                                    {node.children.length > 0 && `, ${node.children.length} sub-tareas`}
+                                    {t('activityLog.eventsCount', { count: node.modifications.length })}
+                                    {node.children.length > 0 &&
+                                        t('activityLog.subTasksCount', { count: node.children.length })}
                                     {node.weekRange && ` · ${node.weekRange}`}
                                 </div>
                             </div>
@@ -977,7 +1031,7 @@ export function ActivityLogSection({ currentMonth, maxItems = 200 }: ActivityLog
                 ) : projectGroups.length === 0 ? (
                     <div className="text-center py-6 text-slate-500 text-sm">
                         <Clock className="h-6 w-6 mx-auto mb-1.5 opacity-50" />
-                        <p>No hay cambios registrados</p>
+                        <p>{t('activityLog.noChanges')}</p>
                     </div>
                 ) : (
                     <ScrollArea className="h-[500px] pr-2">

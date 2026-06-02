@@ -18,6 +18,7 @@ import {
 import { Building2, ChevronDown, Check } from 'lucide-react';
 import { toast } from '@/lib/notify';
 import { cn } from '@/lib/utils';
+import { useAppTranslation } from '@/hooks/useAppTranslation';
 
 interface AgencySelectorCompactProps {
   /** Integrado en una línea de contexto (sin borde, trigger compacto) */
@@ -27,6 +28,7 @@ interface AgencySelectorCompactProps {
 export function AgencySelectorCompact(props: AgencySelectorCompactProps = {}) {
   const { inline = false } = props;
   const { currentAgency, availableAgencies, switchAgency, isLoading, refreshAgency } = useAgency();
+  const { t } = useAppTranslation();
   const [isSwitching, setIsSwitching] = useState(false);
   const hasMultipleAgencies = (availableAgencies?.length || 0) > 1;
 
@@ -37,10 +39,10 @@ export function AgencySelectorCompact(props: AgencySelectorCompactProps = {}) {
     try {
       await switchAgency(agencyId);
       await refreshAgency();
-      toast.success('Agencia cambiada correctamente');
+      toast.success(t('agencies.toast.switchSuccess'));
     } catch (error) {
       console.error('Error cambiando agencia:', error);
-      toast.error('Error al cambiar de agencia');
+      toast.error(t('agencies.toast.switchError'));
     } finally {
       setIsSwitching(false);
     }

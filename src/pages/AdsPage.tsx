@@ -365,7 +365,7 @@ export default function AdsPage() {
     }, { onConflict: 'client_id' });
     setEditingClient(null);
     fetchData();
-    toast.success('Configuración guardada');
+    toast.success(t('ads.toasts.configSaved'));
   };
 
   // Lógica principal de cálculo
