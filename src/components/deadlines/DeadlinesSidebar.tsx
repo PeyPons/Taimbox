@@ -47,6 +47,8 @@ export interface DeadlinesSidebarProps {
   onOpenSuggestionsFull: () => void;
   globalAssignments: GlobalAssignmentItem[];
   currentUserId: string | undefined;
+  /** Quien puede editar deadlines puede eliminar cualquier asignación global del mes. */
+  canDeleteAnyGlobalAssignment?: boolean;
   onOpenGlobalDialog: (assignment?: GlobalAssignmentItem) => void;
   onDeleteGlobal: (id: string) => void;
 }
@@ -59,6 +61,7 @@ export function DeadlinesSidebar({
   onOpenSuggestionsFull,
   globalAssignments,
   currentUserId,
+  canDeleteAnyGlobalAssignment = false,
   onOpenGlobalDialog,
   onDeleteGlobal,
 }: DeadlinesSidebarProps) {
@@ -86,7 +89,10 @@ export function DeadlinesSidebar({
           ) : (
             <div className="space-y-1">
               {globalAssignments.map((a) => {
-                const canDelete = !a.employeeId || a.employeeId === currentUserId;
+                const canDelete =
+                  canDeleteAnyGlobalAssignment ||
+                  !a.employeeId ||
+                  a.employeeId === currentUserId;
                 return (
                   <div key={a.id} className="flex items-center justify-between text-xs group">
                     <span className="truncate text-slate-600">{a.name}</span>

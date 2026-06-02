@@ -309,8 +309,11 @@ export default function DeadlinesPage() {
       return;
     }
 
-    // Solo permitir eliminar asignaciones propias
-    if (assignment.employeeId && assignment.employeeId !== currentUser.id) {
+    if (
+      !canEditDeadlines &&
+      assignment.employeeId &&
+      assignment.employeeId !== currentUser.id
+    ) {
       toast.error('Solo puedes eliminar tus propias asignaciones');
       return;
     }
@@ -688,6 +691,7 @@ export default function DeadlinesPage() {
           onOpenSuggestionsFull={() => setIsSuggestionsExpandedOpen(true)}
           globalAssignments={globalAssignments}
           currentUserId={currentUser?.id}
+          canDeleteAnyGlobalAssignment={canEditDeadlines}
           onOpenGlobalDialog={openGlobalDialog}
           onDeleteGlobal={handleDeleteGlobal}
         />

@@ -57,6 +57,7 @@ export interface EmployeeItem {
   name: string;
   first_name?: string;
   avatarUrl?: string;
+  isActive?: boolean;
 }
 
 export interface EditLock {
@@ -188,6 +189,14 @@ export function DeadlinesProjectList({
                     ? inlineFormData.isHidden
                     : hiddenProjects.has(project.id);
                   const projectNotes = deadline?.notes;
+                  const employeesForEdit = employees.filter((emp) => {
+                    if (emp.isActive !== false) return true;
+                    const h =
+                      (inlineFormData.employeeHours[emp.id] ??
+                        (deadline?.employeeHours as Record<string, number> | undefined)?.[emp.id]) ||
+                      0;
+                    return h > 0;
+                  });
 
                   return (
                     <div
@@ -305,7 +314,7 @@ export function DeadlinesProjectList({
                           )}
                           <div className={cn(isLockAcquiring && 'pointer-events-none select-none')}>
                           <div className="flex flex-wrap gap-2 mb-3">
-                            {employees.map((emp) => (
+                            {employeesForEdit.map((emp) => (
                               <DeadlineEmployeeRow
                                 key={emp.id}
                                 employee={emp}

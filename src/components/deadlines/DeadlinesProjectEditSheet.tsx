@@ -35,6 +35,7 @@ export interface EmployeeOption {
   name: string;
   first_name?: string;
   avatarUrl?: string;
+  isActive?: boolean;
 }
 
 export interface DeadlinesProjectEditSheetProps {
@@ -73,6 +74,10 @@ export function DeadlinesProjectEditSheet({
   const budgetCap = effectiveBudgetCap ?? deadline?.budgetOverride ?? project.budgetHours ?? 0;
   const isOverBudget = totalAssigned > budgetCap;
   const budgetDisplay = budgetCap;
+  const employeesForEdit = employees.filter((emp) => {
+    if (emp.isActive !== false) return true;
+    return (formData.employeeHours[emp.id] || 0) > 0;
+  });
 
   return (
     <Sheet open={open} onOpenChange={(o) => !o && onClose()}>
@@ -92,7 +97,7 @@ export function DeadlinesProjectEditSheet({
             {isLockAcquiring && (
               <p className="text-xs text-slate-500 animate-pulse">Verificando bloqueo de edición...</p>
             )}
-            {employees.map((emp) => (
+            {employeesForEdit.map((emp) => (
               <div key={emp.id} className="flex items-center gap-3 bg-slate-50 rounded-lg px-3 py-2.5">
                 <Avatar className="h-8 w-8 shrink-0">
                   <AvatarImage src={emp.avatarUrl} alt={emp.name} />

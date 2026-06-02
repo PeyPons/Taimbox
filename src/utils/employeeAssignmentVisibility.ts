@@ -102,6 +102,24 @@ export function employeeIdsWithDeadlineProjectHoursInMonth(
   return ids;
 }
 
+/**
+ * Lista para Deadlines: activos + inactivos con horas en algún proyecto del mes.
+ * No incluye inactivos solo por planificador, asignación global «afecta a todos» ni globales sin horas en deadlines.
+ */
+export function filterEmployeesForDeadlinesMonth(
+  employees: Employee[],
+  monthKey: string,
+  deadlines: Deadline[],
+  hiddenProjectIds: Set<string>
+): Employee[] {
+  const withProjectHours = employeeIdsWithDeadlineProjectHoursInMonth(
+    monthKey,
+    deadlines,
+    hiddenProjectIds
+  );
+  return employees.filter((e) => e.isActive || withProjectHours.has(e.id));
+}
+
 /** Variante cuando el mes viene como `Date` (p. ej. rentabilidad). */
 export function filterEmployeesForOperationalMonthDate(
   employees: Employee[],

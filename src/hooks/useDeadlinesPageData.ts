@@ -10,7 +10,7 @@ import { supabase } from '@/lib/supabase';
 import { fetchGlobalAssignmentsForMonth } from '@/utils/globalAssignmentsUtils';
 import { Deadline, GlobalAssignment, Project, Client, Employee, Absence, TeamEvent, Allocation } from '@/types';
 import {
-  filterEmployeesForOperationalMonth,
+  filterEmployeesForDeadlinesMonth,
   employeeIdsWithDeadlineProjectHoursInMonth,
 } from '@/utils/employeeAssignmentVisibility';
 import { getEffectiveBudget } from '@/utils/budgetUtils';
@@ -386,13 +386,14 @@ export function useDeadlinesPageData(params: UseDeadlinesPageDataParams) {
   }, []);
 
   const activeEmployees = useMemo(() => {
-    const list = filterEmployeesForOperationalMonth(employeesForView, selectedMonth, {
+    const list = filterEmployeesForDeadlinesMonth(
+      employeesForView,
+      selectedMonth,
       deadlines,
-      globalAssignments,
-      allocations,
-    });
+      hiddenProjects
+    );
     return list.sort((a, b) => (a.first_name || a.name).localeCompare(b.first_name || b.name));
-  }, [employeesForView, selectedMonth, deadlines, globalAssignments, allocations]);
+  }, [employeesForView, selectedMonth, deadlines, hiddenProjects]);
 
   /** Solo filas/avatares en vista lectura: quienes tienen horas en algún proyecto este mes (sin globales). */
   const employeesForProjectDisplay = useMemo(() => {
