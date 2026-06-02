@@ -5,6 +5,7 @@
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DeadlinesAvailabilityCard } from '@/components/deadlines/DeadlinesAvailabilityCard';
+import { DeadlinesCapacityShortcuts } from '@/components/deadlines/DeadlinesCapacityShortcuts';
 import { DeadlinesSuggestionsPreview } from '@/components/deadlines/DeadlinesSuggestionsPreview';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 
@@ -44,7 +45,13 @@ export interface DeadlinesSidebarProps {
   getMonthlyCapacity: (employeeId: string) => CapacityData;
   getEmployeeAssignedHours: (employeeId: string) => number;
   suggestionsPreview: SuggestionGroupPreview[];
+  suggestionsEmptyMessage?: string | null;
+  hasRestrictiveFilters?: boolean;
   onOpenSuggestionsFull: () => void;
+  suggestionsWizardPaused?: boolean;
+  suggestionsWizardResumeLabel?: string;
+  onDiscardSuggestionsWizard?: () => void;
+  onResetSuggestionsFilters?: () => void;
   globalAssignments: GlobalAssignmentItem[];
   currentUserId: string | undefined;
   /** Quien puede editar deadlines puede eliminar cualquier asignación global del mes. */
@@ -58,7 +65,13 @@ export function DeadlinesSidebar({
   getMonthlyCapacity,
   getEmployeeAssignedHours,
   suggestionsPreview,
+  suggestionsEmptyMessage,
+  hasRestrictiveFilters,
   onOpenSuggestionsFull,
+  suggestionsWizardPaused,
+  suggestionsWizardResumeLabel,
+  onDiscardSuggestionsWizard,
+  onResetSuggestionsFilters,
   globalAssignments,
   currentUserId,
   canDeleteAnyGlobalAssignment = false,
@@ -74,7 +87,16 @@ export function DeadlinesSidebar({
           getEmployeeAssignedHours={getEmployeeAssignedHours}
           compact={false}
         />
-        <DeadlinesSuggestionsPreview groups={suggestionsPreview} onOpenFull={onOpenSuggestionsFull} />
+        <DeadlinesSuggestionsPreview
+          groups={suggestionsPreview}
+          emptyMessage={suggestionsEmptyMessage}
+          hasRestrictiveFilters={hasRestrictiveFilters}
+          onOpenFull={onOpenSuggestionsFull}
+          wizardPaused={suggestionsWizardPaused}
+          wizardResumeLabel={suggestionsWizardResumeLabel}
+          onDiscardWizard={onDiscardSuggestionsWizard}
+          onResetFilters={onResetSuggestionsFilters}
+        />
         <div className="bg-white rounded-xl border shadow-sm p-3" data-tour="global-assignments">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
@@ -121,6 +143,7 @@ export function DeadlinesSidebar({
               })}
             </div>
           )}
+          <DeadlinesCapacityShortcuts employees={employees} />
         </div>
       </div>
     </div>

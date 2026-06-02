@@ -1,6 +1,20 @@
 import { supabase } from '@/lib/supabase';
 import { Deadline } from '@/types';
 
+/** Redondeo operativo de horas (paso 0,5 h en Deadlines). */
+export function roundDeadlineHours(hours: number): number {
+  if (!Number.isFinite(hours)) return 0;
+  return Math.round(hours * 10) / 10;
+}
+
+/** Texto legible para chips y resúmenes (evita 11.599999999999998). */
+export function formatDeadlineHoursForDisplay(hours: number): string {
+  const r = roundDeadlineHours(hours);
+  if (r === 0) return '0';
+  if (Number.isInteger(r)) return String(r);
+  return r.toFixed(1).replace(/\.0$/, '');
+}
+
 /** Formato de fila deadlines en Supabase (snake_case) */
 interface SupabaseDeadlineRow {
   id: string;

@@ -90,7 +90,7 @@ const tourSteps: TourStep[] = [
     id: 'global-assignments',
     target: '[data-tour="global-assignments"]',
     title: 'Otras asignaciones',
-    description: 'Tareas internas que afectan a uno o más empleados: deadlines, reuniones, formaciones... Se suman automáticamente a su carga total.',
+    description: 'Tareas internas que suman horas a la carga del mes (reuniones, deadlines transversales…). Para vacaciones o festivos, usa los accesos justo debajo: restan disponibilidad, no van aquí.',
     icon: <Clock className="w-6 h-6 text-slate-500" />,
     position: 'left',
     highlight: true

@@ -87,9 +87,18 @@ export function GlobalAssignmentDialog({
             {initialData ? 'Editar asignación global' : 'Nueva asignación global'}
           </DialogTitle>
           <DialogDescription>
-            Tareas que afectan a uno o más empleados
+            Tareas internas que suman horas a la carga del mes (reuniones, formación interna, deadlines
+            transversales…).
           </DialogDescription>
         </DialogHeader>
+
+        {!initialData && (
+          <p className="text-xs text-slate-600 rounded-lg border border-amber-200/80 bg-amber-50/60 px-3 py-2 leading-relaxed">
+            <span className="font-medium text-slate-800">¿Vacaciones o festivo?</span> No lo registres aquí. En el
+            panel lateral de Deadlines usa «Vacaciones o ausencia» o «Festivo / evento del equipo» — restan
+            disponibilidad, no suman carga.
+          </p>
+        )}
 
         <Form {...form}>
           <form onSubmit={handleSubmit} className="space-y-4 py-4">

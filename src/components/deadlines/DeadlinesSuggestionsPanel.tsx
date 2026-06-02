@@ -15,7 +15,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Sparkles,
   ChevronDown,
@@ -24,11 +24,31 @@ import {
   ArrowRight,
   Inbox,
   Share2,
-  PanelRight,
   Search,
+  RotateCcw,
+  AlertCircle,
+  ArrowLeft,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SensitiveText } from '@/components/privacy/SensitiveText';
+import { formatDeadlineHoursForDisplay, roundDeadlineHours } from '@/utils/deadlineUtils';
+import type { PanelFlowView } from '@/hooks/useDeadlinesSuggestionsState';
+import type { Deadline } from '@/types';
+import type { SuggestionsFlowMode, SuggestionsFlowPreset } from '@/utils/deadlinesSuggestionsPrefs';
+import { SuggestionIntentPicker } from '@/components/deadlines/suggestions/SuggestionIntentPicker';
+import { SuggestionActiveRulesChips } from '@/components/deadlines/suggestions/SuggestionActiveRulesChips';
+import type { FlowProjectScope } from '@/utils/suggestionRulesUtils';
+import { SuggestionGiveFlow } from '@/components/deadlines/suggestions/SuggestionGiveFlow';
+import { SuggestionTakeFlow } from '@/components/deadlines/suggestions/SuggestionTakeFlow';
+import { OpenProjectButton } from '@/components/deadlines/suggestions/OpenProjectButton';
+import { SuggestionTeamResumen } from '@/components/deadlines/suggestions/SuggestionTeamResumen';
+import { SuggestionTeamBalanceView } from '@/components/deadlines/suggestions/SuggestionTeamBalanceView';
+import { SuggestionTeamLimitsSidebar } from '@/components/deadlines/suggestions/SuggestionTeamLimitsSidebar';
+import {
+  buildExpandedEmployeesForTeamView,
+  computeTeamSuggestionsSummary,
+  meetsMinSuggestedTransferHours,
+} from '@/utils/suggestionTeamUtils';
 
 export interface SuggestionDonor {
   id: string;
@@ -82,6 +102,10 @@ export interface DeadlinesSuggestionsPanelProps {
   setMinSenderLoadPct: (v: number) => void;
   minSenderLoadPctInput: string;
   setMinSenderLoadPctInput: (v: string) => void;
+  minSuggestedTransferHours: number;
+  setMinSuggestedTransferHours: (v: number) => void;
+  minSuggestedTransferHoursInput: string;
+  setMinSuggestedTransferHoursInput: (v: string) => void;
   suggestionsCondicionantesOpen: boolean;
   setSuggestionsCondicionantesOpen: (v: boolean) => void;
   rightPanelPorProyectoOpen: boolean;
@@ -95,6 +119,26 @@ export interface DeadlinesSuggestionsPanelProps {
   includedProjectIds: Set<string>;
   setIncludedProjectIds: (v: Set<string> | ((prev: Set<string>) => Set<string>)) => void;
   filteredProjects: { id: string; name: string }[];
+  suggestionsEmptyMessage?: string | null;
+  hasRestrictiveFilters?: boolean;
+  onResetFilters?: () => void;
+  panelFlowView: PanelFlowView;
+  setPanelFlowView: (v: PanelFlowView) => void;
+  wizardStep: number;
+  setWizardStep: (v: number | ((n: number) => number)) => void;
+  focusEmployeeId: string | null;
+  setFocusEmployeeId: (v: string | null) => void;
+  flowProjectScope: FlowProjectScope;
+  setFlowProjectScope: (scope: FlowProjectScope) => void;
+  excludedReceiverIds: string[];
+  setExcludedReceiverIds: (v: string[] | ((prev: string[]) => string[])) => void;
+  deadlines: Deadline[];
+  hiddenProjects: Set<string>;
+  onInitializeGiveRules: (receiverId: string) => void;
+  onInitializeTakeRules: (donorId: string) => void;
+  startFlow: (mode: SuggestionsFlowMode, preset?: SuggestionsFlowPreset) => void;
+  lastFlowMode?: SuggestionsFlowMode;
+  onOpenProject?: (projectId: string) => void;
 }
 
 function handleClose(
@@ -125,7 +169,11 @@ function CondicionantesBlock({
   includedProjectIds,
   setIncludedProjectIds,
   filteredProjects,
+  hasRestrictiveFilters,
+  onResetFilters,
   compact,
+  hideLoadPctFields,
+  dense,
 }: {
   suggestionDonors: SuggestionDonor[];
   excludedDonorIds: string[];
@@ -143,56 +191,91 @@ function CondicionantesBlock({
   includedProjectIds: Set<string>;
   setIncludedProjectIds: (v: Set<string> | ((prev: Set<string>) => Set<string>)) => void;
   filteredProjects: { id: string; name: string }[];
+  hasRestrictiveFilters?: boolean;
+  onResetFilters?: () => void;
   compact?: boolean;
+  /** En modo equipo los % van en el sidebar de límites. */
+  hideLoadPctFields?: boolean;
+  /** Filas y paddings más pequeños en vista compacta. */
+  dense?: boolean;
 }) {
   const [projectSearch, setProjectSearch] = useState('');
   const projectsFilteredBySearch = projectSearch.trim()
     ? filteredProjects.filter((p) => p.name.toLowerCase().includes(projectSearch.trim().toLowerCase()))
     : filteredProjects;
 
-  const triggerLabel = compact
-    ? 'Condicionantes'
-    : 'Condicionantes (quién cede, cargas máx. receptor y mín. quien cede)';
+  const triggerLabel = compact ? 'Ajustar condicionantes' : 'Condicionantes del reparto';
+
   return (
     <Collapsible open={suggestionsCondicionantesOpen} onOpenChange={setSuggestionsCondicionantesOpen}>
-      <CollapsibleTrigger asChild>
-        <button
-          type="button"
-          className={cn(
-            'flex items-center gap-2 w-full text-left font-medium rounded-lg transition-colors',
-            compact
-              ? 'text-xs text-slate-600 hover:text-slate-800 hover:bg-slate-100 py-2 px-2 mb-2'
-              : 'text-sm text-slate-700 hover:text-slate-900 hover:bg-slate-100 py-2.5 px-3 border border-slate-200 bg-slate-50/50 hover:border-slate-300'
-          )}
-          title="Clic para ver o ocultar opciones: quién puede ceder, % receptor y quien cede, proyectos"
-        >
-          {suggestionsCondicionantesOpen ? (
-            <ChevronUp className={cn(compact ? 'h-3.5 w-3.5' : 'h-4 w-4', 'shrink-0')} />
-          ) : (
-            <ChevronDown className={cn(compact ? 'h-3.5 w-3.5' : 'h-4 w-4', 'shrink-0')} />
-          )}
-          <span className="flex-1">{triggerLabel}</span>
-          {!suggestionsCondicionantesOpen && !compact && (
-            <span className="text-xs font-normal text-slate-500">Clic para ajustar</span>
-          )}
-        </button>
-      </CollapsibleTrigger>
+      <div className={cn('flex items-center gap-2', compact ? 'mb-2' : 'mb-3')}>
+        <CollapsibleTrigger asChild>
+          <button
+            type="button"
+            className={cn(
+              'flex items-center gap-2 flex-1 min-w-0 text-left font-medium rounded-lg transition-colors',
+              compact
+                ? 'text-xs text-slate-600 hover:text-slate-800 hover:bg-slate-100 py-2 px-2'
+                : 'text-sm text-slate-700 hover:text-slate-900 hover:bg-slate-100 py-2.5 px-3 border border-slate-200 bg-slate-50/50 hover:border-slate-300'
+            )}
+            title="Quién puede ceder, límites de carga y proyectos a considerar"
+          >
+            {suggestionsCondicionantesOpen ? (
+              <ChevronUp className={cn(compact ? 'h-3.5 w-3.5' : 'h-4 w-4', 'shrink-0')} />
+            ) : (
+              <ChevronDown className={cn(compact ? 'h-3.5 w-3.5' : 'h-4 w-4', 'shrink-0')} />
+            )}
+            <span className="flex-1 truncate">{triggerLabel}</span>
+            {hasRestrictiveFilters && (
+              <Badge variant="outline" className="text-[10px] shrink-0 border-amber-200 text-amber-800">
+                Activos
+              </Badge>
+            )}
+          </button>
+        </CollapsibleTrigger>
+        {onResetFilters && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className={cn('shrink-0 text-slate-500', compact ? 'h-8 px-2 text-[10px]' : 'h-9 text-xs')}
+            onClick={onResetFilters}
+            title="Volver a 100% receptor, 30% mín. cedente, sin exclusiones ni filtros de proyecto"
+          >
+            <RotateCcw className={cn(compact ? 'h-3 w-3' : 'h-3.5 w-3.5', 'mr-1')} />
+            Restaurar
+          </Button>
+        )}
+      </div>
       <CollapsibleContent>
         {compact ? (
-          <div className="space-y-3 py-2 pb-3 border border-slate-200 rounded-xl bg-slate-50/80 px-3 mb-2">
-            <p className="text-[11px] font-semibold text-slate-500 uppercase">Quién puede ceder</p>
-            <div className="grid grid-cols-1 gap-2">
+          <div
+            className={cn(
+              'border border-slate-200 rounded-lg bg-slate-50/80 mb-1',
+              dense ? 'space-y-1.5 py-1.5 px-2 pb-2' : 'space-y-3 py-2 pb-3 px-3'
+            )}
+          >
+            <p className={cn('font-semibold text-slate-500 uppercase', dense ? 'text-[10px]' : 'text-[11px]')}>
+              Quién puede ceder
+            </p>
+            <div className={cn('grid grid-cols-1', dense ? 'gap-1' : 'gap-2')}>
               {suggestionDonors.map((d) => {
                 const allowed = !excludedDonorIds.includes(d.id);
                 return (
                   <div
                     key={d.id}
                     className={cn(
-                      'flex items-center gap-2 rounded-lg border p-2 min-h-[2.25rem]',
+                      'flex items-center gap-2 rounded-md border',
+                      dense ? 'p-1.5 min-h-[1.75rem]' : 'p-2 min-h-[2.25rem] rounded-lg',
                       allowed ? 'bg-white border-slate-200' : 'bg-slate-100/80 border-slate-100 opacity-75'
                     )}
                   >
-                    <Avatar className="h-6 w-6 shrink-0 border border-slate-200">
+                    <Avatar
+                      className={cn(
+                        'shrink-0 border border-slate-200',
+                        dense ? 'h-5 w-5' : 'h-6 w-6'
+                      )}
+                    >
                       <AvatarImage src={d.avatarUrl} alt={d.name} />
                       <AvatarFallback className="text-[10px]">{d.name.substring(0, 2).toUpperCase()}</AvatarFallback>
                     </Avatar>
@@ -210,6 +293,7 @@ function CondicionantesBlock({
                 );
               })}
             </div>
+            {!hideLoadPctFields && (
             <div className="space-y-2 pt-2 border-t border-slate-200">
               <div className="rounded-xl border border-primary/20 bg-primary/5 px-3 py-3 flex items-center justify-between gap-3 min-w-0">
                 <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -284,18 +368,35 @@ function CondicionantesBlock({
                 </div>
               </div>
             </div>
-            <div className="space-y-2 pt-2 border-t border-slate-200">
-              <div className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white p-2">
+            )}
+            <div
+              className={cn(
+                dense ? 'space-y-1.5' : 'space-y-2',
+                !hideLoadPctFields ? 'pt-2 border-t border-slate-200' : dense ? 'pt-1 border-t border-slate-200' : 'pt-0'
+              )}
+            >
+              <div
+                className={cn(
+                  'flex items-center justify-between gap-2 rounded-md border border-slate-200 bg-white',
+                  dense ? 'p-1.5' : 'p-2 rounded-lg'
+                )}
+              >
                 <div className="flex items-center gap-2 min-w-0">
-                  <FolderKanban className="h-4 w-4 text-slate-500 shrink-0" />
-                  <span className="text-xs font-medium text-slate-700">Solo proyectos en común</span>
+                  <FolderKanban className={cn('text-slate-500 shrink-0', dense ? 'h-3.5 w-3.5' : 'h-4 w-4')} />
+                  <span className={cn('font-medium text-slate-700', dense ? 'text-[11px]' : 'text-xs')}>
+                    Solo proyectos en común
+                  </span>
                 </div>
-                <Switch checked={onlySharedProjects} onCheckedChange={setOnlySharedProjects} className="shrink-0" />
+                <Switch checked={onlySharedProjects} onCheckedChange={setOnlySharedProjects} className="shrink-0 scale-90" />
               </div>
               {filteredProjects.length > 0 && (
                 <Popover onOpenChange={(open) => !open && setProjectSearch('')}>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm" className="w-full justify-start text-xs h-8">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className={cn('w-full justify-start', dense ? 'text-[11px] h-7' : 'text-xs h-8')}
+                    >
                       <FolderKanban className="h-3.5 w-3.5 mr-1.5" />
                       {includedProjectIds.size === 0 ? 'Todos los proyectos' : `${includedProjectIds.size} proyecto(s) seleccionados`}
                     </Button>
@@ -388,7 +489,10 @@ function CondicionantesBlock({
                   );
                 })}
                 {suggestionDonors.length === 0 && (
-                  <span className="text-xs text-slate-500 col-span-full">No hay orígenes en las sugerencias</span>
+                  <span className="text-xs text-slate-500 col-span-full">
+                    Nadie cumple el % mínimo de quien cede o no tiene horas en proyectos visibles. Baja el % mínimo o
+                    revisa las asignaciones del mes.
+                  </span>
                 )}
               </div>
             </div>
@@ -570,10 +674,11 @@ function ResumenPropuesto({
     const projectItems: { fromName: string; hours: number }[] = [];
     p.transfers.forEach((t) => {
       if (t.suggestedHours <= 0) return;
+      const h = roundDeadlineHours(t.suggestedHours);
       if (!byFrom.has(t.fromId)) byFrom.set(t.fromId, { fromName: t.fromName, fromAvatar: t.fromAvatar, hours: 0 });
-      byFrom.get(t.fromId)!.hours += t.suggestedHours;
-      totalToReceptor += t.suggestedHours;
-      projectItems.push({ fromName: t.fromName, hours: t.suggestedHours });
+      byFrom.get(t.fromId)!.hours = roundDeadlineHours(byFrom.get(t.fromId)!.hours + h);
+      totalToReceptor = roundDeadlineHours(totalToReceptor + h);
+      projectItems.push({ fromName: t.fromName, hours: h });
     });
     if (projectItems.length) byProject.push({ projectId: p.projectId, projectName: p.projectName, items: projectItems });
   });
@@ -587,7 +692,7 @@ function ResumenPropuesto({
           <p>Sin transferencias sugeridas con los condicionantes actuales.</p>
           {group.deficitHours > 0 && (
             <p className="text-xs text-slate-500">
-              Margen bajo el tope configurado: ~{Math.round(group.deficitHours * 2) / 2}h · Carga actual ~{rPct}%
+              Margen bajo el tope configurado: ~{formatDeadlineHoursForDisplay(group.deficitHours)}h · Carga actual ~{rPct}%
             </p>
           )}
         </div>
@@ -625,7 +730,7 @@ function ResumenPropuesto({
                 </Avatar>
                 <span className="text-xs font-medium text-slate-800 truncate max-w-[100px]">{fromName}</span>
                 <Badge variant="secondary" className="shrink-0 bg-rose-50 text-rose-700 border border-rose-200 text-[11px] font-mono">
-                  −{hours}h
+                  −{formatDeadlineHoursForDisplay(hours)}h
                 </Badge>
               </div>
             ))}
@@ -648,7 +753,9 @@ function ResumenPropuesto({
               <p className="text-[11px] text-slate-500">Añadir horas a</p>
               <p className="font-semibold text-slate-900 text-sm truncate">{group.employeeName}</p>
             </div>
-            <Badge className="shrink-0 bg-primary text-primary-foreground text-xs font-mono">+{totalToReceptor}h</Badge>
+            <Badge className="shrink-0 bg-primary text-primary-foreground text-xs font-mono">
+              +{formatDeadlineHoursForDisplay(totalToReceptor)}h
+            </Badge>
           </div>
         </div>
         <div>
@@ -685,7 +792,7 @@ function ResumenPropuesto({
                         key={j}
                         className="text-[10px] text-slate-600 bg-slate-100 rounded px-1 font-mono"
                       >
-                        {item.fromName} −{item.hours}h
+                        {item.fromName} −{formatDeadlineHoursForDisplay(item.hours)}h
                       </span>
                     ))}
                   </div>
@@ -736,7 +843,9 @@ function ResumenPropuesto({
                 <AvatarFallback className="text-[10px]">{fromName.substring(0, 2).toUpperCase()}</AvatarFallback>
               </Avatar>
               <span className="text-[11px] font-medium text-slate-700 truncate max-w-[70px]">{fromName}</span>
-              <span className="text-[11px] font-mono text-rose-600 font-semibold">−{hours}h</span>
+              <span className="text-[11px] font-mono text-rose-600 font-semibold">
+                −{formatDeadlineHoursForDisplay(hours)}h
+              </span>
             </div>
           ))}
         </div>
@@ -750,7 +859,7 @@ function ResumenPropuesto({
           </Avatar>
           <span className="text-xs font-semibold text-slate-800 truncate max-w-[90px]">{group.employeeName}</span>
           <Badge className="shrink-0 bg-primary text-primary-foreground text-[11px] font-mono">
-            +{totalToReceptor}h
+            +{formatDeadlineHoursForDisplay(totalToReceptor)}h
           </Badge>
         </div>
       </div>
@@ -778,7 +887,7 @@ function ResumenPropuesto({
                         key={j}
                         className="text-[10px] text-slate-600 bg-slate-100 rounded px-1 font-mono"
                       >
-                        {item.fromName} −{item.hours}h
+                        {item.fromName} −{formatDeadlineHoursForDisplay(item.hours)}h
                       </span>
                     ))}
                   </div>
@@ -811,6 +920,10 @@ export function DeadlinesSuggestionsPanel(props: DeadlinesSuggestionsPanelProps)
     setMinSenderLoadPct,
     minSenderLoadPctInput,
     setMinSenderLoadPctInput,
+    minSuggestedTransferHours,
+    setMinSuggestedTransferHours,
+    minSuggestedTransferHoursInput,
+    setMinSuggestedTransferHoursInput,
     suggestionsCondicionantesOpen,
     setSuggestionsCondicionantesOpen,
     rightPanelPorProyectoOpen,
@@ -824,16 +937,188 @@ export function DeadlinesSuggestionsPanel(props: DeadlinesSuggestionsPanelProps)
     includedProjectIds,
     setIncludedProjectIds,
     filteredProjects,
+    suggestionsEmptyMessage,
+    hasRestrictiveFilters,
+    onResetFilters,
+    panelFlowView,
+    setPanelFlowView,
+    wizardStep,
+    setWizardStep,
+    focusEmployeeId,
+    setFocusEmployeeId,
+    flowProjectScope,
+    setFlowProjectScope,
+    excludedReceiverIds,
+    setExcludedReceiverIds,
+    deadlines,
+    hiddenProjects,
+    onInitializeGiveRules,
+    onInitializeTakeRules,
+    startFlow,
+    lastFlowMode,
+    onOpenProject,
   } = props;
+
+  const [teamLimitsOpen, setTeamLimitsOpen] = useState(false);
 
   const onClose = () => handleClose(onOpenChange, setExpandedProjects, setExpandedEmployees);
 
+  const handleBack = () => {
+    if (panelFlowView === 'give' || panelFlowView === 'take') {
+      if (wizardStep > 1) setWizardStep((s) => s - 1);
+      else setPanelFlowView('intent');
+    } else if (panelFlowView === 'team') {
+      setPanelFlowView('intent');
+    }
+  };
+
+  const showBack = panelFlowView !== 'intent';
+
+  const titleText =
+    panelFlowView === 'intent'
+      ? 'Repartir carga del mes'
+      : panelFlowView === 'give'
+        ? 'Dar horas a alguien'
+        : panelFlowView === 'take'
+          ? 'Quitar carga a alguien'
+          : 'Equilibrar el equipo';
+
   const title = (
     <span className="flex items-center gap-2">
-      <Sparkles className="h-5 w-5 text-orange-500" />
-      Sugerencias de redistribución
+      {showBack && (
+        <Button type="button" variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={handleBack}>
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
+      )}
+      <Sparkles className="h-5 w-5 text-orange-500 shrink-0" />
+      {titleText}
     </span>
   );
+
+  const descriptionText =
+    panelFlowView === 'intent'
+      ? 'Elige cómo quieres repartir la carga. Los cambios se aplican en cada proyecto.'
+      : panelFlowView === 'give'
+        ? 'Guía paso a paso para sumar horas a una persona.'
+        : panelFlowView === 'take'
+          ? 'Guía paso a paso para aliviar a alguien sobrecargado.'
+          : 'Reparto sugerido para todo el equipo. Ajusta límites y revisa cada persona.';
+
+  const flowBody =
+    panelFlowView === 'intent' ? (
+      <SuggestionIntentPicker
+        lastMode={lastFlowMode}
+        onSelect={(mode, preset) => {
+          startFlow(mode, preset);
+          if (mode === 'team') {
+            setExpandedEmployees(new Set());
+            setExpandedProjects(new Set());
+            setSuggestionsCondicionantesOpen(false);
+          }
+        }}
+      />
+    ) : panelFlowView === 'give' ? (
+      <SuggestionGiveFlow
+        step={wizardStep}
+        setStep={setWizardStep}
+        focusEmployeeId={focusEmployeeId}
+        setFocusEmployeeId={setFocusEmployeeId}
+        suggestionsByEmployeeAndProject={suggestionsByEmployeeAndProject}
+        suggestionDonors={suggestionDonors}
+        deadlines={deadlines}
+        hiddenProjects={hiddenProjects}
+        flowProjectScope={flowProjectScope}
+        setFlowProjectScope={setFlowProjectScope}
+        excludedDonorIds={excludedDonorIds}
+        setExcludedDonorIds={setExcludedDonorIds}
+        onlySharedProjects={onlySharedProjects}
+        setOnlySharedProjects={setOnlySharedProjects}
+        includedProjectIds={includedProjectIds}
+        setIncludedProjectIds={setIncludedProjectIds}
+        filteredProjects={filteredProjects}
+        getMonthlyCapacity={getMonthlyCapacity}
+        getEmployeeAssignedHours={getEmployeeAssignedHours}
+        maxReceiverLoadPct={maxReceiverLoadPct}
+        maxReceiverLoadPctInput={maxReceiverLoadPctInput}
+        setMaxReceiverLoadPct={setMaxReceiverLoadPct}
+        setMaxReceiverLoadPctInput={setMaxReceiverLoadPctInput}
+        minSenderLoadPct={minSenderLoadPct}
+        minSenderLoadPctInput={minSenderLoadPctInput}
+        setMinSenderLoadPct={setMinSenderLoadPct}
+        setMinSenderLoadPctInput={setMinSenderLoadPctInput}
+        onInitializeRules={onInitializeGiveRules}
+        onOpenProject={onOpenProject}
+      />
+    ) : panelFlowView === 'take' ? (
+      <SuggestionTakeFlow
+        step={wizardStep}
+        setStep={setWizardStep}
+        focusEmployeeId={focusEmployeeId}
+        setFocusEmployeeId={setFocusEmployeeId}
+        suggestionDonors={suggestionDonors}
+        suggestionsByEmployeeAndProject={suggestionsByEmployeeAndProject}
+        deadlines={deadlines}
+        hiddenProjects={hiddenProjects}
+        flowProjectScope={flowProjectScope}
+        setFlowProjectScope={setFlowProjectScope}
+        excludedReceiverIds={excludedReceiverIds}
+        setExcludedReceiverIds={setExcludedReceiverIds}
+        onlySharedProjects={onlySharedProjects}
+        setOnlySharedProjects={setOnlySharedProjects}
+        includedProjectIds={includedProjectIds}
+        setIncludedProjectIds={setIncludedProjectIds}
+        filteredProjects={filteredProjects}
+        getMonthlyCapacity={getMonthlyCapacity}
+        getEmployeeAssignedHours={getEmployeeAssignedHours}
+        minSenderLoadPct={minSenderLoadPct}
+        minSenderLoadPctInput={minSenderLoadPctInput}
+        setMinSenderLoadPct={setMinSenderLoadPct}
+        setMinSenderLoadPctInput={setMinSenderLoadPctInput}
+        maxReceiverLoadPct={maxReceiverLoadPct}
+        maxReceiverLoadPctInput={maxReceiverLoadPctInput}
+        setMaxReceiverLoadPct={setMaxReceiverLoadPct}
+        setMaxReceiverLoadPctInput={setMaxReceiverLoadPctInput}
+        onInitializeRules={onInitializeTakeRules}
+        onOpenProject={onOpenProject}
+      />
+    ) : null;
+
+  const allowedDonorCount =
+    panelFlowView === 'give'
+      ? suggestionDonors.filter((d) => !excludedDonorIds.includes(d.id)).length
+      : undefined;
+  const allowedReceiverCount =
+    panelFlowView === 'take'
+      ? suggestionsByEmployeeAndProject.filter((g) => !excludedReceiverIds.includes(g.employeeId)).length
+      : undefined;
+
+  const teamSummary = useMemo(
+    () => computeTeamSuggestionsSummary(suggestionsByEmployeeAndProject, minSuggestedTransferHours),
+    [suggestionsByEmployeeAndProject, minSuggestedTransferHours]
+  );
+
+  const expandAllTeamEmployees = () => {
+    setExpandedEmployees(
+      buildExpandedEmployeesForTeamView(suggestionsByEmployeeAndProject, minSuggestedTransferHours)
+    );
+  };
+
+  const rulesChips =
+    panelFlowView === 'give' || panelFlowView === 'take' || panelFlowView === 'team' ? (
+      <SuggestionActiveRulesChips
+        mode={panelFlowView}
+        flowProjectScope={flowProjectScope}
+        onlySharedProjects={onlySharedProjects}
+        includedProjectIds={includedProjectIds}
+        excludedDonorIds={excludedDonorIds}
+        excludedReceiverIds={excludedReceiverIds}
+        minSenderLoadPct={minSenderLoadPct}
+        maxReceiverLoadPct={maxReceiverLoadPct}
+        minSuggestedTransferHours={minSuggestedTransferHours}
+        allowedDonorCount={allowedDonorCount}
+        allowedReceiverCount={allowedReceiverCount}
+      />
+    ) : null;
 
   const condicionantesProps = {
     suggestionDonors,
@@ -852,12 +1137,92 @@ export function DeadlinesSuggestionsPanel(props: DeadlinesSuggestionsPanelProps)
     includedProjectIds,
     setIncludedProjectIds,
     filteredProjects,
+    hasRestrictiveFilters,
+    onResetFilters,
   };
 
-  const listContent = (
+  const teamCondicionantes = (
+    <CondicionantesBlock {...condicionantesProps} compact hideLoadPctFields dense />
+  );
+
+  const teamLimitsProps = {
+    minSenderLoadPct,
+    minSenderLoadPctInput,
+    setMinSenderLoadPct,
+    setMinSenderLoadPctInput,
+    maxReceiverLoadPct,
+    maxReceiverLoadPctInput,
+    setMaxReceiverLoadPct,
+    setMaxReceiverLoadPctInput,
+    minSuggestedTransferHours,
+    minSuggestedTransferHoursInput,
+    setMinSuggestedTransferHoursInput,
+    setMinSuggestedTransferHours,
+    onResetFilters,
+    condicionantesBlock: teamCondicionantes,
+  };
+
+  const teamLimitsSidebar = <SuggestionTeamLimitsSidebar {...teamLimitsProps} />;
+  const teamMobileLimits = <SuggestionTeamLimitsSidebar {...teamLimitsProps} variant="embedded" />;
+
+  const emptyState = (
+    <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/80 p-6 text-center space-y-3">
+      <AlertCircle className="h-10 w-10 text-slate-300 mx-auto" />
+      <p className="text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
+        {suggestionsEmptyMessage ??
+          'No hay transferencias sugeridas. Ajusta los condicionantes o restaura los valores por defecto.'}
+      </p>
+      {onResetFilters && (
+        <Button variant="outline" size="sm" onClick={onResetFilters}>
+          <RotateCcw className="h-4 w-4 mr-2" />
+          Restaurar filtros por defecto
+        </Button>
+      )}
+    </div>
+  );
+
+  const sortedTeamGroups = useMemo(() => {
+    const hoursFor = (g: EmployeeRecommendation) => {
+      let total = 0;
+      for (const p of g.projects) {
+        for (const t of p.transfers) {
+          if (meetsMinSuggestedTransferHours(t.suggestedHours, minSuggestedTransferHours)) {
+            total += Number(t.suggestedHours) || 0;
+          }
+        }
+      }
+      return total;
+    };
+    return [...suggestionsByEmployeeAndProject].sort((a, b) => {
+      const diff = hoursFor(b) - hoursFor(a);
+      if (Math.abs(diff) > 1e-6) return diff;
+      return b.deficitHours - a.deficitHours;
+    });
+  }, [suggestionsByEmployeeAndProject, minSuggestedTransferHours]);
+
+  const listContent =
+    sortedTeamGroups.length === 0 ? (
+      emptyState
+    ) : (
     <>
-      {suggestionsByEmployeeAndProject.map((group) => {
+      {sortedTeamGroups.map((group) => {
         const isEmployeeOpen = expandedEmployees.has(group.employeeId);
+        const groupSuggestedHours = group.projects.reduce((sum, p) => {
+          for (const t of p.transfers) {
+            if (meetsMinSuggestedTransferHours(t.suggestedHours, minSuggestedTransferHours)) {
+              sum += Number(t.suggestedHours) || 0;
+            }
+          }
+          return sum;
+        }, 0);
+        const visibleProjects = group.projects
+          .map((p) => ({
+            ...p,
+            transfers: p.transfers.filter((t) =>
+              meetsMinSuggestedTransferHours(t.suggestedHours, minSuggestedTransferHours)
+            ),
+          }))
+          .filter((p) => p.transfers.length > 0);
         return (
           <div key={group.employeeId} className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
             <Collapsible
@@ -885,20 +1250,27 @@ export function DeadlinesSuggestionsPanel(props: DeadlinesSuggestionsPanelProps)
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-slate-900 truncate">{group.employeeName}</p>
                     <p className="text-xs text-slate-500">
-                      {group.projects.length > 0
-                        ? `Puede recibir horas en ${group.projects.length} ${group.projects.length === 1 ? 'proyecto' : 'proyectos'}`
-                        : 'Tiene margen para recibir; no hay proyectos sugeridos con los filtros actuales'}
+                      {visibleProjects.length > 0
+                        ? `Hasta ${formatDeadlineHoursForDisplay(groupSuggestedHours)}h en ${visibleProjects.length} ${visibleProjects.length === 1 ? 'proyecto' : 'proyectos'}`
+                        : group.deficitHours > 0.01
+                          ? 'Margen para recibir; sin movimientos con los filtros actuales'
+                          : 'Sin sugerencias con los filtros actuales'}
                     </p>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
+                    {groupSuggestedHours > 0 && (
+                      <Badge className="text-xs bg-primary/10 text-primary border border-primary/20 font-medium">
+                        +{formatDeadlineHoursForDisplay(groupSuggestedHours)}h
+                      </Badge>
+                    )}
                     <Badge
                       variant="secondary"
                       className="text-xs bg-amber-50 text-amber-800 border border-amber-200 font-medium"
                     >
-                      Déficit: {Math.round(group.deficitHours * 2) / 2}h
+                      Déficit: {formatDeadlineHoursForDisplay(group.deficitHours)}h
                     </Badge>
                     <Badge variant="secondary" className="text-xs bg-slate-100 text-slate-700 font-medium">
-                      {group.projects.length}
+                      {visibleProjects.length}
                     </Badge>
                   </div>
                   {isEmployeeOpen ? (
@@ -910,13 +1282,13 @@ export function DeadlinesSuggestionsPanel(props: DeadlinesSuggestionsPanelProps)
               </CollapsibleTrigger>
               <CollapsibleContent>
                 <div className="border-t border-slate-100 bg-slate-50/30 px-2 pb-2 pt-1 space-y-2">
-                  {group.projects.length === 0 ? (
+                  {visibleProjects.length === 0 ? (
                     <div className="px-2 py-4 text-center text-sm text-slate-600">
-                      Prueba a relajar el % mínimo de quien cede, subir el tope del receptor o revisar proyectos incluidos /
-                      «solo en común».
+                      Prueba a bajar el mínimo por transferencia, relajar el % de quien cede o subir el tope del
+                      receptor.
                     </div>
                   ) : null}
-                  {group.projects.map((proj) => {
+                  {visibleProjects.map((proj) => {
                     const projectKey = `${group.employeeId}-${proj.projectId}`;
                     const isProjectOpen = expandedProjects.has(projectKey);
                     return (
@@ -967,18 +1339,28 @@ export function DeadlinesSuggestionsPanel(props: DeadlinesSuggestionsPanelProps)
                                   <div className="flex-1 min-w-0">
                                     <p className="font-medium text-slate-900 text-sm">{t.fromName}</p>
                                     <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1.5">
-                                      <span className="font-mono font-semibold text-primary">{t.hoursOnProject}h</span>
+                                      <span className="font-mono font-semibold text-primary">
+                                        {formatDeadlineHoursForDisplay(t.hoursOnProject)}h
+                                      </span>
                                       <span>asignadas en este proyecto</span>
                                     </p>
                                     <p className="text-[11px] text-slate-500 mt-1 flex items-center gap-1">
                                       <ArrowRight className="h-3 w-3 text-slate-400" />
                                       {t.suggestedHours > 0 ? (
-                                        <>Pasar hasta {t.suggestedHours}h a {group.employeeName}</>
+                                        <>
+                                          Pasar hasta {formatDeadlineHoursForDisplay(t.suggestedHours)}h a{' '}
+                                          {group.employeeName}
+                                        </>
                                       ) : (
                                         <>Sin margen sugerido; revisar en tabla</>
                                       )}
                                     </p>
                                   </div>
+                                  <OpenProjectButton
+                                    projectId={proj.projectId}
+                                    onOpenProject={onOpenProject}
+                                    className="shrink-0 mt-1"
+                                  />
                                 </div>
                               ))}
                             </div>
@@ -1004,68 +1386,132 @@ export function DeadlinesSuggestionsPanel(props: DeadlinesSuggestionsPanelProps)
     </>
   );
 
+  const selectedGroup = suggestionsByEmployeeAndProject.find((g) => expandedEmployees.has(g.employeeId));
+
+  const teamRightPanelContent = (
+    <>
+      <SuggestionTeamResumen summary={teamSummary} />
+      {selectedGroup && teamSummary.transferCount > 0 ? (
+        <div className="mt-4 pt-4 border-t border-slate-200">
+          <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-2">
+            Detalle: {selectedGroup.employeeName}
+          </p>
+          <ResumenPropuesto
+            group={selectedGroup}
+            getMonthlyCapacity={getMonthlyCapacity}
+            getEmployeeAssignedHours={getEmployeeAssignedHours}
+            rightPanelPorProyectoOpen={rightPanelPorProyectoOpen}
+            setRightPanelPorProyectoOpen={setRightPanelPorProyectoOpen}
+          />
+        </div>
+      ) : teamSummary.transferCount > 0 ? (
+        <p className="text-xs text-slate-500 mt-4 leading-relaxed">
+          Expande una fila en la lista para ver aquí el desglose por proyecto.
+        </p>
+      ) : null}
+    </>
+  );
+
+  const teamBalanceView = (
+    <SuggestionTeamBalanceView
+      summary={teamSummary}
+      listContent={listContent}
+      rightPanel={teamRightPanelContent}
+      limitsSidebar={teamLimitsSidebar}
+      mobileLimitsContent={teamMobileLimits}
+      rulesChips={rulesChips}
+      onExpandAll={expandAllTeamEmployees}
+      onCollapseAll={() => {
+        setExpandedEmployees(new Set());
+        setExpandedProjects(new Set());
+      }}
+      teamLimitsOpen={teamLimitsOpen}
+      onTeamLimitsOpenChange={setTeamLimitsOpen}
+      hasRestrictiveFilters={hasRestrictiveFilters}
+      onResetFilters={onResetFilters}
+    />
+  );
+
   if (isMobile) {
+    const teamMobile = panelFlowView === 'team';
     return (
       <Sheet open={open} onOpenChange={(o) => (o ? onOpenChange(true) : onClose())}>
-        <SheetContent side="bottom" className="h-[85vh] rounded-t-2xl flex flex-col">
-          <SheetHeader className="text-left">
-            <SheetTitle>{title}</SheetTitle>
-          </SheetHeader>
-          <div className="flex-1 overflow-hidden flex flex-col mt-2">
-            <p className="text-xs text-slate-500 mb-3">
-              Recomendaciones por proyecto. Quién puede recibir horas y desde qué proyecto transferir. Ajusta los
-              condicionantes para afinar.
-            </p>
-            <CondicionantesBlock {...condicionantesProps} compact />
-            <div className="flex-1 overflow-y-auto space-y-3 pr-2 -mr-2">{listContent}</div>
-          </div>
+        <SheetContent
+          side="bottom"
+          className={cn(
+            'flex flex-col p-0 gap-0',
+            teamMobile ? 'h-[100dvh] max-h-[100dvh] rounded-none' : 'h-[min(90vh,720px)] rounded-t-2xl p-6'
+          )}
+        >
+          {teamMobile ? (
+            <>
+              <SheetHeader className="shrink-0 text-left px-4 pt-4 pb-3 border-b space-y-1">
+                <SheetTitle>{title}</SheetTitle>
+                <p className="text-xs text-muted-foreground font-normal">{descriptionText}</p>
+              </SheetHeader>
+              <div className="flex flex-1 min-h-0 overflow-hidden">{teamBalanceView}</div>
+            </>
+          ) : (
+            <>
+              <SheetHeader className="text-left">
+                <SheetTitle>{title}</SheetTitle>
+              </SheetHeader>
+              <div className="flex-1 overflow-hidden flex flex-col mt-2 min-h-0">
+                <p className="text-xs text-slate-500 mb-2">{descriptionText}</p>
+                {rulesChips}
+                <div className="flex flex-col flex-1 min-h-0 overflow-hidden pr-1">
+                  {flowBody ?? (
+                    <div className="flex min-h-[280px] items-center justify-center text-sm text-slate-500 px-4 text-center">
+                      No se puede mostrar este paso. Vuelve atrás o elige otra persona.
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
         </SheetContent>
       </Sheet>
     );
   }
 
-  const selectedGroup = suggestionsByEmployeeAndProject.find((g) => expandedEmployees.has(g.employeeId));
-  const rightPanel = (
-    <div className="hidden lg:flex flex-col min-h-0 lg:max-h-[min(85vh,calc(100vh-8rem))] overflow-y-auto overflow-x-hidden bg-slate-50/50 rounded-lg border border-slate-200 p-3">
-      {!selectedGroup ? (
-        <div className="flex flex-col items-center justify-center gap-2 text-slate-500 py-8 px-4">
-          <PanelRight className="h-10 w-10 text-slate-300" />
-          <p className="text-sm font-medium">Selecciona un empleado</p>
-          <p className="text-xs text-center">Expande una fila para ver aquí el resumen.</p>
-        </div>
-      ) : (
-        <ResumenPropuesto
-          group={selectedGroup}
-          getMonthlyCapacity={getMonthlyCapacity}
-          getEmployeeAssignedHours={getEmployeeAssignedHours}
-          rightPanelPorProyectoOpen={rightPanelPorProyectoOpen}
-          setRightPanelPorProyectoOpen={setRightPanelPorProyectoOpen}
-        />
-      )}
-    </div>
-  );
+  const isTeamFullscreen = panelFlowView === 'team';
 
   return (
     <Dialog open={open} onOpenChange={(o) => (o ? onOpenChange(true) : onClose())}>
-      <DialogContent className="max-w-[95vw] sm:max-w-[640px] md:max-w-4xl lg:max-w-5xl xl:max-w-6xl max-h-[90vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>
-            Recomendaciones por proyecto: quién puede recibir horas y desde qué proyecto transferir. Expande un
-            empleado y revisa el panel de la derecha. Ajusta los condicionantes para afinar el reparto.
-          </DialogDescription>
-        </DialogHeader>
-        <CondicionantesBlock {...condicionantesProps} />
-        <div className="flex-1 min-h-0 min-w-0 overflow-y-auto overscroll-contain">
-          <div className="flex flex-col lg:flex-row gap-4 lg:items-start min-w-0">
-            <div className="flex-1 min-w-0 overflow-x-auto py-1 space-y-3 pr-1 border-r-0 lg:border-r lg:border-slate-200 lg:pr-4">
-              {listContent}
+      <DialogContent
+        className={cn(
+          'flex flex-col',
+          isTeamFullscreen
+            ? '!left-0 !top-0 !translate-x-0 !translate-y-0 w-screen h-[100dvh] max-h-[100dvh] max-w-none rounded-none border-0 p-0 gap-0 overflow-hidden sm:rounded-none'
+            : 'max-w-[95vw] sm:max-w-[640px] md:max-w-4xl lg:max-w-5xl xl:max-w-6xl h-[min(90vh,720px)] max-h-[90vh]'
+        )}
+      >
+        {isTeamFullscreen ? (
+          <>
+            <div className="shrink-0 flex items-start gap-2 px-4 py-3 border-b bg-background pr-14">
+              <div className="flex-1 min-w-0 space-y-1 text-left">
+                <DialogTitle className="text-left leading-snug">{title}</DialogTitle>
+                <DialogDescription className="text-left">{descriptionText}</DialogDescription>
+              </div>
             </div>
-            <div className="w-full lg:w-[minmax(280px,400px)] lg:flex-shrink-0 lg:sticky lg:top-0 lg:self-start min-w-0">
-              {rightPanel}
+            <div className="flex flex-1 min-h-0 overflow-hidden">{teamBalanceView}</div>
+          </>
+        ) : (
+          <>
+            <DialogHeader>
+              <DialogTitle>{title}</DialogTitle>
+              <DialogDescription>{descriptionText}</DialogDescription>
+            </DialogHeader>
+            {rulesChips}
+            <div className="flex flex-col flex-1 min-h-0 overflow-hidden py-1">
+              {flowBody ?? (
+                <div className="flex h-full min-h-[320px] items-center justify-center text-sm text-slate-500 px-4 text-center">
+                  No se puede mostrar este paso. Vuelve atrás o elige otra persona.
+                </div>
+              )}
             </div>
-          </div>
-        </div>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );

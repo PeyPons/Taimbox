@@ -201,6 +201,7 @@ export function DeadlinesProjectList({
                   return (
                     <div
                       key={project.id}
+                      data-deadline-project-id={project.id}
                       className={cn(
                         isHidden && 'opacity-40',
                         isEditing && 'bg-primary/10/40',

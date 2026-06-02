@@ -31,6 +31,7 @@ import { DeadlinesSuggestionsPreview } from '@/components/deadlines/DeadlinesSug
 import { DeadlinesSuggestionsPanel } from '@/components/deadlines/DeadlinesSuggestionsPanel';
 import { DeadlinesAvailabilityCard } from '@/components/deadlines/DeadlinesAvailabilityCard';
 import { DeadlinesProjectEditSheet } from '@/components/deadlines/DeadlinesProjectEditSheet';
+import { SuggestionsProjectEditOverlay } from '@/components/deadlines/suggestions/SuggestionsProjectEditOverlay';
 import { DeadlinesSidebar } from '@/components/deadlines/DeadlinesSidebar';
 import { DeadlinesPageHeader } from '@/components/deadlines/DeadlinesPageHeader';
 import { DeadlinesConfirmDialog } from '@/components/deadlines/DeadlinesConfirmDialog';
@@ -47,6 +48,20 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useDeadlinesRedistribution } from '@/hooks/useDeadlinesRedistribution';
 import { useDeadlinesPageData } from '@/hooks/useDeadlinesPageData';
 import { useDeadlinesEditing } from '@/hooks/useDeadlinesEditing';
+import { useDeadlinesSuggestionsState } from '@/hooks/useDeadlinesSuggestionsState';
+import {
+  describeSuggestionsBlockReason,
+  getSuggestionsWizardResumeLabel,
+  isSuggestionsWizardPaused,
+  loadDeadlinesSuggestionsPrefs,
+  totalSuggestedHoursForGroup,
+} from '@/utils/deadlinesSuggestionsPrefs';
+import {
+  applyFlowProjectScope,
+  defaultExcludedDonorsForReceiver,
+  defaultExcludedReceiversForDonor,
+  getEmployeeProjectIds,
+} from '@/utils/suggestionRulesUtils';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { useAppTranslation } from '@/hooks/useAppTranslation';
 import { useSupportAgencyView, buildAgencyAwarePath } from '@/hooks/useSupportAgencyView';
@@ -132,6 +147,74 @@ export default function DeadlinesPage() {
     broadcastChannelRef,
   } = data;
 
+  const validSuggestionDonorIds = useMemo(
+    () => new Set(activeEmployees.map((e) => e.id)),
+    [activeEmployees]
+  );
+  const validSuggestionProjectIds = useMemo(
+    () => new Set(filteredProjects.map((p) => p.id)),
+    [filteredProjects]
+  );
+
+  const suggestionsState = useDeadlinesSuggestionsState({
+    agencyId: currentAgency?.id,
+    userId: currentUser?.id,
+    validDonorIds: validSuggestionDonorIds,
+    validProjectIds: validSuggestionProjectIds,
+  });
+
+  const {
+    excludedDonorIds,
+    setExcludedDonorIds,
+    maxReceiverLoadPct,
+    setMaxReceiverLoadPct,
+    maxReceiverLoadPctInput,
+    setMaxReceiverLoadPctInput,
+    minSenderLoadPct,
+    setMinSenderLoadPct,
+    minSenderLoadPctInput,
+    setMinSenderLoadPctInput,
+    minSuggestedTransferHours,
+    setMinSuggestedTransferHours,
+    minSuggestedTransferHoursInput,
+    setMinSuggestedTransferHoursInput,
+    onlySharedProjects,
+    setOnlySharedProjects,
+    includedProjectIds,
+    setIncludedProjectIds,
+    isSuggestionsExpandedOpen,
+    setIsSuggestionsExpandedOpen,
+    expandedSuggestionsProjects,
+    setExpandedSuggestionsProjects,
+    expandedSuggestionsEmployees,
+    setExpandedSuggestionsEmployees,
+    suggestionsCondicionantesOpen,
+    setSuggestionsCondicionantesOpen,
+    rightPanelPorProyectoOpen,
+    setRightPanelPorProyectoOpen,
+    resetSuggestionsPrefs,
+    hasRestrictiveFilters,
+    panelFlowView,
+    setPanelFlowView,
+    wizardStep,
+    setWizardStep,
+    focusEmployeeId,
+    setFocusEmployeeId,
+    flowProjectScope,
+    setFlowProjectScope,
+    excludedReceiverIds,
+    setExcludedReceiverIds,
+    openSuggestionsAssistant,
+    resetSuggestionsAssistantFlow,
+    closeSuggestionsAssistant,
+    startFlow,
+  } = suggestionsState;
+
+  const lastSuggestionsFlowMode = useMemo(
+    () => loadDeadlinesSuggestionsPrefs(currentAgency?.id, currentUser?.id)?.lastFlowMode,
+    [currentAgency?.id, currentUser?.id, isSuggestionsExpandedOpen]
+  );
+
   const editing = useDeadlinesEditing({
     canEditDeadlines,
     selectedMonth,
@@ -169,20 +252,9 @@ export default function DeadlinesPage() {
   const [isGlobalDialogOpen, setIsGlobalDialogOpen] = useState(false);
   const [editingDeadline, setEditingDeadline] = useState<Deadline | null>(null);
   const [editingGlobal, setEditingGlobal] = useState<GlobalAssignment | null>(null);
-  const [isSuggestionsExpandedOpen, setIsSuggestionsExpandedOpen] = useState(false);
-  const [expandedSuggestionsProjects, setExpandedSuggestionsProjects] = useState<Set<string>>(new Set());
-  const [expandedSuggestionsEmployees, setExpandedSuggestionsEmployees] = useState<Set<string>>(new Set());
-  const [excludedDonorIds, setExcludedDonorIds] = useState<string[]>([]);
-  const [maxReceiverLoadPct, setMaxReceiverLoadPct] = useState<number>(100);
-  const [maxReceiverLoadPctInput, setMaxReceiverLoadPctInput] = useState<string>('100');
-  const [minSenderLoadPct, setMinSenderLoadPct] = useState<number>(30);
-  const [minSenderLoadPctInput, setMinSenderLoadPctInput] = useState<string>('30');
-  const [suggestionsCondicionantesOpen, setSuggestionsCondicionantesOpen] = useState(true);
-  const [rightPanelPorProyectoOpen, setRightPanelPorProyectoOpen] = useState(false);
-  const [onlySharedProjects, setOnlySharedProjects] = useState(false);
-  const [includedProjectIds, setIncludedProjectIds] = useState<Set<string>>(new Set());
 
   const [confirmAction, setConfirmAction] = useState<{ type: 'delete_deadline' | 'delete_allocation' | 'copy_month' | 'delete_month', id?: string, data?: any } | null>(null);
+  const [suggestionsOverlayProjectId, setSuggestionsOverlayProjectId] = useState<string | null>(null);
 
   // Expandir todos los clientes por defecto
   useEffect(() => {
@@ -535,7 +607,7 @@ export default function DeadlinesPage() {
     getHoursOnProject,
     suggestionDonors,
     suggestionsByEmployeeAndProject,
-    suggestionsByEmployee,
+    suggestionsBlockReason,
   } = useDeadlinesRedistribution({
     activeEmployees,
     deadlines,
@@ -547,10 +619,112 @@ export default function DeadlinesPage() {
     excludedDonorIds,
     maxReceiverLoadPct,
     minSenderLoadPct,
+    minSuggestedTransferHours,
     employees,
     onlySharedProjects,
-    includedProjectIds: includedProjectIds.size > 0 ? includedProjectIds : null,
+    includedProjectIds:
+      panelFlowView === 'give' || panelFlowView === 'take'
+        ? flowProjectScope === 'manual'
+          ? includedProjectIds
+          : null
+        : includedProjectIds.size > 0
+          ? includedProjectIds
+          : null,
+    guidedProjectScope:
+      panelFlowView === 'give' || panelFlowView === 'take' ? flowProjectScope : null,
+    guidedFocusEmployeeId:
+      panelFlowView === 'give' || panelFlowView === 'take' ? focusEmployeeId : null,
   });
+
+  const suggestionsEmptyMessage = suggestionsBlockReason
+    ? describeSuggestionsBlockReason(suggestionsBlockReason)
+    : null;
+
+  const suggestionsPreviewGroups = useMemo(() => {
+    return [...suggestionsByEmployeeAndProject]
+      .filter((g) => g.projects.some((p) => p.transfers.some((t) => (Number(t.suggestedHours) || 0) > 0.05)))
+      .sort((a, b) => totalSuggestedHoursForGroup(b) - totalSuggestedHoursForGroup(a))
+      .slice(0, 3);
+  }, [suggestionsByEmployeeAndProject]);
+
+  const suggestionsWizardPaused = isSuggestionsWizardPaused(isSuggestionsExpandedOpen, panelFlowView);
+
+  const suggestionsWizardResumeLabel = useMemo(() => {
+    const focusName =
+      focusEmployeeId != null
+        ? (activeEmployees.find((e) => e.id === focusEmployeeId)?.name ??
+          suggestionsByEmployeeAndProject.find((g) => g.employeeId === focusEmployeeId)?.employeeName)
+        : undefined;
+    return getSuggestionsWizardResumeLabel(panelFlowView, wizardStep, focusName);
+  }, [
+    panelFlowView,
+    wizardStep,
+    focusEmployeeId,
+    activeEmployees,
+    suggestionsByEmployeeAndProject,
+  ]);
+
+  const initializeGiveRules = useCallback(
+    (receiverId: string) => {
+      const donorIds = suggestionDonors.map((d) => d.id);
+      setExcludedDonorIds(defaultExcludedDonorsForReceiver(deadlines, receiverId, donorIds, hiddenProjects));
+      setFlowProjectScope('shared');
+      const scoped = applyFlowProjectScope('shared');
+      setOnlySharedProjects(scoped.onlySharedProjects);
+      setIncludedProjectIds(new Set(scoped.includedProjectIds));
+    },
+    [
+      deadlines,
+      hiddenProjects,
+      suggestionDonors,
+      setExcludedDonorIds,
+      setFlowProjectScope,
+      setOnlySharedProjects,
+      setIncludedProjectIds,
+    ]
+  );
+
+  const initializeTakeRules = useCallback(
+    (donorId: string) => {
+      const receiverIds = suggestionsByEmployeeAndProject.map((g) => g.employeeId);
+      setExcludedReceiverIds(defaultExcludedReceiversForDonor(deadlines, donorId, receiverIds, hiddenProjects));
+      setFlowProjectScope('shared');
+      const scoped = applyFlowProjectScope('shared');
+      setOnlySharedProjects(scoped.onlySharedProjects);
+      setIncludedProjectIds(new Set(scoped.includedProjectIds));
+    },
+    [
+      deadlines,
+      hiddenProjects,
+      suggestionsByEmployeeAndProject,
+      setExcludedReceiverIds,
+      setFlowProjectScope,
+      setOnlySharedProjects,
+      setIncludedProjectIds,
+    ]
+  );
+
+  const closeSuggestionsProjectOverlay = useCallback(() => {
+    setSuggestionsOverlayProjectId(null);
+    if (editingProjectId) {
+      cancelEditingProject();
+    }
+  }, [editingProjectId, cancelEditingProject]);
+
+  const openProjectFromSuggestions = useCallback(
+    (projectId: string) => {
+      if (!projects.some((p) => p.id === projectId)) return;
+      setSuggestionsOverlayProjectId(projectId);
+      void startEditingProject(projectId);
+    },
+    [projects, startEditingProject]
+  );
+
+  useEffect(() => {
+    if (!isSuggestionsExpandedOpen && suggestionsOverlayProjectId) {
+      closeSuggestionsProjectOverlay();
+    }
+  }, [isSuggestionsExpandedOpen, suggestionsOverlayProjectId, closeSuggestionsProjectOverlay]);
 
   if (isLoading) {
     return (
@@ -599,10 +773,34 @@ export default function DeadlinesPage() {
               )}
             />
             {canEditDeadlines && (
-              <Button variant="outline" size="sm" className="h-11 px-4 gap-1" onClick={() => openGlobalDialog()}>
-                <Plus className="h-4 w-4" />
-                {t('deadlines.globalAssignments.button')}
-              </Button>
+              <>
+                <Button
+                  variant={suggestionsWizardPaused ? 'default' : 'outline'}
+                  size="sm"
+                  className={cn(
+                    'h-11 px-3 gap-1 touch-manipulation relative',
+                    suggestionsWizardPaused && 'ring-2 ring-primary/40'
+                  )}
+                  onClick={openSuggestionsAssistant}
+                  title={
+                    suggestionsWizardPaused
+                      ? `Continuar: ${suggestionsWizardResumeLabel}`
+                      : 'Recomendaciones de redistribución'
+                  }
+                >
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  <span className="sr-only">
+                    {suggestionsWizardPaused ? 'Continuar asistente' : 'Recomendaciones'}
+                  </span>
+                  {suggestionsWizardPaused && (
+                    <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-primary" />
+                  )}
+                </Button>
+                <Button variant="outline" size="sm" className="h-11 px-4 gap-1" onClick={() => openGlobalDialog()}>
+                  <Plus className="h-4 w-4" />
+                  {t('deadlines.globalAssignments.button')}
+                </Button>
+              </>
             )}
           </div>
         ) : (
@@ -648,10 +846,30 @@ export default function DeadlinesPage() {
           }}
           monthAnchor={selectedMonthStart}
         />
+
+        {isMobile && canEditDeadlines && suggestionsWizardPaused && (
+          <div className="sticky bottom-2 z-30 flex flex-col gap-2 p-3 rounded-xl border border-primary/30 bg-white shadow-lg">
+            <p className="text-xs font-medium text-slate-800">Asistente en pausa</p>
+            <p className="text-[11px] text-slate-500">{suggestionsWizardResumeLabel}</p>
+            <div className="flex gap-2">
+              <Button size="sm" className="flex-1 h-9 text-xs" onClick={openSuggestionsAssistant}>
+                Continuar
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-9 text-xs shrink-0"
+                onClick={resetSuggestionsAssistantFlow}
+              >
+                Descartar
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Sheet de edición de proyecto (solo móvil) */}
-      {isMobile && editingProjectId && (() => {
+      {isMobile && editingProjectId && !suggestionsOverlayProjectId && (() => {
         const project = projects.find(p => p.id === editingProjectId);
         const deadline = getProjectDeadline(editingProjectId);
         if (!project) return null;
@@ -687,8 +905,14 @@ export default function DeadlinesPage() {
           employees={activeEmployees}
           getMonthlyCapacity={getMonthlyCapacity}
           getEmployeeAssignedHours={getEmployeeAssignedHours}
-          suggestionsPreview={suggestionsByEmployeeAndProject.slice(0, 3)}
-          onOpenSuggestionsFull={() => setIsSuggestionsExpandedOpen(true)}
+          suggestionsPreview={suggestionsPreviewGroups}
+          suggestionsEmptyMessage={suggestionsEmptyMessage}
+          hasRestrictiveFilters={hasRestrictiveFilters}
+          onOpenSuggestionsFull={openSuggestionsAssistant}
+          suggestionsWizardPaused={suggestionsWizardPaused}
+          suggestionsWizardResumeLabel={suggestionsWizardResumeLabel}
+          onDiscardSuggestionsWizard={resetSuggestionsAssistantFlow}
+          onResetSuggestionsFilters={resetSuggestionsPrefs}
           globalAssignments={globalAssignments}
           currentUserId={currentUser?.id}
           canDeleteAnyGlobalAssignment={canEditDeadlines}
@@ -709,7 +933,13 @@ export default function DeadlinesPage() {
       {/* Popup ampliable de sugerencias de redistribución */}
       <DeadlinesSuggestionsPanel
         open={isSuggestionsExpandedOpen}
-        onOpenChange={setIsSuggestionsExpandedOpen}
+        onOpenChange={(open) => {
+          if (open) {
+            setIsSuggestionsExpandedOpen(true);
+            return;
+          }
+          closeSuggestionsAssistant();
+        }}
         isMobile={isMobile}
         expandedProjects={expandedSuggestionsProjects}
         setExpandedProjects={setExpandedSuggestionsProjects}
@@ -725,6 +955,10 @@ export default function DeadlinesPage() {
         setMinSenderLoadPct={setMinSenderLoadPct}
         minSenderLoadPctInput={minSenderLoadPctInput}
         setMinSenderLoadPctInput={setMinSenderLoadPctInput}
+        minSuggestedTransferHours={minSuggestedTransferHours}
+        setMinSuggestedTransferHours={setMinSuggestedTransferHours}
+        minSuggestedTransferHoursInput={minSuggestedTransferHoursInput}
+        setMinSuggestedTransferHoursInput={setMinSuggestedTransferHoursInput}
         suggestionsCondicionantesOpen={suggestionsCondicionantesOpen}
         setSuggestionsCondicionantesOpen={setSuggestionsCondicionantesOpen}
         rightPanelPorProyectoOpen={rightPanelPorProyectoOpen}
@@ -738,7 +972,64 @@ export default function DeadlinesPage() {
         includedProjectIds={includedProjectIds}
         setIncludedProjectIds={setIncludedProjectIds}
         filteredProjects={filteredProjects}
+        suggestionsEmptyMessage={suggestionsEmptyMessage}
+        hasRestrictiveFilters={hasRestrictiveFilters}
+        onResetFilters={resetSuggestionsPrefs}
+        panelFlowView={panelFlowView}
+        setPanelFlowView={setPanelFlowView}
+        wizardStep={wizardStep}
+        setWizardStep={setWizardStep}
+        focusEmployeeId={focusEmployeeId}
+        setFocusEmployeeId={setFocusEmployeeId}
+        excludedReceiverIds={excludedReceiverIds}
+        setExcludedReceiverIds={setExcludedReceiverIds}
+        deadlines={deadlines}
+        hiddenProjects={hiddenProjects}
+        flowProjectScope={flowProjectScope}
+        setFlowProjectScope={setFlowProjectScope}
+        onInitializeGiveRules={initializeGiveRules}
+        onInitializeTakeRules={initializeTakeRules}
+        startFlow={startFlow}
+        lastFlowMode={lastSuggestionsFlowMode}
+        onOpenProject={canEditDeadlines ? openProjectFromSuggestions : undefined}
       />
+
+      {canEditDeadlines &&
+        isSuggestionsExpandedOpen &&
+        suggestionsOverlayProjectId &&
+        editingProjectId === suggestionsOverlayProjectId &&
+        (() => {
+          const project = projects.find((p) => p.id === suggestionsOverlayProjectId);
+          const deadline = getProjectDeadline(suggestionsOverlayProjectId);
+          if (!project) return null;
+          return (
+            <SuggestionsProjectEditOverlay
+              open
+              isMobile={isMobile}
+              project={{
+                id: project.id,
+                name: project.name,
+                budgetHours: project.budgetHours,
+              }}
+              deadline={
+                deadline ? { budgetOverride: deadline.budgetOverride } : null
+              }
+              effectiveBudgetCap={getEffectiveBudgetForMonth(
+                project,
+                deadline ?? null,
+                selectedMonthStart
+              )}
+              formData={inlineFormData}
+              employees={activeEmployees}
+              formatProjectName={formatProjectName}
+              onEmployeeHoursChange={updateInlineEmployeeHours}
+              onFormPatch={handleFormPatch}
+              saveStatus={autoSaveStatus}
+              isLockAcquiring={isLockAcquiring}
+              onClose={closeSuggestionsProjectOverlay}
+            />
+          );
+        })()}
 
       <DeadlinesConfirmDialog
         open={!!confirmAction}

@@ -5,6 +5,12 @@
 
 import { useMemo, useCallback } from 'react';
 import { Deadline } from '@/types';
+import type { SuggestionsBlockReason } from '@/utils/deadlinesSuggestionsPrefs';
+import { roundDeadlineHours } from '@/utils/deadlineUtils';
+import {
+  getEmployeeProjectIds,
+  type FlowProjectScope,
+} from '@/utils/suggestionRulesUtils';
 
 export type RedistributionTip = {
   from: string;
@@ -51,11 +57,16 @@ export interface UseDeadlinesRedistributionParams {
   excludedDonorIds: string[];
   maxReceiverLoadPct: number;
   minSenderLoadPct: number;
+  /** No mostrar transferencias sugeridas por debajo de este umbral (h). */
+  minSuggestedTransferHours?: number;
   employees: EmployeeLike[] | null;
   /** Si true, solo se sugieren transferencias en proyectos que donante y receptor comparten. */
   onlySharedProjects?: boolean;
-  /** Si tiene elementos, solo se consideran estos proyectos para las sugerencias. Vacío/null = todos. */
+  /** Si tiene elementos, solo se consideran estos proyectos para las sugerencias. Vacío/null = todos (modo equipo). */
   includedProjectIds?: Set<string> | null;
+  /** Flujos guiados Dar/Quitar: alcance explícito (no inferir por included vacío). */
+  guidedProjectScope?: FlowProjectScope | null;
+  guidedFocusEmployeeId?: string | null;
 }
 
 export function useDeadlinesRedistribution(params: UseDeadlinesRedistributionParams) {
@@ -70,10 +81,18 @@ export function useDeadlinesRedistribution(params: UseDeadlinesRedistributionPar
     excludedDonorIds,
     maxReceiverLoadPct,
     minSenderLoadPct,
+    minSuggestedTransferHours = 0.5,
     employees,
     onlySharedProjects = false,
     includedProjectIds = null,
+    guidedProjectScope = null,
+    guidedFocusEmployeeId = null,
   } = params;
+
+  const guidedFocusProjectIds = useMemo(() => {
+    if (guidedProjectScope !== 'focus_projects' || !guidedFocusEmployeeId) return null;
+    return getEmployeeProjectIds(deadlines, guidedFocusEmployeeId, hiddenProjects);
+  }, [guidedProjectScope, guidedFocusEmployeeId, deadlines, hiddenProjects]);
 
   /** Tips de redistribución. Cedentes = quienes tienen carga >= minSenderLoadPct y al menos un proyecto.
    * Receptores = quienes tienen carga < maxReceiverLoadPct. Así "Quién puede ceder" incluye a todos los que pueden (p. ej. Alexander al 70%). */
@@ -117,10 +136,19 @@ export function useDeadlinesRedistribution(params: UseDeadlinesRedistributionPar
 
     if (donors.length === 0 || below.length === 0) return { tips: [] as RedistributionTip[], donorIds: donors.map((d) => d.id) };
 
-    const filterByIncluded = (projectIds: string[]) =>
-      includedProjectIds && includedProjectIds.size > 0
-        ? projectIds.filter((pid) => includedProjectIds.has(pid))
-        : projectIds;
+    const filterByIncluded = (projectIds: string[]) => {
+      if (guidedProjectScope === 'manual') {
+        if (!includedProjectIds || includedProjectIds.size === 0) return [];
+        return projectIds.filter((pid) => includedProjectIds.has(pid));
+      }
+      if (guidedProjectScope === 'focus_projects' && guidedFocusProjectIds) {
+        return projectIds.filter((pid) => guidedFocusProjectIds.has(pid));
+      }
+      if (includedProjectIds && includedProjectIds.size > 0) {
+        return projectIds.filter((pid) => includedProjectIds.has(pid));
+      }
+      return projectIds;
+    };
 
     donors.forEach((over) => {
       const candidateProjects = filterByIncluded(over.projects);
@@ -168,6 +196,8 @@ export function useDeadlinesRedistribution(params: UseDeadlinesRedistributionPar
     minSenderLoadPct,
     onlySharedProjects,
     includedProjectIds,
+    guidedProjectScope,
+    guidedFocusProjectIds,
   ]);
 
   const redistributionTips = redistributionResult.tips;
@@ -225,13 +255,15 @@ export function useDeadlinesRedistribution(params: UseDeadlinesRedistributionPar
         const fromAssigned = getEmployeeAssignedHours(tip.fromId);
         const minSenderHours = fromCap * (minSenderLoadPct / 100);
         const maxHoursFromSender = Math.max(0, fromAssigned - minSenderHours);
-        const suggestedHours = Math.min(hoursOnProject, shortfall, maxHoursFromSender);
+        const suggestedHours = roundDeadlineHours(
+          Math.min(hoursOnProject, shortfall, maxHoursFromSender)
+        );
         if (!proj.transfers.some((t) => t.fromId === tip.fromId)) {
           proj.transfers.push({
             fromId: tip.fromId,
             fromName: tip.from,
             fromAvatar: (employees ?? []).find((e) => e.id === tip.fromId)?.avatarUrl,
-            hoursOnProject,
+            hoursOnProject: roundDeadlineHours(hoursOnProject),
             suggestedHours,
             reason: tip.reason,
           });
@@ -255,7 +287,7 @@ export function useDeadlinesRedistribution(params: UseDeadlinesRedistributionPar
         const rawProjects = Array.from(byProject.values())
           .map((p) => ({
             ...p,
-            transfers: p.transfers.filter((t) => t.suggestedHours > 0.1),
+            transfers: p.transfers.filter((t) => t.suggestedHours >= minSuggestedTransferHours - 1e-6),
           }))
           .filter((p) => p.transfers.length > 0);
         const shortfall = shortfallByToId.get(employeeId) ?? 0;
@@ -269,7 +301,10 @@ export function useDeadlinesRedistribution(params: UseDeadlinesRedistributionPar
             ...p,
             transfers: p.transfers.map((t) => ({
               ...t,
-              suggestedHours: factor === 1 ? t.suggestedHours : t.suggestedHours * factor,
+              suggestedHours:
+                factor === 1
+                  ? t.suggestedHours
+                  : roundDeadlineHours(t.suggestedHours * factor),
             })),
           }))
           .sort((a, b) => b.transfers.length - a.transfers.length);
@@ -306,12 +341,22 @@ export function useDeadlinesRedistribution(params: UseDeadlinesRedistributionPar
       group.projects.forEach((p) => {
         p.transfers.forEach((t) => {
           const f = donorFactor.get(t.fromId) ?? 1;
-          t.suggestedHours = Math.round(t.suggestedHours * f * 10) / 10;
+          t.suggestedHours = roundDeadlineHours(t.suggestedHours * f);
         });
       });
+      group.projects = group.projects
+        .map((p) => ({
+          ...p,
+          transfers: p.transfers.filter(
+            (t) => t.suggestedHours >= minSuggestedTransferHours - 1e-6
+          ),
+        }))
+        .filter((p) => p.transfers.length > 0);
     });
 
-    return rawGroups.sort((a, b) => b.projects.length - a.projects.length);
+    return rawGroups
+      .filter((g) => g.projects.length > 0 || g.deficitHours > 0)
+      .sort((a, b) => b.projects.length - a.projects.length);
   }, [
     redistributionTips,
     employees,
@@ -322,6 +367,52 @@ export function useDeadlinesRedistribution(params: UseDeadlinesRedistributionPar
     excludedDonorIds,
     maxReceiverLoadPct,
     minSenderLoadPct,
+    minSuggestedTransferHours,
+  ]);
+
+  const suggestionsBlockReason = useMemo((): SuggestionsBlockReason | null => {
+    if (activeEmployees.length < 2) return 'no_team';
+
+    const capPct = Math.min(100, Math.max(0, maxReceiverLoadPct));
+    let hasReceiverMargin = false;
+    for (const emp of activeEmployees) {
+      const cap = getMonthlyCapacity(emp.id);
+      const assigned = getEmployeeAssignedHours(emp.id);
+      const maxAssignable = cap.available * (capPct / 100);
+      if (maxAssignable - assigned > 0.01) {
+        hasReceiverMargin = true;
+        break;
+      }
+    }
+    if (!hasReceiverMargin) return 'no_receivers';
+
+    if (donorIdsFromHook.length === 0) return 'no_donors';
+
+    const excludedSet = new Set(excludedDonorIds);
+    const allowedDonors = donorIdsFromHook.filter((id) => !excludedSet.has(id));
+    if (allowedDonors.length === 0) return 'all_donors_excluded';
+
+    const hasTransfers = suggestionsByEmployeeAndProject.some((g) =>
+      g.projects.some((p) =>
+        p.transfers.some((t) => t.suggestedHours >= minSuggestedTransferHours - 1e-6)
+      )
+    );
+    if (!hasTransfers) {
+      if (includedProjectIds && includedProjectIds.size > 0) return 'project_filter_empty';
+      if (onlySharedProjects) return 'only_shared_no_overlap';
+      return 'thresholds';
+    }
+    return null;
+  }, [
+    activeEmployees,
+    maxReceiverLoadPct,
+    getMonthlyCapacity,
+    getEmployeeAssignedHours,
+    donorIdsFromHook,
+    excludedDonorIds,
+    suggestionsByEmployeeAndProject,
+    includedProjectIds,
+    onlySharedProjects,
   ]);
 
   const suggestionsByEmployee = useMemo(() => {
@@ -348,5 +439,6 @@ export function useDeadlinesRedistribution(params: UseDeadlinesRedistributionPar
     suggestionDonors,
     suggestionsByEmployeeAndProject,
     suggestionsByEmployee,
+    suggestionsBlockReason,
   };
 }
