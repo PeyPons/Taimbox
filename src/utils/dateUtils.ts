@@ -1,9 +1,10 @@
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, isSameMonth, addDays, addMonths, startOfDay, format, eachDayOfInterval, isWeekend, parseISO, isBefore, isAfter } from 'date-fns';
-import { es } from 'date-fns/locale';
+import type { Locale } from 'date-fns';
+import { getDateFnsLocale } from '@/i18n/dateLocale';
 import { WorkSchedule } from '@/types';
 
-// ... (Resto de funciones: getMonthName, formatDateToISO, isCurrentWeek se mantienen igual) ...
-export const getMonthName = (date: Date) => format(date, 'MMMM', { locale: es });
+export const getMonthName = (date: Date, locale?: Locale) =>
+  format(date, 'MMMM', { locale: locale ?? getDateFnsLocale() });
 export const formatDateToISO = (date: Date) => format(date, 'yyyy-MM-dd');
 
 /** Tramo de semana como en el planificador (puede ser semana partida entre meses). */
@@ -17,7 +18,8 @@ export type PlannerWeekSlice = {
  * Rango laboral visible tipo "7–11 abr" (lun–vie en el tramo efectivo).
  * Alineado con las cabeceras del calendario del dashboard de equipo.
  */
-export function formatPlannerWeekWorkingRangeLabel(week: PlannerWeekSlice): string {
+export function formatPlannerWeekWorkingRangeLabel(week: PlannerWeekSlice, locale?: Locale): string {
+  const loc = locale ?? getDateFnsLocale();
   const effectiveStart = week.effectiveStart || week.weekStart;
   const effectiveEnd = week.effectiveEnd || addDays(week.weekStart, 6);
   const workingDays: Date[] = [];
@@ -30,9 +32,9 @@ export function formatPlannerWeekWorkingRangeLabel(week: PlannerWeekSlice): stri
   const first = workingDays[0];
   const last = workingDays[workingDays.length - 1];
   if (first && last) {
-    return `${format(first, 'd', { locale: es })}–${format(last, 'd MMM', { locale: es })}`;
+    return `${format(first, 'd', { locale: loc })}–${format(last, 'd MMM', { locale: loc })}`;
   }
-  return `${format(effectiveStart, 'd', { locale: es })}–${format(effectiveEnd, 'd MMM', { locale: es })}`;
+  return `${format(effectiveStart, 'd', { locale: loc })}–${format(effectiveEnd, 'd MMM', { locale: loc })}`;
 }
 
 /**

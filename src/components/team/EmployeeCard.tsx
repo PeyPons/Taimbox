@@ -18,7 +18,7 @@ import {
 import { useApp } from '@/contexts/AppContext';
 import { useAgency } from '@/contexts/AgencyContext';
 import { useAppTranslation } from '@/hooks/useAppTranslation';
-import { getValidRole, getValidDepartment } from '@/utils/roleUtils';
+import { getValidRole, getValidDepartment, translateRoleLabel } from '@/utils/roleUtils';
 import { normalizeDepartments } from '@/utils/departmentUtils';
 import { toast } from '@/lib/notify';
 import { SensitiveText } from '@/components/privacy/SensitiveText';
@@ -35,7 +35,7 @@ export const EmployeeCard = memo(function EmployeeCard({ employee }: EmployeeCar
   // Obtener roles y departamentos disponibles
   const availableRoles = currentAgency?.settings?.roles || [];
   const availableDepartments = normalizeDepartments(currentAgency?.settings?.departments);
-  const displayRole = getValidRole(employee, availableRoles);
+  const displayRole = translateRoleLabel(getValidRole(employee, availableRoles), t);
   const displayDepartment = getValidDepartment(employee, availableDepartments.length ? availableDepartments : undefined);
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -59,7 +59,9 @@ export const EmployeeCard = memo(function EmployeeCard({ employee }: EmployeeCar
   const handleToggleActive = (e: React.MouseEvent) => {
     e.stopPropagation();
     toggleEmployeeActive(employee.id);
-    toast.success(employee.isActive ? "Empleado desactivado" : "Empleado activado");
+    toast.success(employee.isActive
+      ? t('team.employeeCard.deactivated', 'Employee deactivated')
+      : t('team.employeeCard.activated', 'Employee activated'));
   };
 
   return (
@@ -95,13 +97,13 @@ export const EmployeeCard = memo(function EmployeeCard({ employee }: EmployeeCar
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+            <DropdownMenuLabel>{t('team.employeeCard.actions', 'Actions')}</DropdownMenuLabel>
             <DropdownMenuItem onClick={handleToggleActive}>
-              {employee.isActive ? <><UserX className="mr-2 h-4 w-4" /> Desactivar</> : <><UserCheck className="mr-2 h-4 w-4" /> Activar</>}
+              {employee.isActive ? <><UserX className="mr-2 h-4 w-4" /> {t('team.employeeCard.deactivate', 'Deactivate')}</> : <><UserCheck className="mr-2 h-4 w-4" /> {t('team.employeeCard.activate', 'Activate')}</>}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem className="text-red-600 focus:text-red-600" onClick={handleDeleteClick}>
-              <UserCog className="mr-2 h-4 w-4" /> Eliminar
+              <UserCog className="mr-2 h-4 w-4" /> {t('team.employeeCard.delete', 'Remove')}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

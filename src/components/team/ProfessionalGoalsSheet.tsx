@@ -16,7 +16,8 @@ import { useGoals } from '@/contexts/GoalsContext';
 import { ProfessionalGoal } from '@/types';
 import { Plus, Trash2, Target, Pencil, ExternalLink, CheckCircle2, Check, ChevronDown } from 'lucide-react';
 import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { useDateLocale } from '@/hooks/useDateLocale';
+import { useAppTranslation } from '@/hooks/useAppTranslation';
 import { cn } from '@/lib/utils';
 import { toast } from '@/lib/notify';
 import { INPUT_LIMITS } from '@/constants/inputLimits';
@@ -97,6 +98,8 @@ const goalFormSchema = z.object({
 type GoalFormValues = z.infer<typeof goalFormSchema>;
 
 export function ProfessionalGoalsSheet({ open, onOpenChange, employeeId }: ProfessionalGoalsSheetProps) {
+  const { t } = useAppTranslation();
+  const dateLocale = useDateLocale();
   const { employees } = useApp();
   const { professionalGoals, addProfessionalGoal, updateProfessionalGoal, deleteProfessionalGoal } = useGoals();
   const employee = employees.find(e => e.id === employeeId);
@@ -240,8 +243,8 @@ export function ProfessionalGoalsSheet({ open, onOpenChange, employeeId }: Profe
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
         <SheetHeader className="pb-4 border-b">
-          <SheetTitle>Objetivos: {employee.name}</SheetTitle>
-          <SheetDescription>Gestión de OKRs y objetivos profesionales.</SheetDescription>
+          <SheetTitle>{t('team.professionalGoals.sheetTitle', { name: employee.name })}</SheetTitle>
+          <SheetDescription>{t('team.professionalGoals.sheetDescription')}</SheetDescription>
         </SheetHeader>
 
         {isAdding ? (
@@ -268,7 +271,7 @@ export function ProfessionalGoalsSheet({ open, onOpenChange, employeeId }: Profe
                     name="dueDate"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Fecha límite</FormLabel>
+                        <FormLabel>{t('team.professionalGoals.dueDateLabel')}</FormLabel>
                         <FormControl>
                           <Input type="date" {...field} />
                         </FormControl>
@@ -281,7 +284,7 @@ export function ProfessionalGoalsSheet({ open, onOpenChange, employeeId }: Profe
                     name="trainingUrl"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Enlace formación (opcional)</FormLabel>
+                        <FormLabel>{t('team.professionalGoals.trainingUrlLabel')}</FormLabel>
                         <FormControl>
                           <Input placeholder="https://..." {...field} />
                         </FormControl>
@@ -391,10 +394,16 @@ export function ProfessionalGoalsSheet({ open, onOpenChange, employeeId }: Profe
                       <div className="space-y-1">
                         <h3 className="font-bold text-base">{goal.title}</h3>
                         <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                          {goal.dueDate && <span>Vence: {format(new Date(goal.dueDate), 'd MMM yyyy', { locale: es })}</span>}
+                          {goal.dueDate && (
+                            <span>
+                              {t('team.professionalGoals.due', 'Vence: {{date}}', {
+                                date: format(new Date(goal.dueDate), 'd MMM yyyy', { locale: dateLocale }),
+                              })}
+                            </span>
+                          )}
                           {goal.trainingUrl && (
                             <a href={goal.trainingUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-primary hover:underline">
-                              <ExternalLink className="h-3 w-3" /> Formación
+                              <ExternalLink className="h-3 w-3" /> {t('team.professionalGoals.training', 'Formación')}
                             </a>
                           )}
                         </div>

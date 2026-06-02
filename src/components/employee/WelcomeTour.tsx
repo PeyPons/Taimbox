@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback, useId } from 'react';
+import React, { useState, useEffect, useCallback, useId, useMemo } from 'react';
+import { useAppTranslation } from '@/hooks/useAppTranslation';
 import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -23,158 +24,164 @@ interface TourStep {
   tab?: string; // Tab value to switch to
 }
 
-const tourSteps: TourStep[] = [
-  {
-    id: 'welcome',
-    target: 'body',
-    title: '¡Bienvenido a Taimbox! 🎉',
-    description: 'Este es tu panel de control personal. Te guiaremos por las funciones principales para que empieces con buen pie.',
-    icon: <Sparkles className="w-6 h-6 text-indigo-500" />,
-    position: 'center'
-  },
-  {
-    id: 'add-tasks',
-    target: '[data-tour="add-tasks"]',
-    title: 'Añadir tareas',
-    description: 'Aquí puedes planificar tu trabajo. Añade múltiples tareas a la vez, selecciona el proyecto, las horas y la semana. Verás alertas si te pasas de las horas contratadas.',
-    icon: <ListPlus className="w-6 h-6 text-indigo-500" />,
-    position: 'bottom',
-    highlight: true
-  },
-  {
-    id: 'weekly',
-    target: '[data-tour="weekly-button"]',
-    title: 'Weekly - Revisión de tareas',
-    description: 'Revisa las tareas que te quedaron abiertas de la semana anterior y las que tus compañeros te han pasado. Puedes moverlas, transferirlas o distribuirlas según necesites.',
-    icon: <CheckSquare className="w-6 h-6 text-amber-500" />,
-    position: 'bottom',
-    highlight: true
-  },
-  {
-    id: 'crm-export',
-    target: '[data-tour="crm-export"]',
-    title: 'Exportar planificación (CSV)',
-    description: 'Cuando tengas tareas planificadas, puedes exportarlas a CSV con un clic para cruzarlas con tu ERP u otra herramienta. Necesitas tener tu ID externo configurado en el perfil.',
-    icon: <FileDown className="w-6 h-6 text-purple-500" />,
-    position: 'bottom',
-    highlight: true
-  },
-  {
-    id: 'internal-tasks',
-    target: '[data-tour="internal-tasks"]',
-    title: 'Gestión interna',
-    description: 'Reuniones, formaciones, deadlines... Todo el tiempo que no está asociado a un cliente va aquí. Se registra automáticamente como completado.',
-    icon: <Clock className="w-6 h-6 text-slate-500" />,
-    position: 'bottom',
-    highlight: true
-  },
-  {
-    id: 'goals',
-    target: '[data-tour="goals"]',
-    title: 'Tus objetivos',
-    description: 'Aquí puedes ver y gestionar tus objetivos profesionales (OKRs). Mantén el foco en lo que importa para tu crecimiento.',
-    icon: <TrendingUp className="w-6 h-6 text-emerald-500" />,
-    position: 'bottom',
-    highlight: true
-  },
-  {
-    id: 'absences',
-    target: '[data-tour="absences"]',
-    title: 'Ausencias',
-    description: 'Registra tus vacaciones, bajas o permisos para que el planificador tenga en cuenta tu disponibilidad real. Tu capacidad se ajustará automáticamente.',
-    icon: <Calendar className="w-6 h-6 text-amber-500" />,
-    position: 'bottom',
-    highlight: true
-  },
-  {
-    id: 'calendar',
-    target: '[data-tour="calendar"]',
-    title: 'Tu calendario',
-    description: 'Vista mensual de tu carga de trabajo. Los colores indican tu ocupación: verde (OK), amarillo (casi lleno), rojo (sobrecargado). Haz clic en cualquier semana para ver los detalles.',
-    icon: <LayoutDashboard className="w-6 h-6 text-blue-500" />,
-    position: 'bottom',
-    highlight: true
-  },
-  {
-    id: 'priority-widget',
-    target: '[data-tour="priority-widget"]',
-    title: 'Alertas inteligentes',
-    description: 'Te avisamos de lo más importante: si estás bloqueando a alguien, tareas casi terminadas, o por dónde empezar. ¡Presta atención a los avisos rojos!',
-    icon: <AlertOctagon className="w-6 h-6 text-red-500" />,
-    position: 'right',
-    highlight: true,
-    tab: 'dependencies'
-  },
-  {
-    id: 'dependencies-widget',
-    target: '[data-tour="dependencies-widget"]',
-    title: 'Estado de dependencias',
-    description: 'Ve quién espera por ti y por quién estás esperando. Las dependencias en verde ya están listas para que empieces.',
-    icon: <Users className="w-6 h-6 text-indigo-500" />,
-    position: 'left',
-    highlight: true,
-    tab: 'dependencies'
-  },
-  {
-    id: 'planning-inconsistencies',
-    target: '[data-tour="planning-inconsistencies"]',
-    title: 'Coherencia de planificación',
-    description: 'Detecta si tus horas planificadas coinciden con lo acordado en los deadlines. Si hay diferencias, te mostramos posibles intercambios de tareas con compañeros.',
-    icon: <Search className="w-6 h-6 text-amber-500" />,
-    position: 'top',
-    highlight: true,
-    tab: 'coherence'
-  },
-  {
-    id: 'collaboration-cards',
-    target: '[data-tour="collaboration-cards"]',
-    title: 'Tu equipo y apoyo',
-    description: 'Ve con quién colaboras más este mes y pide ayuda a compañeros cuando la necesites. Un click y el sistema notificará a quien pueda echarte una mano.',
-    icon: <HeartHandshake className="w-6 h-6 text-pink-500" />,
-    position: 'top',
-    highlight: true,
-    tab: 'teammates'
-  },
-  {
-    id: 'projects-summary',
-    target: '[data-tour="projects-summary"]',
-    title: 'Resumen de proyectos',
-    description: 'Todos tus proyectos del mes con las horas asignadas, completadas y el estado de las horas contratadas. Haz clic en cualquier semana para ver y editar tus tareas.',
-    icon: <Target className="w-6 h-6 text-purple-500" />,
-    position: 'top',
-    highlight: true,
-    tab: 'projects'
-  },
-  {
-    id: 'monthly-balance',
-    target: '[data-tour="monthly-balance"]',
-    title: 'Balance del mes',
-    description: 'Resumen motivacional de tu mes: horas trabajadas, distribución de proyectos y un mensaje de ánimo personalizado según tu rendimiento.',
-    icon: <Scale className="w-6 h-6 text-indigo-500" />,
-    position: 'top',
-    highlight: true,
-    tab: 'metrics'
-  },
-  {
-    id: 'reliability-index',
-    target: '[data-tour="reliability-index"]',
-    title: 'Índice de fiabilidad',
-    description: 'Mide qué tan precisas son tus estimaciones de tiempo. Un índice cercano al 100% significa que estimas muy bien. Aquí verás consejos para mejorar.',
-    icon: <Award className="w-6 h-6 text-emerald-500" />,
-    position: 'top',
-    highlight: true,
-    tab: 'metrics'
-  },
-  {
-    id: 'finish',
-    target: 'body',
-    title: '¡A por ello! 💪',
-    description: '',
-    icon: <CheckCircle2 className="w-6 h-6 text-emerald-500" />,
-    position: 'center',
-    customContent: true
-  }
-];
+function useWelcomeTourSteps(): TourStep[] {
+  const { t } = useAppTranslation();
+  return useMemo(
+    (): TourStep[] => [
+      {
+        id: 'welcome',
+        target: 'body',
+        title: t('welcomeTour.steps.welcome.title'),
+        description: t('welcomeTour.steps.welcome.description'),
+        icon: <Sparkles className="w-6 h-6 text-indigo-500" />,
+        position: 'center',
+      },
+      {
+        id: 'add-tasks',
+        target: '[data-tour="add-tasks"]',
+        title: t('welcomeTour.steps.addTasks.title'),
+        description: t('welcomeTour.steps.addTasks.description'),
+        icon: <ListPlus className="w-6 h-6 text-indigo-500" />,
+        position: 'bottom',
+        highlight: true,
+      },
+      {
+        id: 'weekly',
+        target: '[data-tour="weekly-button"]',
+        title: t('welcomeTour.steps.weekly.title'),
+        description: t('welcomeTour.steps.weekly.description'),
+        icon: <CheckSquare className="w-6 h-6 text-amber-500" />,
+        position: 'bottom',
+        highlight: true,
+      },
+      {
+        id: 'crm-export',
+        target: '[data-tour="crm-export"]',
+        title: t('welcomeTour.steps.crmExport.title'),
+        description: t('welcomeTour.steps.crmExport.description'),
+        icon: <FileDown className="w-6 h-6 text-purple-500" />,
+        position: 'bottom',
+        highlight: true,
+      },
+      {
+        id: 'internal-tasks',
+        target: '[data-tour="internal-tasks"]',
+        title: t('welcomeTour.steps.internalTasks.title'),
+        description: t('welcomeTour.steps.internalTasks.description'),
+        icon: <Clock className="w-6 h-6 text-slate-500" />,
+        position: 'bottom',
+        highlight: true,
+      },
+      {
+        id: 'goals',
+        target: '[data-tour="goals"]',
+        title: t('welcomeTour.steps.goals.title'),
+        description: t('welcomeTour.steps.goals.description'),
+        icon: <TrendingUp className="w-6 h-6 text-emerald-500" />,
+        position: 'bottom',
+        highlight: true,
+      },
+      {
+        id: 'absences',
+        target: '[data-tour="absences"]',
+        title: t('welcomeTour.steps.absences.title'),
+        description: t('welcomeTour.steps.absences.description'),
+        icon: <Calendar className="w-6 h-6 text-amber-500" />,
+        position: 'bottom',
+        highlight: true,
+      },
+      {
+        id: 'calendar',
+        target: '[data-tour="calendar"]',
+        title: t('welcomeTour.steps.calendar.title'),
+        description: t('welcomeTour.steps.calendar.description'),
+        icon: <LayoutDashboard className="w-6 h-6 text-blue-500" />,
+        position: 'bottom',
+        highlight: true,
+      },
+      {
+        id: 'priority-widget',
+        target: '[data-tour="priority-widget"]',
+        title: t('welcomeTour.steps.priorityWidget.title'),
+        description: t('welcomeTour.steps.priorityWidget.description'),
+        icon: <AlertOctagon className="w-6 h-6 text-red-500" />,
+        position: 'right',
+        highlight: true,
+        tab: 'dependencies',
+      },
+      {
+        id: 'dependencies-widget',
+        target: '[data-tour="dependencies-widget"]',
+        title: t('welcomeTour.steps.dependenciesWidget.title'),
+        description: t('welcomeTour.steps.dependenciesWidget.description'),
+        icon: <Users className="w-6 h-6 text-indigo-500" />,
+        position: 'left',
+        highlight: true,
+        tab: 'dependencies',
+      },
+      {
+        id: 'planning-inconsistencies',
+        target: '[data-tour="planning-inconsistencies"]',
+        title: t('welcomeTour.steps.planningInconsistencies.title'),
+        description: t('welcomeTour.steps.planningInconsistencies.description'),
+        icon: <Search className="w-6 h-6 text-amber-500" />,
+        position: 'top',
+        highlight: true,
+        tab: 'coherence',
+      },
+      {
+        id: 'collaboration-cards',
+        target: '[data-tour="collaboration-cards"]',
+        title: t('welcomeTour.steps.collaborationCards.title'),
+        description: t('welcomeTour.steps.collaborationCards.description'),
+        icon: <HeartHandshake className="w-6 h-6 text-pink-500" />,
+        position: 'top',
+        highlight: true,
+        tab: 'teammates',
+      },
+      {
+        id: 'projects-summary',
+        target: '[data-tour="projects-summary"]',
+        title: t('welcomeTour.steps.projectsSummary.title'),
+        description: t('welcomeTour.steps.projectsSummary.description'),
+        icon: <Target className="w-6 h-6 text-purple-500" />,
+        position: 'top',
+        highlight: true,
+        tab: 'projects',
+      },
+      {
+        id: 'monthly-balance',
+        target: '[data-tour="monthly-balance"]',
+        title: t('welcomeTour.steps.monthlyBalance.title'),
+        description: t('welcomeTour.steps.monthlyBalance.description'),
+        icon: <Scale className="w-6 h-6 text-indigo-500" />,
+        position: 'top',
+        highlight: true,
+        tab: 'metrics',
+      },
+      {
+        id: 'reliability-index',
+        target: '[data-tour="reliability-index"]',
+        title: t('welcomeTour.steps.reliability.title'),
+        description: t('welcomeTour.steps.reliability.description'),
+        icon: <Award className="w-6 h-6 text-emerald-500" />,
+        position: 'top',
+        highlight: true,
+        tab: 'metrics',
+      },
+      {
+        id: 'finish',
+        target: 'body',
+        title: t('welcomeTour.steps.finish.title'),
+        description: t('welcomeTour.steps.finish.description'),
+        icon: <CheckCircle2 className="w-6 h-6 text-emerald-500" />,
+        position: 'center',
+        customContent: true,
+      },
+    ],
+    [t]
+  );
+}
 
 interface HighlightPosition {
   top: number;
@@ -190,6 +197,8 @@ interface WelcomeTourProps {
 }
 
 export function WelcomeTour({ onComplete, forceShow = false, onTabChange }: WelcomeTourProps) {
+  const { t } = useAppTranslation();
+  const tourSteps = useWelcomeTourSteps();
   const { currentUser, updateEmployee } = useApp();
   const maskId = useId().replace(/:/g, '');
   const [isVisible, setIsVisible] = useState(false);
@@ -622,7 +631,7 @@ export function WelcomeTour({ onComplete, forceShow = false, onTabChange }: Welc
                 </div>
                 <div>
                   <h3 className="font-bold text-lg">{step.title}</h3>
-                  <p className="text-xs text-white/70">Paso {currentStep + 1} de {tourSteps.length}</p>
+                  <p className="text-xs text-white/70">{t('welcomeTour.nav.stepOf', { current: currentStep + 1, total: tourSteps.length })}</p>
                 </div>
               </div>
               <Button
@@ -641,24 +650,24 @@ export function WelcomeTour({ onComplete, forceShow = false, onTabChange }: Welc
             {step.customContent ? (
               <div className="space-y-4">
                 <p className="text-sm text-slate-600">
-                  Ya conoces lo básico. Recuerda:
+                  {t('welcomeTour.finishCustom.intro')}
                 </p>
                 <ul className="space-y-2 text-sm">
                   <li className="flex items-center gap-2 text-slate-700">
                     <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                    <span>Planifica tus tareas al inicio de cada semana</span>
+                    <span>{t('welcomeTour.finishCustom.tip1')}</span>
                   </li>
                   <li className="flex items-center gap-2 text-slate-700">
                     <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                    <span>Registra las horas reales al completar tareas</span>
+                    <span>{t('welcomeTour.finishCustom.tip2')}</span>
                   </li>
                   <li className="flex items-center gap-2 text-slate-700">
                     <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                    <span>Revisa tu índice de fiabilidad para mejorar</span>
+                    <span>{t('welcomeTour.finishCustom.tip3')}</span>
                   </li>
                   <li className="flex items-center gap-2 text-slate-700">
                     <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                    <span>Colabora con compañeros que necesiten ayuda</span>
+                    <span>{t('welcomeTour.finishCustom.tip4')}</span>
                   </li>
                 </ul>
               </div>
@@ -691,7 +700,7 @@ export function WelcomeTour({ onComplete, forceShow = false, onTabChange }: Welc
                 onClick={handleSkip}
                 className="text-slate-400 hover:text-slate-600"
               >
-                Saltar tour
+                {t('welcomeTour.nav.skip')}
               </Button>
 
               <div className="flex gap-2">
@@ -703,7 +712,7 @@ export function WelcomeTour({ onComplete, forceShow = false, onTabChange }: Welc
                     className="gap-1"
                   >
                     <ChevronLeft className="w-4 h-4" />
-                    Anterior
+                    {t('welcomeTour.nav.prev')}
                   </Button>
                 )}
                 <Button
@@ -713,12 +722,12 @@ export function WelcomeTour({ onComplete, forceShow = false, onTabChange }: Welc
                 >
                   {isLastStep ? (
                     <>
-                      ¡Empezar!
+                      {t('welcomeTour.nav.finish')}
                       <CheckCircle2 className="w-4 h-4" />
                     </>
                   ) : (
                     <>
-                      Siguiente
+                      {t('welcomeTour.nav.next')}
                       <ChevronRight className="w-4 h-4" />
                     </>
                   )}

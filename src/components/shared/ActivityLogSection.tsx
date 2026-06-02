@@ -36,7 +36,7 @@ import {
 } from 'lucide-react';
 import { format, formatDistanceToNow, parseISO, startOfMonth } from 'date-fns';
 import { filterEmployeesForOperationalMonthDate } from '@/utils/employeeAssignmentVisibility';
-import { es } from 'date-fns/locale';
+import { useDateLocale } from '@/hooks/useDateLocale';
 import { cn } from '@/lib/utils';
 
 // --- Types ---
@@ -158,6 +158,7 @@ export function ActivityLogSection({ currentMonth, maxItems = 200 }: ActivityLog
     const [filterWeeklyOnly, setFilterWeeklyOnly] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const { t } = useAppTranslation();
+    const dateLocale = useDateLocale();
     const { formatName: formatProjectName } = useProjectAliasing();
     const { isActive: isPrivacyDemo, anonymizer: privacyAnonymizer } = usePrivacyDemo();
 
@@ -736,7 +737,7 @@ export function ActivityLogSection({ currentMonth, maxItems = 200 }: ActivityLog
                             </div>
 
                             <span className="text-[10px] text-slate-400 shrink-0">
-                                {formatDistanceToNow(parseISO(node.latestTimestamp), { addSuffix: true, locale: es })}
+                                {formatDistanceToNow(parseISO(node.latestTimestamp), { addSuffix: true, locale: dateLocale })}
                             </span>
                         </div>
                     </CollapsibleTrigger>
@@ -755,7 +756,7 @@ export function ActivityLogSection({ currentMonth, maxItems = 200 }: ActivityLog
                                         <div className="flex-1">
                                             <p className="text-[11px] text-slate-700 leading-tight">{mod.details}</p>
                                             <p className="text-[9px] text-slate-400">
-                                                S{mod.weekNum} · {format(parseISO(mod.timestamp), "HH:mm dd/MM", { locale: es })}
+                                                S{mod.weekNum} · {format(parseISO(mod.timestamp), "HH:mm dd/MM", { locale: dateLocale })}
                                             </p>
                                         </div>
                                     </div>

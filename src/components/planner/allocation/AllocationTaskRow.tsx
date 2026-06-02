@@ -11,6 +11,7 @@ import { useWeeklyCloseDay } from '@/hooks/useWeeklyCloseDay';
 import { PlannerTaskContextMenu } from '@/components/planner/allocation/PlannerTaskContextMenu';
 import { TaskTimer } from '@/components/employee/TaskTimer';
 import { useAgency } from '@/contexts/AgencyContext';
+import { useAppTranslation } from '@/hooks/useAppTranslation';
 import { getPlanningDeltaHours } from '@/utils/hoursTracking';
 import { formatDecimalHoursAsHm } from '@/utils/timerDisplay';
 import { round2 } from '@/utils/numbers';
@@ -87,6 +88,7 @@ export function AllocationTaskRow({
     ownerEmployeeId,
 }: AllocationTaskRowProps) {
     const weeklyCloseDay = useWeeklyCloseDay();
+    const { t } = useAppTranslation();
     const { currentAgency } = useAgency();
     const preference = currentAgency?.settings?.hoursTrackingPreference;
     const todayIso = format(new Date(), 'yyyy-MM-dd');
@@ -119,10 +121,10 @@ export function AllocationTaskRow({
     const displayTaskName = cleanTransferredTaskName(alloc.taskName);
 
     const transferMenuLabel = pendingTransfer
-        ? 'Transferencia pendiente'
+        ? t('planner.allocationSheet.transfer.pendingMenu', 'Transfer pending')
         : transferUi.isSenderShell
-          ? 'Tarea transferida'
-          : 'Transferencia pendiente';
+          ? t('planner.allocationSheet.transfer.transferredMenu', 'Task transferred')
+          : t('planner.allocationSheet.transfer.pendingMenu', 'Transfer pending');
 
     return (
         <div className={cn(
@@ -170,8 +172,8 @@ export function AllocationTaskRow({
                         ) : (
                             <div className="flex flex-wrap items-center gap-x-2 gap-y-1 min-w-0">
                                 {isFocusToday && (
-                                    <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-amber-100 shrink-0" title="El empleado marcó esta tarea en foco para hoy">
-                                        <Sun className="h-2.5 w-2.5 text-amber-600" aria-label="En foco hoy" />
+                                    <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-amber-100 shrink-0" title={t('planner.allocationTaskRow.focusTodayTitle', 'Employee marked this task as today\'s focus')}>
+                                        <Sun className="h-2.5 w-2.5 text-amber-600" aria-label={t('planner.allocationTaskRow.focusTodayAria', 'Focus today')} />
                                     </span>
                                 )}
                                 <p
@@ -186,7 +188,9 @@ export function AllocationTaskRow({
                                 </p>
                                 {transferUi.showTransferBadge && (
                                     <AllocationTransferBadge
-                                        label={pendingTransfer ? 'Pendiente' : 'Transferida'}
+                                        label={pendingTransfer
+                                            ? t('planner.allocationSheet.transfer.pending', 'Pending')
+                                            : t('planner.allocationSheet.transfer.transferred', 'Transferred')}
                                         tooltip={transferUi.transferBadgeTooltip}
                                     />
                                 )}

@@ -1,17 +1,30 @@
 import { cn } from '@/lib/utils';
-
-const LABELS = ['Persona', 'Origen', 'Revisar'] as const;
+import { useTranslation } from 'react-i18next';
 
 export function SuggestionStepBar({
   step,
-  labels = LABELS,
+  labels,
 }: {
   step: number;
   labels?: readonly string[];
 }) {
+  const { t } = useTranslation('app');
+  const defaultLabels = [
+    t('deadlines.suggestions.stepPerson', 'Persona'),
+    t('deadlines.suggestions.stepOrigin', 'Origen'),
+    t('deadlines.suggestions.stepReview', 'Revisar'),
+  ] as const;
+  const resolvedLabels = labels ?? defaultLabels;
+
   return (
-    <div className="flex items-center gap-1 mb-4" aria-label={`Paso ${step} de ${labels.length}`}>
-      {labels.map((label, i) => {
+    <div
+      className="flex items-center gap-1 mb-4"
+      aria-label={t('deadlines.suggestions.stepBarAria', 'Paso {{step}} de {{total}}', {
+        step,
+        total: resolvedLabels.length,
+      })}
+    >
+      {resolvedLabels.map((label, i) => {
         const n = i + 1;
         const active = n === step;
         const done = n < step;
@@ -35,7 +48,7 @@ export function SuggestionStepBar({
             >
               {label}
             </span>
-            {i < labels.length - 1 && <div className="h-px flex-1 bg-slate-200 min-w-2" />}
+            {i < resolvedLabels.length - 1 && <div className="h-px flex-1 bg-slate-200 min-w-2" />}
           </div>
         );
       })}

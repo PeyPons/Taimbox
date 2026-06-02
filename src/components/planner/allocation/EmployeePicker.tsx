@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Check, Plus, User } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -34,6 +35,7 @@ export function EmployeePicker({
   placeholder = 'Seleccionar empleado...',
   fallbackLabel,
 }: EmployeePickerProps) {
+  const { t } = useTranslation('app');
   const [open, setOpen] = useState(false);
   const selected = employees.find((e) => e.id === value);
   const triggerLabel = value
@@ -72,7 +74,7 @@ export function EmployeePicker({
         <Command>
           <CommandInput placeholder="Buscar empleado..." />
           <CommandList className="max-h-[280px] overflow-y-auto overscroll-contain">
-            <CommandEmpty>No se encontró empleado.</CommandEmpty>
+            <CommandEmpty>{t('planner.employeePicker.notFound')}</CommandEmpty>
             <CommandGroup>
               {employees.map((emp) => (
                 <CommandItem

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -137,6 +138,7 @@ interface DeadlinesTourProps {
 }
 
 export function DeadlinesTour({ onComplete, forceShow = false }: DeadlinesTourProps) {
+  const { t } = useTranslation('app');
   const { currentUser, updateEmployee } = useApp();
   const [isVisible, setIsVisible] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
@@ -396,6 +398,11 @@ export function DeadlinesTour({ onComplete, forceShow = false }: DeadlinesTourPr
   const isFirstStep = currentStep === 0;
   const isLastStep = currentStep === tourSteps.length - 1;
   const isCentered = step.position === 'center' || !highlightPos;
+  const stepTitle = t(`deadlines.tour.steps.${step.id}.title`, step.title);
+  const stepDescription = t(`deadlines.tour.steps.${step.id}.description`, step.description);
+  const stepInteractionHint = step.interactionHint
+    ? t(`deadlines.tour.steps.${step.id}.interactionHint`, step.interactionHint)
+    : undefined;
 
   // Renderizar en un portal
   // Si el paso es interactivo, permitir clicks en el área destacada
@@ -490,8 +497,13 @@ export function DeadlinesTour({ onComplete, forceShow = false }: DeadlinesTourPr
                   {step.icon}
                 </div>
                 <div>
-                  <h3 className="font-bold text-lg">{step.title}</h3>
-                  <p className="text-xs text-white/70">Paso {currentStep + 1} de {tourSteps.length}</p>
+                  <h3 className="font-bold text-lg">{stepTitle}</h3>
+                  <p className="text-xs text-white/70">
+                    {t('deadlines.tour.stepOf', 'Paso {{current}} de {{total}}', {
+                      current: currentStep + 1,
+                      total: tourSteps.length,
+                    })}
+                  </p>
                 </div>
               </div>
               <Button 
@@ -510,36 +522,36 @@ export function DeadlinesTour({ onComplete, forceShow = false }: DeadlinesTourPr
             {step.customContent ? (
               <div className="space-y-4">
                 <p className="text-sm text-slate-600">
-                  Ya conoces lo básico de Deadlines. Recuerda:
+                  {t('deadlines.tour.finish.intro', 'Ya conoces lo básico de Deadlines. Recuerda:')}
                 </p>
                 <ul className="space-y-2 text-sm">
                   <li className="flex items-center gap-2 text-slate-700">
                     <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                    <span>Haz clic en proyectos para editarlos directamente</span>
+                    <span>{t('deadlines.tour.finish.tip1', 'Haz clic en proyectos para editarlos directamente')}</span>
                   </li>
                   <li className="flex items-center gap-2 text-slate-700">
                     <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                    <span>Los cambios se guardan automáticamente al escribir</span>
+                    <span>{t('deadlines.tour.finish.tip2', 'Los cambios se guardan automáticamente al escribir')}</span>
                   </li>
                   <li className="flex items-center gap-2 text-slate-700">
                     <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                    <span>Revisa el panel de disponibilidad para equilibrar cargas</span>
+                    <span>{t('deadlines.tour.finish.tip3', 'Revisa el panel de disponibilidad para equilibrar cargas')}</span>
                   </li>
                   <li className="flex items-center gap-2 text-slate-700">
                     <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                    <span>Usa las sugerencias para redistribuir trabajo</span>
+                    <span>{t('deadlines.tour.finish.tip4', 'Usa las sugerencias para redistribuir trabajo')}</span>
                   </li>
                 </ul>
               </div>
             ) : (
               <>
-                <p className="text-sm text-slate-600 leading-relaxed">{step.description}</p>
+                <p className="text-sm text-slate-600 leading-relaxed">{stepDescription}</p>
                 
                 {/* Hint de interacción si es un paso interactivo */}
-                {step.interactive && step.interactionHint && (
+                {step.interactive && stepInteractionHint && (
                   <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
                     <p className="text-sm text-amber-800 font-medium">
-                      {step.interactionHint}
+                      {stepInteractionHint}
                     </p>
                   </div>
                 )}
@@ -571,7 +583,7 @@ export function DeadlinesTour({ onComplete, forceShow = false }: DeadlinesTourPr
                 onClick={handleSkip}
                 className="text-slate-400 hover:text-slate-600"
               >
-                Saltar tour
+                {t('deadlines.tour.nav.skip', 'Saltar tour')}
               </Button>
 
               <div className="flex gap-2">
@@ -583,7 +595,7 @@ export function DeadlinesTour({ onComplete, forceShow = false }: DeadlinesTourPr
                     className="gap-1"
                   >
                     <ChevronLeft className="w-4 h-4" />
-                    Anterior
+                    {t('deadlines.tour.nav.prev', 'Anterior')}
                   </Button>
                 )}
                 <Button
@@ -593,12 +605,12 @@ export function DeadlinesTour({ onComplete, forceShow = false }: DeadlinesTourPr
                 >
                   {isLastStep ? (
                     <>
-                      ¡Empezar!
+                      {t('deadlines.tour.nav.start', '¡Empezar!')}
                       <CheckCircle2 className="w-4 h-4" />
                     </>
                   ) : (
                     <>
-                      Siguiente
+                      {t('deadlines.tour.nav.next', 'Siguiente')}
                       <ChevronRight className="w-4 h-4" />
                     </>
                   )}

@@ -14,7 +14,7 @@ import {
   startOfMonth,
   subMonths,
 } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { useDateLocale } from '@/hooks/useDateLocale';
 import { useApp } from '@/contexts/AppContext';
 import { useAgency } from '@/contexts/AgencyContext';
 import { useDepartmentView } from '@/contexts/DepartmentViewContext';
@@ -113,6 +113,7 @@ function radarIsEndOfMonth(viewDate: Date): boolean {
 
 export default function DataExportHubPage() {
   const { t } = useTranslation('app');
+  const dateLocale = useDateLocale();
   const {
     projects,
     clients,
@@ -661,7 +662,7 @@ export default function DataExportHubPage() {
           <p className="text-xs text-amber-700">
             {t('dataExportHub.historyLimit', {
               defaultValue: 'Tu plan limita histórico desde {{date}}',
-              date: format(minReportingMonth, 'MMMM yyyy', { locale: es }),
+              date: format(minReportingMonth, 'MMMM yyyy', { locale: dateLocale }),
             })}
           </p>
         )}
@@ -686,7 +687,7 @@ export default function DataExportHubPage() {
                 onChange={() => toggleMonth(mk)}
                 className="rounded border-slate-300"
               />
-              {format(monthKeyToDate(mk), 'MMM yyyy', { locale: es })}
+              {format(monthKeyToDate(mk), 'MMM yyyy', { locale: dateLocale })}
             </label>
           ))}
         </div>

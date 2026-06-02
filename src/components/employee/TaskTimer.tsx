@@ -3,6 +3,7 @@ import { Play, Square } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTaskTimer } from '@/hooks/useTaskTimer';
 import { useAgency } from '@/contexts/AgencyContext';
+import { useAppTranslation } from '@/hooks/useAppTranslation';
 import { cn } from '@/lib/utils';
 
 export interface TaskTimerProps {
@@ -21,6 +22,7 @@ export function TaskTimer({
   onTimeLogged,
   beforeStart,
 }: TaskTimerProps) {
+  const { t } = useAppTranslation();
   const { currentAgency } = useAgency();
   const maxHours = currentAgency?.settings?.timeTrackerMaxHours ?? 12;
   const { isRunning, isLoading, isSaving, formattedTime, formattedTimeShort, startTimer, stopTimer } = useTaskTimer(
@@ -49,9 +51,16 @@ export function TaskTimer({
       )}
       role="timer"
       aria-live="polite"
-      aria-label={isRunning ? `Cronómetro en curso: ${formattedTime}` : `Total tiempo registrado hoy: ${formattedTimeShort}`}
+      aria-label={
+        isRunning
+          ? t('employeeDashboard.taskTimer.runningAria', { time: formattedTime })
+          : t('employeeDashboard.taskTimer.totalTodayAria', { time: formattedTimeShort })
+      }
     >
-      <span className={cn("font-mono text-sm font-medium tabular-nums", isRunning ? "w-20 text-center" : "w-14 text-center")} title={isRunning ? undefined : "Total registrado hoy (horas:minutos)"}>
+      <span
+        className={cn('font-mono text-sm font-medium tabular-nums', isRunning ? 'w-20 text-center' : 'w-14 text-center')}
+        title={isRunning ? undefined : t('employeeDashboard.taskTimer.totalTodayTitle')}
+      >
         {displayTime}
       </span>
 
@@ -62,7 +71,7 @@ export function TaskTimer({
           className="h-6 w-6 text-red-500 hover:bg-red-100 hover:text-red-600 rounded-full pointer-events-auto disabled:pointer-events-none"
           onClick={stopTimer}
           disabled={disabled || isSaving}
-          aria-label="Detener cronómetro"
+          aria-label={t('employeeDashboard.taskTimer.stopAria')}
         >
           <Square className="h-3 w-3 fill-current" />
         </Button>
@@ -84,7 +93,7 @@ export function TaskTimer({
             }
           }}
           disabled={disabled || isSaving || isPriming}
-          aria-label="Iniciar cronómetro"
+          aria-label={t('employeeDashboard.taskTimer.startAria')}
         >
           <Play className="h-3 w-3 fill-current" />
         </Button>

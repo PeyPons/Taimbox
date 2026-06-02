@@ -17,9 +17,10 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { Deadline } from '@/types';
 import { fetchDeadlinesForMonth } from '@/utils/deadlineUtils';
 import { format, isSameMonth, parseISO, startOfMonth, endOfMonth } from 'date-fns';
-import { isAllocationInEffectiveMonth } from '@/utils/dateUtils';
-import { es } from 'date-fns/locale';
+import { AppTrans, useAppTranslation } from '@/hooks/useAppTranslation';
+import { useDateLocale } from '@/hooks/useDateLocale';
 import { getEffectiveCompletedHours } from '@/utils/hoursTracking';
+import { isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { SensitiveText } from '@/components/privacy/SensitiveText';
 
 /** Píldora compacta: icono violeta (#7C3AED), texto gris pizarra, borde/sombra muy suaves (referencia UX). */
@@ -39,17 +40,19 @@ function MobileHoursMetrics({
   deadlineHours,
   plannedHours,
   computedHours,
+  t,
 }: {
   deadlineHours: number;
   plannedHours: number;
   computedHours: number;
+  t: (key: string, options?: Record<string, unknown>) => string;
 }) {
   const columns = [
     ...(deadlineHours > 0
-      ? [{ label: 'Deadline', value: deadlineHours, valueClass: 'text-slate-900' }]
+      ? [{ label: t('employeeDashboard.hours.deadline'), value: deadlineHours, valueClass: 'text-slate-900' }]
       : []),
-    { label: 'Planificado', value: plannedHours, valueClass: 'text-slate-900' },
-    { label: 'Computado', value: computedHours, valueClass: 'text-slate-900' },
+    { label: t('employeeDashboard.hours.planned'), value: plannedHours, valueClass: 'text-slate-900' },
+    { label: t('employeeDashboard.hours.computed'), value: computedHours, valueClass: 'text-slate-900' },
   ];
 
   return (
@@ -70,12 +73,15 @@ function MobileHoursMetrics({
   );
 }
 
-function mobileDeltaMeta(difference: number) {
+function mobileDeltaMeta(
+  difference: number,
+  t: (key: string, options?: Record<string, unknown>) => string
+) {
   if (difference < 0) {
     return {
       dot: 'bg-red-500',
       text: 'text-red-700',
-      label: `${difference}h por planificar`,
+      label: t('employeeDashboard.planning.hoursToPlan', { hours: difference }),
       Icon: TrendingDown,
     };
   }
@@ -83,14 +89,14 @@ function mobileDeltaMeta(difference: number) {
     return {
       dot: 'bg-amber-500',
       text: 'text-amber-700',
-      label: `+${difference}h de desviación`,
+      label: t('employeeDashboard.planning.deviationPositive', { hours: difference }),
       Icon: TrendingUp,
     };
   }
   return {
     dot: 'bg-emerald-500',
     text: 'text-emerald-700',
-    label: 'Sin desviación',
+    label: t('employeeDashboard.planning.noDeviation'),
     Icon: CheckCircle2,
   };
 }
@@ -101,6 +107,8 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
   isManager = false,
   onAddTasksForProject
 }: PlanningInconsistenciesCardProps) {
+  const { t } = useAppTranslation();
+  const dateLocale = useDateLocale();
   const app = useAppOrDemo();
   const { allocations, projects, employees } = app;
   const deadlinesFromContext = (app as { deadlines?: Deadline[] }).deadlines;
@@ -319,7 +327,7 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
 
         results.push({
           projectId: deadline.projectId,
-          projectName: project?.name || 'Proyecto desconocido',
+          projectName: project?.name || t('employeeDashboard.common.unknownProject'),
           deadlineHours,
           plannedHours: round2(projectAllocs.planned),
           computedHours: round2(projectAllocs.computed),
@@ -452,7 +460,7 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
 
         results.push({
           projectId,
-          projectName: project?.name || 'Proyecto desconocido',
+          projectName: project?.name || t('employeeDashboard.common.unknownProject'),
           deadlineHours: 0, // No hay deadline
           plannedHours: round2(projectAllocs.planned),
           computedHours: round2(projectAllocs.computed),
@@ -498,11 +506,11 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
         <CardHeader className="pb-2">
           <CardTitle className="text-base flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-amber-600" />
-            <span>Control de planificación</span>
+            <span>{t('employeeDashboard.planning.controlTitle')}</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-slate-500">Cargando...</p>
+          <p className="text-sm text-slate-500">{t('employeeDashboard.common.loading')}</p>
         </CardContent>
       </Card>
     );
@@ -514,12 +522,12 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
         <CardHeader className="pb-2">
           <CardTitle className="text-base flex items-center gap-2">
             <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-            <span>Control de planificación</span>
+            <span>{t('employeeDashboard.planning.controlTitle')}</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-slate-600">
-            ✅ Todas tus tareas coinciden con lo planificado en el deadline.
+            {t('employeeDashboard.planning.allMatch')}
           </p>
         </CardContent>
       </Card>
@@ -532,15 +540,14 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
         <CardHeader className="pb-2">
           <CardTitle className="text-base flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-amber-600" />
-            <span>Alertas de planificación</span>
+            <span>{t('employeeDashboard.planning.alertsTitle')}</span>
             <Tooltip>
               <TooltipTrigger className={cn("shrink-0", isMobile && "p-2 -m-2 touch-manipulation")}>
                 <Info className={cn("text-slate-400", isMobile ? "h-5 w-5" : "h-4 w-4")} />
               </TooltipTrigger>
               <TooltipContent className="max-w-[min(300px,calc(100vw-2rem))]">
                 <p className="text-xs">
-                  Detecta diferencias entre lo planificado en el deadline y lo realmente planificado en tus tareas.
-                  Útil para detectar intercambios con compañeros o cambios de planificación.
+                  {t('employeeDashboard.planning.tooltip')}
                 </p>
               </TooltipContent>
             </Tooltip>
@@ -550,29 +557,43 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
           <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3 sm:p-4 space-y-3">
             <div className="text-sm text-slate-600 leading-snug space-y-1">
               <p>
-                Se han detectado <strong>{inconsistencies.length}</strong> variación{inconsistencies.length !== 1 ? 'es' : ''}
-                {' '}en {format(viewDate, 'MMMM yyyy', { locale: es })}.
+                <AppTrans
+                  i18nKey="employeeDashboard.planning.variationsDetected"
+                  count={inconsistencies.length}
+                  values={{
+                    count: inconsistencies.length,
+                    month: format(viewDate, 'MMMM yyyy', { locale: dateLocale }),
+                  }}
+                  components={{ strong: <strong /> }}
+                />.
               </p>
               {searchQuery.trim() && (
                 <p className="text-xs text-slate-500">
-                  Mostrando <strong>{visibleInconsistencies.length}</strong> de {inconsistencies.length} tras filtrar.
+                  <AppTrans
+                    i18nKey="employeeDashboard.common.showingFiltered"
+                    values={{
+                      visible: visibleInconsistencies.length,
+                      total: inconsistencies.length,
+                    }}
+                    components={{ strong: <strong /> }}
+                  />
                 </p>
               )}
             </div>
 
             <div className="space-y-1.5">
               <label htmlFor="planning-inconsistencies-search" className="text-xs font-medium text-slate-500">
-                Filtrar por proyecto
+                {t('employeeDashboard.planning.filterByProject')}
               </label>
               <div className="relative w-full">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
                 <Input
                   id="planning-inconsistencies-search"
-                  placeholder="Escribe el nombre del proyecto…"
+                  placeholder={t('employeeDashboard.planning.searchPlaceholder')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-9 h-10 w-full bg-white border-slate-200 shadow-sm"
-                  aria-label="Filtrar alertas de planificación por nombre de proyecto"
+                  aria-label={t('employeeDashboard.planning.searchAria')}
                 />
               </div>
             </div>
@@ -581,14 +602,14 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
           <div className={cn(isMobile ? "space-y-3" : "space-y-1.5")}>
             {visibleInconsistencies.length === 0 ? (
               <p className="text-sm text-slate-500 py-3">
-                No hay alertas que coincidan con tu búsqueda.
+                {t('employeeDashboard.planning.noSearchResults')}
               </p>
             ) : visibleInconsistencies.map(inc => {
               const isExpanded = expandedProjects.has(inc.projectId);
               const hasMore = inc.teammates.length > 0;
               const isPositive = inc.difference > 0;
               const currentEmployee = employees.find(e => e.id === employeeId);
-              const deltaMeta = mobileDeltaMeta(inc.difference);
+              const deltaMeta = mobileDeltaMeta(inc.difference, t);
               const DeltaIcon = deltaMeta.Icon;
 
               return (
@@ -664,6 +685,7 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
                               deadlineHours={inc.deadlineHours}
                               plannedHours={inc.plannedHours}
                               computedHours={inc.computedHours}
+                              t={t}
                             />
 
                             <div className="flex items-center justify-between gap-3 pt-0.5">
@@ -684,10 +706,10 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
                                     onAddTasksForProject(inc.projectId);
                                   }}
                                   className="h-9 shrink-0 rounded-lg bg-indigo-600 px-3 text-xs font-medium text-white shadow-sm hover:bg-indigo-700"
-                                  aria-label="Añadir tareas a este proyecto"
+                                  aria-label={t('employeeDashboard.planning.addTasksAria')}
                                 >
                                   <ListPlus className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
-                                  Añadir
+                                  {t('employeeDashboard.common.add')}
                                 </Button>
                               )}
                             </div>
@@ -696,17 +718,17 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
                           <div className="flex items-center gap-2 text-xs text-slate-600 flex-wrap gap-y-1">
                             <div className="flex items-center gap-1 text-slate-700 font-semibold">
                               <User className="h-3 w-3" />
-                              <span>Mis Horas:</span>
+                              <span>{t('employeeDashboard.hours.myHours')}</span>
                             </div>
                             {inc.deadlineHours > 0 && (
-                              <span>Deadline: <strong className="text-slate-800">{inc.deadlineHours}h</strong></span>
+                              <span>{t('employeeDashboard.hours.deadlineLabel')} <strong className="text-slate-800">{inc.deadlineHours}h</strong></span>
                             )}
                             <span className="text-slate-300">→</span>
                             <span className="text-blue-600">
-                              Plan: <strong>{inc.plannedHours}h</strong>
+                              {t('employeeDashboard.hours.planShort')} <strong>{inc.plannedHours}h</strong>
                             </span>
                             <span className="text-emerald-600">
-                              Comp: <strong>{inc.computedHours}h</strong>
+                              {t('employeeDashboard.hours.compShort')} <strong>{inc.computedHours}h</strong>
                             </span>
                             <span className="text-slate-300">→</span>
                             <div className={cn(
@@ -739,10 +761,10 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
                                   onAddTasksForProject(inc.projectId);
                                 }}
                                 className={cn(addTasksButtonClass, 'flex-shrink-0')}
-                                aria-label="Añadir tareas a este proyecto"
+                                aria-label={t('employeeDashboard.planning.addTasksAria')}
                               >
                                 <ListPlus className="h-3.5 w-3.5 shrink-0 text-violet-600" strokeWidth={2} aria-hidden />
-                                Añadir
+                                {t('employeeDashboard.common.add')}
                               </Button>
                             )}
                           </div>
@@ -757,11 +779,11 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
                       {(inc.budgetHours > 0 || inc.minimumHours > 0) && (
                         <div className="text-[10px] text-slate-500">
                           {inc.budgetHours > 0 && (
-                            <span>Asignadas: <strong>{inc.budgetHours}h</strong></span>
+                            <span>{t('employeeDashboard.hours.assigned')} <strong>{inc.budgetHours}h</strong></span>
                           )}
                           {inc.budgetHours > 0 && inc.minimumHours > 0 && <span> • </span>}
                           {inc.minimumHours > 0 && (
-                            <span>Mínimo: <strong>{inc.minimumHours}h</strong></span>
+                            <span>{t('employeeDashboard.hours.minimum')} <strong>{inc.minimumHours}h</strong></span>
                           )}
                         </div>
                       )}
@@ -783,9 +805,9 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
                               </Avatar>
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2">
-                                  <span className="font-semibold text-slate-900 text-sm">Tú</span>
+                                  <span className="font-semibold text-slate-900 text-sm">{t('employeeDashboard.common.you')}</span>
                                   <Badge variant="outline" className="h-5 px-1.5 text-[10px] bg-white/80 text-indigo-700 border-indigo-200 font-medium">
-                                    Tus datos
+                                    {t('employeeDashboard.planning.yourData')}
                                   </Badge>
                                 </div>
                               </div>
@@ -798,10 +820,10 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
                                     onAddTasksForProject(inc.projectId);
                                   }}
                                   className="h-9 shrink-0 rounded-lg bg-indigo-600 px-3 text-xs font-medium text-white shadow-sm hover:bg-indigo-700"
-                                  aria-label="Añadir tareas a este proyecto"
+                                  aria-label={t('employeeDashboard.planning.addTasksAria')}
                                 >
                                   <ListPlus className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
-                                  Añadir
+                                  {t('employeeDashboard.common.add')}
                                 </Button>
                               )}
                             </div>
@@ -810,6 +832,7 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
                               deadlineHours={inc.deadlineHours}
                               plannedHours={inc.plannedHours}
                               computedHours={inc.computedHours}
+                              t={t}
                             />
 
                             <div className={cn(
@@ -823,17 +846,25 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
                               {inc.difference < 0 ? (
                                 <>
                                   <AlertTriangle className="h-3.5 w-3.5 shrink-0 opacity-80" />
-                                  <span>Te faltan <strong>{Math.abs(inc.difference)}h</strong> por planificar</span>
+                                  <AppTrans
+                                    i18nKey="employeeDashboard.planning.shortfall"
+                                    values={{ hours: Math.abs(inc.difference) }}
+                                    components={{ strong: <strong /> }}
+                                  />
                                 </>
                               ) : inc.difference > 0 ? (
                                 <>
                                   <AlertTriangle className="h-3.5 w-3.5 shrink-0 opacity-80" />
-                                  <span>Te has excedido en <strong>{inc.difference}h</strong></span>
+                                  <AppTrans
+                                    i18nKey="employeeDashboard.planning.exceeded"
+                                    values={{ hours: inc.difference }}
+                                    components={{ strong: <strong /> }}
+                                  />
                                 </>
                               ) : (
                                 <>
                                   <CheckCircle2 className="h-3.5 w-3.5 shrink-0 opacity-80" />
-                                  <span>Planificación perfecta</span>
+                                  <span>{t('employeeDashboard.planning.perfect')}</span>
                                 </>
                               )}
                             </div>
@@ -848,9 +879,9 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
                             </Avatar>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-1">
-                                <span className="font-bold text-slate-900 text-sm">Tú</span>
+                                <span className="font-bold text-slate-900 text-sm">{t('employeeDashboard.common.you')}</span>
                                 <Badge variant="outline" className="h-4 px-1.5 text-[9px] bg-indigo-100 text-indigo-700 border-indigo-300 font-semibold">
-                                  TUS DATOS
+                                  {t('employeeDashboard.planning.yourDataUpper')}
                                 </Badge>
                                 {inc.difference < 0 && onAddTasksForProject && (
                                   <Button
@@ -861,10 +892,10 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
                                       onAddTasksForProject(inc.projectId);
                                     }}
                                     className={cn(addTasksButtonClass, 'flex-shrink-0')}
-                                    aria-label="Añadir tareas a este proyecto"
+                                    aria-label={t('employeeDashboard.planning.addTasksAria')}
                                   >
                                     <ListPlus className="h-3.5 w-3.5 shrink-0 text-violet-600" strokeWidth={2} aria-hidden />
-                                    Añadir
+                                    {t('employeeDashboard.common.add')}
                                   </Button>
                                 )}
                               </div>
@@ -872,24 +903,24 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
                                 {inc.deadlineHours > 0 ? (
                                   <>
                                     <span className="text-xs text-slate-500">
-                                      Deadline: <span className="font-semibold text-slate-700">{inc.deadlineHours}h</span>
+                                      {t('employeeDashboard.hours.deadlineLabel')} <span className="font-semibold text-slate-700">{inc.deadlineHours}h</span>
                                     </span>
                                     <span className="text-slate-300">→</span>
                                   </>
                                 ) : (
-                                  <span className="text-xs text-slate-400 italic">Sin deadline</span>
+                                  <span className="text-xs text-slate-400 italic">{t('employeeDashboard.hours.noDeadline')}</span>
                                 )}
                                 <div className="flex items-center gap-1.5">
                                   <span className="text-xs text-blue-600">
-                                    Plan: <span className="font-semibold">{inc.plannedHours}h</span>
+                                    {t('employeeDashboard.hours.planShort')} <span className="font-semibold">{inc.plannedHours}h</span>
                                   </span>
                                   <span className="text-xs text-emerald-600">
-                                    Comp: <span className="font-semibold">{inc.computedHours}h</span>
+                                    {t('employeeDashboard.hours.compShort')} <span className="font-semibold">{inc.computedHours}h</span>
                                   </span>
                                 </div>
                                 <span className="text-slate-300">|</span>
                                 <span className="text-xs font-semibold text-slate-700">
-                                  Total: <span className="text-sm">{round2(inc.plannedHours + inc.computedHours)}h</span>
+                                  {t('employeeDashboard.hours.total')} <span className="text-sm">{round2(inc.plannedHours + inc.computedHours)}h</span>
                                 </span>
                                 {inc.deadlineHours > 0 && (
                                   <>
@@ -921,17 +952,25 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
                                 {inc.difference < 0 ? (
                                   <>
                                     <AlertTriangle className="h-3 w-3" />
-                                    <span>Te faltan <strong>{Math.abs(inc.difference)}h</strong> por planificar</span>
+                                    <AppTrans
+                                    i18nKey="employeeDashboard.planning.shortfall"
+                                    values={{ hours: Math.abs(inc.difference) }}
+                                    components={{ strong: <strong /> }}
+                                  />
                                   </>
                                 ) : inc.difference > 0 ? (
                                   <>
                                     <AlertTriangle className="h-3 w-3" />
-                                    <span>Te has excedido en <strong>{inc.difference}h</strong></span>
+                                    <AppTrans
+                                    i18nKey="employeeDashboard.planning.exceeded"
+                                    values={{ hours: inc.difference }}
+                                    components={{ strong: <strong /> }}
+                                  />
                                   </>
                                 ) : (
                                   <>
                                     <CheckCircle2 className="h-3 w-3" />
-                                    <span>Planificación perfecta</span>
+                                    <span>{t('employeeDashboard.planning.perfect')}</span>
                                   </>
                                 )}
                               </div>
@@ -947,9 +986,9 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
                             isMobile ? "text-sm font-semibold" : "flex-wrap text-xs font-bold uppercase mb-3"
                           )}>
                             <Users className={cn("text-indigo-600 shrink-0", isMobile ? "h-4 w-4" : "h-4 w-4")} />
-                            <span>{isMobile ? 'Equipo' : 'Estado del resto del equipo'}</span>
+                            <span>{isMobile ? t('employeeDashboard.common.team') : t('employeeDashboard.planning.teamStatus')}</span>
                             <Badge variant="outline" className={cn("text-[10px] h-5 px-1.5", !isMobile && "sm:ml-auto")}>
-                              {inc.teammates.length} {inc.teammates.length === 1 ? 'persona' : 'personas'}
+                              {t('employeeDashboard.planning.people', { count: inc.teammates.length })}
                             </Badge>
                           </div>
                           <div className="space-y-2">
@@ -988,13 +1027,18 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
                                             deadlineHours={tm.deadlineHours}
                                             plannedHours={tm.plannedHours}
                                             computedHours={tm.computedHours}
+                                            t={t}
                                           />
                                           {tm.deadlineHours > 0 && (
                                             <p className={cn(
                                               "mt-2 text-xs font-medium tabular-nums",
                                               tmIsPositive ? "text-amber-700" : tm.difference < 0 ? "text-red-700" : "text-emerald-700"
                                             )}>
-                                              {tmIsPositive ? '+' : ''}{tm.difference}h de desviación · Total {tmTotal}h
+                                              {t('employeeDashboard.planning.deviationAndTotal', {
+                                                sign: tmIsPositive ? '+' : '',
+                                                hours: tm.difference,
+                                                total: tmTotal,
+                                              })}
                                             </p>
                                           )}
                                         </>
@@ -1003,24 +1047,24 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
                                           {tm.deadlineHours > 0 ? (
                                             <>
                                               <span className="text-xs text-slate-500">
-                                                Deadline: <span className="font-semibold text-slate-700">{tm.deadlineHours}h</span>
+                                                {t('employeeDashboard.hours.deadlineLabel')} <span className="font-semibold text-slate-700">{tm.deadlineHours}h</span>
                                               </span>
                                               <span className="text-slate-300">→</span>
                                             </>
                                           ) : (
-                                            <span className="text-xs text-slate-400 italic">Sin deadline</span>
+                                            <span className="text-xs text-slate-400 italic">{t('employeeDashboard.hours.noDeadline')}</span>
                                           )}
                                           <div className="flex items-center gap-1.5">
                                             <span className="text-xs text-blue-600">
-                                              Plan: <span className="font-semibold">{tm.plannedHours}h</span>
+                                              {t('employeeDashboard.hours.planShort')} <span className="font-semibold">{tm.plannedHours}h</span>
                                             </span>
                                             <span className="text-xs text-emerald-600">
-                                              Comp: <span className="font-semibold">{tm.computedHours}h</span>
+                                              {t('employeeDashboard.hours.compShort')} <span className="font-semibold">{tm.computedHours}h</span>
                                             </span>
                                           </div>
                                           <span className="text-slate-300">|</span>
                                           <span className="text-xs font-semibold text-slate-700">
-                                            Total: <span className="text-sm">{tmTotal}h</span>
+                                            {t('employeeDashboard.hours.total')} <span className="text-sm">{tmTotal}h</span>
                                           </span>
                                           {tm.deadlineHours > 0 && (
                                             <>

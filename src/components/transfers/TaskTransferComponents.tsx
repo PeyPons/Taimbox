@@ -29,12 +29,15 @@ import {
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow, startOfMonth, parseISO } from 'date-fns';
 import { filterEmployeesForOperationalMonthDate } from '@/utils/employeeAssignmentVisibility';
-import { es } from 'date-fns/locale';
+import { useAppTranslation } from '@/hooks/useAppTranslation';
+import { useDateLocale } from '@/hooks/useDateLocale';
 
 // ================================================================
 // Pending Transfers Panel (for recipients)
 // ================================================================
 export function PendingTransfersPanel() {
+    const { t } = useAppTranslation();
+    const dateLocale = useDateLocale();
     const { pendingTransfers, rejectTransfer, isLoading, fetchTransfers } = useTaskTransfers();
     const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
     const [selectedTransfer, setSelectedTransfer] = useState<TaskTransfer | null>(null);
@@ -46,7 +49,7 @@ export function PendingTransfersPanel() {
         return (
             <Card className="border-amber-200 bg-amber-50/50">
                 <CardContent className="py-4 text-center text-sm text-muted-foreground">
-                    Cargando transferencias...
+                    {t('transfers.pending.loading', 'Cargando transferencias...')}
                 </CardContent>
             </Card>
         );
@@ -82,7 +85,7 @@ export function PendingTransfersPanel() {
                 <CardHeader className="pb-3">
                     <CardTitle className="flex items-center gap-2 text-amber-800">
                         <Bell className="h-5 w-5 animate-pulse" />
-                        Transferencias Pendientes
+                        {t('transfers.pending.title', 'Transferencias Pendientes')}
                         <Badge variant="secondary" className="ml-2 bg-amber-200 text-amber-800">
                             {(pendingTransfers || []).length}
                         </Badge>
@@ -106,10 +109,10 @@ export function PendingTransfersPanel() {
                                             <div className="flex items-center gap-2 text-sm">
                                                 <span className="font-medium truncate">{transfer.fromEmployeeName}</span>
                                                 <ArrowRight className="h-3 w-3 text-muted-foreground shrink-0" />
-                                                <span className="text-muted-foreground">te envía</span>
+                                                <span className="text-muted-foreground">{t('transfers.pending.sendsYou', 'te envía')}</span>
                                             </div>
                                             <div className="text-sm font-medium text-slate-700 truncate">
-                                                {transfer.taskName || 'Tarea sin nombre'}
+                                                {transfer.taskName || t('transfers.unnamedTask', 'Tarea sin nombre')}
                                             </div>
                                             <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
                                                 <Clock className="h-3 w-3" />
@@ -118,7 +121,7 @@ export function PendingTransfersPanel() {
                                                 <span>
                                                     {formatDistanceToNow(new Date(transfer.requestedAt), {
                                                         addSuffix: true,
-                                                        locale: es
+                                                        locale: dateLocale
                                                     })}
                                                 </span>
                                             </div>
@@ -147,7 +150,7 @@ export function PendingTransfersPanel() {
                                             disabled={!!processing}
                                         >
                                             <Check className="h-4 w-4" />
-                                            Aceptar
+                                            {t('transfers.pending.accept', 'Aceptar')}
                                         </Button>
                                     </div>
                                 </div>
@@ -160,20 +163,20 @@ export function PendingTransfersPanel() {
             <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Rechazar Transferencia</DialogTitle>
+                        <DialogTitle>{t('transfers.reject.title', 'Reject transfer')}</DialogTitle>
                         <DialogDescription>
-                            ¿Por qué rechazas esta tarea? El emisor recibirá este mensaje.
+                            {t('transfers.reject.description', 'Why are you rejecting this task? The sender will receive this message.')}
                         </DialogDescription>
                     </DialogHeader>
                     <Textarea
                         value={rejectReason}
                         onChange={(e) => setRejectReason(e.target.value)}
-                        placeholder="Ej: No tengo capacidad esta semana..."
+                        placeholder={t('transfers.reject.placeholder', 'E.g. I have no capacity this week...')}
                     />
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setRejectDialogOpen(false)}>Cancelar</Button>
+                        <Button variant="outline" onClick={() => setRejectDialogOpen(false)}>{t('common.cancel', 'Cancel')}</Button>
                         <Button variant="destructive" onClick={handleReject} disabled={!rejectReason.trim() || !!processing}>
-                            Rechazar
+                            {t('transfers.reject.confirm', 'Reject')}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -201,6 +204,7 @@ export function PendingTransfersPanel() {
 // Outgoing Transfers List (for senders)
 // ================================================================
 export function OutgoingTransfersList() {
+    const { t } = useAppTranslation();
     const { outgoingTransfers, cancelTransfer, isLoading } = useTaskTransfers();
     const { currentUser } = useApp();
     const [cancelling, setCancelling] = useState<string | null>(null);
@@ -216,11 +220,11 @@ export function OutgoingTransfersList() {
     const getStatusBadge = (status: string) => {
         switch (status) {
             case 'pending':
-                return <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">Pendiente</Badge>;
+                return <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">{t('transfers.status.pending', 'Pending')}</Badge>;
             case 'accepted':
-                return <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">Aceptada</Badge>;
+                return <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">{t('transfers.status.accepted', 'Accepted')}</Badge>;
             case 'rejected':
-                return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">Rechazada</Badge>;
+                return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">{t('transfers.status.rejected', 'Rejected')}</Badge>;
             default:
                 return <Badge variant="secondary">{status}</Badge>;
         }
@@ -231,7 +235,7 @@ export function OutgoingTransfersList() {
             <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-slate-700 text-sm">
                     <ArrowRightLeft className="h-4 w-4" />
-                    Mis Transferencias Enviadas
+                    {t('transfers.outgoing.title', 'My sent transfers')}
                 </CardTitle>
             </CardHeader>
             <CardContent>
@@ -259,7 +263,7 @@ export function OutgoingTransfersList() {
                                                 disabled={cancelling === transfer.id}
                                                 className="h-7 px-2 text-xs"
                                             >
-                                                Cancelar
+                                                {t('common.cancel', 'Cancel')}
                                             </Button>
                                         )}
                                     </div>
@@ -295,6 +299,7 @@ export function TransferRequestDialog({
     fromEmployeeId,
     allocationWeekStartDate,
 }: TransferRequestDialogProps) {
+    const { t } = useAppTranslation();
     const { employees, currentUser, allocations } = useApp();
     const { requestTransfer } = useTaskTransfers();
 
@@ -341,24 +346,24 @@ export function TransferRequestDialog({
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <ArrowRightLeft className="h-5 w-5 text-indigo-600" />
-                        Transferir Tarea
+                        {t('transfers.request.title', 'Transfer task')}
                     </DialogTitle>
                     <DialogDescription>
-                        Solicita a un compañero que se haga cargo de esta tarea.
+                        {t('transfers.request.description', 'Ask a teammate to take over this task.')}
                     </DialogDescription>
                 </DialogHeader>
 
                 <div className="space-y-4 py-4">
                     {/* Task info */}
                     <div className="p-3 bg-slate-50 rounded-lg">
-                        <div className="text-sm text-muted-foreground">Tarea</div>
+                        <div className="text-sm text-muted-foreground">{t('transfers.request.taskLabel', 'Task')}</div>
                         <div className="font-medium">{taskName}</div>
-                        <div className="text-sm text-muted-foreground mt-1">{currentHours}h asignadas</div>
+                        <div className="text-sm text-muted-foreground mt-1">{t('transfers.request.hoursAssigned', '{{hours}}h assigned', { hours: currentHours })}</div>
                     </div>
 
                     {/* Employee selector */}
                     <div className="space-y-2">
-                        <label className="text-sm font-medium">Transferir a</label>
+                        <label className="text-sm font-medium">{t('transfers.request.transferTo', 'Transfer to')}</label>
                         <div className="flex flex-col gap-2 max-h-[300px] overflow-y-auto pr-1">
                             {eligibleEmployees.map((emp) => (
                                 <button
@@ -391,9 +396,9 @@ export function TransferRequestDialog({
 
                     {/* Reason */}
                     <div className="space-y-2">
-                        <label className="text-sm font-medium">Motivo (opcional)</label>
+                        <label className="text-sm font-medium">{t('transfers.request.reasonLabel', 'Reason (optional)')}</label>
                         <Textarea
-                            placeholder="Ej: No tengo tiempo esta semana..."
+                            placeholder={t('transfers.request.reasonPlaceholder', 'E.g. I have no time this week...')}
                             value={reason}
                             onChange={(e) => setReason(e.target.value)}
                             className="min-h-[60px]"
@@ -403,7 +408,7 @@ export function TransferRequestDialog({
 
                 <DialogFooter>
                     <Button variant="outline" onClick={() => onOpenChange(false)}>
-                        Cancelar
+                        {t('common.cancel', 'Cancel')}
                     </Button>
                     <Button
                         onClick={handleSubmit}
@@ -411,7 +416,7 @@ export function TransferRequestDialog({
                         className="bg-indigo-600 hover:bg-indigo-700"
                     >
                         <ArrowRightLeft className="h-4 w-4 mr-2" />
-                        Enviar Solicitud
+                        {t('transfers.request.submit', 'Send request')}
                     </Button>
                 </DialogFooter>
             </DialogContent>

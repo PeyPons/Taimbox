@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
 import { SensitiveText } from '@/components/privacy/SensitiveText';
+import { useTranslation } from 'react-i18next';
 
 interface AllocationProjectHeaderProps {
     project: Project | undefined;
@@ -24,8 +25,9 @@ export function AllocationProjectHeader({
     currentEmployeeId
 }: AllocationProjectHeaderProps) {
     const { formatName: formatProjectName } = useProjectAliasing();
+    const { t } = useTranslation('app');
 
-    if (!project) return <span className="font-bold text-xs truncate">Desc.</span>;
+    if (!project) return <span className="font-bold text-xs truncate">{t('planner.allocation.projectHeader.descAbbrev', 'Desc.')}</span>;
 
     const { totalComputed, totalPlanned, budgetMax, budgetMin, percentage, status, breakdown } = budgetStatus;
 
@@ -66,7 +68,7 @@ export function AllocationProjectHeader({
                             {myHoursInProject.computed > 0 && (
                                 <>
                                     <span className="text-slate-300">·</span>
-                                    <span className="text-emerald-600 font-semibold">{myHoursInProject.computed}h comp</span>
+                                    <span className="text-emerald-600 font-semibold">{t('planner.allocation.projectHeader.compHours', '{{hours}}h comp', { hours: myHoursInProject.computed })}</span>
                                 </>
                             )}
                         </div>
@@ -83,7 +85,10 @@ export function AllocationProjectHeader({
                             </div>
                             <div className="flex justify-between items-center mt-1">
                                 <span className="text-[9px] text-slate-500">
-                                    {myHoursInProject.completed}/{taskCount} tareas
+                                    {t('planner.allocation.projectHeader.tasksProgress', '{{completed}}/{{total}} tareas', {
+                                        completed: myHoursInProject.completed,
+                                        total: taskCount,
+                                    })}
                                 </span>
                                 <span className={cn("text-[9px] font-medium", myProgress >= 100 ? "text-emerald-600" : "text-primary")}>
                                     {myProgress}%
@@ -99,27 +104,27 @@ export function AllocationProjectHeader({
 
                     {/* Horas del empleado actual */}
                     <div className="bg-primary/10 rounded p-2 border border-indigo-100">
-                        <div className="text-[10px] font-semibold text-primary uppercase mb-1">Tus horas</div>
+                        <div className="text-[10px] font-semibold text-primary uppercase mb-1">{t('planner.allocation.projectHeader.yourHours', 'Tus horas')}</div>
                         <div className="flex gap-3 text-xs">
-                            <span className="text-blue-600">Plan: <strong>{myHoursInProject.estimated}h</strong></span>
-                            <span className="text-emerald-600">Comp: <strong>{myHoursInProject.computed}h</strong></span>
+                            <span className="text-blue-600">{t('planner.allocation.projectHeader.plan', 'Plan:')} <strong>{myHoursInProject.estimated}h</strong></span>
+                            <span className="text-emerald-600">{t('planner.allocation.projectHeader.comp', 'Comp:')} <strong>{myHoursInProject.computed}h</strong></span>
                         </div>
                     </div>
 
                     {/* Horas globales del cliente */}
                     {budgetMax > 0 && (
                         <div className="text-xs space-y-1 border-t pt-2">
-                            <div className="text-[10px] font-semibold text-slate-500 uppercase mb-1">Total cliente</div>
+                            <div className="text-[10px] font-semibold text-slate-500 uppercase mb-1">{t('planner.allocation.projectHeader.clientTotal', 'Total cliente')}</div>
                             <div className="flex justify-between">
-                                <span className="text-slate-500">Asignadas:</span>
+                                <span className="text-slate-500">{t('planner.allocation.projectHeader.assigned', 'Asignadas:')}</span>
                                 <span className="font-medium">{budgetMin > 0 ? `${budgetMin}-` : ''}{budgetMax}h</span>
                             </div>
                             <div className="flex justify-between">
-                                <span className="text-slate-500">Planificado:</span>
+                                <span className="text-slate-500">{t('planner.allocation.projectHeader.planned', 'Planificado:')}</span>
                                 <span className="text-blue-600">{totalPlanned.toFixed(1)}h</span>
                             </div>
                             <div className="flex justify-between">
-                                <span className="text-slate-500">Computado (todos):</span>
+                                <span className="text-slate-500">{t('planner.allocation.projectHeader.computed', 'Computado (todos):')}</span>
                                 <span className={cn("font-bold", status === 'overload' ? 'text-red-600' : 'text-emerald-600')}>{totalComputed.toFixed(1)}h</span>
                             </div>
 
@@ -129,8 +134,8 @@ export function AllocationProjectHeader({
                                     <div className={cn("h-full", config.color)} style={{ width: `${Math.min(percentage, 100)}%` }} />
                                 </div>
                                 <div className="flex justify-between items-center mt-0.5">
-                                    <span className="text-[9px] text-slate-400">{Math.round(percentage)}% usado</span>
-                                    {exceededBy > 0 && <span className="text-[9px] font-bold text-red-600">+{exceededBy.toFixed(1)}h exceso</span>}
+                                    <span className="text-[9px] text-slate-400">{t('planner.allocation.projectHeader.usedPct', '{{percent}}% usado', { percent: Math.round(percentage) })}</span>
+                                    {exceededBy > 0 && <span className="text-[9px] font-bold text-red-600">{t('planner.allocation.projectHeader.excess', '+{{hours}}h exceso', { hours: exceededBy.toFixed(1) })}</span>}
                                 </div>
                             </div>
                         </div>
@@ -139,7 +144,7 @@ export function AllocationProjectHeader({
                     {breakdown.length > 1 && (
                         <div className="border-t pt-2 mt-2">
                             <div className="flex items-center gap-1 text-[10px] font-semibold text-slate-500 uppercase mb-1">
-                                <Users className="w-3 h-3" /> Equipo
+                                <Users className="w-3 h-3" /> {t('planner.allocation.projectHeader.team', 'Equipo')}
                             </div>
                             <div className="space-y-1">
                                 {breakdown.map(({ employeeId: empId, employeeName, computed, planned }) => {
@@ -147,11 +152,11 @@ export function AllocationProjectHeader({
                                     return (
                                         <div key={empId} className={cn("text-xs px-1.5 py-1 rounded", isCurrentEmployee ? "bg-primary/10" : "")}>
                                             <div className={cn("font-medium", isCurrentEmployee ? "text-indigo-700" : "text-slate-600")}>
-                                                {employeeName} {isCurrentEmployee && "(tú)"}
+                                                {employeeName} {isCurrentEmployee && t('planner.allocation.projectHeader.you', '(tú)')}
                                             </div>
                                             <div className="flex gap-3 text-[10px] mt-0.5">
-                                                <span className="text-blue-600">Plan: {planned.toFixed(1)}h</span>
-                                                <span className="text-emerald-600">Comp: {computed.toFixed(1)}h</span>
+                                                <span className="text-blue-600">{t('planner.allocation.projectHeader.plan', 'Plan:')} {planned.toFixed(1)}h</span>
+                                                <span className="text-emerald-600">{t('planner.allocation.projectHeader.comp', 'Comp:')} {computed.toFixed(1)}h</span>
                                             </div>
                                         </div>
                                     );
@@ -162,21 +167,21 @@ export function AllocationProjectHeader({
 
                     {status === 'overload' && (
                         <div className="bg-red-50 text-red-700 text-[10px] p-2 rounded border border-red-200 mt-2">
-                            ⚠️ Se han excedido las horas contratadas máximas. Revisar horas computadas.
+                            {t('planner.allocation.projectHeader.overloadWarning', 'Se han excedido las horas contratadas máximas. Revisar horas computadas.')}
                         </div>
                     )}
                     {status === 'warning' && (
                         <div className="bg-amber-50 text-amber-700 text-[10px] p-2 rounded border border-amber-200 mt-2">
                             {projection > budgetMax ? (
-                                <span>⚠️ Cuidado: La proyección total ({projection.toFixed(1)}h) ya supera el límite de {budgetMax}h.</span>
+                                <span>⚠️ {t('planner.allocation.projectHeader.projectionOverLimit', 'Cuidado: La proyección total ({{projection}}h) ya supera el límite de {{max}}h.', { projection: projection.toFixed(1), max: budgetMax })}</span>
                             ) : (
-                                <span>⚡ Cerca del límite. Quedan {(budgetMax - totalComputed).toFixed(1)}h disponibles.</span>
+                                <span>⚡ {t('planner.allocation.projectHeader.nearLimit', 'Cerca del límite. Quedan {{hours}}h disponibles.', { hours: (budgetMax - totalComputed).toFixed(1) })}</span>
                             )}
                         </div>
                     )}
                     {projection > budgetMax && status !== 'overload' && status !== 'warning' && (
                         <div className="bg-orange-50 text-orange-700 text-[10px] p-2 rounded border border-orange-200 mt-2">
-                            📊 La proyección ({projection.toFixed(1)}h) supera las horas contratadas.
+                            📊 {t('planner.allocation.projectHeader.projectionOverBudget', 'La proyección ({{projection}}h) supera las horas contratadas.', { projection: projection.toFixed(1) })}
                         </div>
                     )}
                 </div>

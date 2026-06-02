@@ -1,7 +1,8 @@
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { useTranslation } from 'react-i18next';
+import { useDateLocale } from '@/hooks/useDateLocale';
 
 interface WeekNavigationProps {
   currentWeekIndex: number;
@@ -22,7 +23,9 @@ export function WeekNavigation({
   onNextWeek,
   onToggleView,
 }: WeekNavigationProps) {
-  const monthName = format(viewDate, 'MMMM', { locale: es });
+  const { t } = useTranslation('app');
+  const dateLocale = useDateLocale();
+  const monthName = format(viewDate, 'MMMM', { locale: dateLocale });
   const monthLabel = `${monthName.charAt(0).toUpperCase() + monthName.slice(1)} - ${format(viewDate, 'yyyy')}`;
 
   return (
@@ -32,7 +35,10 @@ export function WeekNavigation({
         <span className="text-sm font-medium text-slate-700">{monthLabel}</span>
         {!showAllWeeks && (
           <span className="text-xs text-slate-500">
-            (Semana {currentWeekIndex + 1} de {totalWeeks})
+            ({t('planner.weekNavigation.weekOf', 'Semana {{current}} de {{total}}', {
+              current: currentWeekIndex + 1,
+              total: totalWeeks,
+            })})
           </span>
         )}
       </div>
@@ -66,7 +72,9 @@ export function WeekNavigation({
           onClick={onToggleView}
           className="text-xs"
         >
-          {showAllWeeks ? 'Ver semana actual' : 'Ver todas las semanas'}
+          {showAllWeeks
+            ? t('planner.weekNavigation.viewCurrentWeek', 'Ver semana actual')
+            : t('planner.weekNavigation.viewAllWeeks', 'Ver todas las semanas')}
         </Button>
       </div>
     </div>

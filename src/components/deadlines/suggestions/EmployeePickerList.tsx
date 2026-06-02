@@ -4,6 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Search, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 import type { EmployeeOption } from '@/components/deadlines/suggestions/types';
 
 export function EmployeePickerList({
@@ -22,11 +23,10 @@ export function EmployeePickerList({
   selectedId: string | null;
   onSelect: (id: string) => void;
   emptyMessage?: string;
-  /** Lista más densa para equipos grandes (paso 1 del asistente). */
   compact?: boolean;
-  /** Ocupa el alto disponible del paso; solo la lista hace scroll (pie del wizard fijo). */
   fillHeight?: boolean;
 }) {
+  const { t } = useTranslation('app');
   const [search, setSearch] = useState('');
 
   const filtered = search.trim()
@@ -42,14 +42,16 @@ export function EmployeePickerList({
       <div className="relative">
         <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
         <Input
-          placeholder="Buscar por nombre..."
+          placeholder={t('deadlines.suggestions.searchByName', 'Buscar por nombre...')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className={cn('pl-8', compact ? 'h-9 text-sm' : 'pl-9 h-10')}
         />
       </div>
       {filtered.length === 0 ? (
-        <p className="text-sm text-slate-500 py-6 text-center">{emptyMessage ?? 'No hay personas disponibles.'}</p>
+        <p className="text-sm text-slate-500 py-6 text-center">
+          {emptyMessage ?? t('deadlines.suggestions.noPeopleAvailable', 'No hay personas disponibles.')}
+        </p>
       ) : (
         <div
           className={cn(
@@ -132,7 +134,9 @@ export function EmployeePickerList({
         </div>
       )}
       {filtered.length > 0 && (
-        <p className="text-[11px] text-slate-400 text-right">{filtered.length} en la lista</p>
+        <p className="text-[11px] text-slate-400 text-right">
+          {t('deadlines.suggestions.peopleInList', '{{count}} en la lista', { count: filtered.length })}
+        </p>
       )}
     </div>
   );

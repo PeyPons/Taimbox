@@ -126,7 +126,7 @@ export function DeadlinesProjectList({
   if (clientEntries.length === 0) {
     return (
       <div className="text-center text-slate-500 py-8 bg-white rounded-xl border">
-        No hay proyectos para mostrar
+        {t('deadlines.projectList.empty', 'No hay proyectos para mostrar')}
       </div>
     );
   }
@@ -136,7 +136,7 @@ export function DeadlinesProjectList({
       {clientEntries.map(([clientId, clientProjects]) => {
         const isKitDigitalGroup = clientId === 'kit-digital';
         const client = isKitDigitalGroup ? null : clients.find((c) => c.id === clientId);
-        const clientName = isKitDigitalGroup ? 'Kit Digital' : (client?.name || 'Sin cliente');
+        const clientName = isKitDigitalGroup ? 'Kit Digital' : (client?.name || t('deadlines.projectList.noClient', 'Sin cliente'));
         const clientColor = isKitDigitalGroup ? '#10b981' : (client?.color || '#6b7280');
         const isExpanded = expandedClients.has(clientId);
 
@@ -157,7 +157,9 @@ export function DeadlinesProjectList({
                 style={{ backgroundColor: clientColor }}
               />
               <span className="font-bold text-slate-800">{clientName}</span>
-              <span className="text-sm text-slate-400">({clientProjects.length} proyectos)</span>
+              <span className="text-sm text-slate-400">
+                ({t('deadlines.projectList.projectsCount', '{{count}} proyectos', { count: clientProjects.length })})
+              </span>
             </button>
 
             {isExpanded && (
@@ -243,10 +245,10 @@ export function DeadlinesProjectList({
                             title={monthRangeHint}
                           >
                             {effMin > 0 && (
-                              <span className="text-orange-500 mr-1">mín {effMin}h ·</span>
+                              <span className="text-orange-500 mr-1">{t('deadlines.projectList.minHours', 'mín {{hours}}h ·', { hours: effMin })}</span>
                             )}
                             <span>
-                              máx {effMax}h
+                              {t('deadlines.projectList.maxHours', 'máx {{hours}}h', { hours: effMax })}
                               {adjDelta != null && (
                                 <span
                                   className={cn(
@@ -278,7 +280,7 @@ export function DeadlinesProjectList({
                               />
                             ))}
                           {!isEditing && totalAssigned === 0 && (
-                            <span className="text-xs text-slate-400 italic">Clic para asignar</span>
+                            <span className="text-xs text-slate-400 italic">{t('deadlines.projectList.clickToAssign', 'Clic para asignar')}</span>
                           )}
                         </div>
 
@@ -310,7 +312,7 @@ export function DeadlinesProjectList({
                         >
                           {isLockAcquiring && (
                             <div className="mb-2 text-xs text-slate-500 animate-pulse">
-                              Verificando bloqueo de edición...
+                              {t('deadlines.projectList.checkingLock', 'Verificando bloqueo de edición...')}
                             </div>
                           )}
                           <div className={cn(isLockAcquiring && 'pointer-events-none select-none')}>
@@ -329,7 +331,7 @@ export function DeadlinesProjectList({
                           </div>
                           <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-slate-200">
                             <div className="flex items-center gap-1.5">
-                              <span className="text-xs text-slate-500">Ajuste:</span>
+                              <span className="text-xs text-slate-500">{t('deadlines.projectList.adjustment', 'Ajuste:')}</span>
                               <Input
                                 type="number"
                                 step={0.5}
@@ -370,7 +372,7 @@ export function DeadlinesProjectList({
                                 )}
                             </div>
                             <Input
-                              placeholder="Notas..."
+                              placeholder={t('deadlines.projectList.notesPlaceholder', 'Notas...')}
                               value={inlineFormData.notes}
                               onChange={(e) =>
                                 onFormPatch({ notes: e.target.value }, 800)
@@ -395,16 +397,16 @@ export function DeadlinesProjectList({
                                 className="scale-75"
                                 disabled={isLockAcquiring}
                               />
-                              <span className="text-slate-500">Ocultar</span>
+                              <span className="text-slate-500">{t('deadlines.projectList.hide', 'Ocultar')}</span>
                             </label>
                             <div className="ml-auto flex items-center gap-2 text-xs">
                               {autoSaveStatus === 'saving' && (
-                                <span className="text-slate-400 animate-pulse">Guardando...</span>
+                                <span className="text-slate-400 animate-pulse">{t('deadlines.projectList.saving', 'Guardando...')}</span>
                               )}
                               {autoSaveStatus === 'saved' && (
                                 <span className="text-emerald-600 flex items-center gap-1">
                                   <CheckCircle2 className="h-3 w-3" />
-                                  Guardado
+                                  {t('deadlines.projectList.saved', 'Guardado')}
                                 </span>
                               )}
                               <Button
@@ -416,14 +418,14 @@ export function DeadlinesProjectList({
                                   cancelEditingProject();
                                 }}
                               >
-                                Cerrar
+                                {t('deadlines.projectList.close', 'Cerrar')}
                               </Button>
                               <div className="h-4 w-px bg-slate-200 mx-1" />
                               <Button
                                 size="sm"
                                 variant="ghost"
                                 className="h-7 w-7 p-0 text-slate-400 hover:text-red-600 hover:bg-red-50"
-                                title="Eliminar deadline (Resetear mes)"
+                                title={t('deadlines.projectList.deleteDeadlineTitle', 'Eliminar deadline (Resetear mes)')}
                                 disabled={isLockAcquiring}
                                 onClick={(e) => {
                                   e.stopPropagation();

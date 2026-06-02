@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -22,8 +23,6 @@ import type {
   EmployeeRecommendation,
   SuggestionDonor,
 } from '@/components/deadlines/suggestions/types';
-
-const STEP_LABELS = ['¿A quién?', 'Reglas', 'Proyectos', 'Revisar'];
 
 export function SuggestionGiveFlow({
   step,
@@ -86,6 +85,14 @@ export function SuggestionGiveFlow({
   onInitializeRules: (receiverId: string) => void;
   onOpenProject?: (projectId: string) => void;
 }) {
+  const { t } = useTranslation('app');
+  const stepLabels = [
+    t('deadlines.suggestions.stepWho', '¿A quién?'),
+    t('deadlines.suggestions.stepRules', 'Reglas'),
+    t('deadlines.suggestions.stepProjects', 'Proyectos'),
+    t('deadlines.suggestions.stepReview', 'Revisar'),
+  ] as const;
+
   const receiverOptions = buildReceiverOptions(
     suggestionsByEmployeeAndProject,
     getMonthlyCapacity,
@@ -125,15 +132,15 @@ export function SuggestionGiveFlow({
     const selectedName = receiverOptions.find((o) => o.id === focusEmployeeId)?.name;
     return (
       <SuggestionWizardStepShell
-        header={<SuggestionStepBar step={1} labels={STEP_LABELS} />}
+        header={<SuggestionStepBar step={1} labels={stepLabels} />}
         footer={
           <div className="flex items-center justify-end gap-3">
             {selectedName ? (
               <p className="text-xs text-slate-600 truncate flex-1 min-w-0 mr-auto">
-                Seleccionado: <span className="font-medium text-slate-900">{selectedName}</span>
+                {t('deadlines.suggestions.selected', 'Seleccionado: {{name}}', { name: selectedName })}
               </p>
             ) : (
-              <p className="text-xs text-slate-500 flex-1 min-w-0 mr-auto">Elige una persona de la lista</p>
+              <p className="text-xs text-slate-500 flex-1 min-w-0 mr-auto">{t('deadlines.suggestions.chooseFromList', 'Elige una persona de la lista')}</p>
             )}
             <Button
               className="shrink-0"
@@ -143,19 +150,19 @@ export function SuggestionGiveFlow({
                 setStep(2);
               }}
             >
-              Siguiente: reglas
+              {t('deadlines.suggestions.nextRules', 'Siguiente: reglas')}
             </Button>
           </div>
         }
       >
         <EmployeePickerList
           fillHeight
-          title="¿A quién quieres dar horas?"
-          hint={`Personas con margen bajo el ${maxReceiverLoadPct}% de carga.`}
+          title={t('deadlines.suggestions.giveWhoTitle', '¿A quién quieres dar horas?')}
+          hint={t('deadlines.suggestions.giveWhoHint', 'Personas con margen bajo el {{pct}}% de carga.', { pct: maxReceiverLoadPct })}
           options={receiverOptions}
           selectedId={focusEmployeeId}
           onSelect={(id) => setFocusEmployeeId(id)}
-          emptyMessage="Nadie tiene margen para recibir con los filtros actuales. Prueba subir el % del receptor o restaurar filtros."
+          emptyMessage={t('deadlines.suggestions.giveWhoEmpty', 'Nadie tiene margen para recibir con los filtros actuales. Prueba subir el % del receptor o restaurar filtros.')}
         />
       </SuggestionWizardStepShell>
     );
@@ -164,11 +171,11 @@ export function SuggestionGiveFlow({
   if (step === 2 && focusEmployeeId && focusMeta) {
     return (
       <SuggestionWizardStepShell
-        header={<SuggestionStepBar step={2} labels={STEP_LABELS} />}
+        header={<SuggestionStepBar step={2} labels={stepLabels} />}
         footer={
           <div className="flex justify-between gap-2">
             <Button variant="outline" onClick={() => setStep(1)}>
-              Atrás
+              {t('deadlines.suggestions.back', 'Atrás')}
             </Button>
             <Button
               onClick={() => setStep(3)}
@@ -178,7 +185,7 @@ export function SuggestionGiveFlow({
                 (flowProjectScope === 'manual' && includedProjectIds.size === 0)
               }
             >
-              Ver proyectos
+              {t('deadlines.suggestions.nextProjects', 'Siguiente: proyectos')}
             </Button>
           </div>
         }
@@ -232,14 +239,14 @@ export function SuggestionGiveFlow({
     const pct = employeeLoadPct(group.employeeId, getMonthlyCapacity, getEmployeeAssignedHours);
     return (
       <SuggestionWizardStepShell
-        header={<SuggestionStepBar step={3} labels={STEP_LABELS} />}
+        header={<SuggestionStepBar step={3} labels={stepLabels} />}
         footer={
           <div className="flex justify-between gap-2">
             <Button variant="outline" onClick={() => setStep(2)}>
-              Atrás
+              {t('deadlines.suggestions.back', 'Atrás')}
             </Button>
             <Button onClick={() => setStep(4)} disabled={sortedProjects.length === 0}>
-              Ver resumen
+              {t('deadlines.suggestions.nextReview', 'Siguiente: revisar')}
             </Button>
           </div>
         }
@@ -264,19 +271,15 @@ export function SuggestionGiveFlow({
   if (step === 4 && group) {
     return (
       <SuggestionWizardStepShell
-        header={<SuggestionStepBar step={4} labels={STEP_LABELS} />}
+        header={<SuggestionStepBar step={4} labels={stepLabels} />}
         footer={
           <div className="flex justify-end">
             <Button variant="outline" onClick={() => setStep(3)}>
-              Atrás
+              {t('deadlines.suggestions.back', 'Atrás')}
             </Button>
           </div>
         }
       >
-        <p className="text-sm text-slate-600 mb-3">
-          Revisa el impacto estimado. Abre un proyecto para editar horas en la tabla (no se guarda nada hasta que tú
-          confirmes).
-        </p>
         <GiveFlowSummary
           group={group}
           getMonthlyCapacity={getMonthlyCapacity}
@@ -284,7 +287,7 @@ export function SuggestionGiveFlow({
         />
         {sortedProjects.length > 0 && (
           <div className="space-y-2 mt-4">
-            <p className="text-xs font-medium text-slate-500">Por proyecto</p>
+            <p className="text-xs font-medium text-slate-500">{t('deadlines.suggestions.byProject', 'Por proyecto')}</p>
             <ProjectTransfersList projects={sortedProjects} onOpenProject={onOpenProject} reviewMode />
             {sortedProjects.length > 8 && (
               <Button variant="ghost" size="sm" className="w-full text-xs" onClick={() => setStep(3)}>
@@ -309,6 +312,7 @@ function GiveFlowSummary({
   getMonthlyCapacity: (id: string) => CapacityResult;
   getEmployeeAssignedHours: (id: string) => number;
 }) {
+  const { t } = useTranslation('app');
   let total = 0;
   const byFrom = new Map<string, { name: string; hours: number }>();
   group.projects.forEach((p) =>
@@ -326,9 +330,12 @@ function GiveFlowSummary({
 
   return (
     <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 space-y-3 text-sm">
-      <p className="font-semibold text-slate-800">Resumen para {group.employeeName}</p>
+      <p className="font-semibold text-slate-800">{t('deadlines.suggestions.summaryFor', 'Resumen para {{name}}', { name: group.employeeName })}</p>
       <p className="text-slate-600">
-        Recibiría hasta <span className="font-mono font-bold text-primary">{formatDeadlineHoursForDisplay(total)}h</span>{' '}
+        {t('deadlines.suggestions.wouldReceiveUpTo', 'Recibiría hasta {{hours}}h de {{count}} origen(es).', {
+          hours: formatDeadlineHoursForDisplay(total),
+          count: byFrom.size,
+        })}{' '}
         (carga ~{newPct}%)
       </p>
       <ul className="space-y-1 text-xs text-slate-600 max-h-32 overflow-y-auto">

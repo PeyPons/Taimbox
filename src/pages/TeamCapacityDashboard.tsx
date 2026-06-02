@@ -4,7 +4,7 @@ import { useApp } from '@/contexts/AppContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, CalendarDays, BarChartIcon, Gauge, Link2, ArrowRight } from 'lucide-react';
 import { format, startOfMonth, subMonths, addMonths, parseISO, isSameDay, endOfMonth, differenceInWeeks, isSameMonth } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { useDateLocale } from '@/hooks/useDateLocale';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -23,6 +23,7 @@ const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
 export default function TeamCapacityDashboard() {
     const { t } = useTranslation('app');
+    const dateLocale = useDateLocale();
     const { employees, allocations, absences, teamEvents, projects, isLoading: isGlobalLoading } = useApp();
     const {
         currentMonth,
@@ -72,13 +73,13 @@ export default function TeamCapacityDashboard() {
 
                     blocked.push({
                         blockedTask: task,
-                        blockedTaskName: task.taskName || 'Tarea sin nombre',
-                        blockedEmployee: blockedEmployee?.name || 'Desconocido',
+                        blockedTaskName: task.taskName || t('operationsRadar.unnamedTask'),
+                        blockedEmployee: blockedEmployee?.name || t('operationsRadar.somebody'),
                         blockerTask: blockerTask,
-                        blockerTaskName: blockerTask.taskName || 'Tarea sin nombre',
-                        blockerEmployee: blockerEmployee?.name || 'Desconocido',
+                        blockerTaskName: blockerTask.taskName || t('operationsRadar.unnamedTask'),
+                        blockerEmployee: blockerEmployee?.name || t('operationsRadar.somebody'),
                         weeksSinceBlocked: weeksSince,
-                        projectName: project?.name || 'Proyecto desconocido'
+                        projectName: project?.name || t('operationsRadar.blockingCardProjectLabel')
                     });
                 }
             }
@@ -86,7 +87,7 @@ export default function TeamCapacityDashboard() {
 
         // Ordenar por semanas bloqueadas (más antiguas primero)
         return blocked.sort((a, b) => b.weeksSinceBlocked - a.weeksSinceBlocked);
-    }, [monthAllocations, allocations, employees, projects, currentMonth]);
+    }, [monthAllocations, allocations, employees, projects, currentMonth, t]);
 
     // Mapa de calor: carga semanal por empleado
     const heatmapData = useMemo(() => {
@@ -150,7 +151,7 @@ export default function TeamCapacityDashboard() {
 
                 return {
                     week: weekStr,
-                    weekLabel: `Sem ${index + 1}`,
+                    weekLabel: t('teamCapacityDashboard.heatmap.weekLabel', { n: index + 1 }),
                     hours: hoursPlanned,
                     capacity: availableCapacity,
                     baseCapacity: baseWeeklyCapacity,
@@ -166,7 +167,7 @@ export default function TeamCapacityDashboard() {
                 weeklyLoad
             };
         });
-    }, [employees, allocations, currentMonth, absences, teamEvents]);
+    }, [employees, allocations, currentMonth, absences, teamEvents, t]);
 
     const averageLoad = useMemo(() => {
         if (!heatmapData || heatmapData.length === 0) return 0;
@@ -202,7 +203,7 @@ export default function TeamCapacityDashboard() {
                         &lt;
                     </Button>
                     <Button variant="ghost" onClick={handleToday} className="h-8 px-3 text-sm font-medium text-slate-700 capitalize">
-                        {format(currentMonth, 'MMM yyyy', { locale: es })}
+                        {format(currentMonth, 'MMM yyyy', { locale: dateLocale })}
                     </Button>
                     <Button variant="ghost" size="icon" onClick={handleNextMonth} className="h-8 w-8 text-slate-500">
                         <span className="sr-only">{t('teamCapacityDashboard.controls.nextMonth', 'Mes siguiente')}</span>

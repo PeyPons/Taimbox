@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { format, parseISO } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { useTranslation } from 'react-i18next';
+import { useDateLocale } from '@/hooks/useDateLocale';
 import { CalendarIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -35,11 +36,14 @@ export interface PhaseDatePickerButtonProps {
 export function PhaseDatePickerButton({
   value,
   onChange,
-  placeholder = 'Seleccionar fecha',
+  placeholder,
   disabled,
   className,
   id,
 }: PhaseDatePickerButtonProps) {
+  const { t } = useTranslation('app');
+  const dateLocale = useDateLocale();
+  const resolvedPlaceholder = placeholder ?? t('common.selectDate', 'Seleccionar fecha');
   const [open, setOpen] = useState(false);
   const selected = parseIsoDateSafe(value);
 
@@ -59,7 +63,7 @@ export function PhaseDatePickerButton({
         >
           <CalendarIcon className="mr-2 h-4 w-4 shrink-0 opacity-70" aria-hidden />
           <span className="truncate">
-            {selected ? format(selected, 'd MMM yyyy', { locale: es }) : placeholder}
+            {selected ? format(selected, 'd MMM yyyy', { locale: dateLocale }) : resolvedPlaceholder}
           </span>
         </Button>
       </PopoverTrigger>

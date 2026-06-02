@@ -80,7 +80,7 @@ export function ProjectImpactSummary({
           if (!impact[task.projectId]) {
             const project = projects.find(p => p.id === task.projectId);
             impact[task.projectId] = {
-              name: project?.name || 'Desconocido',
+              name: project?.name || t('planner.projectImpact.unknownProject'),
               adding: 0,
               current: resolveProjectBudgetForPreview(
                 batchPreview,
@@ -131,7 +131,7 @@ export function ProjectImpactSummary({
 
           employeeDeadlines.push({
             employeeId: empId,
-            employeeName: employee?.name || 'Empleado',
+            employeeName: employee?.name || t('planner.projectImpact.employeeFallback'),
             deadlineHours,
             totalEmployeeHours,
             employeeHoursAssigned: round2(employeeHours.planned + employeeHours.computed)
@@ -150,7 +150,7 @@ export function ProjectImpactSummary({
         employeeDeadlines
       };
     });
-  }, [newTasks, projects, getProjectBudgetStatus, monthDeadlines, employeeId, allEmployeeProjectHours, employees, batchPreview]);
+  }, [newTasks, projects, getProjectBudgetStatus, monthDeadlines, employeeId, allEmployeeProjectHours, employees, batchPreview, t]);
 
   // Agrupar horas por semana para verificar capacidad
   const weekImpact = useMemo(() => {
@@ -212,7 +212,7 @@ export function ProjectImpactSummary({
 
         employeeLoads.push({
           employeeId: empId,
-          employeeName: employee?.name || 'Empleado',
+          employeeName: employee?.name || t('planner.projectImpact.employeeFallback'),
           currentHours: currentLoad.hours,
           capacity: currentLoad.capacity,
           newTotal,
@@ -246,7 +246,7 @@ export function ProjectImpactSummary({
         employeeLoads
       };
     }).sort((a, b) => a.weekIndex - b.weekIndex);
-  }, [newTasks, weeks, viewDate, getEmployeeLoadForWeek, employeeId, employees, batchPreview]);
+  }, [newTasks, weeks, viewDate, getEmployeeLoadForWeek, employeeId, employees, batchPreview, t]);
 
   const hasProjectExcesses = projectImpact.some(p => p.exceeds);
   const hasWeekExcesses = weekImpact.some(w => w.exceeds);
@@ -285,7 +285,7 @@ export function ProjectImpactSummary({
     if (variant === 'vertical') {
       return (
         <div className="flex flex-col gap-6 text-slate-400 italic text-xs">
-          <p>Añade tareas para ver el impacto en tu capacidad y en los proyectos.</p>
+          <p>{t('planner.projectImpact.emptyHint')}</p>
         </div>
       );
     }
@@ -297,15 +297,15 @@ export function ProjectImpactSummary({
       <TooltipProvider delayDuration={300}>
       <div className="flex flex-col gap-6 h-full">
         <div>
-          <h3 className="font-semibold text-sm text-slate-700 mb-1">Impacto Previsto</h3>
-          <p className="text-xs text-slate-500">Simulación basada en las tareas introducidas.</p>
+          <h3 className="font-semibold text-sm text-slate-700 mb-1">{t('planner.projectImpact.title')}</h3>
+          <p className="text-xs text-slate-500">{t('planner.projectImpact.subtitle')}</p>
         </div>
 
         {/* Projects Impact */}
         <div className="space-y-3">
-          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">Proyectos</h4>
+          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">{t('planner.projectImpact.projectsSection')}</h4>
           {projectImpact.length === 0 ? (
-            <p className="text-xs text-slate-400 italic">No hay proyectos afectados.</p>
+            <p className="text-xs text-slate-400 italic">{t('planner.projectImpact.noProjectsAffected')}</p>
           ) : (
             <div className="space-y-2">
               {projectImpact.map(p => (
@@ -321,7 +321,7 @@ export function ProjectImpactSummary({
 
                   {/* Presupuesto del proyecto */}
                   <div className="flex justify-between items-center gap-2 mt-2">
-                    <span className="text-slate-400 text-[10px]">Presupuesto</span>
+                    <span className="text-slate-400 text-[10px]">{t('planner.projectImpact.budget')}</span>
                     <div className="flex items-center gap-2 min-w-0 justify-end">
                       {p.current.budgetMax > 0 ? (
                         <span className={cn("font-medium", p.exceeds ? "text-red-600" : "text-emerald-600")}>
@@ -329,7 +329,7 @@ export function ProjectImpactSummary({
                           {p.exceeds && <AlertTriangle className="h-3 w-3 inline ml-1 text-red-500" />}
                         </span>
                       ) : (
-                        <span className="text-slate-400 italic">Sin límite</span>
+                        <span className="text-slate-400 italic">{t('planner.projectImpact.noLimit')}</span>
                       )}
                       {renderBudgetOverrideBadge(p.id)}
                     </div>
@@ -356,11 +356,11 @@ export function ProjectImpactSummary({
                                 isCurrentEmployee ? "text-blue-700" : "text-indigo-700"
                               )}>
                                 {isCurrentEmployee ? (
-                                  'Tu deadline:'
+                                  t('planner.projectImpact.yourDeadline')
                                 ) : (
                                   <>
                                     <SensitiveText kind="employee" id={empDeadline.employeeId}>{empDeadline.employeeName}</SensitiveText>
-                                    {' '}deadline:
+                                    {' '}{t('planner.projectImpact.deadlineSuffix')}
                                   </>
                                 )}
                               </span>
@@ -372,11 +372,17 @@ export function ProjectImpactSummary({
                               )}>
                                 {empDeadline.totalEmployeeHours.toFixed(1)} / {empDeadline.deadlineHours}h
                                 {empDeadline.totalEmployeeHours > empDeadline.deadlineHours && (
-                                  <span className="ml-1">(+{round2(empDeadline.totalEmployeeHours - empDeadline.deadlineHours)}h)</span>
+                                  <span className="ml-1">
+                                    {t('planner.projectImpact.hoursOver', {
+                                      hours: round2(empDeadline.totalEmployeeHours - empDeadline.deadlineHours),
+                                    })}
+                                  </span>
                                 )}
                                 {empDeadline.totalEmployeeHours <= empDeadline.deadlineHours && empDeadline.totalEmployeeHours < empDeadline.deadlineHours && (
                                   <span className={cn("ml-1 font-normal", isCurrentEmployee ? "text-blue-500" : "text-indigo-500")}>
-                                    ({round2(empDeadline.deadlineHours - empDeadline.totalEmployeeHours)}h rest.)
+                                    {t('planner.projectImpact.hoursRemaining', {
+                                      hours: round2(empDeadline.deadlineHours - empDeadline.totalEmployeeHours),
+                                    })}
                                   </span>
                                 )}
                               </span>
@@ -405,14 +411,16 @@ export function ProjectImpactSummary({
 
         {/* Weeks Impact */}
         <div className="space-y-3">
-          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">Tu ocupación semanal</h4>
+          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">{t('planner.projectImpact.weeklyOccupancy')}</h4>
           {weekImpact.length === 0 ? (
-            <p className="text-xs text-slate-400 italic">No hay semanas afectadas.</p>
+            <p className="text-xs text-slate-400 italic">{t('planner.projectImpact.noWeeksAffected')}</p>
           ) : (
             <div className="grid grid-cols-1 gap-2">
               {weekImpact.map(w => {
                 const weekMeta = weeks[w.weekIndex];
-                const weekLabel = weekMeta ? formatPlannerWeekWorkingRangeLabel(weekMeta) : `Semana ${w.weekIndex + 1}`;
+                const weekLabel = weekMeta
+                  ? formatPlannerWeekWorkingRangeLabel(weekMeta)
+                  : t('planner.projectImpact.weekFallback', { number: w.weekIndex + 1 });
                 return (
                   <div key={w.weekDate} className={cn("p-2.5 rounded border text-xs",
                     w.exceeds ? "bg-red-50 border-red-200" : "bg-white border-slate-200"
@@ -421,7 +429,7 @@ export function ProjectImpactSummary({
                     <div className="flex justify-between items-center mb-2">
                       <div className="flex flex-col">
                         <span className="font-semibold text-slate-700">{weekLabel}</span>
-                        <span className="text-[10px] text-slate-400">Capacidad: {w.capacity}h</span>
+                        <span className="text-[10px] text-slate-400">{t('planner.projectImpact.capacity', { hours: w.capacity })}</span>
                       </div>
                       <div className="text-right">
                         <span className={cn("font-bold block", w.exceeds ? "text-red-600" : "text-slate-700")}>
@@ -523,7 +531,9 @@ export function ProjectImpactSummary({
             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
           )}
           <span className={cn("font-medium max-w-[140px] truncate", w.exceeds ? "text-amber-700" : "text-emerald-700")} title={weeks[w.weekIndex] ? formatPlannerWeekWorkingRangeLabel(weeks[w.weekIndex]) : undefined}>
-            {weeks[w.weekIndex] ? formatPlannerWeekWorkingRangeLabel(weeks[w.weekIndex]) : `Sem. ${w.weekIndex + 1}`}
+            {weeks[w.weekIndex]
+              ? formatPlannerWeekWorkingRangeLabel(weeks[w.weekIndex])
+              : t('planner.projectImpact.weekShort', { number: w.weekIndex + 1 })}
           </span>
           <span className={cn("tabular-nums text-[10px]", w.exceeds ? "text-amber-600" : "text-emerald-600")}>
             {w.newTotal}h/{w.capacity}h

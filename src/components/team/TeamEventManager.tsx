@@ -9,11 +9,14 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch'; // ✅ Importar Switch
 import { useApp } from '@/contexts/AppContext';
 import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { useTranslation } from 'react-i18next';
+import { useDateLocale } from '@/hooks/useDateLocale';
 import { CalendarIcon, Plus, Trash2, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function TeamEventManager() {
+  const { t } = useTranslation('app');
+  const dateLocale = useDateLocale();
   const { teamEvents, addTeamEvent, deleteTeamEvent, employees } = useApp();
   
   const [newEventName, setNewEventName] = useState('');
@@ -33,7 +36,7 @@ export function TeamEventManager() {
       date: format(newEventDate, 'yyyy-MM-dd'),
       hoursReduction: reduction,
       affectedEmployeeIds: selectedEmployees.length > 0 ? selectedEmployees : employees.map(e => e.id),
-      description: isFullDay ? 'Festivo / Día Completo' : ''
+      description: isFullDay ? t('team.events.defaultDescriptionFullDay') : ''
     });
 
     // Reset
@@ -61,25 +64,25 @@ export function TeamEventManager() {
       <CardHeader>
         <CardTitle className="text-lg flex items-center gap-2">
             <Users className="h-5 w-5 text-primary" />
-            Eventos y festivos
+            {t('team.events.title')}
         </CardTitle>
-        <CardDescription>Añade festivos o eventos de equipo.</CardDescription>
+        <CardDescription>{t('team.events.description')}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         
         <div className="grid gap-4 p-4 border rounded-lg bg-slate-50/50">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                    <Label>Nombre del evento</Label>
-                    <Input placeholder="Ej: Navidad, Puente..." value={newEventName} onChange={(e) => setNewEventName(e.target.value)} />
+                    <Label>{t('team.events.eventNameLabel')}</Label>
+                    <Input placeholder={t('team.events.eventNamePlaceholder')} value={newEventName} onChange={(e) => setNewEventName(e.target.value)} />
                 </div>
                 <div className="space-y-2">
-                    <Label>Fecha</Label>
+                    <Label>{t('team.events.dateLabel')}</Label>
                     <Popover>
                         <PopoverTrigger asChild>
                             <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !newEventDate && "text-muted-foreground")}>
                                 <CalendarIcon className="mr-2 h-4 w-4" />
-                                {newEventDate ? format(newEventDate, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
+                                {newEventDate ? format(newEventDate, 'PPP', { locale: dateLocale }) : <span>{t('common.selectDate', 'Seleccionar fecha')}</span>}
                             </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
@@ -93,24 +96,24 @@ export function TeamEventManager() {
                 {/* ✅ SWITCH DÍA COMPLETO */}
                 <div className="flex items-center space-x-2 border p-2 rounded-md bg-white w-full md:w-auto h-10">
                     <Switch id="full-day" checked={isFullDay} onCheckedChange={setIsFullDay} />
-                    <Label htmlFor="full-day" className="cursor-pointer font-medium text-sm">Día completo (Festivo)</Label>
+                    <Label htmlFor="full-day" className="cursor-pointer font-medium text-sm">{t('team.events.fullDayLabel')}</Label>
                 </div>
 
                 <div className={cn("space-y-2 flex-1 transition-opacity", isFullDay && "opacity-50 pointer-events-none")}>
-                    <Label>Reducción de horas</Label>
+                    <Label>{t('team.events.hoursReductionLabel')}</Label>
                     <Input type="number" value={hoursReduction} onChange={(e) => setHoursReduction(e.target.value)} min={0} />
                 </div>
 
                 <Button onClick={handleAddEvent} disabled={!newEventName || !newEventDate} className="bg-primary hover:bg-primary/90 w-full md:w-auto">
-                    <Plus className="h-4 w-4 mr-2" /> Añadir
+                    <Plus className="h-4 w-4 mr-2" /> {t('team.events.add')}
                 </Button>
             </div>
 
             <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                    <Label className="text-xs text-muted-foreground">Afecta a:</Label>
+                    <Label className="text-xs text-muted-foreground">{t('team.events.affectsLabel')}</Label>
                     <Button variant="link" size="sm" onClick={toggleSelectAll} className="h-auto p-0 text-xs">
-                        {selectedEmployees.length === employees.length ? "Deseleccionar todos" : "Seleccionar todos"}
+                        {selectedEmployees.length === employees.length ? t('team.events.deselectAll') : t('team.events.selectAll')}
                     </Button>
                 </div>
                 <div className="flex flex-wrap gap-2 max-h-24 overflow-y-auto border p-2 rounded bg-white">
@@ -129,8 +132,8 @@ export function TeamEventManager() {
         </div>
 
         <div className="space-y-2">
-            <h4 className="text-sm font-medium">Próximos Eventos</h4>
-            {teamEvents.length === 0 && <p className="text-sm text-muted-foreground italic">No hay eventos programados.</p>}
+            <h4 className="text-sm font-medium">{t('team.events.upcoming')}</h4>
+            {teamEvents.length === 0 && <p className="text-sm text-muted-foreground italic">{t('team.events.noEventsScheduled')}</p>}
             <div className="grid gap-2">
                 {teamEvents.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime()).map(event => (
                     <div key={event.id} className="flex items-center justify-between p-3 border rounded-md bg-white shadow-sm">
@@ -139,9 +142,9 @@ export function TeamEventManager() {
                             <div>
                                 <p className="font-medium text-sm">{event.name}</p>
                                 <p className="text-xs text-muted-foreground flex gap-2">
-                                    <span>{format(new Date(event.date), "PPP", { locale: es })}</span>
+                                    <span>{format(new Date(event.date), 'PPP', { locale: dateLocale })}</span>
                                     <span>•</span>
-                                    <span className="font-semibold text-slate-700">{event.hoursReduction >= 8 ? "Día completo" : `-${event.hoursReduction}h`}</span>
+                                    <span className="font-semibold text-slate-700">{event.hoursReduction >= 8 ? t('team.events.fullDayBadge') : t('team.events.hoursReduction', { hours: event.hoursReduction })}</span>
                                 </p>
                             </div>
                         </div>

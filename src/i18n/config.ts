@@ -57,6 +57,8 @@ void i18n
     interpolation: {
       escapeValue: false,
     },
+    // Plural keys use suffixes _one / _other (JSON v4), not legacy _plural.
+    compatibilityJSON: 'v4',
     detection: {
       order: ["querystring", "localStorage", "navigator"],
       lookupQuerystring: "lng",

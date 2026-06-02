@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, FolderKanban, Search } from 'lucide-react';
@@ -25,6 +26,7 @@ export function ProjectTransfersList({
   onOpenProject?: (projectId: string) => void;
   reviewMode?: boolean;
 }) {
+  const { t } = useTranslation('app');
   const [search, setSearch] = useState('');
   const [showAll, setShowAll] = useState(false);
 
@@ -63,7 +65,9 @@ export function ProjectTransfersList({
                     <SensitiveText kind="project" id={proj.projectId}>{proj.projectName}</SensitiveText>
                   </p>
                   <p className="text-[10px] text-slate-500 font-mono">
-                    hasta {formatDeadlineHoursForDisplay(projectTotalSuggestedHours(proj))}h en total
+                    {t('deadlines.suggestions.upToTotal', 'hasta {{hours}}h en total', {
+                      hours: formatDeadlineHoursForDisplay(projectTotalSuggestedHours(proj)),
+                    })}
                   </p>
                 </div>
               </div>
@@ -74,12 +78,14 @@ export function ProjectTransfersList({
                 <span className="font-medium text-slate-700 truncate flex-1">{t.fromName}</span>
                 <ArrowRight className="h-3 w-3 text-slate-400 shrink-0" />
                 <span className="font-mono text-primary font-semibold shrink-0">
-                  hasta {formatDeadlineHoursForDisplay(t.suggestedHours)}h
+                  {t('deadlines.suggestions.upToHours', 'hasta {{hours}}h', {
+                    hours: formatDeadlineHoursForDisplay(t.suggestedHours),
+                  })}
                 </span>
               </div>
             ))}
             {more > 0 && (
-              <p className="text-[10px] text-slate-400 pl-1">+{more} origen(es) más en este proyecto</p>
+              <p className="text-[10px] text-slate-400 pl-1">{t('deadlines.suggestions.moreOrigins', '+{{count}} origen(es) más en este proyecto', { count: more })}</p>
             )}
           </div>
         );
@@ -90,7 +96,7 @@ export function ProjectTransfersList({
   if (sorted.length === 0) {
     return (
       <p className="text-sm text-slate-600 py-6 text-center">
-        No hay proyectos con transferencias sugeridas para esta persona.
+        {t('deadlines.suggestions.noProjectsTransfers', 'No hay proyectos con transferencias sugeridas para esta persona.')}
       </p>
     );
   }
@@ -103,11 +109,14 @@ export function ProjectTransfersList({
     return (
       <div className="space-y-2">
         <p className="text-xs font-medium text-slate-500">
-          {sorted.length} proyecto(s) · {transferCount} movimiento(s) sugerido(s)
+          {t('deadlines.suggestions.projectsTransfersSummary', '{{projects}} proyecto(s) · {{transfers}} movimiento(s) sugerido(s)', {
+            projects: sorted.length,
+            transfers: transferCount,
+          })}
         </p>
         {projectCards}
         {hiddenCount > 0 && (
-          <p className="text-[11px] text-slate-400 text-center">+{hiddenCount} proyecto(s) más en el paso Proyectos</p>
+          <p className="text-[11px] text-slate-400 text-center">{t('deadlines.suggestions.moreProjectsStep', '+{{count}} proyecto(s) más en el paso Proyectos', { count: hiddenCount })}</p>
         )}
       </div>
     );
@@ -117,14 +126,14 @@ export function ProjectTransfersList({
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-2 text-xs text-slate-500">
         <span>
-          {sorted.length} proyecto(s) con sugerencias
-          {search.trim() ? ` · ${filtered.length} coincidencias` : ''}
+          {t('deadlines.suggestions.projectsWithSuggestions', '{{count}} proyecto(s) con sugerencias', { count: sorted.length })}
+          {search.trim() ? ` · ${t('deadlines.suggestions.matches', '{{count}} coincidencias', { count: filtered.length })}` : ''}
         </span>
       </div>
       <div className="relative">
         <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
         <Input
-          placeholder="Buscar proyecto..."
+          placeholder={t('deadlines.suggestions.searchProject', 'Buscar proyecto...')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="pl-9 h-9 text-sm"
@@ -133,12 +142,12 @@ export function ProjectTransfersList({
       {projectCards}
       {!showAll && hiddenCount > 0 && (
         <Button variant="outline" size="sm" className="w-full text-xs" onClick={() => setShowAll(true)}>
-          Ver {hiddenCount} proyecto(s) más
+          {t('deadlines.suggestions.showMoreProjects', 'Ver {{count}} proyecto(s) más', { count: hiddenCount })}
         </Button>
       )}
       {showAll && filtered.length > DEFAULT_VISIBLE && (
         <Button variant="ghost" size="sm" className="w-full text-xs" onClick={() => setShowAll(false)}>
-          Mostrar menos
+          {t('deadlines.suggestions.showLess', 'Mostrar menos')}
         </Button>
       )}
     </div>

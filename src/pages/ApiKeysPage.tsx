@@ -37,6 +37,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Link } from 'react-router-dom';
+import { AppTrans, useAppTranslation } from '@/hooks/useAppTranslation';
 
 interface ApiToken {
   id: string;
@@ -60,14 +61,15 @@ function CopyField({ label, sublabel, value, displayValue, mono = true }: {
   displayValue?: string;
   mono?: boolean;
 }) {
+  const { t } = useAppTranslation();
   const [copied, setCopied] = useState(false);
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(value);
       setCopied(true);
-      toast.success('Copiado');
+      toast.success(t('apiKeys.copySuccess', 'Copied'));
       setTimeout(() => setCopied(false), 2000);
-    } catch { toast.error('Error al copiar'); }
+    } catch { toast.error(t('apiKeys.copyError', 'Error')); }
   };
 
   return (
@@ -89,6 +91,7 @@ function CopyField({ label, sublabel, value, displayValue, mono = true }: {
 }
 
 export default function ApiKeysPage() {
+  const { t, i18n } = useAppTranslation();
   const { currentAgency } = useAgency();
   const [tokens, setTokens] = useState<ApiToken[]>([]);
   const [loading, setLoading] = useState(true);
@@ -120,7 +123,7 @@ export default function ApiKeysPage() {
       setTokens(data || []);
     } catch (err) {
       console.error('Error cargando tokens:', err);
-      toast.error('Error al cargar los tokens API');
+      toast.error(t('apiKeys.toastLoadError', 'Error loading API tokens'));
     } finally {
       setLoading(false);
     }
@@ -161,10 +164,10 @@ export default function ApiKeysPage() {
       setCopiedBearer(false);
 
       await fetchTokens();
-      toast.success(`Token "${data.name}" creado correctamente`);
+      toast.success(t('apiKeys.toastCreateSuccess', 'Token "{{name}}" created successfully', { name: data.name }));
     } catch (err: unknown) {
       console.error('Error creando token:', err);
-      toast.error(err instanceof Error ? err.message : 'Error al crear el token');
+      toast.error(err instanceof Error ? err.message : t('apiKeys.toastCreateError', 'Error creating token'));
     } finally {
       setCreating(false);
     }
@@ -179,11 +182,11 @@ export default function ApiKeysPage() {
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       await fetchTokens();
-      toast.success(`Token "${token.name}" revocado`);
+      toast.success(t('apiKeys.toastRevokeSuccess', 'Token "{{name}}" revoked', { name: token.name }));
       setTokenToRevoke(null);
     } catch (err: unknown) {
       console.error('Error revocando token:', err);
-      toast.error(err instanceof Error ? err.message : 'Error al revocar el token');
+      toast.error(err instanceof Error ? err.message : t('apiKeys.toastRevokeError', 'Error revoking token'));
     } finally {
       setRevoking(null);
     }
@@ -194,22 +197,22 @@ export default function ApiKeysPage() {
     try {
       await navigator.clipboard.writeText(generatedToken);
       setCopiedBearer(true);
-      toast.success('Bearer Token copiado');
+      toast.success(t('apiKeys.toastBearerCopied', 'Bearer token copied'));
       setTimeout(() => setCopiedBearer(false), 2000);
-    } catch { toast.error('Error al copiar'); }
+    } catch { toast.error(t('apiKeys.copyError', 'Error')); }
   };
 
   const formatDate = (date: string | null) => {
     if (!date) return '—';
-    return new Date(date).toLocaleDateString('es-ES', {
+    return new Date(date).toLocaleDateString(i18n.language.startsWith('en') ? 'en-GB' : 'es-ES', {
       day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
     });
   };
 
   const getTokenStatus = (token: ApiToken): { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' } => {
-    if (!token.is_active) return { label: 'Revocado', variant: 'destructive' };
-    if (token.expires_at && new Date(token.expires_at) < new Date()) return { label: 'Expirado', variant: 'secondary' };
-    return { label: 'Activo', variant: 'default' };
+    if (!token.is_active) return { label: t('apiKeys.tokenStatusRevoked', 'Revoked'), variant: 'destructive' as const };
+    if (token.expires_at && new Date(token.expires_at) < new Date()) return { label: t('apiKeys.tokenStatusExpired', 'Expired'), variant: 'secondary' as const };
+    return { label: t('apiKeys.tokenStatusActive', 'Active'), variant: 'default' as const };
   };
 
   const activeTokens = tokens.filter(t => t.is_active && (!t.expires_at || new Date(t.expires_at) >= new Date()));
@@ -222,23 +225,23 @@ export default function ApiKeysPage() {
         <div>
           <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
             <Key className="h-6 w-6 text-primary" />
-            API & Integraciones
+            {t('apiKeys.pageHeading', 'API & Integrations')}
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            Gestiona tokens de acceso para conectar sistemas externos con tu agencia.
+            {t('apiKeys.pageSubtitle', 'Manage access tokens to connect external systems with your agency.')}
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" asChild>
             <Link to="/api-docs">
               <BookOpen className="h-4 w-4 mr-2" />
-              Docs API
+              {t('apiKeys.docsApi', 'API docs')}
               <ExternalLink className="h-3 w-3 ml-1" />
             </Link>
           </Button>
           <Button onClick={() => setShowCreateDialog(true)} size="sm">
             <Plus className="h-4 w-4 mr-2" />
-            Crear token
+            {t('apiKeys.createToken', 'Create token')}
           </Button>
         </div>
       </div>
@@ -248,35 +251,35 @@ export default function ApiKeysPage() {
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <Shield className="h-4 w-4 text-primary" />
-            Datos de conexión para tu integrador
+            {t('apiKeys.connectionCardTitle', 'Connection details for your integrator')}
           </CardTitle>
           <CardDescription>
-            Comparte estos valores con quien necesite conectarse a la API. El Bearer Token se genera en la sección de abajo. El ID de agencia solo hace falta para inserciones (crear empleados, clientes, proyectos).
+            {t('apiKeys.connectionCardDesc', 'Share these values with whoever needs API access. The Bearer token is generated below. Agency ID is only needed for inserts (employees, clients, projects).')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <CopyField
-            label="URL base"
+            label={t('apiKeys.baseUrl', 'Base URL')}
             value={`${API_BASE}/`}
           />
           <CopyField
-            label="Header apikey"
-            sublabel="(clave pública de Supabase, igual para todos)"
+            label={t('apiKeys.apikeyHeader', 'apikey header')}
+            sublabel={t('apiKeys.apikeySublabel', '(public Supabase key, same for everyone)')}
             value={ANON_KEY}
-            displayValue={ANON_KEY ? `${ANON_KEY.slice(0, 30)}...${ANON_KEY.slice(-8)}` : 'No configurada'}
+            displayValue={ANON_KEY ? `${ANON_KEY.slice(0, 30)}...${ANON_KEY.slice(-8)}` : t('apiKeys.notConfigured', 'Not configured')}
           />
           <div>
             <div className="flex items-baseline gap-2 mb-1.5">
-              <Label className="text-xs font-semibold text-slate-700">Header Authorization</Label>
-              <span className="text-[11px] text-slate-400">(identifica a tu agencia y filtra los datos)</span>
+              <Label className="text-xs font-semibold text-slate-700">{t('apiKeys.authHeader', 'Authorization header')}</Label>
+              <span className="text-[11px] text-slate-400">{t('apiKeys.authSublabel', '(identifies your agency and filters data)')}</span>
             </div>
             <div className="flex-1 bg-slate-50 border border-dashed rounded-md px-3 py-2.5 text-sm text-slate-500 italic">
-              Bearer &lt;token JWT&gt; — genera uno en la sección de abajo
+              {t('apiKeys.bearerPlaceholder')}
             </div>
           </div>
           <CopyField
-            label="ID de agencia"
-            sublabel="(solo para inserciones: empleados, clientes, proyectos…; en lecturas no hace falta)"
+            label={t('apiKeys.agencyId', 'Agency ID')}
+            sublabel={t('apiKeys.agencyIdSublabel', '(inserts only: employees, clients, projects…; not needed for reads)')}
             value={currentAgency?.id ?? ''}
             displayValue={currentAgency?.id ? `${currentAgency.id.slice(0, 8)}...${currentAgency.id.slice(-4)}` : '—'}
           />
@@ -289,13 +292,13 @@ export default function ApiKeysPage() {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="text-lg flex items-center gap-2">
-                Tokens API
+                {t('apiKeys.tokensTitle', 'API tokens')}
                 {activeTokens.length > 0 && (
-                  <Badge variant="secondary">{activeTokens.length} activo{activeTokens.length !== 1 ? 's' : ''}</Badge>
+                  <Badge variant="secondary">{t('apiKeys.activeCount', '{{count}} active', { count: activeTokens.length, defaultValue: activeTokens.length === 1 ? '{{count}} active' : '{{count}} active' })}</Badge>
                 )}
               </CardTitle>
               <CardDescription>
-                Cada token es un JWT firmado que da acceso a los datos de tu agencia.
+                {t('apiKeys.tokensDesc', 'Each token is a signed JWT with access to your agency data.')}
               </CardDescription>
             </div>
           </div>
@@ -308,11 +311,11 @@ export default function ApiKeysPage() {
           ) : activeTokens.length === 0 ? (
             <div className="text-center py-8 text-slate-500">
               <Key className="h-10 w-10 mx-auto mb-3 text-slate-300" />
-              <p className="font-medium">No hay tokens activos</p>
-              <p className="text-sm mt-1">Crea un token para que sistemas externos puedan acceder a la API.</p>
+              <p className="font-medium">{t('apiKeys.noActiveTitle', 'No active tokens')}</p>
+              <p className="text-sm mt-1">{t('apiKeys.noActiveDesc', 'Create a token so external systems can access the API.')}</p>
               <Button variant="outline" size="sm" className="mt-4" onClick={() => setShowCreateDialog(true)}>
                 <Plus className="h-4 w-4 mr-2" />
-                Crear primer token
+                {t('apiKeys.createFirst', 'Create first token')}
               </Button>
             </div>
           ) : (
@@ -326,7 +329,7 @@ export default function ApiKeysPage() {
                         <span className="font-medium text-slate-900">{token.name}</span>
                         <Badge variant={status.variant}>{status.label}</Badge>
                         <Badge variant="outline" className="text-xs">
-                          {token.permissions === 'readonly' ? 'Solo lectura' : 'Lectura/Escritura'}
+                          {token.permissions === 'readonly' ? t('apiKeys.readonly') : t('apiKeys.readwrite')}
                         </Badge>
                       </div>
                       <div className="flex items-center gap-4 text-xs text-slate-500 flex-wrap">
@@ -337,10 +340,10 @@ export default function ApiKeysPage() {
                         {token.expires_at ? (
                           <span className="flex items-center gap-1">
                             <AlertTriangle className="h-3 w-3" />
-                            Expira: {formatDate(token.expires_at)}
+                            {t('apiKeys.expires', { date: formatDate(token.expires_at) })}
                           </span>
                         ) : (
-                          <span className="text-slate-400">Sin expiración</span>
+                          <span className="text-slate-400">{t('apiKeys.noExpiration')}</span>
                         )}
                       </div>
                     </div>
@@ -351,7 +354,7 @@ export default function ApiKeysPage() {
                       disabled={revoking === token.id}
                     >
                       {revoking === token.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                      <span className="ml-2 hidden sm:inline">Revocar</span>
+                      <span className="ml-2 hidden sm:inline">{t('apiKeys.revoke', 'Revoke')}</span>
                     </Button>
                   </div>
                 );
@@ -366,7 +369,7 @@ export default function ApiKeysPage() {
         <Card className="border-slate-200">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm text-slate-500 flex items-center gap-2">
-              Tokens inactivos
+              {t('apiKeys.inactiveTitle', 'Inactive tokens')}
               <Badge variant="secondary">{inactiveTokens.length}</Badge>
             </CardTitle>
           </CardHeader>
@@ -381,10 +384,10 @@ export default function ApiKeysPage() {
                         <span className="text-sm text-slate-600">{token.name}</span>
                         <Badge variant={status.variant}>{status.label}</Badge>
                         <Badge variant="outline" className="text-xs text-slate-400">
-                          {token.permissions === 'readonly' ? 'Solo lectura' : 'Lectura/Escritura'}
+                          {token.permissions === 'readonly' ? t('apiKeys.readonly') : t('apiKeys.readwrite')}
                         </Badge>
                       </div>
-                      <p className="text-xs text-slate-400 mt-0.5">Creado: {formatDate(token.created_at)}</p>
+                      <p className="text-xs text-slate-400 mt-0.5">{t('apiKeys.created', 'Created: {{date}}', { date: formatDate(token.created_at) })}</p>
                     </div>
                   </div>
                 );
@@ -399,15 +402,15 @@ export default function ApiKeysPage() {
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <Terminal className="h-4 w-4" />
-            Guía rápida
+            {t('apiKeys.quickGuideTitle', 'Quick guide')}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-2">
             {[
-              { step: '1', title: 'Crea un token arriba', desc: 'Asígnale un nombre descriptivo (ej: "CRM", "BI Dashboard"). Copia el JWT.' },
-              { step: '2', title: 'Configura los 3 headers', desc: 'En Postman u otra herramienta, ve a la pestaña Headers (no Params) y añade: apikey, Authorization y Content-Type.' },
-              { step: '3', title: 'Haz peticiones', desc: 'Los datos se filtran automáticamente por tu agencia gracias a RLS. No necesitas enviar agency_id.' },
+              { step: '1', title: t('apiKeys.quickGuide.step1Title', 'Create a token above'), desc: t('apiKeys.quickGuide.step1Desc', 'Give it a descriptive name (e.g. "CRM", "BI Dashboard"). Copy the JWT.') },
+              { step: '2', title: t('apiKeys.quickGuide.step2Title', 'Set up the 3 headers'), desc: t('apiKeys.quickGuide.step2Desc', 'In Postman or another tool, open the Headers tab (not Params) and add: apikey, Authorization and Content-Type.') },
+              { step: '3', title: t('apiKeys.quickGuide.step3Title', 'Make requests'), desc: t('apiKeys.quickGuide.step3Desc', 'Data is filtered automatically by your agency via RLS. You do not need to send agency_id.') },
             ].map(({ step, title, desc }) => (
               <div key={step} className="flex items-start gap-3 p-2.5 rounded-lg bg-slate-50">
                 <span className="flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-primary text-[11px] font-bold shrink-0 mt-0.5">{step}</span>
@@ -420,7 +423,7 @@ export default function ApiKeysPage() {
           </div>
 
           <div className="bg-slate-900 rounded-lg p-4 text-xs font-mono text-slate-300 overflow-x-auto leading-relaxed">
-            <div className="text-slate-500 mb-1"># Ejemplo: obtener empleados</div>
+            <div className="text-slate-500 mb-1">{t('apiKeys.curlExampleComment', '# Example: fetch employees')}</div>
             <div><span className="text-emerald-400">curl</span> -X GET \</div>
             <div className="pl-2 text-cyan-300">'{API_BASE}/employees?select=id,name,role' \</div>
             <div className="pl-2">-H <span className="text-amber-300">'apikey: &lt;ANON_KEY&gt;'</span> \</div>
@@ -431,8 +434,10 @@ export default function ApiKeysPage() {
           <div className="flex items-start gap-2 p-2.5 bg-blue-50 border border-blue-200 rounded-lg">
             <Info className="h-3.5 w-3.5 text-blue-600 mt-0.5 shrink-0" />
             <p className="text-xs text-blue-700">
-              En Postman, los valores van en la pestaña <strong>Headers</strong> (no en Params ni en la URL).
-              Consulta la <Link to="/api-docs" className="text-primary underline">documentación completa</Link> para filtros, paginación y todas las tablas.
+            <AppTrans
+              i18nKey="apiKeys.postmanHint"
+              components={{ strong: <strong />, link: <Link to="/api-docs" className="text-primary underline" /> }}
+            />
             </p>
           </div>
         </CardContent>
@@ -444,50 +449,50 @@ export default function ApiKeysPage() {
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Crear token API</DialogTitle>
+            <DialogTitle>{t('apiKeys.createDialog.title', 'Crear token API')}</DialogTitle>
             <DialogDescription>
-              El token se mostrará una sola vez al crearlo. Guárdalo en un lugar seguro.
+              {t('apiKeys.createDialog.description', 'El token se mostrará una sola vez al crearlo. Guárdalo en un lugar seguro.')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label htmlFor="token-name">Nombre descriptivo</Label>
+              <Label htmlFor="token-name">{t('apiKeys.createDialog.nameLabel', 'Nombre descriptivo')}</Label>
               <Input
                 id="token-name"
-                placeholder="Ej: CRM Sync, Dashboard externo..."
+                placeholder={t('apiKeys.createDialog.namePlaceholder', 'Ej: CRM Sync, Dashboard externo...')}
                 value={newTokenName}
                 onChange={(e) => setNewTokenName(e.target.value)}
                 maxLength={100}
               />
             </div>
             <div className="space-y-2">
-              <Label>Permisos</Label>
+              <Label>{t('apiKeys.permissions', 'Permissions')}</Label>
               <Select value={newTokenPermissions} onValueChange={(v) => setNewTokenPermissions(v as 'readonly' | 'readwrite')}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="readwrite">Lectura y escritura</SelectItem>
-                  <SelectItem value="readonly">Solo lectura</SelectItem>
+                  <SelectItem value="readwrite">{t('apiKeys.readwriteOption', 'Read and write')}</SelectItem>
+                  <SelectItem value="readonly">{t('apiKeys.readonlyOption', 'Read only')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Expiración</Label>
+              <Label>{t('apiKeys.expiration')}</Label>
               <Select value={newTokenExpiration} onValueChange={setNewTokenExpiration}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="never">Sin expiración</SelectItem>
-                  <SelectItem value="30d">30 días</SelectItem>
-                  <SelectItem value="90d">90 días</SelectItem>
-                  <SelectItem value="365d">1 año</SelectItem>
+                  <SelectItem value="never">{t('apiKeys.expirationNever')}</SelectItem>
+                  <SelectItem value="30d">{t('apiKeys.expiration30d')}</SelectItem>
+                  <SelectItem value="90d">{t('apiKeys.expiration90d')}</SelectItem>
+                  <SelectItem value="365d">{t('apiKeys.expiration365d')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>Cancelar</Button>
+            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>{t('apiKeys.createDialog.cancel', 'Cancel')}</Button>
             <Button onClick={handleCreateToken} disabled={creating || !newTokenName.trim()}>
               {creating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Key className="h-4 w-4 mr-2" />}
-              Generar token
+              {t('apiKeys.createDialog.generate', 'Generate token')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -499,10 +504,10 @@ export default function ApiKeysPage() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Check className="h-5 w-5 text-green-600" />
-              Token creado: {generatedTokenName}
+              {t('apiKeys.generatedDialog.title', 'Token created: {{name}}', { name: generatedTokenName })}
             </DialogTitle>
             <DialogDescription>
-              Copia estos datos y compártelos con tu integrador. El Bearer Token solo se muestra ahora.
+              {t('apiKeys.generatedDialog.description', 'Copy these values and share them with your integrator. The Bearer token is shown only now.')}
             </DialogDescription>
           </DialogHeader>
 
@@ -510,7 +515,7 @@ export default function ApiKeysPage() {
             {/* Tabla resumen para copiar */}
             <div className="space-y-2">
               <div className="flex items-center gap-2 p-2.5 rounded-lg bg-slate-50 border">
-                <span className="text-xs font-semibold text-slate-500 w-24 shrink-0">URL base</span>
+                <span className="text-xs font-semibold text-slate-500 w-24 shrink-0">{t('apiKeys.generatedDialog.baseUrl', 'Base URL')}</span>
                 <span className="flex-1 font-mono text-xs text-slate-700 break-all">{API_BASE}/</span>
                 <CopyBtn value={`${API_BASE}/`} />
               </div>
@@ -529,7 +534,7 @@ export default function ApiKeysPage() {
                   </span>
                 </div>
                 <div className="flex gap-0.5 shrink-0">
-                  <button onClick={() => setShowBearerToken(!showBearerToken)} className="p-1 rounded hover:bg-amber-200/50 transition-colors" title={showBearerToken ? 'Ocultar' : 'Mostrar'}>
+                  <button onClick={() => setShowBearerToken(!showBearerToken)} className="p-1 rounded hover:bg-amber-200/50 transition-colors" title={showBearerToken ? t('apiKeys.generatedDialog.hide', 'Hide') : t('apiKeys.generatedDialog.show', 'Show')}>
                     {showBearerToken ? <EyeOff className="h-3.5 w-3.5 text-slate-500" /> : <Eye className="h-3.5 w-3.5 text-slate-500" />}
                   </button>
                   <CopyBtn value={`Bearer ${generatedToken}`} />
@@ -542,19 +547,21 @@ export default function ApiKeysPage() {
             <div className="flex items-start gap-2 p-2.5 bg-amber-50 border border-amber-200 rounded-lg">
               <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
               <p className="text-xs text-amber-800">
-                <strong>El Bearer Token no se podrá volver a ver.</strong> Si lo pierdes, revoca este token y crea uno nuevo.
-                No lo compartas en repos públicos.
+                <AppTrans
+                  i18nKey="apiKeys.generatedDialog.bearerWarning"
+                  components={{ strong: <strong /> }}
+                />
               </p>
             </div>
           </div>
 
           <DialogFooter className="gap-2 sm:gap-0">
             <Button variant="outline" onClick={() => { setGeneratedToken(null); setShowBearerToken(false); }}>
-              Cerrar
+              {t('apiKeys.generatedDialog.close')}
             </Button>
             <Button onClick={copyBearerToken}>
               {copiedBearer ? <Check className="h-4 w-4 mr-2" /> : <Copy className="h-4 w-4 mr-2" />}
-              {copiedBearer ? 'Copiado' : 'Copiar Bearer Token'}
+              {copiedBearer ? t('apiKeys.generatedDialog.copied') : t('apiKeys.generatedDialog.copyBearer')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -564,16 +571,15 @@ export default function ApiKeysPage() {
       <AlertDialog open={!!tokenToRevoke} onOpenChange={(open) => { if (!open) setTokenToRevoke(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Revocar token &ldquo;{tokenToRevoke?.name}&rdquo;?</AlertDialogTitle>
+            <AlertDialogTitle>{t('apiKeys.revokeDialog.title', { name: tokenToRevoke?.name ?? '' })}</AlertDialogTitle>
             <AlertDialogDescription>
-              Los sistemas que usen este token dejarán de poder autenticarse.
-              Tendrás que crear uno nuevo si lo necesitas.
+              {t('apiKeys.revokeDialog.description')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel>{t('apiKeys.revokeDialog.cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={() => tokenToRevoke && handleRevokeToken(tokenToRevoke)} className="bg-red-600 hover:bg-red-700">
-              Revocar token
+              {t('apiKeys.revokeDialog.confirm')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -583,15 +589,16 @@ export default function ApiKeysPage() {
 }
 
 function CopyBtn({ value }: { value: string }) {
+  const { t } = useAppTranslation();
   const [ok, setOk] = useState(false);
   return (
     <button
       onClick={async () => {
-        try { await navigator.clipboard.writeText(value); setOk(true); toast.success('Copiado'); setTimeout(() => setOk(false), 1500); }
-        catch { toast.error('Error'); }
+        try { await navigator.clipboard.writeText(value); setOk(true); toast.success(t('apiKeys.copySuccess', 'Copied')); setTimeout(() => setOk(false), 1500); }
+        catch { toast.error(t('apiKeys.copyError', 'Error')); }
       }}
       className="p-1 rounded hover:bg-slate-200 transition-colors"
-      title="Copiar"
+      title={t('apiKeys.copy', 'Copy')}
     >
       {ok ? <Check className="h-3.5 w-3.5 text-green-600" /> : <Copy className="h-3.5 w-3.5 text-slate-500" />}
     </button>

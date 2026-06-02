@@ -1,6 +1,7 @@
 import { useCallback, useMemo } from 'react';
 import { format, parseISO, startOfMonth } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { useTranslation } from 'react-i18next';
+import { getDateFnsLocale } from '@/i18n/dateLocale';
 import { toast } from '@/lib/notify';
 import { supabase } from '@/lib/supabase';
 import { useApp } from '@/contexts/AppContext';
@@ -98,6 +99,8 @@ export interface UseWeeklyCloseMutationsResult {
 }
 
 export function useWeeklyCloseMutations(viewDate: Date): UseWeeklyCloseMutationsResult {
+  const { i18n } = useTranslation();
+  const dateLocale = getDateFnsLocale(i18n.language);
   const {
     allocations,
     employees,
@@ -392,7 +395,7 @@ export function useWeeklyCloseMutations(viewDate: Date): UseWeeklyCloseMutations
       if (newEstimate <= 0) {
         return weeklyCloseFail(`"${task.taskName}" necesita horas planificadas > 0`);
       }
-      const destLabel = format(destSlot.weekStart, 'd MMM yyyy', { locale: es });
+      const destLabel = format(destSlot.weekStart, 'd MMM yyyy', { locale: dateLocale });
       const fb =
         comment ||
         `Tarea con rollover: ${actual.toFixed(2)}h registradas, ${newEstimate.toFixed(2)}h planificadas desde ${destLabel}`;

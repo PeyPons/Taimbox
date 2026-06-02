@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { FolderKanban, Search } from 'lucide-react';
@@ -19,9 +20,9 @@ export function DonorDestinationsList({
 }: {
   rows: DonorTransferRow[];
   onOpenProject?: (projectId: string) => void;
-  /** Vista compacta del paso Revisar (sin buscador ni paginación). */
   reviewMode?: boolean;
 }) {
+  const { t } = useTranslation('app');
   const [search, setSearch] = useState('');
   const [showAll, setShowAll] = useState(false);
 
@@ -62,9 +63,7 @@ export function DonorDestinationsList({
     : Math.max(0, filtered.length - DEFAULT_VISIBLE);
 
   const projectCards = (
-    <div
-      className="space-y-3 max-h-[min(50vh,420px)] overflow-y-auto pr-1"
-    >
+    <div className="space-y-3 max-h-[min(50vh,420px)] overflow-y-auto pr-1">
       {visible.map(({ projectId, projectName, rows: projectRows, totalHours }) => {
         const shown = projectRows.slice(0, MAX_RECEIVERS_SHOWN);
         const more = projectRows.length - shown.length;
@@ -78,7 +77,9 @@ export function DonorDestinationsList({
                     <SensitiveText kind="project" id={projectId}>{projectName}</SensitiveText>
                   </p>
                   <p className="text-[10px] text-slate-500 font-mono">
-                    hasta {formatDeadlineHoursForDisplay(totalHours)}h en total
+                    {t('deadlines.suggestions.upToTotal', 'hasta {{hours}}h en total', {
+                      hours: formatDeadlineHoursForDisplay(totalHours),
+                    })}
                   </p>
                 </div>
               </div>
@@ -92,12 +93,16 @@ export function DonorDestinationsList({
                 <span className="text-slate-500 shrink-0">→</span>
                 <span className="font-medium text-slate-700 truncate flex-1">{r.receiverName}</span>
                 <span className="font-mono text-primary font-semibold shrink-0">
-                  hasta {formatDeadlineHoursForDisplay(r.transfer.suggestedHours)}h
+                  {t('deadlines.suggestions.upToHours', 'hasta {{hours}}h', {
+                    hours: formatDeadlineHoursForDisplay(r.transfer.suggestedHours),
+                  })}
                 </span>
               </div>
             ))}
             {more > 0 && (
-              <p className="text-[10px] text-slate-400 pl-1">+{more} destino(s) más en este proyecto</p>
+              <p className="text-[10px] text-slate-400 pl-1">
+                {t('deadlines.suggestions.moreDestinations', '+{{count}} destino(s) más en este proyecto', { count: more })}
+              </p>
             )}
           </div>
         );
@@ -107,7 +112,9 @@ export function DonorDestinationsList({
 
   if (byProject.length === 0) {
     return (
-      <p className="text-sm text-slate-600 py-6 text-center">No hay destinos sugeridos para esta persona.</p>
+      <p className="text-sm text-slate-600 py-6 text-center">
+        {t('deadlines.suggestions.noDestinationsForPerson', 'No hay destinos sugeridos para esta persona.')}
+      </p>
     );
   }
 
@@ -115,11 +122,16 @@ export function DonorDestinationsList({
     return (
       <div className="space-y-2">
         <p className="text-xs font-medium text-slate-500">
-          {byProject.length} proyecto(s) · {rows.length} movimiento(s) sugerido(s)
+          {t('deadlines.suggestions.projectsTransfersSummary', '{{projects}} proyecto(s) · {{transfers}} movimiento(s) sugerido(s)', {
+            projects: byProject.length,
+            transfers: rows.length,
+          })}
         </p>
         {projectCards}
         {hiddenCount > 0 && (
-          <p className="text-[11px] text-slate-400 text-center">+{hiddenCount} proyecto(s) más en el paso Destinos</p>
+          <p className="text-[11px] text-slate-400 text-center">
+            {t('deadlines.suggestions.moreProjectsDestinations', '+{{count}} proyecto(s) más en el paso Destinos', { count: hiddenCount })}
+          </p>
         )}
       </div>
     );
@@ -127,11 +139,13 @@ export function DonorDestinationsList({
 
   return (
     <div className="space-y-3">
-      <p className="text-xs text-slate-500">{byProject.length} proyecto(s) donde puede ceder horas</p>
+      <p className="text-xs text-slate-500">
+        {t('deadlines.suggestions.projectsWhereCanGive', '{{count}} proyecto(s) donde puede ceder horas', { count: byProject.length })}
+      </p>
       <div className="relative">
         <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
         <Input
-          placeholder="Buscar proyecto..."
+          placeholder={t('deadlines.suggestions.searchProject', 'Buscar proyecto...')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="pl-9 h-9 text-sm"
@@ -140,12 +154,12 @@ export function DonorDestinationsList({
       {projectCards}
       {!showAll && hiddenCount > 0 && (
         <Button variant="outline" size="sm" className="w-full text-xs" onClick={() => setShowAll(true)}>
-          Ver {hiddenCount} proyecto(s) más
+          {t('deadlines.suggestions.showMoreProjects', 'Ver {{count}} proyecto(s) más', { count: hiddenCount })}
         </Button>
       )}
       {showAll && filtered.length > DEFAULT_VISIBLE && (
         <Button variant="ghost" size="sm" className="w-full text-xs" onClick={() => setShowAll(false)}>
-          Mostrar menos
+          {t('deadlines.suggestions.showLess', 'Mostrar menos')}
         </Button>
       )}
     </div>

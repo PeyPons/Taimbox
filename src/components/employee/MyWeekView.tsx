@@ -10,8 +10,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { format } from 'date-fns';
-import { isAllocationInEffectiveMonth } from '@/utils/dateUtils';
-import { es } from 'date-fns/locale';
+import { AppTrans, useAppTranslation } from '@/hooks/useAppTranslation';
+import { useDateLocale } from '@/hooks/useDateLocale';
 import {
   Sparkles, Target,
   CheckCircle2, Clock, Filter, Check, ChevronDown, Search
@@ -21,6 +21,7 @@ import { useProjectAliasing } from '@/hooks/useProjectAliasing';
 import { Deadline } from '@/types';
 import { fetchDeadlinesForMonth } from '@/utils/deadlineUtils';
 import { getEffectiveCompletedHours, getPlanningDeltaHours } from '@/utils/hoursTracking';
+import { isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { SensitiveText } from '@/components/privacy/SensitiveText';
 
 interface MyWeekViewProps {
@@ -76,6 +77,8 @@ const PROJECT_BADGE: Record<UtilTone, string> = {
 };
 
 export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyWeekViewProps) {
+  const { t } = useAppTranslation();
+  const dateLocale = useDateLocale();
   const { allocations, projects, clients, employees, getEmployeeMonthlyLoad } = useAppOrDemo();
   const { currentAgency } = useAgency();
   const { formatName: formatProjectName } = useProjectAliasing();
@@ -101,7 +104,7 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
     loadDeadlines();
   }, [monthKey, currentAgency?.id]);
 
-  const monthLabel = format(viewDate, 'MMMM yyyy', { locale: es });
+  const monthLabel = format(viewDate, 'MMMM yyyy', { locale: dateLocale });
   const myEmployee = employees.find(e => e.id === employeeId);
 
   // Allocations del mes para este empleado
@@ -184,8 +187,8 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
 
         groups[alloc.projectId] = {
           projectId: alloc.projectId,
-          projectName: proj?.name || 'Sin proyecto',
-          clientName: cli?.name || 'Interno',
+          projectName: proj?.name || t('employeeDashboard.common.noProject'),
+          clientName: cli?.name || t('employeeDashboard.common.internal'),
           clientId: cli?.id ?? `internal-${alloc.projectId}`,
           clientColor: cli?.color || '#6b7280',
           myEstimated: 0,
@@ -280,7 +283,7 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
         const emp = employees.find(e => e.id === empId);
         return {
           id: empId,
-          name: emp?.name || 'Desconocido',
+          name: emp?.name || t('employeeDashboard.common.unknown'),
           avatarUrl: emp?.avatarUrl,
           hoursPlanned: round2(data.planned),
           hoursComputed: round2(data.computed),
@@ -330,7 +333,7 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
                 {monthLabel}
               </h2>
               <p className="text-sm text-muted-foreground flex items-center gap-1">
-                <Target className="h-3.5 w-3.5" /> Rendimiento por proyecto
+                <Target className="h-3.5 w-3.5" /> {t('employeeDashboard.myWeek.performanceSubtitle')}
               </p>
             </div>
 
@@ -343,7 +346,7 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
                     <span className="text-sm font-bold text-slate-700">~{monthlyStats.capacity}h</span>
                   </div>
                 </TooltipTrigger>
-                <TooltipContent>Tu capacidad disponible este mes</TooltipContent>
+                <TooltipContent>{t('employeeDashboard.myWeek.capacityTooltip')}</TooltipContent>
               </Tooltip>
 
               <Tooltip>
@@ -358,7 +361,12 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
                     </span>
                   </div>
                 </TooltipTrigger>
-                <TooltipContent>{monthlyStats.completedTasks} de {monthlyStats.totalTasks} tareas completadas</TooltipContent>
+                <TooltipContent>
+                  {t('employeeDashboard.myWeek.tasksCompletedTooltip', {
+                    completed: monthlyStats.completedTasks,
+                    total: monthlyStats.totalTasks,
+                  })}
+                </TooltipContent>
               </Tooltip>
             </div>
           </div>
@@ -368,22 +376,26 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
             <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3 sm:p-4 space-y-3">
               <div className="flex items-center gap-2">
                 <Filter className="h-4 w-4 text-slate-400 shrink-0" />
-                <span className="text-xs text-slate-600">Filtros y búsqueda</span>
+                <span className="text-xs text-slate-600">{t('employeeDashboard.common.filtersAndSearch')}</span>
               </div>
               {(projectsSearchQuery.trim() || filterTeammate !== 'all') && (
                 <p className="text-xs text-slate-500">
-                  Mostrando <strong>{filteredProjects.length}</strong> de {projectGroups.length} proyecto{projectGroups.length !== 1 ? 's' : ''}.
+                  <AppTrans
+                    i18nKey="employeeDashboard.common.showingProjectsFiltered"
+                    values={{ visible: filteredProjects.length, total: projectGroups.length }}
+                    components={{ strong: <strong /> }}
+                  />
                 </p>
               )}
               <div className="flex flex-wrap items-center gap-3">
                 <div className="relative min-w-[200px] flex-1 sm:flex-initial sm:min-w-[220px] max-w-full">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                   <Input
-                    placeholder="Buscar por proyecto o cliente..."
+                    placeholder={t('employeeDashboard.common.searchByProjectOrClient')}
                     value={projectsSearchQuery}
                     onChange={(e) => setProjectsSearchQuery(e.target.value)}
                     className="pl-9 h-10 w-full bg-white border-slate-200 shadow-sm"
-                    aria-label="Buscar en mis proyectos"
+                    aria-label={t('employeeDashboard.common.searchInProjectsAria')}
                   />
                 </div>
                 {allTeammates.length > 0 && (
@@ -392,10 +404,10 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
                       <Button variant="outline" className="min-w-[220px] h-10 text-sm justify-between font-normal w-full sm:w-auto">
                         <span className="truncate">
                           {filterTeammate === 'all'
-                            ? 'Todos los compañeros'
+                            ? t('employeeDashboard.common.allTeammates')
                             : (
                                 <SensitiveText kind="employee" id={filterTeammate}>
-                                  {allTeammates.find(e => e?.id === filterTeammate)?.name ?? 'Compañero'}
+                                  {allTeammates.find(e => e?.id === filterTeammate)?.name ?? t('employeeDashboard.common.team')}
                                 </SensitiveText>
                               )}
                         </span>
@@ -404,17 +416,17 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
                     </PopoverTrigger>
                     <PopoverContent className="min-w-[300px] p-0" align="start">
                       <Command>
-                        <CommandInput placeholder="Buscar compañero..." />
+                        <CommandInput placeholder={t('employeeDashboard.common.searchTeammate')} />
                         <CommandList className="max-h-[320px]">
-                          <CommandEmpty>No se encontraron compañeros.</CommandEmpty>
+                          <CommandEmpty>{t('employeeDashboard.common.noTeammatesFound')}</CommandEmpty>
                           <CommandGroup>
                             <CommandItem
-                              value="Todos los compañeros"
+                              value={t('employeeDashboard.common.allTeammates')}
                               className="py-2.5"
                               onSelect={() => { setFilterTeammate('all'); setOpenFilterTeammate(false); }}
                             >
                               <Check className={cn('mr-2 h-4 w-4 shrink-0', filterTeammate === 'all' ? 'opacity-100' : 'opacity-0')} />
-                              Todos los compañeros
+                              {t('employeeDashboard.common.allTeammates')}
                             </CommandItem>
                             {allTeammates.map(emp => emp && (
                               <CommandItem
@@ -447,8 +459,8 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
               <Sparkles className="h-12 w-12 mx-auto mb-4 text-slate-300" />
               <p className="text-muted-foreground">
                 {projectGroups.length === 0
-                  ? 'Sin proyectos asignados este mes.'
-                  : 'No hay proyectos que coincidan con tu búsqueda o filtros.'}
+                  ? t('employeeDashboard.myWeek.noProjectsMonth')
+                  : t('employeeDashboard.myWeek.noProjectsFilter')}
               </p>
             </CardContent>
           </Card>
@@ -479,7 +491,7 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
               const headerMembers: { id: string; name: string; avatarUrl?: string; isMe?: boolean }[] = [
                 {
                   id: employeeId,
-                  name: myEmployee?.name || 'Tú',
+                  name: myEmployee?.name || t('employeeDashboard.common.you'),
                   avatarUrl: myEmployee?.avatarUrl,
                   isMe: true
                 },
@@ -521,16 +533,21 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
                           <TooltipContent side="left" className="max-w-[220px]">
                             {group.projectBudget > 0 ? (
                               <>
-                                <p className="font-semibold mb-1">Consumo vs presupuesto</p>
+                                <p className="font-semibold mb-1">{t('employeeDashboard.myWeek.consumptionTooltipTitle')}</p>
                                 <p className="text-xs text-muted-foreground">
-                                  {group.projectTotalComputedAll}h registradas sobre {group.projectBudget}h de presupuesto del cliente este mes.
+                                  {t('employeeDashboard.myWeek.consumptionTooltipBody', {
+                                    computed: group.projectTotalComputedAll,
+                                    budget: group.projectBudget,
+                                  })}
                                 </p>
                               </>
                             ) : (
                               <>
-                                <p className="font-semibold mb-1">Tu contribución</p>
+                                <p className="font-semibold mb-1">{t('employeeDashboard.myWeek.contributionTooltipTitle')}</p>
                                 <p className="text-xs text-muted-foreground">
-                                  Aportas el {group.myImpactPercentage}% del trabajo computado del proyecto este mes.
+                                  {t('employeeDashboard.myWeek.contributionTooltipBody', {
+                                    percent: group.myImpactPercentage,
+                                  })}
                                 </p>
                               </>
                             )}
@@ -549,13 +566,13 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
                                       m.isMe ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'
                                     )}
                                   >
-                                    {m.isMe ? 'TÚ' : m.name.substring(0, 2).toUpperCase()}
+                                    {m.isMe ? t('employeeDashboard.common.youShort') : m.name.substring(0, 2).toUpperCase()}
                                   </AvatarFallback>
                                 </Avatar>
                               </TooltipTrigger>
                               <TooltipContent>
                                 {m.isMe ? (
-                                  <span className="font-medium">Tú</span>
+                                  <span className="font-medium">{t('employeeDashboard.common.you')}</span>
                                 ) : (
                                   <SensitiveText kind="employee" id={m.id} className="font-medium">
                                     {m.name}
@@ -577,7 +594,7 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
                       <div className="space-y-2 pt-1 border-t border-slate-100">
                         <div className="flex items-center justify-between gap-2 min-w-0">
                           <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide truncate min-w-0">
-                            Consumo del proyecto
+                            {t('employeeDashboard.myWeek.consumptionTitle')}
                           </span>
                           <span className="text-xs font-bold text-slate-800 tabular-nums shrink-0 text-right">
                             {group.projectTotalComputedAll}h / {group.projectBudget}h
@@ -616,18 +633,18 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
                             className="text-[10px] text-center font-medium text-slate-600 leading-snug px-0.5 min-w-0 break-words"
                             title={
                               group.projectTotalAssigned > 0
-                                ? `Plan asignado (mes): ${group.projectTotalAssigned}h`
+                                ? t('employeeDashboard.myWeek.planAssignedMonth', { hours: group.projectTotalAssigned })
                                 : undefined
                             }
                           >
                             {group.projectTotalAssigned > 0
-                              ? `Plan asignado (mes): ${group.projectTotalAssigned}h`
+                              ? t('employeeDashboard.myWeek.planAssignedMonth', { hours: group.projectTotalAssigned })
                               : '—'}
                           </p>
                         </div>
                         {group.hoursMissing > 0 && (
                           <p className="text-[10px] text-amber-700 font-medium leading-snug">
-                            Faltan {group.hoursMissing}h por asignar respecto al objetivo del proyecto.
+                            {t('employeeDashboard.myWeek.hoursMissing', { hours: group.hoursMissing })}
                           </p>
                         )}
                       </div>
@@ -639,10 +656,12 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
                       <div className="space-y-2 min-w-0">
                         <div className="flex items-center justify-between gap-2 min-w-0">
                           <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">
-                            Equipo
+                            {t('employeeDashboard.myWeek.teamSection')}
                           </div>
                           <div className="text-[10px] text-slate-400 truncate">
-                            {preference === 'actual' ? 'Real / Plan' : 'Computado / Plan'}
+                            {preference === 'actual'
+                              ? t('employeeDashboard.myWeek.realOverPlan')
+                              : t('employeeDashboard.myWeek.computedOverPlan')}
                           </div>
                         </div>
                         <div className="space-y-3 min-w-0">
@@ -658,11 +677,11 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
                                   <Avatar className="h-6 w-6 border border-emerald-200 shrink-0">
                                     <AvatarImage src={myEmployee?.avatarUrl} />
                                     <AvatarFallback className="text-[9px] bg-emerald-100 text-emerald-800 font-semibold">
-                                      TÚ
+                                      {t('employeeDashboard.common.youShort')}
                                     </AvatarFallback>
                                   </Avatar>
                                   <span className="text-xs font-medium text-slate-800 truncate min-w-0 flex-1">
-                                    Tú
+                                    {t('employeeDashboard.common.you')}
                                   </span>
                                   <div className="flex items-center gap-1.5 shrink-0 min-w-0">
                                     <span className="text-[11px] font-medium text-slate-600 tabular-nums whitespace-nowrap text-right">
@@ -724,12 +743,12 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
 
                     <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-100 min-w-0">
                       <div className="rounded-lg bg-slate-100/90 px-1.5 sm:px-2 py-2 text-center min-w-0">
-                        <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide truncate">Estimado</p>
+                        <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide truncate">{t('employeeDashboard.hours.estimated')}</p>
                         <p className="text-sm font-bold text-slate-900 tabular-nums mt-0.5 truncate">{group.myEstimated}h</p>
                       </div>
                       <div className="rounded-lg bg-slate-100/90 px-1.5 sm:px-2 py-2 text-center min-w-0">
                         <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide truncate">
-                          {preference === 'actual' ? 'Real' : 'Computado'}
+                          {preference === 'actual' ? t('employeeDashboard.hours.real') : t('employeeDashboard.hours.computedCol')}
                         </p>
                         <p className="text-sm font-bold text-emerald-700 tabular-nums mt-0.5 truncate">
                           {preference === 'actual' ? group.myReal : group.myComputed}h
@@ -751,7 +770,7 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
                             balance < 0 && 'text-red-800'
                           )}
                         >
-                          Balance
+                          {t('employeeDashboard.hours.balance')}
                         </p>
                         {group.myCompletedTasks === 0 ? (
                           <p className="text-xs font-semibold text-slate-500 mt-1">—</p>

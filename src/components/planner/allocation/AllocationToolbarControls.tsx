@@ -4,6 +4,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { Calendar, Check, ChevronDown, LayoutGrid, Plus, Search, SlidersHorizontal, TrendingUp } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 type SortOption = 'budget_desc' | 'budget_asc' | 'my_hours_desc' | 'my_hours_asc' | 'name_asc' | 'name_desc';
 
@@ -38,6 +39,8 @@ export function AllocationToolbarControls({
   onSetSortOption,
   onAddTask,
 }: AllocationToolbarControlsProps) {
+  const { t } = useTranslation('app');
+
   return (
     <div className="flex flex-wrap items-center justify-end gap-1.5 sm:gap-2">
       <Tooltip>
@@ -50,14 +53,16 @@ export function AllocationToolbarControls({
           >
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
             <Input
-              placeholder="Buscar..."
+              placeholder={t('planner.allocationToolbar.searchPlaceholder', 'Buscar...')}
               className={cn('pl-9 h-9 text-xs bg-white/50 focus:bg-white transition-all', !searchTerm && 'cursor-pointer')}
               value={searchTerm}
               onChange={(e) => onSearchTermChange(e.target.value)}
             />
           </div>
         </TooltipTrigger>
-        <TooltipContent side="bottom">Filtra por nombre de tarea o de proyecto</TooltipContent>
+        <TooltipContent side="bottom">
+          {t('planner.allocationToolbar.searchTooltip', 'Filtra por nombre de tarea o de proyecto')}
+        </TooltipContent>
       </Tooltip>
 
       <div className="hidden sm:block h-6 w-px bg-slate-200" />
@@ -72,10 +77,18 @@ export function AllocationToolbarControls({
               onClick={onToggleShowAllWeeks}
             >
               {effectiveShowAllWeeks ? <LayoutGrid className="h-3.5 w-3.5 shrink-0" /> : <Calendar className="h-3.5 w-3.5 shrink-0" />}
-              <span className="text-xs font-medium">{effectiveShowAllWeeks ? 'Mes' : 'Semana'}</span>
+              <span className="text-xs font-medium">
+                {effectiveShowAllWeeks
+                  ? t('planner.allocationToolbar.viewMonth', 'Mes')
+                  : t('planner.allocationToolbar.viewWeek', 'Semana')}
+              </span>
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="bottom">Vista: {effectiveShowAllWeeks ? "mes completo (todas las semanas)" : "semana actual"}</TooltipContent>
+          <TooltipContent side="bottom">
+            {effectiveShowAllWeeks
+              ? t('planner.allocationToolbar.viewMonthTooltip', 'Vista: mes completo (todas las semanas)')
+              : t('planner.allocationToolbar.viewWeekTooltip', 'Vista: semana actual')}
+          </TooltipContent>
         </Tooltip>
 
         <Tooltip>
@@ -90,8 +103,10 @@ export function AllocationToolbarControls({
             </Button>
           </TooltipTrigger>
           <TooltipContent side="bottom" className="max-w-[220px]">
-            <p className="font-medium">Previsión semanal</p>
-            <p className="text-xs text-muted-foreground mt-0.5">Resumen de cierre de semana y tareas pendientes de revisar.</p>
+            <p className="font-medium">{t('planner.allocationToolbar.weeklyForecastTitle', 'Previsión semanal')}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {t('planner.allocationToolbar.weeklyForecastDesc', 'Resumen de cierre de semana y tareas pendientes de revisar.')}
+            </p>
           </TooltipContent>
         </Tooltip>
       </div>
@@ -116,9 +131,11 @@ export function AllocationToolbarControls({
           {effectiveShowAllWeeks && (
             <>
               <div className="p-2">
-                <p className="text-xs font-semibold text-slate-500 mb-2 px-1">VISUALIZACIÓN</p>
+                <p className="text-xs font-semibold text-slate-500 mb-2 px-1">
+                  {t('planner.allocationToolbar.displaySection', 'VISUALIZACIÓN')}
+                </p>
                 <div className="flex items-center justify-between px-2 py-1.5 hover:bg-slate-50 rounded cursor-pointer" onClick={onToggleAutoExpand}>
-                  <span className="text-sm">Proyectos expandidos</span>
+                  <span className="text-sm">{t('planner.allocationToolbar.expandedProjects', 'Proyectos expandidos')}</span>
                   {autoExpand && <Check className="h-3.5 w-3.5 text-indigo-600" />}
                 </div>
               </div>
@@ -127,19 +144,25 @@ export function AllocationToolbarControls({
           )}
           <div className="p-2">
             <p className="text-xs font-semibold text-slate-500 mb-2 px-1">
-              {effectiveShowAllWeeks ? 'ORDENAR POR' : 'ORDENAR PROYECTOS'}
+              {effectiveShowAllWeeks
+                ? t('planner.allocationToolbar.sortSection', 'ORDENAR POR')
+                : t('planner.allocationToolbar.sortProjectsSection', 'ORDENAR PROYECTOS')}
             </p>
             <DropdownMenuItem onClick={() => onSetSortOption('budget_desc')} className="text-xs">
-              {sortOption === 'budget_desc' && <Check className="h-3 w-3 mr-2 text-indigo-600" />} Horas contratadas (Mayor)
+              {sortOption === 'budget_desc' && <Check className="h-3 w-3 mr-2 text-indigo-600" />}
+              {t('planner.allocationSheet.sort.budgetDesc', 'Horas contratadas (Mayor)')}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => onSetSortOption('budget_asc')} className="text-xs">
-              {sortOption === 'budget_asc' && <Check className="h-3 w-3 mr-2 text-indigo-600" />} Horas contratadas (Menor)
+              {sortOption === 'budget_asc' && <Check className="h-3 w-3 mr-2 text-indigo-600" />}
+              {t('planner.allocationSheet.sort.budgetAsc', 'Horas contratadas (Menor)')}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => onSetSortOption('my_hours_desc')} className="text-xs">
-              {sortOption === 'my_hours_desc' && <Check className="h-3 w-3 mr-2 text-indigo-600" />} Mis horas (Mayor)
+              {sortOption === 'my_hours_desc' && <Check className="h-3 w-3 mr-2 text-indigo-600" />}
+              {t('planner.allocationSheet.sort.myHoursDesc', 'Mis horas (Mayor)')}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => onSetSortOption('my_hours_asc')} className="text-xs">
-              {sortOption === 'my_hours_asc' && <Check className="h-3 w-3 mr-2 text-indigo-600" />} Mis horas (Menor)
+              {sortOption === 'my_hours_asc' && <Check className="h-3 w-3 mr-2 text-indigo-600" />}
+              {t('planner.allocationSheet.sort.myHoursAsc', 'Mis horas (Menor)')}
             </DropdownMenuItem>
           </div>
         </DropdownMenuContent>
@@ -158,11 +181,10 @@ export function AllocationToolbarControls({
             data-tour="planner-add-task"
           >
             <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">Añadir tarea</span>
+            <span className="hidden sm:inline">{t('planner.allocationSheet.addTask', 'Añadir tarea')}</span>
           </Button>
         </>
       )}
     </div>
   );
 }
-

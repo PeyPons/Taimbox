@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import { useAppTranslation } from '@/hooks/useAppTranslation';
 import { useApp } from '@/contexts/AppContext';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
@@ -20,7 +21,7 @@ import { Badge } from '@/components/ui/badge';
 import { useProjectFilters } from '@/hooks/useProjectFilters';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format, parseISO, startOfWeek, startOfMonth, addDays, addMonths, isBefore, isSameWeek } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { useDateLocale } from '@/hooks/useDateLocale';
 import { CheckCircle2, AlertCircle, AlertTriangle, Plus, Clock, Trash2, Search } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from '@/lib/notify';
@@ -43,36 +44,16 @@ import {
 import { cn } from '@/lib/utils';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useWeeklyReportI18n, type WeeklyActionId, type WeeklyOutcomeId } from '@/hooks/useWeeklyReportI18n';
 
 import type { Allocation } from '@/types';
 
-type WeeklyActionId = 'postpone' | 'moveToEmployee' | 'justify' | 'distribute' | 'keep' | 'cancel';
-type WeeklyOutcomeId = 'done' | 'continue' | 'handoff' | 'blocked';
-
-const WEEKLY_ACTION_META: Record<WeeklyActionId, { label: string; hint: string }> = {
-  keep: { label: 'Cerrar tarea', hint: 'Registrar horas y finalizar' },
-  postpone: { label: 'Continuar en otra semana', hint: 'Indica lo hecho aquí; el resto va a la semana que elijas (0 si no avanzaste)' },
-  distribute: { label: 'Distribuir en tareas', hint: 'Partir en varias tareas en tu planificación' },
-  moveToEmployee: { label: 'Reasignar a compañero', hint: 'Pasa las horas pendientes a otra persona' },
-  cancel: { label: 'Anular / no se hará', hint: 'Cierra la tarea y elimina el saldo pendiente del plan' },
-  justify: { label: 'Solo dejar nota', hint: 'Explicación sin cambiar horas ni planificación' },
-};
-
-const WEEKLY_OUTCOME_GROUPS: Array<{
-  id: WeeklyOutcomeId;
-  label: string;
-  hint: string;
-  actions: WeeklyActionId[];
-}> = [
-  { id: 'done', label: 'Terminé', hint: 'Registrar horas y cerrar', actions: ['keep'] },
-  { id: 'continue', label: 'Sigo después', hint: 'Pasar a otra semana (0 h si no avanzaste) o distribuir en tareas', actions: ['postpone', 'distribute'] },
-  { id: 'handoff', label: 'Otro lo hará', hint: 'Pasar lo pendiente a un compañero', actions: ['moveToEmployee'] },
-  { id: 'blocked', label: 'No aplica', hint: 'Anular o dejar nota', actions: ['cancel', 'justify'] },
-];
-
-function getOutcomeForAction(action: WeeklyActionId | null | undefined): WeeklyOutcomeId | null {
+function getOutcomeForAction(
+  action: WeeklyActionId | null | undefined,
+  weeklyOutcomeGroups: ReturnType<typeof useWeeklyReportI18n>['weeklyOutcomeGroups']
+): WeeklyOutcomeId | null {
   if (!action) return null;
-  for (const group of WEEKLY_OUTCOME_GROUPS) {
+  for (const group of weeklyOutcomeGroups) {
     if (group.actions.includes(action)) return group.id;
   }
   return null;
@@ -90,18 +71,20 @@ function isWeeklyActionDisabledForTask(
 
 function isWeeklyOutcomeDisabled(
   outcomeId: WeeklyOutcomeId,
-  task: Pick<Allocation, 'hoursAssigned' | 'hoursActual'>
+  task: Pick<Allocation, 'hoursAssigned' | 'hoursActual'>,
+  weeklyOutcomeGroups: ReturnType<typeof useWeeklyReportI18n>['weeklyOutcomeGroups']
 ): boolean {
-  const group = WEEKLY_OUTCOME_GROUPS.find((g) => g.id === outcomeId);
+  const group = weeklyOutcomeGroups.find((g) => g.id === outcomeId);
   if (!group) return true;
   return group.actions.every((action) => isWeeklyActionDisabledForTask(action, task));
 }
 
 function getEnabledActionsForOutcome(
   outcomeId: WeeklyOutcomeId,
-  task: Pick<Allocation, 'hoursAssigned' | 'hoursActual'>
+  task: Pick<Allocation, 'hoursAssigned' | 'hoursActual'>,
+  weeklyOutcomeGroups: ReturnType<typeof useWeeklyReportI18n>['weeklyOutcomeGroups']
 ): WeeklyActionId[] {
-  const group = WEEKLY_OUTCOME_GROUPS.find((g) => g.id === outcomeId);
+  const group = weeklyOutcomeGroups.find((g) => g.id === outcomeId);
   if (!group) return [];
   return group.actions.filter((action) => !isWeeklyActionDisabledForTask(action, task));
 }
@@ -115,15 +98,16 @@ function getTaskPendingHours(task: Pick<Allocation, 'hoursAssigned' | 'hoursActu
 }
 
 function WeeklyOptionalNote({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const { t } = useAppTranslation();
   return (
     <div className="space-y-1 border-t pt-3">
-      <Label className="text-xs font-medium text-muted-foreground">Nota (opcional)</Label>
+      <Label className="text-xs font-medium text-muted-foreground">{t('weeklyReport.notes.optionalLabel')}</Label>
       <Textarea
         value={value}
         onChange={(e) => onChange(e.target.value)}
         rows={2}
         className="min-h-[48px] max-h-24 resize-y text-sm"
-        placeholder="Visible en el historial de la agencia."
+        placeholder={t('weeklyReport.notes.optionalPlaceholder')}
       />
     </div>
   );
@@ -132,25 +116,28 @@ function WeeklyOptionalNote({ value, onChange }: { value: string; onChange: (v: 
 function WeeklyRequiredNote({
   value,
   onChange,
-  placeholder = 'Explica qué pasó con la tarea. Visible en el historial de la agencia.',
-  helperText = 'La tarea sigue en el planificador; solo queda la nota en el historial.',
+  placeholder,
+  helperText,
 }: {
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
   helperText?: string;
 }) {
+  const { t } = useAppTranslation();
+  const resolvedPlaceholder = placeholder ?? t('weeklyReport.notes.requiredPlaceholder');
+  const resolvedHelper = helperText ?? t('weeklyReport.notes.requiredHelperDefault');
   return (
     <div className="space-y-1">
-      <Label className="text-xs font-medium">Explicación *</Label>
+      <Label className="text-xs font-medium">{t('weeklyReport.notes.requiredLabel')}</Label>
       <Textarea
         value={value}
         onChange={(e) => onChange(e.target.value)}
         rows={2}
         className="min-h-[48px] max-h-24 resize-y text-sm"
-        placeholder={placeholder}
+        placeholder={resolvedPlaceholder}
       />
-      <p className="text-[11px] text-muted-foreground">{helperText}</p>
+      <p className="text-[11px] text-muted-foreground">{resolvedHelper}</p>
     </div>
   );
 }
@@ -168,6 +155,8 @@ interface WeeklyReportDialogProps {
 }
 
 export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, focusAllocationId = null }: WeeklyReportDialogProps) {
+  const { t, weeklyActionMeta, weeklyOutcomeGroups } = useWeeklyReportI18n();
+  const dateLocale = useDateLocale();
   const { allocations, projects, clients, employees, absences, teamEvents, weeklyFeedback, getEmployeeLoadForWeek, loadDataForMonth, ensureMonthLoaded } = useApp();
   const weeklyCloseDay = useWeeklyCloseDay();
   const { formatName: formatProjectName } = useProjectAliasing();
@@ -454,7 +443,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
     if (action === 'distribute') {
       const distTasks = distributionTasks[task.id] || [];
       const validTasks = distTasks.filter(t => t.taskName.trim() && parseHours(t.hours) > 0);
-      if (validTasks.length === 0) { canSubmit = false; validationErrors.push(`"${task.taskName}" necesita al menos una tarea válida`); continue; }
+      if (validTasks.length === 0) { canSubmit = false; validationErrors.push(t('weeklyReport.validation.needsValidTask', { taskName: task.taskName })); continue; }
       const totalDistributed = validTasks.reduce((sum, t) => sum + parseHours(t.hours), 0);
       if (Math.abs(totalDistributed - pendingHours) > 0.01) { canSubmit = false; validationErrors.push(`"${task.taskName}": suma ${totalDistributed.toFixed(2)}h ≠ ${pendingHours.toFixed(2)}h pendientes`); }
       const projectMonthAllocations = allocations.filter(a => a.projectId === task.projectId && isAllocationInEffectiveMonth(a.weekStartDate, viewDate) && a.id !== task.id);
@@ -491,16 +480,16 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
     } else if (action === 'moveToEmployee') {
       const teSlots = getSlotsForTaskWeek(task.weekStartDate);
       if (teSlots.length === 0) { canSubmit = false; validationErrors.push(`"${task.taskName}": sin semanas para transferir`); }
-      else if (!moveToEmployee[task.id] || !moveToWeek[task.id]) { canSubmit = false; validationErrors.push(`"${task.taskName}": selecciona compañero y semana`); }
+      else if (!moveToEmployee[task.id] || !moveToWeek[task.id]) { canSubmit = false; validationErrors.push(t('weeklyReport.validation.selectColleagueWeek', { taskName: task.taskName })); }
       else if (pendingHours <= 0) { canSubmit = false; validationErrors.push(`"${task.taskName}": no hay horas pendientes para transferir`); }
       else {
         const rem = pendingHours;
         if (rem > 0) { const ts = teSlots.find(s => s.storageKey === moveToWeek[task.id]); const wl = getEmployeeLoadForWeek(moveToEmployee[task.id], moveToWeek[task.id], undefined, undefined, ts?.viewMonth ?? viewDate); const te = employees.find(e => e.id === moveToEmployee[task.id]); if (te && (wl?.hours || 0) + rem > (wl?.capacity || 0)) capacityWarnings.push(`"${task.taskName}": ${te.name} sobre capacidad`); }
       }
     } else if (action === 'justify') {
-      if (!taskComments[task.id]?.trim()) { canSubmit = false; validationErrors.push(`"${task.taskName}": escribe una explicación`); }
+      if (!taskComments[task.id]?.trim()) { canSubmit = false; validationErrors.push(t('weeklyReport.validation.writeExplanation', { taskName: task.taskName })); }
     } else if (action === 'cancel') {
-      if (!taskComments[task.id]?.trim()) { canSubmit = false; validationErrors.push(`"${task.taskName}": indica el motivo de la anulación`); }
+      if (!taskComments[task.id]?.trim()) { canSubmit = false; validationErrors.push(t('weeklyReport.validation.cancelReason', { taskName: task.taskName })); }
     }
   }
 
@@ -518,7 +507,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
     return [...byMonth.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([mk, monthSlots]) => (
       <SelectGroup key={mk}>
         <SelectLabel className="py-1.5 pl-8 pr-2 text-xs font-semibold capitalize text-muted-foreground">
-          {format(monthSlots[0].viewMonth, 'MMMM yyyy', { locale: es })}
+          {format(monthSlots[0].viewMonth, 'MMMM yyyy', { locale: dateLocale })}
         </SelectLabel>
         {monthSlots.map((slot) => {
           const load = loadForEmployeeId
@@ -530,11 +519,11 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
           const weeks = getWeeksForMonth(slot.viewMonth);
           const wi = weeks.findIndex(w => getStorageKey(w.weekStart, slot.viewMonth) === slot.storageKey);
           const wn = wi >= 0 ? wi + 1 : null;
-          const dateRange = `${format(slot.weekStart, 'd', { locale: es })}–${format(addDays(slot.weekStart, 4), 'd MMM', { locale: es })}`;
+          const dateRange = `${format(slot.weekStart, 'd', { locale: dateLocale })}–${format(addDays(slot.weekStart, 4), 'd MMM', { locale: dateLocale })}`;
           const label = `S${wn || '?'} · ${dateRange}`;
           const availLabel = loadForEmployeeId
             ? avail >= 0 ? `${avail.toFixed(0)}h libres` : `${Math.abs(avail).toFixed(0)}h sobre cap.`
-            : 'Elige compañero';
+            : t('weeklyReport.validation.chooseColleague');
           return (
             <SelectItem key={slot.storageKey} value={slot.storageKey} className="py-2">
               <span className="text-sm">{label}</span>
@@ -585,7 +574,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
   const handleActionChange = (task: typeof allTasks[0], value: string) => {
     const action = value as WeeklyActionId;
     setTaskActions((prev) => ({ ...prev, [task.id]: action }));
-    const outcome = getOutcomeForAction(action);
+    const outcome = getOutcomeForAction(action, weeklyOutcomeGroups);
     if (outcome) {
       setTaskOutcomes((prev) => ({ ...prev, [task.id]: outcome }));
     }
@@ -621,9 +610,9 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
   };
 
   const handleOutcomeSelect = (task: typeof allTasks[0], outcomeId: WeeklyOutcomeId) => {
-    if (isWeeklyOutcomeDisabled(outcomeId, task)) return;
+    if (isWeeklyOutcomeDisabled(outcomeId, task, weeklyOutcomeGroups)) return;
     setTaskOutcomes((prev) => ({ ...prev, [task.id]: outcomeId }));
-    const enabled = getEnabledActionsForOutcome(outcomeId, task);
+    const enabled = getEnabledActionsForOutcome(outcomeId, task, weeklyOutcomeGroups);
     if (enabled.length === 1) {
       handleActionChange(task, enabled[0]);
       return;
@@ -658,7 +647,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
         ? getSlotsForTaskWeek(task.weekStartDate).find((s) => s.storageKey === destWeekKey)
         : undefined;
       const destLabel = destSlot
-        ? `${format(destSlot.weekStart, 'd', { locale: es })}–${format(addDays(destSlot.weekStart, 4), 'd MMM', { locale: es })}`
+        ? `${format(destSlot.weekStart, 'd', { locale: dateLocale })}–${format(addDays(destSlot.weekStart, 4), 'd MMM', { locale: dateLocale })}`
         : 'la semana elegida';
       const targetEmployee = moveToEmployee[task.id]
         ? employees.find((e) => e.id === moveToEmployee[task.id])
@@ -673,42 +662,60 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
           const actual = h ? parseHours(h.actual) : (task.hoursActual ?? task.hoursAssigned);
           const unplanned = roundTaskHours(Math.max(0, task.hoursAssigned - actual));
           if (unplanned > 0.01) {
-            return `Se cerrará la tarea con ${actual.toFixed(2)}h registradas. ${unplanned.toFixed(2)}h quedarán sin planificar si confirmas el cierre.`;
+            return t('weeklyReport.consequences.keepUnplanned', {
+              actual: actual.toFixed(2),
+              unplanned: unplanned.toFixed(2),
+            });
           }
-          return 'La tarea se marcará como completada y desaparecerá del planificador de esta semana.';
+          return t('weeklyReport.consequences.keepComplete');
         }
         case 'postpone': {
           const h = rolloverHours[task.id];
           const act = h ? parseHours(h.actual) : (task.hoursActual ?? 0);
           const rollover = roundTaskHours(Math.max(0, task.hoursAssigned - act));
-          return `Esta semana se cierra con ${act.toFixed(2)}h hechas. ${rollover.toFixed(2)}h quedarán planificadas en tu semana del ${destLabel}.`;
+          return t('weeklyReport.consequences.postponeRollover', {
+            actual: act.toFixed(2),
+            rollover: rollover.toFixed(2),
+            destLabel,
+          });
         }
         case 'distribute':
           return distCount > 0
-            ? `La tarea original se sustituirá por ${distCount} tarea(s) en tu plan (${pending.toFixed(2)}h en total).`
-            : `Sustituirás esta tarea por varias tareas con nombre, horas y semana (${pending.toFixed(2)}h pendientes).`;
+            ? t('weeklyReport.consequences.distributeReplace', {
+                count: distCount,
+                pending: pending.toFixed(2),
+              })
+            : t('weeklyReport.consequences.distributeSplit', { pending: pending.toFixed(2) });
         case 'moveToEmployee':
           return targetEmployee
-            ? `${pending.toFixed(2)}h pendientes pasarán a ${targetEmployee.name} en la semana del ${destLabel}. Tu parte quedará cerrada.`
-            : `Las ${pending.toFixed(2)}h pendientes pasarán a otro compañero. Tu parte de la tarea quedará cerrada.`;
+            ? t('weeklyReport.consequences.transferNamed', {
+                pending: pending.toFixed(2),
+                name: targetEmployee.name,
+                destLabel,
+              })
+            : t('weeklyReport.consequences.transferAnonymous', { pending: pending.toFixed(2) });
         case 'justify':
-          return 'La planificación no cambia. Solo quedará registrada tu explicación en el historial de la agencia.';
+          return t('weeklyReport.consequences.justifyOnly');
         case 'cancel': {
           const alreadyActual = task.hoursActual || 0;
           const dropped = getTaskPendingHours(task);
           if (alreadyActual > 0 && dropped > 0) {
-            return `Se cerrará con ${alreadyActual.toFixed(2)}h registradas; ${dropped.toFixed(2)}h pendientes saldrán del plan.`;
+            return t('weeklyReport.consequences.cancelWithDropped', {
+              actual: alreadyActual.toFixed(2),
+              dropped: dropped.toFixed(2),
+            });
           }
           if (alreadyActual > 0) {
-            return `Se cerrará con ${alreadyActual.toFixed(2)}h registradas.`;
+            return t('weeklyReport.consequences.cancelWithActual', { actual: alreadyActual.toFixed(2) });
           }
-          return 'La tarea se cerrará a 0h y desaparecerá del planificador.';
+          return t('weeklyReport.consequences.cancelZero');
         }
         default:
           return '';
       }
     },
     [
+      t,
       distributionTasks,
       employees,
       getSlotsForTaskWeek,
@@ -717,6 +724,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
       moveToWeek,
       rolloverHours,
       rolloverTargetWeek,
+      dateLocale,
     ]
   );
 
@@ -771,7 +779,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
         }
 
         if (!result.ok) {
-          failures.push({ taskId: task.id, taskName: task.taskName || 'Sin nombre', message: result.message });
+          failures.push({ taskId: task.id, taskName: task.taskName || t('weeklyReport.sidebar.noName'), message: result.message });
         } else {
           processedCount += 1;
         }
@@ -780,7 +788,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
       if (failures.length > 0) {
         setSelectedTaskId(failures[0].taskId);
         const names = failures.slice(0, 3).map((f) => f.taskName).join(', ');
-        const suffix = failures.length > 3 ? ` y ${failures.length - 3} más` : '';
+        const suffix = failures.length > 3 ? t('weeklyReport.errors.andMore', { count: failures.length - 3 }) : '';
         toast.error(
           failures.length === 1
             ? failures[0].message
@@ -800,7 +808,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
       setDistributionTasks({}); setKeepTaskHours({}); setRolloverHours({}); setRolloverTargetWeek({});
     } catch (error) {
       console.error('Error actualizando weekly:', error);
-      toast.error('Error al actualizar el weekly');
+      toast.error(t('weeklyReport.toast.updateError'));
     } finally {
       setIsSubmitting(false);
     }
@@ -826,14 +834,14 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
 
   const selectedAction = selectedTask ? taskActions[selectedTask.id] : null;
   const selectedOutcome: WeeklyOutcomeId | null = selectedTask
-    ? taskOutcomes[selectedTask.id] ?? getOutcomeForAction(selectedAction)
+    ? taskOutcomes[selectedTask.id] ?? getOutcomeForAction(selectedAction, weeklyOutcomeGroups)
     : null;
   const selectedSubActions = selectedTask && selectedOutcome
-    ? getEnabledActionsForOutcome(selectedOutcome, selectedTask)
+    ? getEnabledActionsForOutcome(selectedOutcome, selectedTask, weeklyOutcomeGroups)
     : [];
   const showSubActionPicker = selectedSubActions.length > 1;
   const selectedOutcomeGroup = selectedOutcome
-    ? WEEKLY_OUTCOME_GROUPS.find((g) => g.id === selectedOutcome)
+    ? weeklyOutcomeGroups.find((g) => g.id === selectedOutcome)
     : null;
 
   // ── RENDER ──
@@ -849,12 +857,12 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
         <div className="space-y-2 border-b px-4 pb-3 pt-4 sm:px-5">
           <DialogHeader className="space-y-0.5">
             <DialogTitle className="text-base font-semibold tracking-tight sm:text-lg">
-              {singleTaskFromPlanner ? 'Opciones Weekly' : 'Cierre semanal'}
+              {singleTaskFromPlanner ? t('weeklyReport.header.titlePlanner') : t('weeklyReport.header.titleWeekly')}
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground sm:text-sm">
               {singleTaskFromPlanner
-                ? 'Elige qué hacer con la tarea y confirma.'
-                : `${resolvedCount}/${allTasks.length} configuradas`}
+                ? t('weeklyReport.header.descPlanner')
+                : t('weeklyReport.header.descProgress', { resolved: resolvedCount, total: allTasks.length })}
             </DialogDescription>
           </DialogHeader>
           {!singleTaskFromPlanner && (
@@ -873,9 +881,9 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
         {allTasks.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center px-8 py-16 text-center">
             <CheckCircle2 className="mb-4 h-10 w-10 text-muted-foreground/50" strokeWidth={1.5} />
-            <h3 className="text-base font-semibold">Sin pendientes</h3>
+            <h3 className="text-base font-semibold">{t('weeklyReport.empty.noPendingTitle')}</h3>
             <p className="mt-1.5 max-w-sm text-sm text-muted-foreground">
-              No hay tareas que requieran cierre en este periodo.
+              {t('weeklyReport.empty.noPendingDesc')}
             </p>
           </div>
         ) : (
@@ -897,11 +905,11 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
                     {pastTasks.length > 0 ? (
                       <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-amber-600" aria-hidden />
                     ) : null}
-                    <span className="truncate text-left font-semibold">Requieren cierre</span>
+                    <span className="truncate text-left font-semibold">{t('weeklyReport.tabs.requireClose')}</span>
                     <span className="font-mono text-[11px] opacity-80">({pastTasks.length})</span>
                   </TabsTrigger>
                   <TabsTrigger value="current" className="gap-1 px-2 py-2 text-xs sm:text-sm">
-                    <span className="truncate font-medium">Semana actual</span>
+                    <span className="truncate font-medium">{t('weeklyReport.tabs.currentWeek')}</span>
                     <span className="font-mono text-[11px] text-muted-foreground">({currentTasks.length})</span>
                   </TabsTrigger>
                 </TabsList>
@@ -916,9 +924,9 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
                 return (
                   <div className="flex flex-1 flex-col items-center justify-center px-8 py-14 text-center">
                     <CheckCircle2 className="mb-3 h-10 w-10 text-emerald-500/90" strokeWidth={1.5} />
-                    <h3 className="text-base font-semibold text-slate-800">Todo al día</h3>
+                    <h3 className="text-base font-semibold text-slate-800">{t('weeklyReport.empty.allCaughtUpTitle')}</h3>
                     <p className="mt-1.5 max-w-sm text-sm text-muted-foreground">
-                      No tienes tareas de semanas anteriores pendientes de cierre. Puedes revisar la pestaña <strong>Semana actual</strong> si quieres ajustar lo de esta semana.
+                      {t('weeklyReport.empty.allCaughtUpDesc')}
                     </p>
                   </div>
                 );
@@ -927,9 +935,9 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
                 return (
                   <div className="flex flex-1 flex-col items-center justify-center px-8 py-14 text-center">
                     <Clock className="mb-3 h-9 w-9 text-muted-foreground/50" strokeWidth={1.5} />
-                    <h3 className="text-base font-semibold">Sin tareas en la semana actual</h3>
+                    <h3 className="text-base font-semibold">{t('weeklyReport.empty.currentWeekEmptyTitle')}</h3>
                     <p className="mt-1.5 max-w-sm text-sm text-muted-foreground">
-                      Aquí aparecerán las tareas de la semana en curso cuando quieras hacer ajustes proactivos.
+                      {t('weeklyReport.empty.currentWeekEmptyDesc')}
                     </p>
                   </div>
                 );
@@ -944,15 +952,15 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
                     <Input
                       value={modalSearch}
                       onChange={(e) => setModalSearch(e.target.value)}
-                      placeholder="Filtrar..."
+                      placeholder={t('weeklyReport.sidebar.filterPlaceholder')}
                       className="h-8 pl-8 text-xs"
-                      aria-label="Filtrar tareas"
+                      aria-label={t('weeklyReport.sidebar.filterAria')}
                     />
                   </div>
                 </div>
                 <div className="flex-1 overflow-y-auto py-1">
                   {sidebarGroups.length === 0 && modalSearch.trim() ? (
-                    <p className="px-3 py-6 text-center text-xs text-muted-foreground">Sin resultados</p>
+                    <p className="px-3 py-6 text-center text-xs text-muted-foreground">{t('weeklyReport.sidebar.noResults')}</p>
                   ) : (
                     sidebarGroups.map(group => (
                       <div key={group.id}>
@@ -988,10 +996,10 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
                               <div className="min-w-0 flex-1">
                                 <div className="flex items-center gap-1.5">
                                   <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: client?.color || '#94a3b8' }} />
-                                  <span className="truncate text-[11px] text-muted-foreground">{project?.name || 'Sin proyecto'}</span>
+                                  <span className="truncate text-[11px] text-muted-foreground">{project?.name || t('weeklyReport.sidebar.noProject')}</span>
                                 </div>
                                 <p className="mt-0.5 truncate text-sm font-medium leading-tight">
-                                  {task.taskName?.replace(/\(transferida de .+\)/, '').trim() || 'Sin nombre'}
+                                  {task.taskName?.replace(/\(transferida de .+\)/, '').trim() || t('weeklyReport.sidebar.noName')}
                                 </p>
                               </div>
                               <span className="shrink-0 font-mono text-xs text-muted-foreground">{pending}h</span>
@@ -1025,7 +1033,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
                                 <div className="h-3.5 w-3.5 shrink-0 rounded-full border-2 border-muted-foreground/25" />
                               )}
                               <span className="truncate text-sm">
-                                {task.taskName?.replace(/\(transferida de .+\)/, '').trim() || 'Sin nombre'}
+                                {task.taskName?.replace(/\(transferida de .+\)/, '').trim() || t('weeklyReport.sidebar.noName')}
                               </span>
                               <span className="ml-auto shrink-0 font-mono text-xs text-muted-foreground">{pending}h</span>
                             </div>
@@ -1045,7 +1053,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
                         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
                           <span className="inline-flex items-center gap-1.5">
                             <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: selectedClient?.color || '#94a3b8' }} />
-                            {selectedProject?.name || 'Sin proyecto'}
+                            {selectedProject?.name || t('weeklyReport.sidebar.noProject')}
                           </span>
                           <span aria-hidden>·</span>
                           <Badge variant="secondary" className="h-5 max-w-[min(100%,14rem)] truncate px-1.5 font-mono text-[11px]">
@@ -1067,7 +1075,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
                           )}
                         </div>
                         <h3 className="text-base font-semibold leading-snug tracking-tight">
-                          {selectedTask.taskName?.replace(/\(transferida de .+\)/, '').trim() || 'Sin nombre'}
+                          {selectedTask.taskName?.replace(/\(transferida de .+\)/, '').trim() || t('weeklyReport.sidebar.noName')}
                         </h3>
                       </div>
 
@@ -1084,8 +1092,8 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
                           {formatWeeklyTaskHoursSummary(selectedTask)}
                         </Label>
                         <div className="grid grid-cols-2 gap-1.5">
-                          {WEEKLY_OUTCOME_GROUPS.map(({ id, label, hint }) => {
-                            const disabled = isWeeklyOutcomeDisabled(id, selectedTask);
+                          {weeklyOutcomeGroups.map(({ id, label, hint }) => {
+                            const disabled = isWeeklyOutcomeDisabled(id, selectedTask, weeklyOutcomeGroups);
                             const isSelected = selectedOutcome === id;
                             return (
                               <button
@@ -1108,9 +1116,9 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
                           })}
                         </div>
 
-                        {isWeeklyOutcomeDisabled('handoff', selectedTask) && canPostponeTaskInWeekly(selectedTask) && (
+                        {isWeeklyOutcomeDisabled('handoff', selectedTask, weeklyOutcomeGroups) && canPostponeTaskInWeekly(selectedTask) && (
                           <p className="text-[11px] text-muted-foreground">
-                            «Otro lo hará» solo aparece cuando hay horas pendientes sin registrar en el planificador.
+                            {t('weeklyReport.ui.handoffHint')}
                           </p>
                         )}
 
@@ -1118,17 +1126,17 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
                           <div
                             className="space-y-2 rounded-md border border-dashed border-primary/30 bg-muted/40 px-3 py-2.5"
                             role="group"
-                            aria-label={`Opciones para ${selectedOutcomeGroup.label}`}
+                            aria-label={t('weeklyReport.ui.optionsFor', { label: selectedOutcomeGroup.label })}
                           >
                             <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5">
                               <p className="text-xs">
                                 <span className="font-medium text-foreground">{selectedOutcomeGroup.label}</span>
                                 <span className="mx-1.5 text-muted-foreground" aria-hidden>→</span>
-                                <span className="text-muted-foreground">elige una opción</span>
+                                <span className="text-muted-foreground">{t('weeklyReport.ui.chooseOption')}</span>
                               </p>
                               {!selectedAction && (
                                 <span className="text-[10px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-400">
-                                  Obligatorio
+                                  {t('weeklyReport.ui.mandatory')}
                                 </span>
                               )}
                             </div>
@@ -1138,7 +1146,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
                               className="space-y-1"
                             >
                               {selectedSubActions.map((actionId) => {
-                                const meta = WEEKLY_ACTION_META[actionId];
+                                const meta = weeklyActionMeta[actionId];
                                 const isActive = selectedAction === actionId;
                                 return (
                                   <label
@@ -1193,13 +1201,13 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
                                   <p className="flex items-start gap-1.5 rounded-md border border-amber-200/80 bg-amber-50/80 px-2 py-1.5 text-[11px] leading-snug text-amber-950 dark:border-amber-900/40 dark:bg-amber-950/25 dark:text-amber-100">
                                     <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" aria-hidden />
                                     <span>
-                                      {unplannedKeep.toFixed(2)}h sin planificar — elige <strong>Sigo después</strong> si el trabajo continúa.
+                                      <span dangerouslySetInnerHTML={{ __html: t('weeklyReport.ui.unplannedKeepWarning', { hours: unplannedKeep.toFixed(2) }) }} />
                                     </span>
                                   </p>
                                 )}
                                 <div className="grid grid-cols-2 gap-3">
                                   <div className="space-y-1">
-                                    <Label className="text-xs font-medium">Horas reales *</Label>
+                                    <Label className="text-xs font-medium">{t('weeklyReport.ui.actualHours')}</Label>
                                     <Input type="text" inputMode="decimal" className="h-8 font-mono text-sm" value={hours.actual}
                                       onChange={(e) => { 
                                         const v = normalizeWeeklyHourInput(e.target.value); 
@@ -1216,7 +1224,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
                                   </div>
                                   {preference !== 'actual' && (
                                   <div className="space-y-1">
-                                    <Label className="text-xs font-medium">Facturación</Label>
+                                    <Label className="text-xs font-medium">{t('weeklyReport.ui.billing')}</Label>
                                     <Input type="text" inputMode="decimal" className="h-8 font-mono text-sm" value={hours.computed}
                                       disabled={preference === 'actual'}
                                       onChange={(e) => { const v = normalizeWeeklyHourInput(e.target.value); setKeepTaskHours(prev => ({ ...prev, [selectedTask.id]: { ...prev[selectedTask.id], computed: v } })); }}
@@ -1241,7 +1249,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
                               <div className="space-y-3">
                                 <div className="grid grid-cols-2 gap-3">
                                   <div className="space-y-1">
-                                    <Label className="text-xs font-medium">Horas de esta semana *</Label>
+                                    <Label className="text-xs font-medium">{t('weeklyReport.ui.thisWeekHours')}</Label>
                                     <Input type="text" inputMode="decimal" className="h-8 font-mono text-sm" value={hours.actual}
                                       onChange={(e) => { 
                                         const v = normalizeWeeklyHourInput(e.target.value); 
@@ -1255,15 +1263,16 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
                                         })); 
                                       }}
                                       placeholder="0" />
-                                    <p className="text-[11px] text-muted-foreground">
-                                      0 si no avanzaste · pasan{' '}
-                                      <span className="font-mono font-medium text-foreground">{pendNext.toFixed(2)}h</span>{' '}
-                                      a la semana destino
-                                    </p>
+                                    <p
+                                      className="text-[11px] text-muted-foreground"
+                                      dangerouslySetInnerHTML={{
+                                        __html: t('weeklyReport.ui.zeroAdvanceHint', { hours: pendNext.toFixed(2) }),
+                                      }}
+                                    />
                                   </div>
                                   {preference !== 'actual' && (
                                   <div className="space-y-1">
-                                    <Label className="text-xs font-medium">Facturación</Label>
+                                    <Label className="text-xs font-medium">{t('weeklyReport.ui.billing')}</Label>
                                     <Input type="text" inputMode="decimal" className="h-8 font-mono text-sm" value={hours.computed}
                                       disabled={preference === 'actual'}
                                       onChange={(e) => { const v = normalizeWeeklyHourInput(e.target.value); setRolloverHours(prev => ({ ...prev, [selectedTask.id]: { ...prev[selectedTask.id], computed: v } })); }}
@@ -1272,12 +1281,12 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
                                   )}
                                 </div>
                                 <div className="space-y-1">
-                                  <Label className="text-xs font-medium">Semana destino *</Label>
+                                  <Label className="text-xs font-medium">{t('weeklyReport.ui.targetWeek')}</Label>
                                   {rSlots.length === 0 ? (
-                                    <p className="text-xs text-destructive">No hay semanas disponibles.</p>
+                                    <p className="text-xs text-destructive">{t('weeklyReport.ui.noWeeksAvailable')}</p>
                                   ) : (
                                     <Select value={rolloverTargetWeek[selectedTask.id] ?? rSlots[0]?.storageKey ?? ''} onValueChange={(val) => setRolloverTargetWeek(prev => ({ ...prev, [selectedTask.id]: val }))}>
-                                      <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Elige semana" /></SelectTrigger>
+                                      <SelectTrigger className="h-8 text-sm"><SelectValue placeholder={t('weeklyReport.ui.chooseWeek')} /></SelectTrigger>
                                       <SelectContent className="max-h-[min(280px,60vh)]">{weekSelectGroups(selectedTask.weekStartDate, employeeId)}</SelectContent>
                                     </Select>
                                   )}
@@ -1291,9 +1300,9 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
                           {selectedAction === 'distribute' && (
                             <div className="space-y-3">
                               <div className="flex items-center justify-between text-xs">
-                                <span>A distribuir: <span className="font-mono font-medium">{round2(selectedMissingHours).toFixed(2)}h</span></span>
+                                <span>{t('weeklyReport.ui.toDistribute')} <span className="font-mono font-medium">{round2(selectedMissingHours).toFixed(2)}h</span></span>
                                 <span className={cn("font-mono", round2(selectedMissingHours - (distributionTasks[selectedTask.id]?.reduce((a, d) => a + parseHours(d.hours), 0) || 0)) === 0 ? "font-medium" : "text-muted-foreground")}>
-                                  Saldo: {round2(selectedMissingHours - (distributionTasks[selectedTask.id]?.reduce((a, d) => a + parseHours(d.hours), 0) || 0)).toFixed(2)}h
+                                  {t('weeklyReport.ui.balance')} {round2(selectedMissingHours - (distributionTasks[selectedTask.id]?.reduce((a, d) => a + parseHours(d.hours), 0) || 0)).toFixed(2)}h
                                 </span>
                               </div>
                               <div className="space-y-1.5">
@@ -1305,7 +1314,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
                                     <div key={dist.id} className="space-y-1.5 rounded-md border bg-background p-2">
                                       <div className="flex items-center gap-1.5">
                                         <Input type="text" className="h-8 min-w-0 flex-1 text-sm" value={dist.taskName}
-                                          onChange={(e) => updateDistributionRow(selectedTask.id, dist.id, 'taskName', e.target.value)} placeholder="Nombre de la tarea" />
+                                          onChange={(e) => updateDistributionRow(selectedTask.id, dist.id, 'taskName', e.target.value)} placeholder={t('weeklyReport.ui.taskNamePlaceholder')} />
                                         <Input type="text" inputMode="decimal" className={cn("h-8 w-14 shrink-0 font-mono text-sm", isOverCap && "border-destructive/60")} value={dist.hours}
                                           onChange={(e) => updateDistributionHours(selectedTask.id, dist.id, normalizeWeeklyHourInput(e.target.value))} placeholder="h" />
                                         <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive" onClick={() => removeDistributionRow(selectedTask.id, dist.id)}>
@@ -1313,16 +1322,16 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
                                         </Button>
                                       </div>
                                       <Select value={dist.weekDate ?? ''} onValueChange={(val) => updateDistributionRow(selectedTask.id, dist.id, 'weekDate', val)}>
-                                        <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Semana" /></SelectTrigger>
+                                        <SelectTrigger className="h-8 text-xs"><SelectValue placeholder={t('weeklyReport.ui.week')} /></SelectTrigger>
                                         <SelectContent className="max-h-[min(280px,60vh)]">{weekSelectGroups(selectedTask.weekStartDate, employeeId)}</SelectContent>
                                       </Select>
-                                      {isOverCap && <p className="text-[11px] text-destructive">Supera capacidad.</p>}
+                                      {isOverCap && <p className="text-[11px] text-destructive">{t('weeklyReport.ui.overCapacity')}</p>}
                                     </div>
                                   );
                                 })}
                               </div>
                               <Button variant="outline" size="sm" className="h-8 w-full border-dashed text-xs" onClick={() => addDistributionRow(selectedTask.id, selectedTask.weekStartDate)}>
-                                <Plus className="mr-1 h-3.5 w-3.5" /> Añadir tarea
+                                <Plus className="mr-1 h-3.5 w-3.5" /> {t('weeklyReport.ui.addTask')}
                               </Button>
                               <WeeklyOptionalNote value={taskComments[selectedTask.id] || ''} onChange={(v) => setTaskComments(prev => ({ ...prev, [selectedTask.id]: v }))} />
                             </div>
@@ -1336,13 +1345,13 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
                             return (
                               <div className="space-y-3">
                                 <p className="text-[11px] text-muted-foreground">
-                                  <span className="font-mono font-medium text-foreground">{transferPending.toFixed(2)}h</span> al compañero · aparece en su plan sin aceptación
+                                  <span dangerouslySetInnerHTML={{ __html: t('weeklyReport.ui.transferSummary', { hours: transferPending.toFixed(2) }) }} />
                                 </p>
                                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                                   <div className="space-y-1">
-                                    <Label className="text-xs font-medium">Compañero *</Label>
+                                    <Label className="text-xs font-medium">{t('weeklyReport.ui.colleague')}</Label>
                                     <Select value={moveToEmployee[selectedTask.id] ?? ''} onValueChange={(val) => setMoveToEmployee(prev => ({ ...prev, [selectedTask.id]: val }))}>
-                                      <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Persona" /></SelectTrigger>
+                                      <SelectTrigger className="h-8 text-sm"><SelectValue placeholder={t('weeklyReport.ui.person')} /></SelectTrigger>
                                       <SelectContent className="max-h-[min(240px,50vh)]">
                                         {employeesForWeeklyTransfer.filter(e => e.id !== employeeId).map(e => {
                                           const loads = tSlots.map(slot => getEmployeeLoadForWeek(e.id, slot.storageKey, undefined, undefined, slot.viewMonth));
@@ -1351,7 +1360,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
                                             <SelectItem key={e.id} value={e.id} className="py-1.5 text-sm">
                                               {e.name}
                                               <span className={cn("ml-1.5 text-xs", avail >= 0 ? "text-muted-foreground" : "text-destructive")}>
-                                                · {avail >= 0 ? `${avail.toFixed(0)}h` : 'Sobre cap.'}
+                                                · {avail >= 0 ? `${avail.toFixed(0)}h` : t('weeklyReport.ui.overCapShort')}
                                               </span>
                                             </SelectItem>
                                           );
@@ -1360,9 +1369,9 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
                                     </Select>
                                   </div>
                                   <div className="space-y-1">
-                                    <Label className="text-xs font-medium">Semana *</Label>
+                                    <Label className="text-xs font-medium">{t('weeklyReport.ui.weekLabel')}</Label>
                                     <Select value={moveToWeek[selectedTask.id] ?? ''} onValueChange={(val) => setMoveToWeek(prev => ({ ...prev, [selectedTask.id]: val }))}>
-                                      <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Semana" /></SelectTrigger>
+                                      <SelectTrigger className="h-8 text-sm"><SelectValue placeholder={t('weeklyReport.ui.week')} /></SelectTrigger>
                                       <SelectContent className="max-h-[min(280px,60vh)]">{weekSelectGroups(selectedTask.weekStartDate, selEmpId || null)}</SelectContent>
                                     </Select>
                                   </div>
@@ -1377,8 +1386,8 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
                             <WeeklyRequiredNote
                               value={taskComments[selectedTask.id] || ''}
                               onChange={(v) => setTaskComments(prev => ({ ...prev, [selectedTask.id]: v }))}
-                              placeholder="Ej.: cliente canceló el entregable, tarea duplicada, scope eliminado…"
-                              helperText="La tarea se cerrará y el saldo pendiente saldrá del planificador."
+                              placeholder={t('weeklyReport.notes.cancelPlaceholder')}
+                              helperText={t('weeklyReport.notes.cancelHelper')}
                             />
                           )}
 
@@ -1394,7 +1403,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
                     </div>
                   ) : (
                     <div className="flex h-full items-center justify-center p-6 text-sm text-muted-foreground">
-                      Selecciona una tarea de la lista
+                      {t('weeklyReport.ui.selectFromList')}
                     </div>
                   )}
                 </div>
@@ -1406,26 +1415,26 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
             {/* ── FOOTER ── */}
             <DialogFooter className="shrink-0 items-center border-t px-4 py-3 sm:justify-between sm:px-5">
               <p className="hidden text-xs text-muted-foreground sm:block">
-                {resolvedCount}/{allTasks.length} configuradas
+                {t('weeklyReport.footer.configured', { resolved: resolvedCount, total: allTasks.length })}
               </p>
               <div className="flex w-full gap-2 sm:w-auto">
                 <Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={() => onOpenChange(false)}>
-                  Cancelar
+                  {t('weeklyReport.footer.cancel')}
                 </Button>
                 <Button
                   size="sm"
                   className="flex-1 sm:flex-none"
                   onClick={handleCloseWeek}
                   disabled={!canSubmit || isSubmitting}
-                  title={!canSubmit ? validationErrors.join(' · ') : capacityWarnings.length > 0 ? `Aviso: ${capacityWarnings.join(' · ')}` : undefined}
+                  title={!canSubmit ? validationErrors.join(' · ') : capacityWarnings.length > 0 ? t('weeklyReport.capacityWarning', { warnings: capacityWarnings.join(' · ') }) : undefined}
                 >
                   {isSubmitting ? (
                     <>
                       <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current/30 border-t-current" />
-                      Procesando…
+                      {t('weeklyReport.footer.processing')}
                     </>
                   ) : (
-                    'Confirmar cierre'
+                    t('weeklyReport.footer.confirmClose')
                   )}
                 </Button>
               </div>
@@ -1437,13 +1446,13 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
       <AlertDialog open={keepConfirmOpen} onOpenChange={setKeepConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Cerrar con horas sin planificar?</AlertDialogTitle>
+            <AlertDialogTitle>{t('weeklyReport.keepConfirm.title')}</AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-2 text-sm text-muted-foreground">
                 <p>
                   {incompleteKeepTasks.length === 1
-                    ? 'Una tarea se cerrará con menos horas de las estimadas:'
-                    : `${incompleteKeepTasks.length} tareas se cerrarán con horas sin planificar:`}
+                    ? t('weeklyReport.keepConfirm.singleDesc')
+                    : t('weeklyReport.keepConfirm.multiDesc', { count: incompleteKeepTasks.length })}
                 </p>
                 <ul className="list-disc space-y-1 pl-5">
                   {incompleteKeepTasks.map((task) => {
@@ -1452,25 +1461,25 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
                     const gap = roundTaskHours(Math.max(0, task.hoursAssigned - actual));
                     return (
                       <li key={task.id}>
-                        <span className="font-medium text-foreground">{task.taskName?.replace(/\(transferida de .+\)/, '').trim() || 'Sin nombre'}</span>
-                        {' '}— {gap.toFixed(2)}h quedarán fuera del plan
+                        <span className="font-medium text-foreground">{task.taskName?.replace(/\(transferida de .+\)/, '').trim() || t('weeklyReport.sidebar.noName')}</span>
+                        {t('weeklyReport.keepConfirm.gapUnplanned', { hours: gap.toFixed(2) })}
                       </li>
                     );
                   })}
                 </ul>
-                <p>Si el trabajo continúa, elige <strong>Sigo después</strong> en lugar de cerrar con horas de menos.</p>
+                <p dangerouslySetInnerHTML={{ __html: t('weeklyReport.keepConfirm.continueLaterHint') }} />
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Revisar tareas</AlertDialogCancel>
+            <AlertDialogCancel>{t('weeklyReport.keepConfirm.reviewTasks')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 setKeepConfirmOpen(false);
                 void executeCloseWeek();
               }}
             >
-              Sí, cerrar igualmente
+              {t('weeklyReport.keepConfirm.confirmAnyway')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

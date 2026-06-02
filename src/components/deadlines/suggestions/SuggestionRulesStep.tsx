@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
@@ -86,6 +87,7 @@ export function SuggestionRulesStep({
   setMaxReceiverLoadPct: (n: number) => void;
   setMaxReceiverLoadPctInput: (s: string) => void;
 }) {
+  const { t } = useTranslation('app');
   const [personSearch, setPersonSearch] = useState('');
   const [projectSearch, setProjectSearch] = useState('');
 
@@ -192,21 +194,21 @@ export function SuggestionRulesStep({
   const scopeOptions: { value: FlowProjectScope; title: string; hint: string }[] = [
     {
       value: 'shared',
-      title: 'Solo proyectos en común (recomendado)',
+      title: t('deadlines.suggestions.rulesSharedRecommended', 'Solo proyectos en común (recomendado)'),
       hint:
         mode === 'give'
-          ? 'Donde la persona y quien cede tienen horas este mes.'
-          : 'Donde quien cede y el destino comparten proyecto.',
+          ? t('deadlines.suggestions.focusProjectsHintGive', 'Donde la persona y quien cede tienen horas este mes.')
+          : t('deadlines.suggestions.focusProjectsHintTake', 'Donde quien cede y el destino comparten proyecto.'),
     },
     {
       value: 'focus_projects',
-      title: mode === 'give' ? 'Todos los proyectos del receptor' : 'Todos los proyectos del cedente',
-      hint: 'Puede ampliar mucho la lista de sugerencias.',
+      title: mode === 'give' ? t('deadlines.suggestions.rulesAllProjectsGive', 'Todos los proyectos del receptor') : t('deadlines.suggestions.rulesAllProjectsTake', 'Todos los proyectos del cedente'),
+      hint: t('deadlines.suggestions.focusProjectsExpandHint', 'Puede ampliar mucho la lista de sugerencias.'),
     },
     {
       value: 'manual',
-      title: 'Elegir proyectos concretos',
-      hint: 'Empieza sin ninguno marcado; activa solo los que te interesen.',
+      title: t('deadlines.suggestions.chooseConcreteProjects', 'Elegir proyectos concretos'),
+      hint: t('deadlines.suggestions.manualScopeHint', 'Empieza sin ninguno marcado; activa solo los que te interesen.'),
     },
   ];
 
@@ -222,7 +224,7 @@ export function SuggestionRulesStep({
         <div className="min-w-0">
           <p className="font-semibold text-slate-900 truncate">{focusEmployeeName}</p>
           <p className="text-xs text-slate-500">
-            {focusProjectIds.length} proyecto(s) con horas este mes
+            {t('deadlines.suggestions.projectsWithHours', '{{count}} proyecto(s) con horas este mes', { count: focusProjectIds.length })}
           </p>
         </div>
       </div>
@@ -237,21 +239,26 @@ export function SuggestionRulesStep({
       >
         {previewProjectCount > 0 ? (
           <p className="text-slate-700">
-            Con estas reglas:{' '}
+            {t('deadlines.suggestions.rulesPreview', 'Con estas reglas:')}{' '}
             <span className="font-semibold text-primary">
-              {previewProjectCount} proyecto(s) · hasta {formatDeadlineHoursForDisplay(previewTotalHours)}h
+              {t('deadlines.suggestions.rulesPreviewDetail', '{{projects}} proyecto(s) · hasta {{hours}}h', {
+                projects: previewProjectCount,
+                hours: formatDeadlineHoursForDisplay(previewTotalHours),
+              })}
             </span>
             {previewPeopleCount > 0 && (
               <span className="text-slate-600">
-                {' '}
-                · {previewPeopleCount} {mode === 'give' ? 'cedente(s)' : 'destino(s)'}
+                {mode === 'give'
+                  ? t('deadlines.suggestions.rulesPreviewPeopleGive', '· {{count}} cedente(s)', { count: previewPeopleCount })
+                  : t('deadlines.suggestions.rulesPreviewPeopleTake', '· {{count}} destino(s)', { count: previewPeopleCount })}
               </span>
             )}
           </p>
         ) : (
           <p className="text-amber-900 text-xs leading-relaxed">
-            No hay sugerencias con estas reglas. Prueba «Solo en común», activa más{' '}
-            {mode === 'give' ? 'cedentes' : 'destinos'}, o ajusta los límites de carga arriba.
+            {t('deadlines.suggestions.rulesNoSuggestions', 'No hay sugerencias con estas reglas. Prueba «Solo en común», activa más {{role}}, o ajusta los límites de carga arriba.', {
+              role: mode === 'give' ? t('deadlines.suggestions.rulesAdjustDonors', 'cedentes') : t('deadlines.suggestions.rulesAdjustReceivers', 'destinos'),
+            })}
           </p>
         )}
       </div>
@@ -269,12 +276,12 @@ export function SuggestionRulesStep({
 
       <div className="space-y-2 flex flex-col min-h-0">
         <p className="text-sm font-semibold text-slate-800">
-          {mode === 'give' ? '¿Quién puede darle horas?' : '¿A quién puede pasarle trabajo?'}
+          {mode === 'give' ? t('deadlines.suggestions.rulesWhoCanGive', '¿Quién puede darle horas?') : t('deadlines.suggestions.rulesWhoCanReceive', '¿A quién puede pasarle trabajo?')}
         </p>
         <div className="relative">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           <Input
-            placeholder="Buscar persona..."
+            placeholder={t('deadlines.suggestions.searchPerson', 'Buscar persona...')}
             value={personSearch}
             onChange={(e) => setPersonSearch(e.target.value)}
             className="pl-9 h-9 text-sm"
@@ -291,7 +298,7 @@ export function SuggestionRulesStep({
                     name={d.name}
                     avatarUrl={d.avatarUrl}
                     allowed={allowed}
-                    hint={shares ? 'Comparte proyecto' : 'Sin proyecto en común'}
+                    hint={shares ? t('deadlines.suggestions.rulesSharesProject', 'Comparte proyecto') : t('deadlines.suggestions.rulesNoSharedProject', 'Sin proyecto en común')}
                     hintMuted={!shares}
                     onToggle={(c) =>
                       setExcludedDonorIds((prev) =>
@@ -310,7 +317,7 @@ export function SuggestionRulesStep({
                     name={r.name}
                     avatarUrl={r.avatarUrl}
                     allowed={allowed}
-                    hint={shares ? 'Comparte proyecto' : 'Sin proyecto en común'}
+                    hint={shares ? t('deadlines.suggestions.rulesSharesProject', 'Comparte proyecto') : t('deadlines.suggestions.rulesNoSharedProject', 'Sin proyecto en común')}
                     hintMuted={!shares}
                     onToggle={(c) =>
                       setExcludedReceiverIds((prev) =>
@@ -321,18 +328,18 @@ export function SuggestionRulesStep({
                 );
               })}
           {(mode === 'give' ? donorList : receiverList).length === 0 && (
-            <p className="text-xs text-slate-500 text-center py-3">Nadie coincide con la búsqueda.</p>
+            <p className="text-xs text-slate-500 text-center py-3">{t('deadlines.suggestions.rulesNoSearchMatch', 'Nadie coincide con la búsqueda.')}</p>
           )}
         </div>
         <p className="text-xs text-slate-500">
           {mode === 'give'
-            ? `${allowedDonorCount} persona(s) pueden ceder`
-            : `${allowedReceiverCount} destino(s) activos`}
+            ? t('deadlines.suggestions.donorsCanGive', '{{count}} persona(s) pueden ceder', { count: allowedDonorCount })
+            : t('deadlines.suggestions.activeDestinations', '{{count}} destino(s) activos', { count: allowedReceiverCount })}
         </p>
       </div>
 
       <div className="space-y-2 pt-1 border-t border-slate-100">
-        <p className="text-sm font-semibold text-slate-800">¿En qué proyectos?</p>
+        <p className="text-sm font-semibold text-slate-800">{t('deadlines.suggestions.rulesWhichProjects', '¿En qué proyectos?')}</p>
         <div className="space-y-2">
           {scopeOptions.map((opt) => (
             <label
@@ -362,7 +369,7 @@ export function SuggestionRulesStep({
           <div className="border rounded-lg p-2 bg-slate-50/80 space-y-2">
             <p className="text-[11px] text-slate-600">
               {includedProjectIds.size === 0 ? (
-                <>Ningún proyecto seleccionado. Marca al menos uno para ver sugerencias.</>
+                <>{t('deadlines.suggestions.noProjectSelected')}</>
               ) : (
                 <>
                   <span className="font-medium text-slate-800">{includedProjectIds.size}</span> de{' '}
@@ -426,7 +433,7 @@ export function SuggestionRulesStep({
             </div>
           </div>
         )}
-        <p className="text-xs text-slate-500">{scopeLabel(flowProjectScope)}</p>
+        <p className="text-xs text-slate-500">{scopeLabel(flowProjectScope, t)}</p>
       </div>
     </div>
   );

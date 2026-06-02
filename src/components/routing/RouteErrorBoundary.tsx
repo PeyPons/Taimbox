@@ -1,5 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
+import { useAppTranslation } from "@/hooks/useAppTranslation";
 
 interface RouteErrorBoundaryProps {
   children: ReactNode;
@@ -11,17 +12,18 @@ interface RouteErrorBoundaryState {
 }
 
 function RouteErrorFallback({ error, onRetry }: { error: Error; onRetry: () => void }) {
+  const { t } = useAppTranslation();
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50">
       <div className="text-center p-8 max-w-md">
-        <h2 className="text-xl font-semibold text-slate-900 mb-2">Error al cargar la página</h2>
+        <h2 className="text-xl font-semibold text-slate-900 mb-2">{t('routeError.title')}</h2>
         <p className="text-slate-600 mb-4 text-sm">{error.message}</p>
         <div className="flex gap-2 justify-center flex-wrap">
           <Button onClick={onRetry} className="bg-primary hover:bg-primary/90">
-            Reintentar
+            {t('routeError.retry')}
           </Button>
           <Button variant="outline" onClick={() => window.location.reload()}>
-            Recargar
+            {t('routeError.reload')}
           </Button>
         </div>
       </div>

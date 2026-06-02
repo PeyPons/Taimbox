@@ -7,7 +7,8 @@ import {
 import { cn } from '@/lib/utils';
 import { LoadStatus } from '@/types';
 import { addDays, format } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { useTranslation } from 'react-i18next';
+import { useDateLocale } from '@/hooks/useDateLocale';
 
 interface WeekInfo {
   weekStart: Date;
@@ -40,6 +41,9 @@ export function AllocationWeekStrip({
   overviewMode,
   variant = 'full',
 }: AllocationWeekStripProps) {
+  const { t } = useTranslation('app');
+  const dateLocale = useDateLocale();
+
   if (weeks.length === 0 || variant === 'hidden') return null;
 
   const isCompact = variant === 'compact';
@@ -51,7 +55,11 @@ export function AllocationWeekStrip({
       className="grid gap-1.5 w-full min-w-0 py-0.5"
       style={{ gridTemplateColumns: `repeat(${colCount}, minmax(0, 1fr))` }}
       role="tablist"
-      aria-label={overviewMode ? 'Resumen semanal del mes' : 'Semanas del mes'}
+      aria-label={
+        overviewMode
+          ? t('planner.allocation.weekStrip.overviewAria', 'Resumen semanal del mes')
+          : t('planner.allocation.weekStrip.weeksAria', 'Semanas del mes')
+      }
       data-tour="planner-week-nav"
     >
       {weeks.map((week, idx) => {
@@ -59,7 +67,7 @@ export function AllocationWeekStrip({
         const end = week.effectiveEnd || addDays(week.weekStart, 6);
         const isActive = !overviewMode && idx === activeWeekIndex;
         const isCurrent = idx === currentWeekIndex;
-        const dateLabel = `${format(start, 'd', { locale: es })}–${format(end, 'd MMM', { locale: es })}`;
+        const dateLabel = `${format(start, 'd', { locale: dateLocale })}–${format(end, 'd MMM', { locale: dateLocale })}`;
         const summary = weekSummaries[idx] ?? {
           planHours: 0,
           loadHours: 0,
@@ -78,7 +86,11 @@ export function AllocationWeekStrip({
             size="sm"
             role="tab"
             aria-selected={isActive}
-            title={overviewMode ? `Desplazar a la semana ${idx + 1}` : undefined}
+            title={
+              overviewMode
+                ? t('planner.allocation.weekStrip.scrollToWeek', 'Desplazar a la semana {{number}}', { number: idx + 1 })
+                : undefined
+            }
             className={cn(
               isCompact
                 ? 'h-9 sm:h-10 flex-row items-center justify-between gap-2 px-2.5 py-1 rounded-lg w-full min-w-0'

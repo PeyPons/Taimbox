@@ -1,4 +1,5 @@
 import { Badge } from '@/components/ui/badge';
+import { useTranslation } from 'react-i18next';
 import { inferFlowProjectScope, type FlowProjectScope } from '@/utils/suggestionRulesUtils';
 
 export function SuggestionActiveRulesChips({
@@ -26,32 +27,33 @@ export function SuggestionActiveRulesChips({
   allowedReceiverCount?: number;
   mode: 'give' | 'take' | 'team';
 }) {
+  const { t } = useTranslation('app');
   const scope =
     flowProjectScope ?? inferFlowProjectScope(onlySharedProjects, includedProjectIds);
   const chips: string[] = [];
 
-  if (scope === 'shared') chips.push('Solo en común');
+  if (scope === 'shared') chips.push(t('deadlines.suggestions.chipSharedOnly', 'Solo en común'));
   else if (scope === 'manual') {
     chips.push(
       includedProjectIds.size > 0
-        ? `${includedProjectIds.size} proy. elegidos`
-        : 'Manual (ninguno aún)'
+        ? t('deadlines.suggestions.chipManualCount', '{{count}} proy. elegidos', { count: includedProjectIds.size })
+        : t('deadlines.suggestions.chipManualNone', 'Manual (ninguno aún)')
     );
-  } else if (scope === 'focus_projects') chips.push('Proyectos de la persona');
+  } else if (scope === 'focus_projects') chips.push(t('deadlines.suggestions.chipFocusProjects', 'Proyectos de la persona'));
 
   if (mode === 'give' && allowedDonorCount != null) {
-    chips.push(`${allowedDonorCount} ceden`);
+    chips.push(t('deadlines.suggestions.chipDonorsCount', '{{count}} ceden', { count: allowedDonorCount }));
   }
   if (mode === 'take' && allowedReceiverCount != null) {
-    chips.push(`${allowedReceiverCount} destinos`);
+    chips.push(t('deadlines.suggestions.chipReceiversCount', '{{count}} destinos', { count: allowedReceiverCount }));
   }
   if (mode === 'team' && excludedDonorIds.length > 0) {
-    chips.push(`${excludedDonorIds.length} cedentes excl.`);
+    chips.push(t('deadlines.suggestions.chipExcludedDonors', '{{count}} cedentes excl.', { count: excludedDonorIds.length }));
   }
-  if (minSenderLoadPct > 30) chips.push(`Cede desde ${minSenderLoadPct}%`);
-  if (maxReceiverLoadPct < 100) chips.push(`Receptor máx. ${maxReceiverLoadPct}%`);
+  if (minSenderLoadPct > 30) chips.push(t('deadlines.suggestions.chipSenderFrom', 'Cede desde {{pct}}%', { pct: minSenderLoadPct }));
+  if (maxReceiverLoadPct < 100) chips.push(t('deadlines.suggestions.chipReceiverMax', 'Receptor máx. {{pct}}%', { pct: maxReceiverLoadPct }));
   if (mode === 'team' && minSuggestedTransferHours != null) {
-    chips.push(`Mín. ${minSuggestedTransferHours}h/mov.`);
+    chips.push(t('deadlines.suggestions.chipMinTransfer', 'Mín. {{hours}}h/mov.', { hours: minSuggestedTransferHours }));
   }
 
   if (chips.length === 0) return null;
@@ -67,14 +69,14 @@ export function SuggestionActiveRulesChips({
   );
 }
 
-export function scopeLabel(scope: FlowProjectScope): string {
+export function scopeLabel(scope: FlowProjectScope, t: (key: string, fallback: string) => string): string {
   switch (scope) {
     case 'shared':
-      return 'Solo proyectos en común';
+      return t('deadlines.suggestions.scopeShared', 'Solo proyectos en común');
     case 'focus_projects':
-      return 'Todos los proyectos de la persona';
+      return t('deadlines.suggestions.scopeFocusProjects', 'Todos los proyectos de la persona');
     case 'manual':
-      return 'Elige proyectos marcando la casilla';
+      return t('deadlines.suggestions.scopeManual', 'Elige proyectos marcando la casilla');
     default:
       return '';
   }

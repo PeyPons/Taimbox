@@ -10,7 +10,8 @@ import { getMonthName, isCurrentWeek } from '@/utils/dateUtils';
 import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, addDays } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { useTranslation } from 'react-i18next';
+import { useDateLocale } from '@/hooks/useDateLocale';
 
 const EMPLOYEE_COL_WIDE = 180;
 const EMPLOYEE_COL_NARROW = 168;
@@ -18,6 +19,8 @@ const WEEK_COL_MIN = 116;
 const TOTAL_COL = 72;
 
 export function PlannerGrid() {
+  const { t } = useTranslation('app');
+  const dateLocale = useDateLocale();
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('all');
   const [selectedProjectId, setSelectedProjectId] = useState<string>('all');
   const [showOnlyMe, setShowOnlyMe] = useState(() => localStorage.getItem('planner_only_me') === 'true');
@@ -93,7 +96,9 @@ export function PlannerGrid() {
       <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <div className="text-slate-500 dark:text-slate-400">Cargando {getMonthName(currentMonth)}...</div>
+          <div className="text-slate-500 dark:text-slate-400">
+            {t('planner.grid.loading', 'Cargando {{month}}...', { month: getMonthName(currentMonth, dateLocale) })}
+          </div>
         </div>
       </div>
     );
@@ -143,7 +148,7 @@ export function PlannerGrid() {
                 style={{ gridTemplateColumns: gridTemplate }}
               >
                 <div className="px-2 py-2 font-semibold text-xs text-slate-700 dark:text-slate-200 border-r flex items-center bg-slate-50 dark:bg-slate-900 sticky left-0 z-20">
-                  Equipo ({filteredEmployees.length})
+                  {t('planner.grid.teamHeader', 'Equipo ({{count}})', { count: filteredEmployees.length })}
                 </div>
                 {weeks.map((week, index) => (
                   <div
@@ -162,13 +167,13 @@ export function PlannerGrid() {
                       S{index + 1}
                     </span>
                     <span className="text-[9px] text-slate-400 font-medium truncate leading-tight">
-                      {format(week.weekStart, 'd', { locale: es })}–
-                      {format(addDays(week.weekStart, 4), 'd MMM', { locale: es })}
+                      {format(week.weekStart, 'd', { locale: dateLocale })}–
+                      {format(addDays(week.weekStart, 4), 'd MMM', { locale: dateLocale })}
                     </span>
                   </div>
                 ))}
                 <div className="px-1 py-2 font-semibold text-[10px] text-center border-l bg-slate-50 flex items-center justify-center">
-                  Total
+                  {t('planner.grid.total', 'Total')}
                 </div>
               </div>
 

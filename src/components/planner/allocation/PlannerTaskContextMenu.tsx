@@ -18,44 +18,31 @@ import {
   ListChecks,
 } from 'lucide-react';
 import { isAllocationWeekPastForWeekly } from '@/utils/dateUtils';
+import { useAppTranslation } from '@/hooks/useAppTranslation';
 
 export interface PlannerTaskContextMenuProps {
   alloc: Allocation;
-  /** Solicitud pendiente o cascarón tras aceptación (solo lectura). */
   transferReadOnly?: boolean;
   /** @deprecated Usar transferReadOnly */
   pendingTransfer?: boolean;
   transferReadOnlyLabel?: string;
   isWeeklyEnabled: boolean;
   weeklyCloseDay: number;
-  /** Siguiente semana en el mes (para «Mover sem.»); si no hay, no se muestra la opción */
   nextWeekStart?: Date;
   onStartEditFull: () => void;
   onTransfer: () => void;
   onMoveTask: (targetWeekStart: Date) => void;
-  /**
-   * Con Weekly activo: una sola entrada al modal de cierre (`WeeklyReportDialog`) con todas las acciones.
-   * Si no se pasa, se muestran transferir / mover / (legacy) cierre parcial según corresponda.
-   */
   onOpenWeeklyForTask?: (alloc: Allocation) => void;
-  /** Clases del botón disparador (p. ej. táctil en móvil) */
   triggerClassName?: string;
   iconClassName?: string;
-  /** Móvil / filas sin hover: menú siempre visible */
   menuTriggerMode?: 'hover' | 'always';
 }
 
-/**
- * Menú ⋯ unificado:
- * - Con Weekly + `onOpenWeeklyForTask`: Editar + «Opciones Weekly…» (modal completo).
- * - Sin Weekly: Editar, Transferir, Mover sem.
- * Con Weekly activo y semana pasada, transferir y mover quedan bloqueados (igual que editar).
- */
 export function PlannerTaskContextMenu({
   alloc,
   transferReadOnly: transferReadOnlyProp,
   pendingTransfer: pendingTransferLegacy,
-  transferReadOnlyLabel = 'Transferencia pendiente',
+  transferReadOnlyLabel,
   isWeeklyEnabled,
   weeklyCloseDay,
   nextWeekStart,
@@ -67,6 +54,8 @@ export function PlannerTaskContextMenu({
   iconClassName = 'h-3 w-3',
   menuTriggerMode = 'hover',
 }: PlannerTaskContextMenuProps) {
+  const { t } = useAppTranslation();
+  const readOnlyLabel = transferReadOnlyLabel ?? t('planner.allocationSheet.transfer.pendingMenu', 'Transfer pending');
   const transferReadOnly = transferReadOnlyProp ?? !!pendingTransferLegacy;
   const isCompleted = alloc.status === 'completed';
   const weeklyPastLock = isWeeklyEnabled && isAllocationWeekPastForWeekly(alloc.weekStartDate, weeklyCloseDay);
@@ -108,7 +97,7 @@ export function PlannerTaskContextMenu({
           ) : (
             <Pencil className="mr-2 h-3.5 w-3.5" />
           )}
-          {transferReadOnly ? transferReadOnlyLabel : 'Editar'}
+          {transferReadOnly ? readOnlyLabel : t('planner.taskContextMenu.edit', 'Edit')}
         </DropdownMenuItem>
 
         {showWeeklyEntry && (
@@ -122,7 +111,7 @@ export function PlannerTaskContextMenu({
               }}
             >
               <ListChecks className="mr-2 h-3.5 w-3.5" />
-              Opciones Weekly…
+              {t('planner.taskContextMenu.weeklyOptions', 'Weekly options…')}
             </DropdownMenuItem>
           </>
         )}
@@ -141,13 +130,13 @@ export function PlannerTaskContextMenu({
               ) : (
                 <ArrowRightLeft className="mr-2 h-3.5 w-3.5" />
               )}
-              Transferir a compañero
+              {t('planner.taskContextMenu.transferToTeammate', 'Transfer to teammate')}
             </DropdownMenuItem>
 
             {weeklyPastLock && isWeeklyEnabled && (
               <DropdownMenuItem disabled className="text-xs text-amber-600">
                 <AlertTriangle className="mr-2 h-3.5 w-3.5" />
-                Usa Weekly para gestionar esta semana
+                {t('planner.taskContextMenu.useWeeklyForWeek', 'Use Weekly to manage this week')}
               </DropdownMenuItem>
             )}
 
@@ -160,7 +149,7 @@ export function PlannerTaskContextMenu({
                 }}
               >
                 <ArrowRightCircle className="mr-2 h-3.5 w-3.5" />
-                Mover sem.
+                {t('planner.taskContextMenu.moveWeek', 'Move week')}
               </DropdownMenuItem>
             )}
           </>
@@ -169,7 +158,7 @@ export function PlannerTaskContextMenu({
         {useWeeklyModal && weeklyPastLock && !transferReadOnly && (
           <DropdownMenuItem disabled className="text-xs text-amber-600">
             <AlertTriangle className="mr-2 h-3.5 w-3.5" />
-            Edición bloqueada: usa «Opciones Weekly»
+            {t('planner.taskContextMenu.editLockedUseWeekly', 'Editing locked: use «Weekly options»')}
           </DropdownMenuItem>
         )}
       </DropdownMenuContent>

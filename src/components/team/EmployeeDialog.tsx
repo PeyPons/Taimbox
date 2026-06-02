@@ -350,14 +350,14 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
         >
           <DialogHeader>
             <DialogTitle>{isEditing ? 'Editar empleado' : 'Nuevo empleado'}</DialogTitle>
-            <DialogDescription>Modifica datos, acceso y horario.</DialogDescription>
+            <DialogDescription>{t('team.employeeDialog.editDescription')}</DialogDescription>
           </DialogHeader>
 
           <Tabs defaultValue="profile" className="w-full mt-2">
             <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="profile">Perfil</TabsTrigger>
-              <TabsTrigger value="schedule" disabled={!isEditing}>Horario</TabsTrigger>
-              <TabsTrigger value="management" disabled={!isEditing}>Gestión</TabsTrigger>
+              <TabsTrigger value="profile">{t('team.employeeDialog.tabProfile')}</TabsTrigger>
+              <TabsTrigger value="schedule" disabled={!isEditing}>{t('team.employeeDialog.tabSchedule')}</TabsTrigger>
+              <TabsTrigger value="management" disabled={!isEditing}>{t('team.employeeDialog.tabManagement')}</TabsTrigger>
             </TabsList>
 
             <TabsContent value="profile" className="space-y-4 py-4">
@@ -577,14 +577,14 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
               <div className="space-y-4">
                 <div className="bg-blue-50 text-blue-800 p-3 rounded-md text-sm flex gap-2">
                   <Clock className="h-5 w-5 shrink-0" />
-                  <p>Ajusta las horas diarias. Esto recalculará la capacidad semanal automáticamente.</p>
+                  <p>{t('team.employeeDialog.scheduleHint')}</p>
                 </div>
                 <ScheduleEditor
                   schedule={workSchedule as WorkSchedule}
                   onChange={(newSchedule) => form.setValue('workSchedule', newSchedule as WorkSchedule)}
                 />
                 <div className="flex justify-end pt-2">
-                  <Button onClick={form.handleSubmit(onSubmit)} className="bg-primary">Guardar horario</Button>
+                  <Button onClick={form.handleSubmit(onSubmit)} className="bg-primary">{t('team.employeeDialog.saveSchedule')}</Button>
                 </div>
               </div>
             </TabsContent>

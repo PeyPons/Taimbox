@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { useAppTranslation } from '@/hooks/useAppTranslation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -12,7 +13,7 @@ import { Switch } from '@/components/ui/switch';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useApp } from '@/contexts/AppContext';
 import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { useDateLocale } from '@/hooks/useDateLocale';
 import { Trash2, CalendarIcon, Plus, Check, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from '@/lib/notify';
@@ -25,27 +26,45 @@ interface AbsencesSheetProps {
   employeeId: string;
 }
 
-const absenceFormSchema = z.object({
-  startDate: z.string().min(1, 'La fecha de inicio es obligatoria'),
-  endDate: z.string().optional(),
-  type: z.enum(['vacation', 'sick_leave', 'personal', 'other']),
-  description: z.string().max(INPUT_LIMITS.absenceDescription).optional(),
-  isFullDay: z.boolean(),
-  hours: z.number().min(0.5).max(24).optional(),
-}).refine((data) => {
-  if (!data.isFullDay && (!data.hours || data.hours <= 0)) {
-    return false;
-  }
-  return true;
-}, {
-  message: 'Las horas son obligatorias cuando no es día completo',
-  path: ['hours'],
-});
-
-type AbsenceFormValues = z.infer<typeof absenceFormSchema>;
+type AbsenceFormValues = {
+  startDate: string;
+  endDate?: string;
+  type: 'vacation' | 'sick_leave' | 'personal' | 'other';
+  description?: string;
+  isFullDay: boolean;
+  hours?: number;
+};
 
 export function AbsencesSheet({ open, onOpenChange, employeeId }: AbsencesSheetProps) {
+  const { t } = useAppTranslation();
+  const dateLocale = useDateLocale();
   const { employees, absences, addAbsence, deleteAbsence } = useApp();
+
+  const absenceFormSchema = useMemo(
+    () =>
+      z
+        .object({
+          startDate: z.string().min(1, t('team.absences.startDateRequired')),
+          endDate: z.string().optional(),
+          type: z.enum(['vacation', 'sick_leave', 'personal', 'other']),
+          description: z.string().max(INPUT_LIMITS.absenceDescription).optional(),
+          isFullDay: z.boolean(),
+          hours: z.number().min(0.5).max(24).optional(),
+        })
+        .refine(
+          (data) => {
+            if (!data.isFullDay && (!data.hours || data.hours <= 0)) {
+              return false;
+            }
+            return true;
+          },
+          {
+            message: t('team.absences.hoursRequired'),
+            path: ['hours'],
+          }
+        ),
+    [t]
+  );
   const employee = employees.find(e => e.id === employeeId);
 
   const employeeAbsences = absences.filter(a => a.employeeId === employeeId);
@@ -78,7 +97,7 @@ export function AbsencesSheet({ open, onOpenChange, employeeId }: AbsencesSheetP
         hours: data.isFullDay ? 0 : (data.hours || 0)
       });
 
-      toast.success('Ausencia registrada correctamente');
+      toast.success(t('team.absences.addSuccess'));
       form.reset({
         startDate: '',
         endDate: '',
@@ -89,7 +108,7 @@ export function AbsencesSheet({ open, onOpenChange, employeeId }: AbsencesSheetP
       });
     } catch (error) {
       console.error('Error añadiendo ausencia:', error);
-      const errorMessage = (error as Error)?.message || 'Error al registrar la ausencia';
+      const errorMessage = (error as Error)?.message || t('team.absences.registerError');
       toast.error(errorMessage);
     }
   };
@@ -98,8 +117,8 @@ export function AbsencesSheet({ open, onOpenChange, employeeId }: AbsencesSheetP
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full sm:max-w-md overflow-y-auto">
         <SheetHeader className="pb-4 border-b">
-          <SheetTitle>Ausencias: {employee.name}</SheetTitle>
-          <SheetDescription>Registra vacaciones, bajas o permisos.</SheetDescription>
+          <SheetTitle>{t('team.absences.sheetTitle', { name: employee.name })}</SheetTitle>
+          <SheetDescription>{t('team.absences.sheetDescription')}</SheetDescription>
         </SheetHeader>
 
         <div className="space-y-6 py-6">
@@ -111,7 +130,7 @@ export function AbsencesSheet({ open, onOpenChange, employeeId }: AbsencesSheetP
                   name="startDate"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Desde</FormLabel>
+                      <FormLabel>{t('team.absences.fromLabel')}</FormLabel>
                       <FormControl>
                         <Input type="date" {...field} />
                       </FormControl>
@@ -124,7 +143,7 @@ export function AbsencesSheet({ open, onOpenChange, employeeId }: AbsencesSheetP
                   name="endDate"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Hasta (opcional)</FormLabel>
+                      <FormLabel>{t('team.absences.toOptionalLabel')}</FormLabel>
                       <FormControl>
                         <Input type="date" {...field} />
                       </FormControl>
@@ -139,12 +158,12 @@ export function AbsencesSheet({ open, onOpenChange, employeeId }: AbsencesSheetP
                 name="type"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Tipo</FormLabel>
+                    <FormLabel>{t('team.absences.typeLabel')}</FormLabel>
                     <Popover open={openTypePopover} onOpenChange={setOpenTypePopover}>
                       <PopoverTrigger asChild>
                         <FormControl>
                           <Button variant="outline" className="w-full justify-between font-normal">
-                            <span className="truncate">{field.value === 'vacation' ? 'Vacaciones' : field.value === 'sick_leave' ? 'Baja Médica' : field.value === 'personal' ? 'Asuntos Propios' : field.value === 'other' ? 'Otro' : 'Tipo'}</span>
+                            <span className="truncate">{field.value ? t(`team.absences.types.${field.value}`) : t('team.absences.typeLabel')}</span>
                             <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
                           </Button>
                         </FormControl>
@@ -154,9 +173,9 @@ export function AbsencesSheet({ open, onOpenChange, employeeId }: AbsencesSheetP
                           <CommandList>
                             <CommandGroup>
                               {(['vacation', 'sick_leave', 'personal', 'other'] as const).map(val => (
-                                <CommandItem key={val} value={val === 'vacation' ? 'Vacaciones' : val === 'sick_leave' ? 'Baja Médica' : val === 'personal' ? 'Asuntos Propios' : 'Otro'} onSelect={() => { field.onChange(val); setOpenTypePopover(false); }}>
+                                <CommandItem key={val} value={t(`team.absences.types.${val}`)} onSelect={() => { field.onChange(val); setOpenTypePopover(false); }}>
                                   <Check className={cn('mr-2 h-4 w-4 shrink-0', field.value === val ? 'opacity-100' : 'opacity-0')} />
-                                  {val === 'vacation' ? 'Vacaciones' : val === 'sick_leave' ? 'Baja Médica' : val === 'personal' ? 'Asuntos Propios' : 'Otro'}
+                                  {t(`team.absences.types.${val}`)}
                                 </CommandItem>
                               ))}
                             </CommandGroup>
@@ -176,7 +195,7 @@ export function AbsencesSheet({ open, onOpenChange, employeeId }: AbsencesSheetP
                 render={({ field }) => (
                   <FormItem className="flex flex-col gap-3 pt-2">
                     <div className="flex items-center justify-between">
-                      <FormLabel className="cursor-pointer">¿Día completo?</FormLabel>
+                      <FormLabel className="cursor-pointer">{t('team.absences.fullDay')}</FormLabel>
                       <FormControl>
                         <Switch checked={field.value} onCheckedChange={field.onChange} />
                       </FormControl>
@@ -192,7 +211,7 @@ export function AbsencesSheet({ open, onOpenChange, employeeId }: AbsencesSheetP
                   name="hours"
                   render={({ field }) => (
                     <FormItem className="animate-in fade-in slide-in-from-top-1">
-                      <FormLabel>Horas de ausencia (por día)</FormLabel>
+                      <FormLabel>{t('team.absences.hoursPerDay')}</FormLabel>
                       <FormControl>
                         <Input
                           type="number"
@@ -214,9 +233,9 @@ export function AbsencesSheet({ open, onOpenChange, employeeId }: AbsencesSheetP
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Motivo (opcional)</FormLabel>
+                    <FormLabel>{t('team.absences.reasonLabel')}</FormLabel>
                     <FormControl>
-                      <Input placeholder="Ej: Cita médica..." maxLength={INPUT_LIMITS.absenceDescription} {...field} />
+                      <Input placeholder={t('team.absences.descriptionPlaceholder')} maxLength={INPUT_LIMITS.absenceDescription} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -224,14 +243,14 @@ export function AbsencesSheet({ open, onOpenChange, employeeId }: AbsencesSheetP
               />
 
               <Button type="submit" className="w-full bg-primary hover:bg-primary/90">
-                <Plus className="mr-2 h-4 w-4" /> Añadir ausencia
+                <Plus className="mr-2 h-4 w-4" /> {t('team.absences.add')}
               </Button>
             </form>
           </Form>
 
           <div className="space-y-3">
-            <h4 className="text-sm font-medium text-muted-foreground">Historial</h4>
-            {employeeAbsences.length === 0 && <p className="text-sm text-center py-4 text-muted-foreground">No hay ausencias registradas.</p>}
+            <h4 className="text-sm font-medium text-muted-foreground">{t('team.absences.history')}</h4>
+            {employeeAbsences.length === 0 && <p className="text-sm text-center py-4 text-muted-foreground">{t('team.absences.noAbsences')}</p>}
 
             {employeeAbsences.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()).map(absence => (
               <div key={absence.id} className="flex items-center justify-between p-3 border rounded-lg bg-card shadow-sm">
@@ -252,8 +271,8 @@ export function AbsencesSheet({ open, onOpenChange, employeeId }: AbsencesSheetP
                     )}
                   </div>
                   <p className="text-sm font-medium mt-1">
-                    {format(new Date(absence.startDate), 'd MMM', { locale: es })}
-                    {absence.endDate && absence.endDate !== absence.startDate && ` - ${format(new Date(absence.endDate), 'd MMM', { locale: es })}`}
+                    {format(new Date(absence.startDate), 'd MMM', { locale: dateLocale })}
+                    {absence.endDate && absence.endDate !== absence.startDate && ` - ${format(new Date(absence.endDate), 'd MMM', { locale: dateLocale })}`}
                   </p>
                   {absence.description && <p className="text-xs text-muted-foreground">{absence.description}</p>}
                 </div>

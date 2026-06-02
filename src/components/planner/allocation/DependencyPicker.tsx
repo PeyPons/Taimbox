@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { format } from 'date-fns';
 import { Check, ChevronDown, Link2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -72,23 +73,33 @@ function getEmployee(employees: Employee[], id: string) {
   return employees.find((e) => e.id === id);
 }
 
-function getWeekLabel(weekStartDate: string, weeks: WeekSlice[]): string {
+function getWeekLabel(
+  weekStartDate: string,
+  weeks: WeekSlice[],
+  t: (key: string, fallback: string, options?: Record<string, unknown>) => string,
+): string {
   const idx = weeks.findIndex((w) => format(w.weekStart, 'yyyy-MM-dd') === weekStartDate);
   if (idx >= 0) {
-    return `Sem ${idx + 1} · ${formatPlannerWeekWorkingRangeLabel(weeks[idx])}`;
+    return t('planner.allocation.dependencyPicker.weekLabel', 'Sem {{number}} · {{range}}', {
+      number: idx + 1,
+      range: formatPlannerWeekWorkingRangeLabel(weeks[idx]),
+    });
   }
   return weekStartDate;
 }
 
-function statusLabel(status: Allocation['status']): string {
+function statusLabel(
+  status: Allocation['status'],
+  t: (key: string, fallback: string) => string,
+): string {
   switch (status) {
     case 'completed':
-      return 'Completada';
+      return t('planner.allocation.dependencyPicker.statusCompleted', 'Completada');
     case 'in_progress':
     case 'active':
-      return 'En curso';
+      return t('planner.allocation.dependencyPicker.statusInProgress', 'En curso');
     default:
-      return 'Planificada';
+      return t('planner.allocation.dependencyPicker.statusPlanned', 'Planificada');
   }
 }
 
@@ -123,11 +134,13 @@ function DependencyPickerList({
   onSelect: (id: string) => void;
   className?: string;
 }) {
+  const { t, i18n } = useTranslation('app');
+
   const grouped = useMemo(() => {
     const sorted = [...dependencies].sort((a, b) => {
       const weekCmp = a.weekStartDate.localeCompare(b.weekStartDate);
       if (weekCmp !== 0) return weekCmp;
-      return (a.taskName || '').localeCompare(b.taskName || '', 'es');
+      return (a.taskName || '').localeCompare(b.taskName || '', i18n.language);
     });
 
     const map = new Map<string, Allocation[]>();
@@ -138,10 +151,10 @@ function DependencyPickerList({
     }
     return Array.from(map.entries()).map(([weekStartDate, items]) => ({
       weekStartDate,
-      weekLabel: getWeekLabel(weekStartDate, weeks),
+      weekLabel: getWeekLabel(weekStartDate, weeks, t),
       items,
     }));
-  }, [dependencies, weeks]);
+  }, [dependencies, weeks, t, i18n.language]);
 
   return (
     <Command
@@ -156,11 +169,11 @@ function DependencyPickerList({
         className,
       )}
     >
-      <CommandInput placeholder="Buscar por tarea, persona o semana…" />
+      <CommandInput placeholder={t('planner.allocation.dependencyPicker.searchPlaceholder', 'Buscar por tarea, persona o semana…')} />
       <CommandList className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-        <CommandEmpty>No hay tareas que coincidan.</CommandEmpty>
+        <CommandEmpty>{t('planner.allocation.dependencyPicker.empty', 'No hay tareas que coincidan.')}</CommandEmpty>
 
-        <CommandGroup heading="Opción" className={dependencyGroupClass}>
+        <CommandGroup heading={t('planner.allocation.dependencyPicker.optionGroup', 'Opción')} className={dependencyGroupClass}>
           <CommandItem
             value={NONE_ITEM_VALUE}
             onSelect={() => onSelect(DEPENDENCY_NONE)}
@@ -177,8 +190,8 @@ function DependencyPickerList({
               )}
             />
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-slate-800">Sin dependencia</p>
-              <p className="truncate text-xs text-slate-500">Esta tarea no espera a otra</p>
+              <p className="truncate text-sm font-medium text-slate-800">{t('planner.allocation.dependencyPicker.noneTitle', 'Sin dependencia')}</p>
+              <p className="truncate text-xs text-slate-500">{t('planner.allocation.dependencyPicker.noneDescription', 'Esta tarea no espera a otra')}</p>
             </div>
           </CommandItem>
         </CommandGroup>
@@ -213,10 +226,10 @@ function DependencyPickerList({
                   </Avatar>
                   <div className="min-w-0 flex-1 space-y-0.5">
                     <p className="truncate text-sm font-medium leading-snug text-slate-900" title={dep.taskName}>
-                      {dep.taskName || 'Sin nombre'}
+                      {dep.taskName || t('planner.allocation.dependencyPicker.unnamedTask', 'Sin nombre')}
                     </p>
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-slate-500">
-                      <span className="truncate">{owner?.name || 'Sin asignar'}</span>
+                      <span className="truncate">{owner?.name || t('planner.allocation.dependencyPicker.unassigned', 'Sin asignar')}</span>
                       <span className="text-slate-300">·</span>
                       <span className="shrink-0 tabular-nums">{dep.hoursAssigned}h</span>
                       <span className="text-slate-300">·</span>
@@ -224,7 +237,7 @@ function DependencyPickerList({
                         variant={statusVariant(dep.status)}
                         className="h-5 shrink-0 px-1.5 text-[10px] font-normal leading-none"
                       >
-                        {statusLabel(dep.status)}
+                        {statusLabel(dep.status, t)}
                       </Badge>
                     </div>
                   </div>
@@ -249,22 +262,24 @@ export function DependencyPicker({
   className,
 }: DependencyPickerProps) {
   const [open, setOpen] = useState(false);
+  const { t } = useTranslation('app');
 
   const selectedDep = value && value !== DEPENDENCY_NONE ? dependencies.find((d) => d.id === value) : null;
   const selectedOwner = selectedDep ? getEmployee(employees, selectedDep.employeeId) : null;
 
+  const noneLabel = t('planner.allocation.dependencyPicker.noneTitle', 'Sin dependencia');
   const triggerLabel = selectedDep
-    ? selectedDep.taskName || 'Sin nombre'
-    : compact
-      ? 'Sin dependencia'
-      : 'Sin dependencia';
+    ? selectedDep.taskName || t('planner.allocation.dependencyPicker.unnamedTask', 'Sin nombre')
+    : noneLabel;
 
   const triggerSub =
     selectedDep && selectedOwner
       ? selectedOwner.name
       : dependencies.length > 0
-        ? `${dependencies.length} tarea${dependencies.length === 1 ? '' : 's'} en el proyecto`
-        : 'Selecciona un proyecto primero';
+        ? t('planner.allocation.dependencyPicker.tasksInProject', '{{count}} tarea en el proyecto', {
+            count: dependencies.length,
+          })
+        : t('planner.allocation.dependencyPicker.selectProjectFirst', 'Selecciona un proyecto primero');
 
   const handleSelect = (id: string) => {
     onChange(id);
@@ -299,11 +314,13 @@ export function DependencyPicker({
           className="flex h-[min(85vh,520px)] max-h-[85vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg"
         >
           <DialogHeader className="shrink-0 border-b border-slate-200 px-4 py-3 text-left">
-            <DialogTitle className="text-base">Depende de otra tarea</DialogTitle>
+            <DialogTitle className="text-base">{t('planner.allocation.dependencyPicker.dialogTitle', 'Depende de otra tarea')}</DialogTitle>
             <DialogDescription className="text-xs">
               {dependencies.length > 0
-                ? `${dependencies.length} candidata${dependencies.length === 1 ? '' : 's'} · agrupadas por semana. Usa la búsqueda si hay muchas opciones.`
-                : 'No hay otras tareas activas en este proyecto.'}
+                ? t('planner.allocation.dependencyPicker.dialogDescription', '{{count}} candidata · agrupadas por semana. Usa la búsqueda si hay muchas opciones.', {
+                    count: dependencies.length,
+                  })
+                : t('planner.allocation.dependencyPicker.dialogEmpty', 'No hay otras tareas activas en este proyecto.')}
             </DialogDescription>
           </DialogHeader>
           <DependencyPickerList

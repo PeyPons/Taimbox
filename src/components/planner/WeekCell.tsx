@@ -19,6 +19,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { useTranslation } from 'react-i18next';
 
 interface WeekCellProps {
   allocations: Allocation[];
@@ -58,23 +59,39 @@ function WeekCellTooltipBody({
   breakdown: { reason: string; hours: number; type: 'absence' | 'event' }[];
   isZeroCapacityOverload: boolean;
 }) {
+  const { t } = useTranslation('app');
+
   return (
     <div className="space-y-1.5 text-xs tabular-nums">
       <div className="font-semibold">
-        Plan {summary.planHours}h / {summary.capacity}h
+        {t('planner.weekCell.plan', 'Plan {{planHours}}h / {{capacity}}h', {
+          planHours: summary.planHours,
+          capacity: summary.capacity,
+        })}
       </div>
       <div className="text-slate-600">
-        Est. {totalEst}h · Real {totalReal > 0 ? `${totalReal}h` : '—'}
-        {summary.showComp && ` · Comp ${totalComp > 0 ? `${totalComp}h` : '—'}`}
+        {t('planner.weekCell.estimated', 'Est. {{est}}h · Real {{real}}', {
+          est: totalEst,
+          real: totalReal > 0 ? `${totalReal}h` : '—',
+        })}
+        {summary.showComp &&
+          ` · ${t('planner.weekCell.comp', 'Comp {{comp}}h', {
+            comp: totalComp > 0 ? `${totalComp}h` : '—',
+          })}`}
       </div>
       {totalTasks > 0 && (
         <div className="text-slate-500">
-          {completedCount}/{totalTasks} tareas completadas
+          {t('planner.weekCell.tasksCompletedShort', '{{completed}}/{{total}} tareas completadas', {
+            completed: completedCount,
+            total: totalTasks,
+          })}
         </div>
       )}
       {Math.abs(balance) > 0.01 && (
         <div className={balance >= 0 ? 'text-emerald-700' : 'text-red-700'}>
-          Balance: {balance > 0 ? '+' : ''}{balance}h
+          {t('planner.weekCell.balance', 'Balance: {{balance}}h', {
+            balance: `${balance > 0 ? '+' : ''}${balance}`,
+          })}
         </div>
       )}
       {breakdown.map((item, idx) => (
@@ -83,7 +100,9 @@ function WeekCellTooltipBody({
         </div>
       ))}
       {isZeroCapacityOverload && (
-        <div className="text-red-700 font-medium">Tareas en semana sin capacidad</div>
+        <div className="text-red-700 font-medium">
+          {t('planner.weekCell.zeroCapacity', 'Tareas en semana sin capacidad')}
+        </div>
       )}
     </div>
   );
@@ -101,6 +120,7 @@ function WeekCellCompact({
   touchTarget,
 }: Omit<WeekCellProps, 'variant' | 'baseCapacity'>) {
   const { currentAgency } = useAgency();
+  const { t } = useTranslation('app');
   const showComp = currentAgency?.settings?.hoursTrackingPreference !== 'actual';
 
   const totalEst = round2(allocations.reduce((sum, a) => sum + (a.hoursAssigned || 0), 0));
@@ -178,13 +198,16 @@ function WeekCellCompact({
                     <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" aria-hidden />
                   )}
                   <span className="truncate">
-                    {completedTasks.length}/{allocations.length} tareas
+                    {t('planner.weekCell.tasks', '{{completed}}/{{total}} tareas', {
+                      completed: completedTasks.length,
+                      total: allocations.length,
+                    })}
                   </span>
                 </div>
               ) : hasReductions ? (
-                <div className="text-[10px] text-slate-400 mt-0.5">Libre</div>
+                <div className="text-[10px] text-slate-400 mt-0.5">{t('planner.weekCell.free', 'Libre')}</div>
               ) : (
-                <div className="text-[10px] text-slate-300 mt-0.5 uppercase tracking-wide">Libre</div>
+                <div className="text-[10px] text-slate-300 mt-0.5 uppercase tracking-wide">{t('planner.weekCell.free', 'Libre')}</div>
               )}
             </div>
 
@@ -236,6 +259,7 @@ function WeekCellDetailed({
   onClick,
   touchTarget,
 }: Omit<WeekCellProps, 'variant' | 'percentage' | 'baseCapacity'>) {
+  const { t } = useTranslation('app');
   const totalEst = round2(allocations.reduce((sum, a) => sum + (a.hoursAssigned || 0), 0));
   const completedTasks = allocations.filter((a) => a.status === 'completed');
   const pendingTasks = allocations.filter((a) => a.status !== 'completed');
@@ -304,7 +328,11 @@ function WeekCellDetailed({
                 </TooltipTrigger>
                 <TooltipContent side="top" className="text-xs">
                   <p>
-                    {completedTasks.length}/{allocations.length} tareas completadas ({executionPercent}%)
+                    {t('planner.weekCell.tasksCompleted', '{{completed}}/{{total}} tareas completadas ({{percent}}%)', {
+                      completed: completedTasks.length,
+                      total: allocations.length,
+                      percent: executionPercent,
+                    })}
                   </p>
                 </TooltipContent>
               </Tooltip>
@@ -319,7 +347,7 @@ function WeekCellDetailed({
               >
                 <span className="flex items-center gap-1 shrink-0">
                   <Clock className="h-3 w-3" />
-                  Est.
+                  {t('planner.weekCell.estimatedLabel', 'Est.')}
                 </span>
                 <span className="font-mono font-semibold truncate">{totalEst}h</span>
               </div>
@@ -328,11 +356,11 @@ function WeekCellDetailed({
                 <>
                   <div className="space-y-0.5 text-[11px] py-0.5 px-1 rounded bg-blue-50/70 min-w-0">
                     <div className="flex items-center justify-between gap-1 text-blue-700 min-w-0">
-                      <span className="font-medium shrink-0">Real</span>
+                      <span className="font-medium shrink-0">{t('planner.weekCell.realLabel', 'Real')}</span>
                       <span className="font-mono font-bold truncate">{totalReal}h</span>
                     </div>
                     <div className="flex items-center justify-between gap-1 text-emerald-700 min-w-0">
-                      <span className="font-medium shrink-0">Comp.</span>
+                      <span className="font-medium shrink-0">{t('planner.weekCell.compLabel', 'Comp.')}</span>
                       <span className="font-mono font-bold truncate">{totalComp}h</span>
                     </div>
                   </div>
@@ -354,7 +382,7 @@ function WeekCellDetailed({
                             ) : (
                               <TrendingDown className="h-3.5 w-3.5 shrink-0" />
                             )}
-                            <span>{balance >= 0 ? 'Gan.' : 'Pérd.'}</span>
+                            <span>{balance >= 0 ? t('planner.weekCell.gainShort', 'Gan.') : t('planner.weekCell.lossShort', 'Pérd.')}</span>
                           </span>
                           <span className="font-mono font-bold text-[12px] truncate">
                             {balance > 0 ? '+' : ''}
@@ -363,7 +391,7 @@ function WeekCellDetailed({
                         </div>
                       </TooltipTrigger>
                       <TooltipContent side="top" className="text-xs">
-                        {balance >= 0 ? 'Ganancia' : 'Pérdida'}: {balance > 0 ? '+' : ''}
+                        {balance >= 0 ? t('planner.weekCell.gain', 'Ganancia') : t('planner.weekCell.loss', 'Pérdida')}: {balance > 0 ? '+' : ''}
                         {balance}h
                       </TooltipContent>
                     </Tooltip>
@@ -372,7 +400,7 @@ function WeekCellDetailed({
                   {Math.abs(balance) <= 0.01 && (
                     <div className="flex justify-center items-center text-[10px] px-2 py-0.5 rounded bg-slate-100 text-slate-500">
                       <CheckCircle2 className="h-3 w-3 mr-1 shrink-0" />
-                      <span>En tiempo</span>
+                      <span>{t('planner.weekCell.onTime', 'En tiempo')}</span>
                     </div>
                   )}
                 </>
@@ -380,7 +408,7 @@ function WeekCellDetailed({
 
               {pendingTasks.length > 0 && hasCompleted && (
                 <div className="text-[9px] text-slate-400 text-center mt-0.5">
-                  +{pendingTasks.length} pendiente{pendingTasks.length > 1 ? 's' : ''}
+                  {t('planner.weekCell.pending', '+{{count}} pendiente', { count: pendingTasks.length })}
                 </div>
               )}
             </div>
@@ -388,7 +416,7 @@ function WeekCellDetailed({
         ) : (
           <div className="flex-1 flex items-center justify-center min-h-0">
             {!hasReductions && (
-              <span className="text-[11px] text-slate-300 uppercase tracking-wider font-medium">Libre</span>
+              <span className="text-[11px] text-slate-300 uppercase tracking-wider font-medium">{t('planner.weekCell.free', 'Libre')}</span>
             )}
           </div>
         )}
@@ -421,7 +449,7 @@ function WeekCellDetailed({
                 </TooltipTrigger>
                 <TooltipContent side="top" className="text-xs max-w-[200px]">
                   <p>{item.reason}</p>
-                  <p className="text-slate-400">Reduce la capacidad en {item.hours}h</p>
+                  <p className="text-slate-400">{t('planner.weekCell.capacityReduction', 'Reduce la capacidad en {{hours}}h', { hours: item.hours })}</p>
                 </TooltipContent>
               </Tooltip>
             ))}
@@ -432,7 +460,7 @@ function WeekCellDetailed({
           {isZeroCapacityOverload && (
             <div className="flex items-center gap-1 text-[10px] text-red-700 bg-red-100 border border-red-300 rounded px-1.5 py-1 mb-1.5">
               <AlertCircle className="h-3 w-3 flex-shrink-0" />
-              <span className="font-medium leading-tight">Tareas en vacaciones</span>
+              <span className="font-medium leading-tight">{t('planner.weekCell.tasksOnVacation', 'Tareas en vacaciones')}</span>
             </div>
           )}
           <div className={cn('flex items-center gap-1 min-w-0 w-full', statusTone, touchTarget && 'text-base')}>

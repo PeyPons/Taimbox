@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { useDateLocale } from '@/hooks/useDateLocale';
 import { Download } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
 import { useAgency } from '@/contexts/AgencyContext';
@@ -52,6 +52,7 @@ export function DeliverableLifecycleTable(props: DeliverableLifecycleTableProps)
     const { formatMoney, currencySymbol, inCurrencyParens } = useFormatMoney();
     const currencyLabels = { currencySymbol, currencyParens: inCurrencyParens };
     const { t } = useTranslation('app');
+    const dateLocale = useDateLocale();
     const { projects, clients } = useApp();
     const { currentAgency } = useAgency();
     const { isActive: privacyDemoActive, anonymizer } = usePrivacyDemo();
@@ -392,7 +393,7 @@ export function DeliverableLifecycleTable(props: DeliverableLifecycleTableProps)
                                         </td>
                                         <td className="p-2 text-slate-600 whitespace-nowrap">
                                             {ph
-                                                ? `${format(ph.start, 'd MMM', { locale: es })} – ${format(ph.due, 'd MMM yyyy', { locale: es })}`
+                                                ? `${format(ph.start, 'd MMM', { locale: dateLocale })} – ${format(ph.due, 'd MMM yyyy', { locale: dateLocale })}`
                                                 : '—'}
                                         </td>
                                         <td className="p-2">

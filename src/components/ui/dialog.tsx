@@ -57,7 +57,7 @@ const DialogContent = React.forwardRef<
         (child) => React.isValidElement(child) && (child.type === DialogTitle || child.type === DialogHeader)
       ) && (
           <VisuallyHidden>
-            <DialogTitle>Diálogo</DialogTitle>
+            <DialogTitle>Dialog</DialogTitle>
           </VisuallyHidden>
         )}
 

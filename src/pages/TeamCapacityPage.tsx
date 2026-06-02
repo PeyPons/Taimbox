@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isSameMonth, addDays } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { useDateLocale } from '@/hooks/useDateLocale';
 import { getWorkingDaysInRange, getMonthlyCapacity, isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { filterEmployeesForOperationalMonthDate } from '@/utils/employeeAssignmentVisibility';
 import { hoursCountedTowardLoad } from '@/utils/appMetrics';
@@ -52,6 +52,7 @@ interface EmployeeCapacity {
 
 export default function TeamCapacityPage() {
     const { t } = useTranslation('app');
+    const dateLocale = useDateLocale();
     const { employees, allocations, absences, teamEvents } = useApp();
     const { currentAgency } = useAgency();
     const { selectedDepartmentId } = useDepartmentView();
@@ -82,24 +83,24 @@ export default function TeamCapacityPage() {
 
             // La etiqueta muestra el rango efectivo dentro del mes
             const label = effectiveStart.getTime() === effectiveEnd.getTime()
-                ? format(effectiveStart, "d 'de' MMMM", { locale: es })
-                : `${format(effectiveStart, "d", { locale: es })} - ${format(effectiveEnd, "d 'de' MMMM", { locale: es })}`;
+                ? format(effectiveStart, 'PPP', { locale: dateLocale })
+                : `${format(effectiveStart, 'd', { locale: dateLocale })} - ${format(effectiveEnd, 'PPP', { locale: dateLocale })}`;
 
             return {
                 rangeStart: effectiveStart,
                 rangeEnd: effectiveEnd,
-                periodLabel: `Semana: ${label}`,
+                periodLabel: t('teamCapacity.periodWeek', { defaultValue: 'Semana: {{label}}', label }),
                 filterAllocationsForMonth: true // Filtrar allocations solo del mes actual
             };
         } else {
             return {
                 rangeStart: currentMonthStart,
                 rangeEnd: currentMonthEnd,
-                periodLabel: format(today, "MMMM yyyy", { locale: es }),
+                periodLabel: format(today, 'MMMM yyyy', { locale: dateLocale }),
                 filterAllocationsForMonth: true
             };
         }
-    }, [today, viewMode]);
+    }, [today, viewMode, dateLocale, t]);
 
     // Calcular capacidad de cada empleado con ausencias y eventos (respeta vista por departamento)
     const teamCapacity = useMemo(() => {

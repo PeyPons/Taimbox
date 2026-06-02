@@ -7,8 +7,11 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 
 import { getMonthName } from '@/utils/dateUtils';
+import { useDateLocale } from '@/hooks/useDateLocale';
 
 import { cn } from '@/lib/utils';
+
+import { useTranslation } from 'react-i18next';
 
 import {
 
@@ -73,19 +76,21 @@ interface PlannerGridToolbarProps {
 
 
 function LoadLegend({ className }: { className?: string }) {
+  const { t } = useTranslation('app');
+
   return (
     <div className={cn('flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground', className)}>
       <span className="inline-flex items-center gap-1.5">
         <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
-        Equilibrada (2–5h libres)
+        {t('planner.toolbar.loadLegend.healthy', 'Equilibrada (2–5h libres)')}
       </span>
       <span className="inline-flex items-center gap-1.5">
         <span className="h-2 w-2 rounded-full bg-amber-400 shrink-0" />
-        Cerca del límite
+        {t('planner.toolbar.loadLegend.warning', 'Cerca del límite')}
       </span>
       <span className="inline-flex items-center gap-1.5">
         <span className="h-2 w-2 rounded-full bg-red-500 shrink-0" />
-        Sobrecarga (&gt;100%)
+        {t('planner.toolbar.loadLegend.overload', 'Sobrecarga (>100%)')}
       </span>
     </div>
   );
@@ -134,6 +139,8 @@ export function PlannerGridToolbar({
   setOpenProjectCombo,
 
 }: PlannerGridToolbarProps) {
+  const { t } = useTranslation('app');
+  const dateLocale = useDateLocale();
 
   return (
 
@@ -145,7 +152,7 @@ export function PlannerGridToolbar({
 
           <h2 className="text-base font-bold capitalize text-foreground flex items-center gap-1.5 shrink-0">
 
-            {getMonthName(currentMonth)}
+            {getMonthName(currentMonth, dateLocale)}
 
             <Badge variant="outline" className="text-[10px] font-normal px-1.5 py-0">
 
@@ -159,7 +166,7 @@ export function PlannerGridToolbar({
 
           <div className="flex items-center gap-0.5 bg-slate-100 dark:bg-slate-800 rounded-md p-0.5 shrink-0">
 
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onPrevMonth} aria-label="Mes anterior">
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onPrevMonth} aria-label={t('planner.toolbar.prevMonth', 'Mes anterior')}>
 
               <ChevronLeft className="h-4 w-4" />
 
@@ -169,11 +176,11 @@ export function PlannerGridToolbar({
 
               <CalendarDays className="h-3.5 w-3.5 mr-1" />
 
-              Hoy
+              {t('planner.toolbar.today', 'Hoy')}
 
             </Button>
 
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onNextMonth} aria-label="Mes siguiente">
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onNextMonth} aria-label={t('planner.toolbar.nextMonth', 'Mes siguiente')}>
 
               <ChevronRight className="h-4 w-4" />
 
@@ -197,7 +204,7 @@ export function PlannerGridToolbar({
 
                   {selectedEmployeeId === 'all'
 
-                    ? 'Todos'
+                    ? t('planner.toolbar.all', 'Todos')
 
                     : (employees || []).find((e) => e.id === selectedEmployeeId)?.name}
 
@@ -213,7 +220,7 @@ export function PlannerGridToolbar({
 
               <Command>
 
-                <CommandInput placeholder="Empleado..." />
+                <CommandInput placeholder={t('planner.toolbar.employeePlaceholder', 'Empleado...')} />
 
                 <CommandList>
 
@@ -231,7 +238,7 @@ export function PlannerGridToolbar({
 
                     >
 
-                      Todos
+                      {t('planner.toolbar.all', 'Todos')}
 
                     </CommandItem>
 
@@ -279,7 +286,7 @@ export function PlannerGridToolbar({
 
                   {selectedProjectId === 'all'
 
-                    ? 'Todos'
+                    ? t('planner.toolbar.all', 'Todos')
 
                     : (projects || []).find((p) => p.id === selectedProjectId)?.name}
 
@@ -295,7 +302,7 @@ export function PlannerGridToolbar({
 
               <Command>
 
-                <CommandInput placeholder="Proyecto..." />
+                <CommandInput placeholder={t('planner.toolbar.projectPlaceholder', 'Proyecto...')} />
 
                 <CommandList>
 
@@ -313,7 +320,7 @@ export function PlannerGridToolbar({
 
                     >
 
-                      Todos
+                      {t('planner.toolbar.all', 'Todos')}
 
                     </CommandItem>
 
@@ -369,7 +376,7 @@ export function PlannerGridToolbar({
 
             <User className="h-3.5 w-3.5" />
 
-            Solo yo
+            {t('planner.toolbar.onlyMe', 'Solo yo')}
 
           </Button>
 
@@ -386,5 +393,4 @@ export function PlannerGridToolbar({
   );
 
 }
-
 

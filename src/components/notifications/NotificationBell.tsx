@@ -13,9 +13,12 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { useTranslation } from 'react-i18next';
+import { useDateLocale } from '@/hooks/useDateLocale';
 
 export function NotificationBell() {
+    const { t } = useTranslation('app');
+    const dateLocale = useDateLocale();
     const { notifications, unreadCount, markAsRead, markAllAsRead, clearNotifications } = useNotifications();
     const navigate = useNavigate();
     const { permissions } = usePermissions();
@@ -74,15 +77,15 @@ export function NotificationBell() {
             </PopoverTrigger>
             <PopoverContent className="w-80 p-0" align="end">
                 <div className="flex items-center justify-between p-4 border-b">
-                    <h4 className="font-semibold text-sm">Notificaciones</h4>
+                    <h4 className="font-semibold text-sm">{t('notifications.bell.title', 'Notificaciones')}</h4>
                     <div className="flex gap-1">
                         {unreadCount > 0 && (
-                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={markAllAsRead} title="Marcar todas como leídas">
+                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={markAllAsRead} title={t('notifications.bell.markAllRead', 'Marcar todas como leídas')}>
                                 <Check className="h-4 w-4" />
                             </Button>
                         )}
                         {notifications.length > 0 && (
-                            <Button variant="ghost" size="icon" className="h-6 w-6 text-red-500 hover:text-red-600 hover:bg-red-50" onClick={clearNotifications} title="Borrar todas">
+                            <Button variant="ghost" size="icon" className="h-6 w-6 text-red-500 hover:text-red-600 hover:bg-red-50" onClick={clearNotifications} title={t('notifications.bell.clearAll', 'Borrar todas')}>
                                 <Trash2 className="h-4 w-4" />
                             </Button>
                         )}
@@ -92,7 +95,7 @@ export function NotificationBell() {
                     {notifications.length === 0 ? (
                         <div className="flex flex-col items-center justify-center h-full p-8 text-center text-slate-500 space-y-2">
                             <Bell className="h-8 w-8 opacity-20" />
-                            <p className="text-sm">No tienes notificaciones</p>
+                            <p className="text-sm">{t('notifications.bell.empty', 'No tienes notificaciones')}</p>
                         </div>
                     ) : (
                         <div className="divide-y">
@@ -116,7 +119,7 @@ export function NotificationBell() {
                                             {notification.message}
                                         </p>
                                         <p className="text-[10px] text-slate-400">
-                                            {formatDistanceToNow(notification.date, { addSuffix: true, locale: es })}
+                                            {formatDistanceToNow(notification.date, { addSuffix: true, locale: dateLocale })}
                                         </p>
                                     </div>
                                     {!notification.read && (

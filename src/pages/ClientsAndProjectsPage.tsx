@@ -37,7 +37,7 @@ import { isAllocationInEffectiveMonth, getWeeksForMonth } from '@/utils/dateUtil
 import { useMonthNavigation } from '@/hooks/useMonthNavigation';
 import { useEnsureMonthWithLoading } from '@/hooks/useEnsureMonthWithLoading';
 import { Loader2 } from 'lucide-react';
-import { es } from 'date-fns/locale';
+import { useDateLocale } from '@/hooks/useDateLocale';
 import { useProjectFilters } from '@/hooks/useProjectFilters';
 import { useIntegration } from '@/hooks/useIntegration';
 import { Deadline, GlobalAssignment } from '@/types';
@@ -130,6 +130,7 @@ function StatCard({
 
 export default function ClientsAndProjectsPage() {
   const { t } = useTranslation('app');
+  const dateLocale = useDateLocale();
   const {
     clients, projects, allocations, employees,
     addClient, updateClient, deleteClient,
@@ -1005,9 +1006,9 @@ export default function ClientsAndProjectsPage() {
             <Building2 className="h-5 w-5 text-white" />
           </div>
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-foreground">Clientes y Proyectos</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground">{t('clientsAndProjects.title')}</h1>
             <p className="text-sm text-muted-foreground">
-              Gestiona tus clientes y proyectos con análisis detallado
+              {t('clientsAndProjects.subtitle')}
             </p>
           </div>
         </div>
@@ -1025,7 +1026,7 @@ export default function ClientsAndProjectsPage() {
             </Button>
             <span className="text-sm font-medium px-2 min-w-[120px] text-center capitalize flex items-center justify-center gap-1.5">
               {isLoadingMonth && <Loader2 className="h-3.5 w-3.5 animate-spin text-slate-400" />}
-              {format(currentMonth, 'MMMM yyyy', { locale: es })}
+              {format(currentMonth, 'MMMM yyyy', { locale: dateLocale })}
             </span>
             <Button
               variant="ghost"
@@ -1040,9 +1041,9 @@ export default function ClientsAndProjectsPage() {
               size="sm"
               className="h-8 text-xs"
               onClick={goToToday}
-              aria-label="Mes actual"
+              aria-label={t('clientsAndProjects.controls.currentMonth')}
             >
-              Mes actual
+              {t('clientsAndProjects.controls.currentMonth')}
             </Button>
           </div>
 
@@ -1078,14 +1079,14 @@ export default function ClientsAndProjectsPage() {
             <DialogTrigger asChild>
               <Button className="gap-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 shadow-md">
                 <Plus className="h-4 w-4" />
-                Nuevo cliente
+                {t('clientsAndProjects.actions.newClient')}
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Nuevo cliente</DialogTitle>
+                <DialogTitle>{t('clientsAndProjects.dialogs.newClient.title')}</DialogTitle>
                 <DialogDescription>
-                  Crea un nuevo cliente para organizar tus proyectos.
+                  {t('clientsAndProjects.dialogs.newClient.description')}
                 </DialogDescription>
               </DialogHeader>
               <Form {...clientForm}>

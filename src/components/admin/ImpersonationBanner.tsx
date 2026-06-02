@@ -11,6 +11,7 @@ import { supabase } from "@/lib/supabase";
 import { Eye, LogOut } from "lucide-react";
 import { useAgency } from "@/contexts/AgencyContext";
 import { usePlatformAdmin } from "@/hooks/usePlatformAdmin";
+import { useTranslation } from "react-i18next";
 
 interface ImpersonationRow {
   agency_id: string;
@@ -110,6 +111,7 @@ export function useImpersonationStatus(): ImpersonationState {
 
 /** Vista compacta en el sidebar (sustituye la franja superior). */
 export function SidebarImpersonationPanel() {
+  const { t } = useTranslation("app");
   const { loading, isImpersonating, agencyName, agencyId, exitImpersonation, exiting } =
     useImpersonationStatus();
 
@@ -119,7 +121,7 @@ export function SidebarImpersonationPanel() {
     <div className="shrink-0 px-2 pt-1 pb-0.5 border-t border-slate-800/90">
       <div
         className="flex items-center gap-1.5 min-w-0 rounded-md border border-amber-500/25 bg-amber-950/45 px-1.5 py-1"
-        title={`Vista admin: ${agencyName}`}
+        title={t("impersonation.adminViewTitle", "Admin view: {{name}}", { name: agencyName })}
       >
         <Eye className="h-3 w-3 text-amber-400 shrink-0" aria-hidden />
         <span className="text-[10px] leading-tight text-amber-100/95 truncate flex-1 min-w-0">
@@ -130,8 +132,8 @@ export function SidebarImpersonationPanel() {
           onClick={exitImpersonation}
           disabled={exiting || !agencyId}
           className="shrink-0 inline-flex items-center justify-center h-6 w-6 rounded text-amber-200/90 hover:bg-amber-600/30 hover:text-white disabled:opacity-50"
-          title="Salir de vista"
-          aria-label="Salir de vista de agencia"
+          title={t("impersonation.exitTitle", "Exit agency view")}
+          aria-label={t("impersonation.exitAria", "Exit agency view")}
         >
           <LogOut className="h-3 w-3" />
         </button>

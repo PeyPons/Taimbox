@@ -16,7 +16,7 @@ import { localeForAppLanguage } from '@/utils/currencyUtils';
 
 const RATES_CACHE_KEY = 'taimbox-landing-fx-rates-usd-v1';
 const RATES_TTL_MS = 24 * 60 * 60 * 1000;
-const FRANKFURTER_URL = 'https://api.frankfurter.app/latest';
+const FRANKFURTER_URL = 'https://api.frankfurter.dev/v1/latest';
 
 type RatesCache = {
   fetchedAt: number;
@@ -61,7 +61,7 @@ function fractionDigitsFor(currency: AgencyCurrencyCode): number {
 
 async function fetchFrankfurterRates(signal: AbortSignal): Promise<Record<string, number> | null> {
   const targets = LANDING_PRICING_CURRENCIES.filter((c) => c !== 'USD').join(',');
-  const res = await fetch(`${FRANKFURTER_URL}?from=USD&to=${targets}`, { signal });
+  const res = await fetch(`${FRANKFURTER_URL}?base=USD&symbols=${targets}`, { signal });
   if (!res.ok) return null;
   const data = (await res.json()) as { rates?: Record<string, number> };
   if (!data.rates) return null;

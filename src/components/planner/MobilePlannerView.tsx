@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, addDays } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { useTranslation } from 'react-i18next';
+import { useDateLocale } from '@/hooks/useDateLocale';
 import { isCurrentWeek, isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { getValidRole } from '@/utils/roleUtils';
 import { useAppOrDemo } from '@/hooks/useAppOrDemo';
@@ -86,6 +87,8 @@ function MobileEmployeeCard({
   availableRoles,
   cellVariant = 'detailed',
 }: MobileEmployeeCardProps) {
+  const { t } = useTranslation('app');
+  const dateLocale = useDateLocale();
   const displayRole = getValidRole(employee, availableRoles);
   const year = viewDate.getFullYear();
   const month = viewDate.getMonth();
@@ -128,7 +131,7 @@ function MobileEmployeeCard({
           className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer active:opacity-80"
           onClick={() => onOpenSheet(employee.id, week.weekStart)}
           role="button"
-          aria-label={`Ver tareas de ${employee.name}`}
+          aria-label={t('planner.mobile.viewTasksOf', 'Ver tareas de {{name}}', { name: employee.name })}
         >
           <div className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-sm border border-indigo-200 shrink-0">
             {employee.avatarUrl ? (
@@ -163,7 +166,7 @@ function MobileEmployeeCard({
             className="h-11 w-11 shrink-0 rounded-full"
             onClick={() => setWeekIndex(i => Math.max(0, i - 1))}
             disabled={safeWeekIndex === 0}
-            aria-label="Semana anterior"
+            aria-label={t('planner.mobile.prevWeek', 'Semana anterior')}
           >
             <ChevronLeft className="h-5 w-5" />
           </Button>
@@ -172,10 +175,10 @@ function MobileEmployeeCard({
               "text-sm font-bold block",
               isCurrentWeek(week.weekStart) ? "text-primary" : "text-slate-600"
             )}>
-              Semana {safeWeekIndex + 1}
+              {t('planner.mobile.weekLabel', 'Semana {{number}}', { number: safeWeekIndex + 1 })}
             </span>
             <span className="text-xs text-slate-500">
-              {format(week.weekStart, 'd MMM', { locale: es })} - {format(addDays(week.weekStart, 4), 'd MMM', { locale: es })}
+              {format(week.weekStart, 'd MMM', { locale: dateLocale })} - {format(addDays(week.weekStart, 4), 'd MMM', { locale: dateLocale })}
             </span>
           </div>
           <Button
@@ -184,7 +187,7 @@ function MobileEmployeeCard({
             className="h-11 w-11 shrink-0 rounded-full"
             onClick={() => setWeekIndex(i => Math.min(weeks.length - 1, i + 1))}
             disabled={safeWeekIndex >= weeks.length - 1}
-            aria-label="Semana siguiente"
+            aria-label={t('planner.mobile.nextWeek', 'Semana siguiente')}
           >
             <ChevronRight className="h-5 w-5" />
           </Button>
@@ -194,7 +197,7 @@ function MobileEmployeeCard({
           className="min-h-[44px] min-w-[44px] touch-manipulation"
           onClick={() => onOpenSheet(employee.id, week.weekStart)}
           role="button"
-          aria-label={`Editar horas semana ${safeWeekIndex + 1}`}
+          aria-label={t('planner.mobile.editWeekHours', 'Editar horas semana {{number}}', { number: safeWeekIndex + 1 })}
         >
           <WeekCell
             allocations={weekAllocations}

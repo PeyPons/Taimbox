@@ -784,13 +784,13 @@ export default function DeadlinesPage() {
                   onClick={openSuggestionsAssistant}
                   title={
                     suggestionsWizardPaused
-                      ? `Continuar: ${suggestionsWizardResumeLabel}`
-                      : 'Recomendaciones de redistribución'
+                      ? t('deadlines.page.continueAssistantTitle', 'Continuar: {{label}}', { label: suggestionsWizardResumeLabel })
+                      : t('deadlines.page.recommendations', 'Recomendaciones de redistribución')
                   }
                 >
                   <Sparkles className="h-4 w-4 text-primary" />
                   <span className="sr-only">
-                    {suggestionsWizardPaused ? 'Continuar asistente' : 'Recomendaciones'}
+                    {suggestionsWizardPaused ? t('deadlines.page.continueAssistant', 'Continuar asistente') : t('deadlines.page.recommendationsShort', 'Recomendaciones')}
                   </span>
                   {suggestionsWizardPaused && (
                     <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-primary" />
@@ -849,11 +849,11 @@ export default function DeadlinesPage() {
 
         {isMobile && canEditDeadlines && suggestionsWizardPaused && (
           <div className="sticky bottom-2 z-30 flex flex-col gap-2 p-3 rounded-xl border border-primary/30 bg-white shadow-lg">
-            <p className="text-xs font-medium text-slate-800">Asistente en pausa</p>
+            <p className="text-xs font-medium text-slate-800">{t('deadlines.page.assistantPaused', 'Asistente en pausa')}</p>
             <p className="text-[11px] text-slate-500">{suggestionsWizardResumeLabel}</p>
             <div className="flex gap-2">
               <Button size="sm" className="flex-1 h-9 text-xs" onClick={openSuggestionsAssistant}>
-                Continuar
+                {t('deadlines.page.continue', 'Continuar')}
               </Button>
               <Button
                 size="sm"
@@ -861,7 +861,7 @@ export default function DeadlinesPage() {
                 className="h-9 text-xs shrink-0"
                 onClick={resetSuggestionsAssistantFlow}
               >
-                Descartar
+                {t('deadlines.page.discard', 'Descartar')}
               </Button>
             </div>
           </div>

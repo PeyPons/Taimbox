@@ -10,7 +10,7 @@ import {
     type OperationsRadarStatusFilter,
 } from '@/components/employee/GlobalPlanningInconsistencies';
 import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { useDateLocale } from '@/hooks/useDateLocale';
 import { useProjectMetrics } from '@/hooks/useProjectMetrics';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
 import { Button } from '@/components/ui/button';
@@ -42,6 +42,7 @@ export default function OperationsRadarPage() {
     const { selectedDepartmentId, setSelectedDepartmentId } = useDepartmentView();
     const { formatName: formatProjectName } = useProjectAliasing();
     const { t } = useAppTranslation();
+    const dateLocale = useDateLocale();
     const isCrmExportEnabled = useIntegration('crm_export');
 
     const [globalSearchQuery, setGlobalSearchQuery] = useState('');
@@ -350,7 +351,7 @@ export default function OperationsRadarPage() {
                                 &lt;
                             </Button>
                             <Button variant="ghost" onClick={handleToday} className="h-9 px-3 text-sm font-medium text-slate-700 capitalize">
-                                {format(viewDate, 'MMM yyyy', { locale: es })}
+                                {format(viewDate, 'MMM yyyy', { locale: dateLocale })}
                             </Button>
                             <Button variant="ghost" size="icon" onClick={handleNextMonth} className="h-9 w-9 text-slate-500" aria-label={t('operationsRadar.nextMonth')}>
                                 &gt;
@@ -591,7 +592,7 @@ export default function OperationsRadarPage() {
                                                 </td>
                                                 <td className="py-2 pr-2 text-slate-600 whitespace-nowrap">
                                                     {ph
-                                                        ? `${format(ph.start, 'd MMM', { locale: es })} – ${format(ph.due, 'd MMM yyyy', { locale: es })}`
+                                                        ? `${format(ph.start, 'd MMM', { locale: dateLocale })} – ${format(ph.due, 'd MMM yyyy', { locale: dateLocale })}`
                                                         : '—'}
                                                 </td>
                                                 <td className="py-2 pr-2 tabular-nums">

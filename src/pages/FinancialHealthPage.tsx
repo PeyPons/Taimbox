@@ -36,7 +36,7 @@ import {
     Loader2,
 } from 'lucide-react';
 import { format, startOfMonth, subMonths, addMonths, endOfMonth, isSameMonth, subDays } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { useDateLocale } from '@/hooks/useDateLocale';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -83,6 +83,7 @@ import { useEnsureMonthWithLoading } from '@/hooks/useEnsureMonthWithLoading';
 
 export default function FinancialHealthPage() {
     const { t } = useTranslation('app');
+    const dateLocale = useDateLocale();
     const [searchQuery, setSearchQuery] = useState('');
     const [hoursMode, setHoursMode] = useState<'actual' | 'computed'>('computed');
     const [costMode, setCostMode] = useState<'standard' | 'dynamic'>('standard');
@@ -545,15 +546,15 @@ export default function FinancialHealthPage() {
 
     const enrichedProjects: EnrichedProject[] = useMemo(() => {
         return projectMetricsBillableWithActivity.map(p => {
-            const clientName = clientById.get(p.clientId) || p.clientName || 'Cliente desconocido';
+            const clientName = clientById.get(p.clientId) || p.clientName || t('financialHealth.unknownClient');
             const projectHours = hoursMode === 'computed' ? p.computed : p.actual;
             const ehr = projectHours > 0 ? (p.monthlyFee || 0) / projectHours : Number.POSITIVE_INFINITY;
             const ehrLabel = projectHours > 0
                 ? `${formatPerHour((ehr || 0), 0)}`
-                : 'Sin iniciar';
+                : t('financialHealth.kpis.ehr.notStarted');
             return { metric: p, clientName, ehr, ehrLabel };
         });
-    }, [projectMetricsBillableWithActivity, clientById, hoursMode, formatPerHour]);
+    }, [projectMetricsBillableWithActivity, clientById, hoursMode, formatPerHour, t]);
 
     const sortedProjects = useMemo(() => {
         return [...enrichedProjects].sort((a, b) => {
@@ -755,7 +756,7 @@ export default function FinancialHealthPage() {
         if (hoursNone > 0 && revenueNone > 0) {
             records.push({
                 id: NO_DEPT_ID,
-                name: 'Sin departamento',
+                name: t('financialHealth.departmentProfitability.noDepartment'),
                 ehr: revenueNone / hoursNone,
                 revenue: revenueNone,
                 hours: hoursNone,
@@ -776,6 +777,7 @@ export default function FinancialHealthPage() {
         hoursMode,
         projectCostAndMarginMap,
         projectDisplayFeeMap,
+        t,
     ]);
 
     // === Por empleado: coste = coste mensual (nómina); ingreso atribuido = reparto del fee de proyectos por horas. Contabilidad pura. ===
@@ -1036,45 +1038,35 @@ export default function FinancialHealthPage() {
         [projectMetricsInternal, hoursMode]
     );
 
-    const hoursHeaderLabel = hoursMode === 'computed' ? 'HORAS (COMPUTADAS)' : 'HORAS (REALES)';
-    const costHeaderLabel = effectiveCostMode === 'standard' ? `Coste ${inCurrencyParens} — Operativo` : `Coste ${inCurrencyParens} — Dinámico`;
+    const hoursHeaderLabel = hoursMode === 'computed'
+        ? t('financialHealth.columns.hoursComputedHeader')
+        : t('financialHealth.columns.hoursActualHeader');
+    const costHeaderLabel =
+        effectiveCostMode === 'standard'
+            ? t('financialHealth.columns.costOperational', { currencyParens: inCurrencyParens })
+            : t('financialHealth.columns.costDynamic', { currencyParens: inCurrencyParens });
     const costHeaderTooltip = useMemo(() => {
         const commonNote =
             agencyTotalOverheadApplied > 0
                 ? ' ' +
-                  t(
-                      'financialHealth.costTooltip.commonNote',
-                      'Incluye gastos comunes del mes prorrateados por horas. En modo operativo la nómina usa capacidad teórica; los gastos comunes usan las horas del mes (reales o computadas según el filtro).'
-                  )
+                  t('financialHealth.costTooltip.commonNote')
                 : '';
         if (dynamicCostFallbackActive) {
-            const base = t(
-                'financialHealth.costTooltip.fallbackIntro',
-                'Cálculo dinámico en espera: aún no hay suficientes horas registradas en el mes para un prorrateo exacto de la nómina. Se muestra temporalmente el coste operativo.'
-            );
+            const base = t('financialHealth.costTooltip.fallbackIntro');
             const extra =
                 agencyTotalOverheadApplied > 0
                     ? ' ' +
-                      t(
-                          'financialHealth.costTooltip.fallbackCommon',
-                          'Los gastos comunes se siguen prorrateando con las horas registradas del mes en el modo elegido (reales o computadas).'
-                      )
+                      t('financialHealth.costTooltip.fallbackCommon')
                     : '';
             return base + extra;
         }
         if (costMode === 'standard') {
             return (
-                t(
-                    'financialHealth.costTooltip.standard',
-                    'Suma de horas × coste hora operativo (capacidad teórica del mes).'
-                ) + commonNote
+                t('financialHealth.costTooltip.standard') + commonNote
             );
         }
         return (
-            t(
-                'financialHealth.costTooltip.dynamic',
-                'Suma de horas × coste hora prorrateado del mes. El total de nómina coincide con las nóminas.'
-            ) + commonNote
+            t('financialHealth.costTooltip.dynamic') + commonNote
         );
     }, [dynamicCostFallbackActive, costMode, agencyTotalOverheadApplied, t]);
 
@@ -1106,7 +1098,7 @@ export default function FinancialHealthPage() {
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="pl-9 h-10 bg-white border-slate-200"
-                            aria-label="Buscar en Rentabilidad"
+                            aria-label={t('financialHealth.searchAria')}
                         />
                     </div>
                     <div className="flex flex-wrap items-center gap-2 sm:gap-3">
@@ -1118,17 +1110,17 @@ export default function FinancialHealthPage() {
                                     onClick={handlePrevMonth}
                                     disabled={minReportingMonth != null && isSameMonth(currentMonth, minReportingMonth)}
                                     className="h-9 w-9 text-slate-600 hover:bg-slate-100 disabled:opacity-50"
-                                    aria-label="Mes anterior"
+                                    aria-label={t('financialHealth.controls.prevMonth')}
                                 >
                                     <ChevronRight className="h-4 w-4 rotate-180" />
                                 </Button>
                                 <Button variant="ghost" onClick={handleToday} className="h-9 px-3 text-sm font-medium text-slate-800 capitalize min-w-[100px]">
-                                    {format(currentMonth, 'MMM yyyy', { locale: es })}
+                                    {format(currentMonth, 'MMM yyyy', { locale: dateLocale })}
                                 </Button>
                                 {minReportingMonth != null && (
                                     <span className="text-xs text-slate-500 hidden sm:inline">{t('financialHealth.controls.starterPlan', 'Plan Starter: mes actual y anterior')}</span>
                                 )}
-                                <Button variant="ghost" size="icon" onClick={handleNextMonth} className="h-9 w-9 text-slate-600 hover:bg-slate-100" aria-label="Mes siguiente">
+                                <Button variant="ghost" size="icon" onClick={handleNextMonth} className="h-9 w-9 text-slate-600 hover:bg-slate-100" aria-label={t('financialHealth.controls.nextMonth')}>
                                     <ChevronRight className="h-4 w-4" />
                                 </Button>
                             </div>
@@ -1225,7 +1217,7 @@ export default function FinancialHealthPage() {
                                     </TooltipContent>
                                 </Tooltip>
                             </div>
-                            <Button variant="ghost" size="icon" className="h-9 w-9 text-slate-500 hover:text-slate-700 shrink-0" onClick={() => setCostHelpOpen(true)} aria-label="Cómo se calcula el coste">
+                            <Button variant="ghost" size="icon" className="h-9 w-9 text-slate-500 hover:text-slate-700 shrink-0" onClick={() => setCostHelpOpen(true)} aria-label={t('financialHealth.costHelpAria')}>
                                 <Info className="h-4 w-4" />
                             </Button>
                         </div>
@@ -1241,10 +1233,10 @@ export default function FinancialHealthPage() {
                                 <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white border border-slate-200/80 shadow-sm text-primary">
                                     <DollarSign className="h-5 w-5" />
                                 </span>
-                                Modelos de coste
+                                {t('financialHealth.costHelp.dialogTitle')}
                             </DialogTitle>
                             <p className="text-sm text-slate-500 leading-relaxed mt-2">
-                                Dos formas de analizar la rentabilidad, según lo que necesites en cada momento.
+                                {t('financialHealth.costHelp.dialogSubtitle')}
                             </p>
                         </DialogHeader>
                     </div>
@@ -1254,21 +1246,21 @@ export default function FinancialHealthPage() {
                                 <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-600">
                                     <Lock className="h-4 w-4" />
                                 </span>
-                                <h3 className="font-semibold text-slate-900 text-sm">Coste estándar (operativo)</h3>
-                                <span className="text-[11px] font-medium text-indigo-600 bg-indigo-100 px-2 py-0.5 rounded-full">Por defecto</span>
+                                <h3 className="font-semibold text-slate-900 text-sm">{t('financialHealth.costHelp.standardTitle')}</h3>
+                                <span className="text-[11px] font-medium text-indigo-600 bg-indigo-100 px-2 py-0.5 rounded-full">{t('financialHealth.costHelp.defaultBadge')}</span>
                             </div>
                             <ul className="space-y-2.5 text-sm text-slate-600">
                                 <li className="flex gap-2.5 pl-0">
-                                    <span className="text-indigo-600 font-semibold shrink-0 w-[120px]">Para qué sirve:</span>
-                                    <span>Evaluar si un proyecto o un cliente es rentable.</span>
+                                    <span className="text-indigo-600 font-semibold shrink-0 w-[120px]">{t('financialHealth.costHelp.purposeLabel')}</span>
+                                    <span>{t('financialHealth.costHelp.standardPurpose')}</span>
                                 </li>
                                 <li className="flex gap-2.5 pl-0">
-                                    <span className="text-indigo-600 font-semibold shrink-0 w-[120px]">Cómo se calcula:</span>
-                                    <span>Coste por hora = nómina ÷ <strong>capacidad teórica del mes</strong> (horas que trabajaría sin vacaciones). Si no está definida, se usan 110 h de referencia.</span>
+                                    <span className="text-indigo-600 font-semibold shrink-0 w-[120px]">{t('financialHealth.costHelp.howLabel')}</span>
+                                    <span>{t('financialHealth.costHelp.standardHow')}</span>
                                 </li>
                                 <li className="flex gap-2.5 pl-0">
-                                    <span className="text-indigo-600 font-semibold shrink-0 w-[120px]">Por qué no coincide:</span>
-                                    <span>Se calcula siempre sobre las mismas horas teóricas: las vacaciones no reducen la base, por lo que los proyectos no se ven más caros; si se trabajan más horas, el coste mostrado puede superar la nómina (margen adicional).</span>
+                                    <span className="text-indigo-600 font-semibold shrink-0 w-[120px]">{t('financialHealth.costHelp.whyMismatchLabel')}</span>
+                                    <span>{t('financialHealth.costHelp.standardWhyMismatch')}</span>
                                 </li>
                             </ul>
                         </div>
@@ -1277,27 +1269,27 @@ export default function FinancialHealthPage() {
                                 <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-500/10 text-violet-600">
                                     <Wallet className="h-4 w-4" />
                                 </span>
-                                <h3 className="font-semibold text-slate-900 text-sm">Coste dinámico</h3>
+                                <h3 className="font-semibold text-slate-900 text-sm">{t('financialHealth.costHelp.dynamicTitle')}</h3>
                             </div>
                             <ul className="space-y-2.5 text-sm text-slate-600">
                                 <li className="flex gap-2.5 pl-0">
-                                    <span className="text-violet-600 font-semibold shrink-0 w-[120px]">Para qué sirve:</span>
-                                    <span>Cuadrar la cuenta del banco a final de mes.</span>
+                                    <span className="text-violet-600 font-semibold shrink-0 w-[120px]">{t('financialHealth.costHelp.purposeLabel')}</span>
+                                    <span>{t('financialHealth.costHelp.dynamicPurpose')}</span>
                                 </li>
                                 <li className="flex gap-2.5 pl-0">
-                                    <span className="text-violet-600 font-semibold shrink-0 w-[120px]">Cómo se calcula:</span>
-                                    <span>Coste por hora = nómina ÷ <strong>horas reales del mes</strong> (las registradas, incluyendo tiempos muertos y vacaciones). El total coincide con la nómina.</span>
+                                    <span className="text-violet-600 font-semibold shrink-0 w-[120px]">{t('financialHealth.costHelp.howLabel')}</span>
+                                    <span>{t('financialHealth.costHelp.dynamicHow')}</span>
                                 </li>
                                 <li className="flex gap-2.5 pl-0">
-                                    <span className="text-violet-600 font-semibold shrink-0 w-[120px]">Cuándo usarlo:</span>
-                                    <span>Cuando necesites ver a dónde ha ido cada céntimo que ha salido del banco.</span>
+                                    <span className="text-violet-600 font-semibold shrink-0 w-[120px]">{t('financialHealth.costHelp.whenLabel')}</span>
+                                    <span>{t('financialHealth.costHelp.dynamicWhen')}</span>
                                 </li>
                             </ul>
                         </div>
                         <div className="rounded-xl border border-slate-200 bg-white p-4 border-l-4 border-l-teal-500">
                             <div className="flex items-center gap-2.5 mb-2">
                                 <Landmark className="h-4 w-4 text-teal-600" />
-                                <h3 className="font-semibold text-slate-900 text-sm">Gastos comunes</h3>
+                                <h3 className="font-semibold text-slate-900 text-sm">{t('financialHealth.costHelp.commonCostsTitle')}</h3>
                             </div>
                             <p className="text-sm text-slate-600">
                                 {t('financialHealth.costHelp.commonCosts')}
@@ -1309,7 +1301,7 @@ export default function FinancialHealthPage() {
                             onClick={() => setCostHelpOpen(false)}
                             className="rounded-lg px-6 font-medium"
                         >
-                            Entendido
+                            {t('financialHealth.costHelp.understood')}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -1381,11 +1373,11 @@ export default function FinancialHealthPage() {
                         <TabsList className="grid w-full max-w-2xl grid-cols-2 sm:grid-cols-4 h-auto sm:h-11 bg-slate-100 p-1 rounded-lg gap-1">
                             <TabsTrigger value="resumen" className="gap-1.5 text-xs sm:text-sm data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md">
                                 <LayoutDashboard className="h-4 w-4 shrink-0" />
-                                Resumen
+                                {t('financialHealth.tabs.summary')}
                             </TabsTrigger>
                             <TabsTrigger value="proyectos" className="gap-1.5 text-xs sm:text-sm data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md">
                                 <FolderKanban className="h-4 w-4 shrink-0" />
-                                Proyectos
+                                {t('financialHealth.tabs.projects')}
                             </TabsTrigger>
                             <TabsTrigger value="deliverables-lifecycle" className="gap-1.5 text-xs sm:text-sm data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md leading-tight">
                                 <Layers className="h-4 w-4 shrink-0" />
@@ -1395,7 +1387,7 @@ export default function FinancialHealthPage() {
                             </TabsTrigger>
                             <TabsTrigger value="empleados" className="gap-1.5 text-xs sm:text-sm data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md">
                                 <UserCircle className="h-4 w-4 shrink-0" />
-                                Empleados
+                                {t('financialHealth.tabs.employees')}
                             </TabsTrigger>
                         </TabsList>
                         <p className="text-xs text-slate-500 px-0.5">
@@ -1408,17 +1400,21 @@ export default function FinancialHealthPage() {
 
                     <TabsContent value="resumen" className="space-y-8 mt-0">
                         {/* KPIs */}
-                        <section className="grid gap-4 sm:gap-6 md:grid-cols-2 xl:grid-cols-3" aria-label="Indicadores clave">
+                        <section className="grid gap-4 sm:gap-6 md:grid-cols-2 xl:grid-cols-3" aria-label={t('financialHealth.kpis.sectionAria')}>
                             <Card className="border-l-4 border-emerald-500 shadow-sm bg-white overflow-hidden">
                                 <CardHeader className="pb-2">
                                     <CardTitle className="text-base font-semibold text-slate-800 flex items-center gap-2">
                                         <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600">
                                             <DollarSign className="h-4 w-4" />
                                         </span>
-                                        Precio Hora Efectivo (EHR)
+                                        {t('financialHealth.kpis.ehr.title')}
                                     </CardTitle>
                                     <CardDescription className="text-xs text-slate-500 mt-1">
-                                        Ingresos por horas {hoursMode === 'computed' ? 'computadas' : 'reales'}. Solo proyectos facturables con actividad.
+                                        {t('financialHealth.kpis.ehr.description', {
+                                            hoursMode: hoursMode === 'computed'
+                                                ? t('financialHealth.kpis.ehr.hoursModeComputed')
+                                                : t('financialHealth.kpis.ehr.hoursModeActual'),
+                                        })}
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>
@@ -1438,18 +1434,16 @@ export default function FinancialHealthPage() {
                                         )}
                                     </div>
                                     <p className="text-xs text-slate-600 mt-1">
-                                        Objetivo de la agencia:{' '}
+                                        {t('financialHealth.kpis.ehr.agencyTarget')}{' '}
                                         <span className="font-semibold tabular-nums">
                                           {formatEhrTargetForDisplay(ehrTarget)} {perHourSuffix}
                                         </span>
                                     </p>
                                     {totalHoursForView > 0 && (
                                         <p className="text-[11px] mt-1 text-slate-500">
-                                            {ehrIsHealthy ? (
-                                                <>Por encima del objetivo. La agencia está generando buen margen por hora.</>
-                                            ) : (
-                                                <>Por debajo del objetivo. Cada hora trabajada deja menos margen del deseado.</>
-                                            )}
+                                            {ehrIsHealthy
+                                                ? t('financialHealth.kpis.ehr.aboveTarget')
+                                                : t('financialHealth.kpis.ehr.belowTarget')}
                                         </p>
                                     )}
                                     {usesLoadedCostForTarget && (
@@ -1466,10 +1460,10 @@ export default function FinancialHealthPage() {
                                         <span className={cn("flex h-8 w-8 items-center justify-center rounded-lg", marginIsPositive ? "bg-emerald-100 text-emerald-600" : "bg-red-100 text-red-600")}>
                                             {marginIsPositive ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
                                         </span>
-                                        Margen Neto
+                                        {t('financialHealth.kpis.netMargin.title')}
                                     </CardTitle>
                                     <CardDescription className="text-xs text-slate-500 mt-1">
-                                        Ingresos menos coste interno. Solo proyectos facturables con actividad.
+                                        {t('financialHealth.kpis.netMargin.description')}
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>
@@ -1499,10 +1493,10 @@ export default function FinancialHealthPage() {
                                             )}
                                         >
                                             {marginPercent != null
-                                                ? `${marginPercent.toFixed(1)}% margen`
+                                                ? t('financialHealth.kpis.netMargin.marginPct', { pct: marginPercent.toFixed(1) })
                                                 : totalRevenue <= 0 && netMargin !== 0
-                                                  ? 'n/a margen (sin ingreso devengado)'
-                                                  : 'Sin facturación'}
+                                                  ? t('financialHealth.kpis.netMargin.naNoRevenue')
+                                                  : t('financialHealth.kpis.netMargin.noBilling')}
                                         </Badge>
                                     </div>
                                 </CardContent>
@@ -1514,10 +1508,10 @@ export default function FinancialHealthPage() {
                                         <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600">
                                             <Landmark className="h-4 w-4" />
                                         </span>
-                                        Gastos comunes del mes
+                                        {t('financialHealth.kpis.monthlyOverheadKpi.title')}
                                     </CardTitle>
                                     <CardDescription className="text-xs text-slate-500 mt-1">
-                                        Alquiler, software y otros gastos fijos imputados a los empleados.
+                                        {t('financialHealth.kpis.monthlyOverheadKpi.description')}
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>
@@ -1528,29 +1522,31 @@ export default function FinancialHealthPage() {
                                     </div>
                                     <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-600">
                                         <span>
-                                            Fijos:{' '}
+                                            {t('financialHealth.kpis.monthlyOverheadKpi.fixed')}{' '}
                                             <span className="font-semibold tabular-nums">
                                                 {formatMoney(commonExpensesBreakdown.totalRecurring)}
                                             </span>
-                                            {' '}({commonExpensesBreakdown.countRecurring} líneas)
+                                            {' '}({t('financialHealth.kpis.monthlyOverheadKpi.lines', { count: commonExpensesBreakdown.countRecurring })})
                                         </span>
                                         <span className="text-slate-400">·</span>
                                         <span>
-                                            Puntuales:{' '}
+                                            {t('financialHealth.kpis.monthlyOverheadKpi.oneOff')}{' '}
                                             <span className="font-semibold tabular-nums">
                                                 {formatMoney(commonExpensesBreakdown.totalMonthly)}
                                             </span>
-                                            {' '}({commonExpensesBreakdown.countMonthly} líneas)
+                                            {' '}({t('financialHealth.kpis.monthlyOverheadKpi.lines', { count: commonExpensesBreakdown.countMonthly })})
                                         </span>
                                     </div>
                                     {commonExpensesBreakdown.total > 0 && totalRevenue > 0 && (
                                         <p className="text-[11px] mt-1 text-slate-500">
-                                            {((commonExpensesBreakdown.total / totalRevenue) * 100).toFixed(1)}% sobre ingresos del mes.
+                                            {t('financialHealth.kpis.monthlyOverheadKpi.pctOfRevenue', {
+                                                pct: ((commonExpensesBreakdown.total / totalRevenue) * 100).toFixed(1),
+                                            })}
                                         </p>
                                     )}
                                     {commonExpensesBreakdown.total === 0 && (
                                         <p className="text-[11px] mt-1 text-slate-500">
-                                            Aún no hay gastos comunes configurados. Añade alquiler, licencias u otros costes compartidos para un coste real por hora.
+                                            {t('financialHealth.kpis.monthlyOverheadKpi.empty')}
                                         </p>
                                     )}
                                 </CardContent>
@@ -1649,17 +1645,17 @@ export default function FinancialHealthPage() {
                         )}
 
                         {/* Radar de hemorragias */}
-                        <section aria-label="Radar de hemorragias">
+                        <section aria-label={t('financialHealth.bleedingRadar.ariaLabel')}>
                             <Card className="shadow-sm border border-slate-200 bg-white overflow-hidden">
                                 <CardHeader className="pb-3">
                                     <CardTitle className="text-base font-semibold text-slate-800 flex items-center gap-2">
                                         <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-50 text-red-600">
                                             <ArrowDownRight className="h-4 w-4" />
                                         </span>
-                                        Radar de hemorragias
+                                        {t('financialHealth.bleedingRadar.title')}
                                     </CardTitle>
                                     <CardDescription className="text-xs text-slate-500">
-                                        Proyectos facturables ordenados por peor Precio Hora Efectivo. Arriba, los que más sangran rentabilidad.
+                                        {t('financialHealth.bleedingRadar.description')}
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-3">
@@ -1668,8 +1664,8 @@ export default function FinancialHealthPage() {
                                             <div className="rounded-full bg-slate-100 p-4 mb-3">
                                                 <FolderKanban className="h-8 w-8 text-slate-400" />
                                             </div>
-                                            <p className="text-sm font-medium text-slate-600">Sin proyectos con facturación este mes</p>
-                                            <p className="text-xs text-slate-500 mt-1 max-w-sm">No hay proyectos facturables con actividad, o no coinciden con los filtros aplicados.</p>
+                                            <p className="text-sm font-medium text-slate-600">{t('financialHealth.bleedingRadar.emptyTitle')}</p>
+                                            <p className="text-xs text-slate-500 mt-1 max-w-sm">{t('financialHealth.bleedingRadar.emptyDesc')}</p>
                                         </div>
                                     ) : (
                                         <>
@@ -1677,26 +1673,28 @@ export default function FinancialHealthPage() {
                                                 <table className="w-full text-sm">
                                                     <thead className="text-xs text-slate-500 uppercase bg-slate-50/80">
                                                         <tr>
-                                                            <th className="px-4 py-3 text-left font-medium rounded-tl-lg">Cliente / Proyecto</th>
+                                                            <th className="px-4 py-3 text-left font-medium rounded-tl-lg">{t('financialHealth.columns.clientProject')}</th>
                                                             <th className="px-4 py-3 text-right font-medium">
                                                                 <span className="inline-flex items-center gap-1">
-                                                                    {isViewingCurrentMonth ? `Ingreso devengado ${inCurrencyParens}` : 'Ingreso (Fee)'}
+                                                                    {isViewingCurrentMonth
+                                                                        ? t('financialHealth.bleedingRadar.accruedRevenue', currencyLabels)
+                                                                        : t('financialHealth.bleedingRadar.feeRevenue')}
                                                                     {isViewingCurrentMonth && (
                                                                         <Tooltip>
                                                                             <TooltipTrigger asChild>
-                                                                                <span className="cursor-help text-slate-400 hover:text-slate-600 inline-flex" aria-label="Info ingreso devengado">
+                                                                                <span className="cursor-help text-slate-400 hover:text-slate-600 inline-flex" aria-label={t('financialHealth.bleedingRadar.accruedInfoAria')}>
                                                                                     <Info className="h-3.5 w-3.5" />
                                                                                 </span>
                                                                             </TooltipTrigger>
                                                                             <TooltipContent side="top" className="text-xs">
-                                                                                En mes en curso se muestra el ingreso devengado (prorrateo por días). Si el proyecto ya ha cumplido o superado el 100 % de las horas del presupuesto, se muestra el fee total.
+                                                                                {t('financialHealth.bleedingRadar.accruedTooltip')}
                                                                             </TooltipContent>
                                                                         </Tooltip>
                                                                     )}
                                                                 </span>
                                                             </th>
                                                             <th className="px-4 py-3 text-right font-medium">{hoursHeaderLabel} / Budget</th>
-                                                            <th className="px-4 py-3 text-right font-medium">Precio Hora Efectivo</th>
+                                                            <th className="px-4 py-3 text-right font-medium">{t('financialHealth.columns.ehr')}</th>
                                                             <th className="px-4 py-3 text-right font-medium whitespace-nowrap">
                                                                 <Tooltip>
                                                                     <TooltipTrigger asChild>
@@ -1720,15 +1718,15 @@ export default function FinancialHealthPage() {
                                                             <th className="px-4 py-3 text-right font-medium">
                                                                 <Tooltip>
                                                                     <TooltipTrigger asChild>
-                                                                        <span className="cursor-help underline decoration-dotted">Ritmo</span>
+                                                                        <span className="cursor-help underline decoration-dotted">{t('financialHealth.columns.pace')}</span>
                                                                     </TooltipTrigger>
                                                                     <TooltipContent side="top" className="text-xs">
-                                                                        % de presupuesto consumido frente a % de mes transcurrido. Rojo: ritmo por encima de lo previsto. Verde: ritmo adecuado.
+                                                                        {t('financialHealth.bleedingRadar.paceTooltip')}
                                                                     </TooltipContent>
                                                                 </Tooltip>
                                                             </th>
-                                                            <th className="px-4 py-3 text-right font-medium">{`Margen ${inCurrencyParens}`}</th>
-                                                            <th className="px-4 py-3 text-right font-medium rounded-tr-lg">Acción</th>
+                                                            <th className="px-4 py-3 text-right font-medium">{t('financialHealth.columns.margin', currencyLabels)}</th>
+                                                            <th className="px-4 py-3 text-right font-medium rounded-tr-lg">{t('financialHealth.columns.action')}</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody className="divide-y divide-slate-100">
@@ -1826,7 +1824,7 @@ export default function FinancialHealthPage() {
                                                                                     </Badge>
                                                                                 ) : (
                                                                                     <Badge variant="outline" className="text-[11px] text-slate-500 border-slate-300 bg-slate-50">
-                                                                                        Sin iniciar
+                                                                                        {t('financialHealth.kpis.ehr.notStarted')}
                                                                                     </Badge>
                                                                                 )}
                                                                             </div>
@@ -1872,7 +1870,7 @@ export default function FinancialHealthPage() {
                                                                         <td className="px-4 py-3 text-right align-middle" onClick={(e) => e.stopPropagation()}>
                                                                             <Button size="sm" variant="ghost" className="h-8 text-xs gap-1 text-slate-600 hover:text-slate-900" onClick={(e) => { e.stopPropagation(); toggleProject(p.projectId); }}>
                                                                                 {isExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
-                                                                                Desglose
+                                                                                {t('financialHealth.expand.breakdown')}
                                                                             </Button>
                                                                         </td>
                                                                     </tr>
@@ -1881,7 +1879,7 @@ export default function FinancialHealthPage() {
                                                                             <td colSpan={9} className="p-0 align-top bg-slate-50/50">
                                                                                 <div className="px-4 py-4">
                                                                                     {attributionRows.length === 0 ? (
-                                                                                        <p className="text-sm italic text-slate-500 py-4">Sin desglose por empleado para este mes.</p>
+                                                                                        <p className="text-sm italic text-slate-500 py-4">{t('financialHealth.expand.noEmployeeBreakdown')}</p>
                                                                                     ) : (
                                                                                         <div className="flex flex-col lg:flex-row gap-4">
                                                                                             <div className="flex-1 min-w-0 rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm">
@@ -1898,7 +1896,7 @@ export default function FinancialHealthPage() {
                                                                                                         </colgroup>
                                                                                                         <thead>
                                                                                                             <tr className="bg-slate-50 border-b border-slate-200">
-                                                                                                                <th className="text-left py-3 px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Empleado</th>
+                                                                                                                <th className="text-left py-3 px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">{t('financialHealth.columns.employee')}</th>
                                                                                                                 <th className="text-right py-3 px-3 text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">Horas</th>
                                                                                                                 <th className="text-right py-3 px-3 text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">{`Ingreso atrib. ${inCurrencyParens}`}</th>
                                                                                                                 <th className="text-right py-3 px-3 text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">{`Coste ${inCurrencyParens}`}</th>
@@ -1922,10 +1920,10 @@ export default function FinancialHealthPage() {
                                                                                                                         </TooltipContent>
                                                                                                                     </Tooltip>
                                                                                                                 </th>
-                                                                                                                <th className="text-right py-3 px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">{`Margen ${inCurrencyParens}`}</th>
+                                                                                                                <th className="text-right py-3 px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">{t('financialHealth.columns.margin', currencyLabels)}</th>
                                                                                                             </tr>
                                                                                                             <tr className="bg-slate-50/80">
-                                                                                                                <th className="text-left py-0.5 px-4 text-[11px] font-normal text-slate-400" colSpan={7}>{hoursMode === 'computed' ? 'Horas computadas' : 'Horas reales'}</th>
+                                                                                                                <th className="text-left py-0.5 px-4 text-[11px] font-normal text-slate-400" colSpan={7}>{hoursMode === 'computed' ? t('financialHealth.expand.hoursComputed') : t('financialHealth.expand.hoursActual')}</th>
                                                                                                             </tr>
                                                                                                         </thead>
                                                                                                         <tbody className="divide-y divide-slate-100">
@@ -1937,7 +1935,7 @@ export default function FinancialHealthPage() {
                                                                                                                 const marginPh = row.hoursDisplay > 0.001 ? row.margin / row.hoursDisplay : 0;
                                                                                                                 return (
                                                                                                                     <tr key={row.employeeId} className={cn("transition-colors hover:bg-slate-50/50", i % 2 === 1 && "bg-slate-50/30")}>
-                                                                                                                        <td className="py-2.5 px-4 font-medium text-slate-900" title={emp?.name || 'Empleado'}>{emp?.name || 'Empleado'}</td>
+                                                                                                                        <td className="py-2.5 px-4 font-medium text-slate-900" title={emp?.name || t('financialHealth.unknownEmployee')}>{emp?.name || t('financialHealth.unknownEmployee')}</td>
                                                                                                                         <td className="py-2.5 px-3 text-right font-mono tabular-nums text-slate-600 text-sm">{row.hoursDisplay.toFixed(1)} h</td>
                                                                                                                         <td className="py-2.5 px-3 text-right font-mono tabular-nums text-slate-700 text-sm">{formatMoney(row.attributedRevenue)}</td>
                                                                                                                         <td className="py-2.5 px-3 text-right font-mono tabular-nums text-slate-700 text-sm">{formatMoney(row.cost)}</td>
@@ -1974,7 +1972,7 @@ export default function FinancialHealthPage() {
                                                                                                                 const totSem = getMarginSemaphore(totMarginPct);
                                                                                                                 return (
                                                                                                                     <tr className="border-t-2 border-slate-200 bg-slate-100/90 font-semibold text-slate-800">
-                                                                                                                        <td className="py-3 px-4">Total</td>
+                                                                                                                        <td className="py-3 px-4">{t('financialHealth.expand.total')}</td>
                                                                                                                         <td className="py-3 px-3 text-right font-mono tabular-nums text-sm">{totH.toFixed(1)} h</td>
                                                                                                                         <td className="py-3 px-3 text-right font-mono tabular-nums text-sm">{formatMoney(totRev)}</td>
                                                                                                                         <td className="py-3 px-3 text-right font-mono tabular-nums text-sm">{formatMoney(totCost)}</td>
@@ -2007,14 +2005,14 @@ export default function FinancialHealthPage() {
                                                                                                 </div>
                                                                                             </div>
                                                                                             <div className="lg:w-52 shrink-0 flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                                                                                                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Resumen</p>
+                                                                                                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{t('financialHealth.expand.summary')}</p>
                                                                                                 <dl className="space-y-3 text-sm">
                                                                                                     <div>
-                                                                                                        <dt className="text-slate-500 text-xs">Coste total</dt>
+                                                                                                        <dt className="text-slate-500 text-xs">{t('financialHealth.expand.totalCost')}</dt>
                                                                                                         <dd className="font-mono font-semibold text-slate-800">{attributionRows.reduce((s, r) => s + r.cost,formatMoney(0))}</dd>
                                                                                                     </div>
                                                                                                     <div>
-                                                                                                        <dt className="text-slate-500 text-xs">Margen total</dt>
+                                                                                                        <dt className="text-slate-500 text-xs">{t('financialHealth.expand.totalMargin')}</dt>
                                                                                                         <dd className={cn("font-mono font-semibold", (() => { const totRev = attributionRows.reduce((s, r) => s + r.attributedRevenue, 0); const totMarg = attributionRows.reduce((s, r) => s + r.margin, 0); const pct = totRev > 0 ? (totMarg / totRev) * 100 : (totMarg < 0 ? -1 : 0); return getMarginSemaphore(pct).className; })())}>{attributionRows.reduce((s, r) => s + r.margin,formatMoney(0))}</dd>
                                                                                                     </div>
                                                                                                     <div>
@@ -2049,7 +2047,7 @@ export default function FinancialHealthPage() {
                                                         className="text-xs"
                                                         onClick={() => setShowAllProjects(prev => !prev)}
                                                     >
-                                                        {showAllProjects ? 'Ver solo Top 10 peores' : 'Ver todos los proyectos'}
+                                                        {showAllProjects ? t('financialHealth.bleedingRadar.showTop10') : t('financialHealth.bleedingRadar.showAll')}
                                                     </Button>
                                                 </div>
                                             )}
@@ -2061,17 +2059,17 @@ export default function FinancialHealthPage() {
 
                         {/* Inversión interna */}
                         {internalWithActivity.length > 0 && (
-                            <section aria-label="Inversión interna">
+                            <section aria-label={t('financialHealth.internalInvestment.ariaLabel')}>
                                 <Card className="shadow-sm border border-slate-200 bg-white border-l-4 border-l-slate-400 overflow-hidden">
                                     <CardHeader className="pb-3">
                                         <CardTitle className="text-base font-semibold text-slate-800 flex items-center gap-2">
                                             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
                                                 <FolderKanban className="h-4 w-4" />
                                             </span>
-                                            Inversión interna
+                                            {t('financialHealth.internalInvestment.title')}
                                         </CardTitle>
                                         <CardDescription className="text-xs text-slate-500">
-                                            Proyectos internos (horas y coste). No forman parte del radar de rentabilidad.
+                                            {t('financialHealth.internalInvestment.description')}
                                         </CardDescription>
                                     </CardHeader>
                                     <CardContent>
@@ -2079,7 +2077,7 @@ export default function FinancialHealthPage() {
                                             <table className="w-full text-sm">
                                                 <thead className="text-xs text-slate-500 uppercase bg-slate-50/80">
                                                     <tr>
-                                                        <th className="px-4 py-3 text-left font-medium rounded-tl-lg">Cliente / Proyecto</th>
+                                                        <th className="px-4 py-3 text-left font-medium rounded-tl-lg">{t('financialHealth.columns.clientProject')}</th>
                                                         <th className="px-4 py-3 text-right font-medium">{hoursHeaderLabel}</th>
                                                         <th className="px-4 py-3 text-right font-medium whitespace-nowrap">
                                                             <Tooltip>
@@ -2115,7 +2113,7 @@ export default function FinancialHealthPage() {
                                                 </thead>
                                                 <tbody className="divide-y divide-slate-100">
                                                     {internalWithActivity.map((p, idx) => {
-                                                        const clientName = clientById.get(p.clientId) || p.clientName || 'Cliente desconocido';
+                                                        const clientName = clientById.get(p.clientId) || p.clientName || t('financialHealth.internalInvestment.unknownClient');
                                                         const pcm = projectCostAndMarginMap.get(p.projectId) ?? {
                                                             cost: 0,
                                                             payrollCost: 0,
@@ -2154,7 +2152,7 @@ export default function FinancialHealthPage() {
                         )}
 
                         {/* Rentabilidad por departamento y por empleado */}
-                        <section aria-label="Rentabilidad por área y empleados">
+                        <section aria-label={t('financialHealth.departmentProfitability.sectionAria')}>
                             <div className="grid gap-6 md:grid-cols-2">
                                 <Card className="shadow-sm border border-slate-200 bg-white overflow-hidden">
                                     <CardHeader className="pb-3">
@@ -2162,7 +2160,7 @@ export default function FinancialHealthPage() {
                                             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
                                                 <TrendingUp className="h-4 w-4" />
                                             </span>
-                                            Rentabilidad por departamento
+                                            {t('financialHealth.departmentProfitability.title')}
                                         </CardTitle>
                                         <CardDescription className="text-xs text-slate-500">
                                             <Tooltip>
@@ -2183,20 +2181,20 @@ export default function FinancialHealthPage() {
                                                 <div className="rounded-full bg-slate-100 p-3 mb-2">
                                                     <LayoutDashboard className="h-6 w-6 text-slate-400" />
                                                 </div>
-                                                <p className="text-sm font-medium text-slate-600">Sin datos por departamento</p>
-                                                <p className="text-xs text-slate-500 mt-1">No hay proyectos con departamento responsable este mes.</p>
+                                                <p className="text-sm font-medium text-slate-600">{t('financialHealth.departmentProfitability.emptyTitle')}</p>
+                                                <p className="text-xs text-slate-500 mt-1">{t('financialHealth.departmentProfitability.emptyDesc')}</p>
                                             </div>
                                         ) : (
                                             <div className="overflow-x-auto">
                                                 <table className="w-full text-sm min-w-[640px]">
                                                     <thead className="text-xs text-slate-500 uppercase bg-slate-50/80">
                                                         <tr>
-                                                            <th className="px-3 py-2.5 text-left font-medium rounded-tl-lg">Área</th>
+                                                            <th className="px-3 py-2.5 text-left font-medium rounded-tl-lg">{t('financialHealth.columns.area')}</th>
                                                             <th className="px-3 py-2.5 text-right font-medium whitespace-nowrap">{hoursHeaderLabel}</th>
                                                             <th className="px-3 py-2.5 text-right font-medium whitespace-nowrap">{`Ingr. ${inCurrencyParens}`}</th>
                                                             <th className="px-3 py-2.5 text-right font-medium whitespace-nowrap">{t('financialHealth.columns.payrollImputed')}</th>
                                                             <th className="px-3 py-2.5 text-right font-medium whitespace-nowrap">{t('financialHealth.columns.commonOverhead')}</th>
-                                                            <th className="px-3 py-2.5 text-right font-medium whitespace-nowrap">{`Margen ${inCurrencyParens}`}</th>
+                                                            <th className="px-3 py-2.5 text-right font-medium whitespace-nowrap">{t('financialHealth.columns.margin', currencyLabels)}</th>
                                                             <th className="px-3 py-2.5 text-right font-medium rounded-tr-lg whitespace-nowrap">EHR</th>
                                                         </tr>
                                                     </thead>
@@ -2248,10 +2246,10 @@ export default function FinancialHealthPage() {
                                             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
                                                 <Users className="h-4 w-4" />
                                             </span>
-                                            Rentabilidad por empleado
+                                            {t('financialHealth.employeeProfitability.title')}
                                         </CardTitle>
                                         <CardDescription className="text-xs text-slate-500">
-                                            Horas, ingreso atribuido, coste y margen por empleado. Ordenado por margen. Detalle en pestaña Empleados.
+                                            {t('financialHealth.employeeProfitability.description')}
                                         </CardDescription>
                                     </CardHeader>
                                     <CardContent>
@@ -2260,15 +2258,15 @@ export default function FinancialHealthPage() {
                                                 <div className="rounded-full bg-slate-100 p-3 mb-2">
                                                     <UserCircle className="h-6 w-6 text-slate-400" />
                                                 </div>
-                                                <p className="text-sm font-medium text-slate-600">Sin datos de empleados</p>
-                                                <p className="text-xs text-slate-500 mt-1">No hay empleados con actividad este mes o no coinciden con la búsqueda.</p>
+                                                <p className="text-sm font-medium text-slate-600">{t('financialHealth.employeeProfitability.emptyTitle')}</p>
+                                                <p className="text-xs text-slate-500 mt-1">{t('financialHealth.employeeProfitability.emptyDesc')}</p>
                                             </div>
                                         ) : (
                                             <div className="overflow-x-auto">
                                                 <table className="w-full text-sm">
                                                     <thead className="text-xs text-slate-500 uppercase bg-slate-50/80">
                                                         <tr>
-                                                            <th className="px-4 py-3 text-left font-medium rounded-tl-lg min-w-[120px]">Empleado</th>
+                                                            <th className="px-4 py-3 text-left font-medium rounded-tl-lg min-w-[120px]">{t('financialHealth.columns.employee')}</th>
                                                             <th className="px-4 py-3 text-right font-medium whitespace-nowrap min-w-[100px]">{hoursHeaderLabel}</th>
                                                             <th className="px-4 py-3 text-right font-medium whitespace-nowrap min-w-[110px]">{`Ingr. atrib. ${inCurrencyParens}`}</th>
                                                             <th className="px-4 py-3 text-right font-medium whitespace-nowrap min-w-[88px]">
@@ -2301,8 +2299,8 @@ export default function FinancialHealthPage() {
                                                                     </TooltipContent>
                                                                 </Tooltip>
                                                             </th>
-                                                            <th className="px-4 py-3 text-right font-medium whitespace-nowrap min-w-[70px]">Coste/h</th>
-                                                            <th className="px-4 py-3 text-right font-medium rounded-tr-lg whitespace-nowrap min-w-[90px]">{`Margen ${inCurrencyParens}`}</th>
+                                                            <th className="px-4 py-3 text-right font-medium whitespace-nowrap min-w-[70px]">{t('financialHealth.columns.costPerHour')}</th>
+                                                            <th className="px-4 py-3 text-right font-medium rounded-tr-lg whitespace-nowrap min-w-[90px]">{t('financialHealth.columns.margin', currencyLabels)}</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody className="divide-y divide-slate-100">
@@ -2354,8 +2352,15 @@ export default function FinancialHealthPage() {
                                                                                       c: formatPerHour(costPerHour, 2),
                                                                                   })
                                                                             : costMode === 'standard'
-                                                                              ? `Base: ${baseHoursStd.toFixed(0)} h (capacidad teórica del mes) · ${formatPerHour(costPerHour, 2)}`
-                                                                              : `Base: ${hEff.toFixed(0)} h (reales del mes) · Nómina: ${formatMoney((empResumen?.monthlyCost ?? empResumen?.hourlyRate ?? 0))} → ${formatPerHour(costPerHour, 2)}`
+                                                                              ? t('financialHealth.costHour.baseStandard', {
+                                                                                    baseH: baseHoursStd.toFixed(0),
+                                                                                    costPerHour: formatPerHour(costPerHour, 2),
+                                                                                })
+                                                                              : t('financialHealth.costHour.baseDynamic', {
+                                                                                    baseH: hEff.toFixed(0),
+                                                                                    payroll: formatMoney(empResumen?.monthlyCost ?? empResumen?.hourlyRate ?? 0),
+                                                                                    costPerHour: formatPerHour(costPerHour, 2),
+                                                                                })
                                                                         : null;
                                                                 return (
                                                                     <tr key={ep.employeeId} className={cn("transition-colors", idx % 2 === 1 ? "bg-slate-50/50" : "bg-white", "hover:bg-slate-100/70")}>
@@ -2393,7 +2398,7 @@ export default function FinancialHealthPage() {
                                                     </tbody>
                                                     <tfoot className="bg-slate-100 border-t-2 border-slate-200">
                                                         <tr className="text-sm font-semibold text-slate-800">
-                                                            <td className="px-4 py-3">Total</td>
+                                                            <td className="px-4 py-3">{t('financialHealth.expand.total')}</td>
                                                             <td className="px-4 py-3 text-right font-mono tabular-nums">
                                                                 {employeeProfitabilityFilteredBySearch.reduce((s, ep) => {
                                                                     const d = employeeDisplayTotalsWhenSearch?.get(ep.employeeId);
@@ -2478,10 +2483,10 @@ export default function FinancialHealthPage() {
                                     <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
                                         <FolderKanban className="h-4 w-4" />
                                     </span>
-                                    Tabla de proyectos (facturables)
+                                    {t('financialHealth.employeeProfitability.projectsTableTitle')}
                                 </CardTitle>
                                 <CardDescription className="text-xs text-slate-500">
-                                    Proyectos con fee y actividad este mes. Coste interno y margen en euros.
+                                    {t('financialHealth.employeeProfitability.tabDescription')}
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
@@ -2490,8 +2495,8 @@ export default function FinancialHealthPage() {
                                         <div className="rounded-full bg-slate-100 p-4 mb-3">
                                             <FolderKanban className="h-8 w-8 text-slate-400" />
                                         </div>
-                                        <p className="text-sm font-medium text-slate-600">Sin proyectos facturables</p>
-                                        <p className="text-xs text-slate-500 mt-1 max-w-sm">No hay proyectos con fee y actividad este mes, o no coinciden con los filtros.</p>
+                                        <p className="text-sm font-medium text-slate-600">{t('financialHealth.employeeProfitability.emptyBillableTitle')}</p>
+                                        <p className="text-xs text-slate-500 mt-1 max-w-sm">{t('financialHealth.employeeProfitability.emptyBillableDesc')}</p>
                                     </div>
                                 ) : (
                                     <div className="overflow-x-auto">
@@ -2505,12 +2510,12 @@ export default function FinancialHealthPage() {
                                                             {isViewingCurrentMonth && (
                                                                 <Tooltip>
                                                                     <TooltipTrigger asChild>
-                                                                        <span className="cursor-help text-slate-400 hover:text-slate-600 inline-flex" aria-label="Info ingreso devengado">
+                                                                        <span className="cursor-help text-slate-400 hover:text-slate-600 inline-flex" aria-label={t('financialHealth.bleedingRadar.accruedInfoAria')}>
                                                                             <Info className="h-3.5 w-3.5" />
                                                                         </span>
                                                                     </TooltipTrigger>
                                                                     <TooltipContent side="top" className="text-xs">
-                                                                        En mes en curso se muestra el ingreso devengado (prorrateo por días). Si el proyecto ya ha cumplido o superado el 100 % de las horas del presupuesto, se muestra el fee total.
+                                                                        {t('financialHealth.bleedingRadar.accruedTooltip')}
                                                                     </TooltipContent>
                                                                 </Tooltip>
                                                             )}
@@ -2541,15 +2546,15 @@ export default function FinancialHealthPage() {
                                                     <th className="px-4 py-3 text-right font-medium">
                                                         <Tooltip>
                                                             <TooltipTrigger asChild>
-                                                                <span className="cursor-help underline decoration-dotted">Ritmo</span>
+                                                                <span className="cursor-help underline decoration-dotted">{t('financialHealth.columns.pace')}</span>
                                                             </TooltipTrigger>
                                                             <TooltipContent side="top" className="text-xs">
-                                                                % de presupuesto consumido frente a % de mes transcurrido. Rojo: ritmo por encima de lo previsto. Verde: ritmo adecuado.
+                                                                {t('financialHealth.bleedingRadar.paceTooltip')}
                                                             </TooltipContent>
                                                         </Tooltip>
                                                     </th>
-                                                    <th className="px-4 py-3 text-right font-medium">{`Margen ${inCurrencyParens}`}</th>
-                                                    <th className="px-4 py-3 text-right font-medium rounded-tr-lg">Acción</th>
+                                                    <th className="px-4 py-3 text-right font-medium">{t('financialHealth.columns.margin', currencyLabels)}</th>
+                                                    <th className="px-4 py-3 text-right font-medium rounded-tr-lg">{t('financialHealth.columns.action')}</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-slate-100">
@@ -2634,7 +2639,7 @@ export default function FinancialHealthPage() {
                                                                 <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
                                                                     <Button size="sm" variant="ghost" className="h-8 text-xs gap-1 text-slate-600 hover:text-slate-900" onClick={(e) => { e.stopPropagation(); toggleProject(p.projectId); }}>
                                                                         {isExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
-                                                                        Desglose
+                                                                        {t('financialHealth.expand.breakdown')}
                                                                     </Button>
                                                                 </td>
                                                             </tr>
@@ -2657,7 +2662,7 @@ export default function FinancialHealthPage() {
                                                                                             </colgroup>
                                                                                             <thead>
                                                                                                 <tr className="bg-slate-50 border-b border-slate-200">
-                                                                                                    <th className="text-left py-3 px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Empleado</th>
+                                                                                                    <th className="text-left py-3 px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">{t('financialHealth.columns.employee')}</th>
                                                                                                     <th className="text-right py-3 px-3 text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">Horas</th>
                                                                                                     <th className="text-right py-3 px-3 text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">{`Ingreso atrib. ${inCurrencyParens}`}</th>
                                                                                                     <th className="text-right py-3 px-3 text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">{`Coste ${inCurrencyParens}`}</th>
@@ -2681,10 +2686,10 @@ export default function FinancialHealthPage() {
                                                                                                             </TooltipContent>
                                                                                                         </Tooltip>
                                                                                                     </th>
-                                                                                                    <th className="text-right py-3 px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">{`Margen ${inCurrencyParens}`}</th>
+                                                                                                    <th className="text-right py-3 px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">{t('financialHealth.columns.margin', currencyLabels)}</th>
                                                                                                 </tr>
                                                                                                 <tr className="bg-slate-50/80">
-                                                                                                    <th className="text-left py-0.5 px-4 text-[11px] font-normal text-slate-400" colSpan={7}>{hoursMode === 'computed' ? 'Horas computadas' : 'Horas reales'}</th>
+                                                                                                    <th className="text-left py-0.5 px-4 text-[11px] font-normal text-slate-400" colSpan={7}>{hoursMode === 'computed' ? t('financialHealth.expand.hoursComputed') : t('financialHealth.expand.hoursActual')}</th>
                                                                                                 </tr>
                                                                                             </thead>
                                                                                             <tbody className="divide-y divide-slate-100">
@@ -2696,7 +2701,7 @@ export default function FinancialHealthPage() {
                                                                                                     const marginPh = row.hoursDisplay > 0.001 ? row.margin / row.hoursDisplay : 0;
                                                                                                     return (
                                                                                                         <tr key={row.employeeId} className={cn("transition-colors hover:bg-slate-50/50", i % 2 === 1 && "bg-slate-50/30")}>
-                                                                                                            <td className="py-2.5 px-4 font-medium text-slate-900" title={emp?.name || 'Empleado'}>{emp?.name || 'Empleado'}</td>
+                                                                                                            <td className="py-2.5 px-4 font-medium text-slate-900" title={emp?.name || t('financialHealth.unknownEmployee')}>{emp?.name || t('financialHealth.unknownEmployee')}</td>
                                                                                                             <td className="py-2.5 px-3 text-right font-mono tabular-nums text-slate-600 text-sm">{row.hoursDisplay.toFixed(1)} h</td>
                                                                                                             <td className="py-2.5 px-3 text-right font-mono tabular-nums text-slate-700 text-sm">{formatMoney(row.attributedRevenue)}</td>
                                                                                                             <td className="py-2.5 px-3 text-right font-mono tabular-nums text-slate-700 text-sm">{formatMoney(row.cost)}</td>
@@ -2733,7 +2738,7 @@ export default function FinancialHealthPage() {
                                                                                                     const totSem = getMarginSemaphore(totMarginPct);
                                                                                                     return (
                                                                                                         <tr className="border-t-2 border-slate-200 bg-slate-100/90 font-semibold text-slate-800">
-                                                                                                            <td className="py-3 px-4">Total</td>
+                                                                                                            <td className="py-3 px-4">{t('financialHealth.expand.total')}</td>
                                                                                                             <td className="py-3 px-3 text-right font-mono tabular-nums text-sm">{totH.toFixed(1)} h</td>
                                                                                                             <td className="py-3 px-3 text-right font-mono tabular-nums text-sm">{formatMoney(totRev)}</td>
                                                                                                             <td className="py-3 px-3 text-right font-mono tabular-nums text-sm">{formatMoney(totCost)}</td>
@@ -2766,14 +2771,14 @@ export default function FinancialHealthPage() {
                                                                                     </div>
                                                                                 </div>
                                                                                 <div className="lg:w-52 shrink-0 flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                                                                                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Resumen</p>
+                                                                                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{t('financialHealth.expand.summary')}</p>
                                                                                     <dl className="space-y-3 text-sm">
                                                                                         <div>
-                                                                                            <dt className="text-slate-500 text-xs">Coste total</dt>
+                                                                                            <dt className="text-slate-500 text-xs">{t('financialHealth.expand.totalCost')}</dt>
                                                                                             <dd className="font-mono font-semibold text-slate-800">{attributionRows.reduce((s, r) => s + r.cost,formatMoney(0))}</dd>
                                                                                         </div>
                                                                                         <div>
-                                                                                            <dt className="text-slate-500 text-xs">Margen total</dt>
+                                                                                            <dt className="text-slate-500 text-xs">{t('financialHealth.expand.totalMargin')}</dt>
                                                                                             <dd className={cn("font-mono font-semibold", (() => { const totRev = attributionRows.reduce((s, r) => s + r.attributedRevenue, 0); const totMarg = attributionRows.reduce((s, r) => s + r.margin, 0); const pct = totRev > 0 ? (totMarg / totRev) * 100 : (totMarg < 0 ? -1 : 0); return getMarginSemaphore(pct).className; })())}>{attributionRows.reduce((s, r) => s + r.margin,formatMoney(0))}</dd>
                                                                                         </div>
                                                                                         <div>
@@ -2876,10 +2881,10 @@ export default function FinancialHealthPage() {
                                         <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
                                             <FolderKanban className="h-4 w-4" />
                                         </span>
-                                        Proyectos internos (sin fee)
+                                        {t('financialHealth.internalInvestment.tabTitle')}
                                     </CardTitle>
                                     <CardDescription className="text-xs text-slate-500">
-                                        Proyectos con fee 0 {currencySymbol} y actividad este mes. Rentabilidad negativa (solo coste). Respetan la búsqueda.
+                                        {t('financialHealth.internalInvestment.tabDescription', { currencySymbol })}
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>
@@ -2989,10 +2994,10 @@ export default function FinancialHealthPage() {
                                     <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
                                         <UserCircle className="h-4 w-4" />
                                     </span>
-                                    Rentabilidad por empleado
+                                    {t('financialHealth.employeeProfitability.title')}
                                 </CardTitle>
                                 <CardDescription className="text-xs text-slate-500">
-                                    Horas, ingreso atribuido, coste y margen. Expande para ver desglose por proyecto.
+                                    {t('financialHealth.employeeProfitability.employeesTabDescription')}
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
@@ -3001,27 +3006,27 @@ export default function FinancialHealthPage() {
                                         <div className="rounded-full bg-slate-100 p-4 mb-3">
                                             <UserCircle className="h-8 w-8 text-slate-400" />
                                         </div>
-                                        <p className="text-sm font-medium text-slate-600">Sin datos de empleados</p>
-                                        <p className="text-xs text-slate-500 mt-1 max-w-sm">No hay empleados con actividad este mes o no coinciden con la búsqueda.</p>
+                                        <p className="text-sm font-medium text-slate-600">{t('financialHealth.employeeProfitability.emptyTitle')}</p>
+                                        <p className="text-xs text-slate-500 mt-1 max-w-sm">{t('financialHealth.employeeProfitability.emptyDesc')}</p>
                                     </div>
                                 ) : (
                                     <div className="overflow-x-auto">
                                         <table className="w-full text-sm">
                                             <thead className="text-xs text-slate-500 uppercase bg-slate-50/80">
                                                 <tr>
-                                                    <th className="px-4 py-3 text-left font-medium rounded-tl-lg min-w-[120px]">Empleado</th>
+                                                    <th className="px-4 py-3 text-left font-medium rounded-tl-lg min-w-[120px]">{t('financialHealth.columns.employee')}</th>
                                                     <th className="px-4 py-3 text-right font-medium whitespace-nowrap min-w-[100px]">
                                                         <Tooltip>
                                                             <TooltipTrigger asChild>
-                                                                <span className="cursor-help underline decoration-dotted">Nómina</span>
+                                                                <span className="cursor-help underline decoration-dotted">{t('financialHealth.columns.payroll')}</span>
                                                             </TooltipTrigger>
                                                             <TooltipContent side="top" className="text-xs max-w-xs">
-                                                                Nómina mensual configurada en la ficha del empleado. No depende de las horas registradas.
+                                                                {t('financialHealth.columns.payrollTooltip')}
                                                             </TooltipContent>
                                                         </Tooltip>
                                                     </th>
                                                     <th className="px-4 py-3 text-right font-medium whitespace-nowrap min-w-[100px]">{hoursHeaderLabel}</th>
-                                                    <th className="px-4 py-3 text-right font-medium whitespace-nowrap min-w-[110px]">Ingr. atrib. (€)</th>
+                                                    <th className="px-4 py-3 text-right font-medium whitespace-nowrap min-w-[110px]">{t('financialHealth.columns.attributedRevenue')}</th>
                                                     <th className="px-4 py-3 text-right font-medium whitespace-nowrap min-w-[80px]">
                                                         <Tooltip>
                                                             <TooltipTrigger asChild>
@@ -3030,14 +3035,14 @@ export default function FinancialHealthPage() {
                                                             <TooltipContent side="top" className="text-xs max-w-xs">
                                                                 {costHeaderTooltip}
                                                                 <br />
-                                                                <span className="text-slate-300">Compuesto por nómina imputada + gastos comunes. Pasa el ratón por la cifra para ver el desglose.</span>
+                                                                <span className="text-slate-300">{t('financialHealth.project.costBreakdownDetail')}</span>
                                                             </TooltipContent>
                                                         </Tooltip>
                                                     </th>
-                                                    <th className="px-4 py-3 text-right font-medium whitespace-nowrap min-w-[70px]">Coste/h</th>
-                                                    <th className="px-4 py-3 text-right font-medium whitespace-nowrap min-w-[90px]">{`Margen ${inCurrencyParens}`}</th>
-                                                    <th className="px-4 py-3 text-right font-medium whitespace-nowrap min-w-[70px]">% margen</th>
-                                                    <th className="px-4 py-3 text-right font-medium rounded-tr-lg">Acción</th>
+                                                    <th className="px-4 py-3 text-right font-medium whitespace-nowrap min-w-[70px]">{t('financialHealth.columns.costPerHour')}</th>
+                                                    <th className="px-4 py-3 text-right font-medium whitespace-nowrap min-w-[90px]">{t('financialHealth.columns.margin', currencyLabels)}</th>
+                                                    <th className="px-4 py-3 text-right font-medium whitespace-nowrap min-w-[70px]">{t('financialHealth.columns.marginPercent')}</th>
+                                                    <th className="px-4 py-3 text-right font-medium rounded-tr-lg">{t('financialHealth.columns.action')}</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-slate-100">
@@ -3090,8 +3095,15 @@ export default function FinancialHealthPage() {
                                                                           c: formatPerHour(costPerHour, 2),
                                                                       })
                                                                 : costMode === 'standard'
-                                                                  ? `Base: ${baseHoursStdTab.toFixed(0)} h (capacidad teórica del mes) · ${formatPerHour(costPerHour, 2)}`
-                                                                  : `Base: ${hEffTab.toFixed(0)} h (reales del mes) · Nómina: ${formatMoney((empTab?.monthlyCost ?? empTab?.hourlyRate ?? 0))} → ${formatPerHour(costPerHour, 2)}`
+                                                                  ? t('financialHealth.costHour.baseStandard', {
+                                                                        baseH: baseHoursStdTab.toFixed(0),
+                                                                        costPerHour: formatPerHour(costPerHour, 2),
+                                                                    })
+                                                                  : t('financialHealth.costHour.baseDynamic', {
+                                                                        baseH: hEffTab.toFixed(0),
+                                                                        payroll: formatMoney(empTab?.monthlyCost ?? empTab?.hourlyRate ?? 0),
+                                                                        costPerHour: formatPerHour(costPerHour, 2),
+                                                                    })
                                                             : null;
                                                     return (
                                                         <Fragment key={ep.employeeId}>
@@ -3120,8 +3132,12 @@ export default function FinancialHealthPage() {
                                                                         </TooltipTrigger>
                                                                         <TooltipContent side="top" className="text-xs max-w-xs">
                                                                             {ep.totalHoursGlobal > 0
-                                                                                ? `${displayHours.toFixed(1)} h imputadas de ${ep.totalHoursGlobal.toFixed(1)} h totales del mes (${((displayHours / ep.totalHoursGlobal) * 100).toFixed(0)}%).`
-                                                                                : `${displayHours.toFixed(1)} h.`}
+                                                                                ? t('financialHealth.employeeExpand.hoursAttributedOfTotal', {
+                                                                                      attributed: displayHours.toFixed(1),
+                                                                                      total: ep.totalHoursGlobal.toFixed(1),
+                                                                                      pct: ((displayHours / ep.totalHoursGlobal) * 100).toFixed(0),
+                                                                                  })
+                                                                                : t('financialHealth.employeeExpand.hoursOnly', { hours: displayHours.toFixed(1) })}
                                                                         </TooltipContent>
                                                                     </Tooltip>
                                                                 </td>
@@ -3133,12 +3149,15 @@ export default function FinancialHealthPage() {
                                                                         </TooltipTrigger>
                                                                         <TooltipContent side="left" className="text-xs">
                                                                             <div className="space-y-0.5">
-                                                                                <div>Nómina imputada: <span className="font-mono">{(display ? (ep.payrollAllocatedTotal * (displayCost / (ep.cost || 1))) :formatMoney(ep.payrollAllocatedTotal))}</span></div>
-                                                                                <div>Gastos comunes: <span className="font-mono">{(display ? (displayCost - ep.payrollAllocatedTotal * (displayCost / (ep.cost || 1))) :formatMoney(ep.cost - ep.payrollAllocatedTotal))}</span></div>
-                                                                                <div className="pt-0.5 border-t border-slate-200/40">Total: <span className="font-mono font-semibold">{formatMoney(displayCost)}</span></div>
+                                                                                <div>{t('financialHealth.employeeExpand.costPayrollLine')} <span className="font-mono">{(display ? (ep.payrollAllocatedTotal * (displayCost / (ep.cost || 1))) :formatMoney(ep.payrollAllocatedTotal))}</span></div>
+                                                                                <div>{t('financialHealth.employeeExpand.costOverheadLine')} <span className="font-mono">{(display ? (displayCost - ep.payrollAllocatedTotal * (displayCost / (ep.cost || 1))) :formatMoney(ep.cost - ep.payrollAllocatedTotal))}</span></div>
+                                                                                <div className="pt-0.5 border-t border-slate-200/40">{t('financialHealth.employeeExpand.costTotalLine')} <span className="font-mono font-semibold">{formatMoney(displayCost)}</span></div>
                                                                                 {ep.hoursNotAttributed > 0.001 && (
                                                                                     <div className="pt-1 text-slate-300">
-                                                                                        {ep.hoursNotAttributed.toFixed(1)} h no imputadas · {formatMoney(ep.costNotAttributed)}
+                                                                                        {t('financialHealth.employeeExpand.hoursUnattributedCost', {
+                                                                                            hours: ep.hoursNotAttributed.toFixed(1),
+                                                                                            cost: formatMoney(ep.costNotAttributed),
+                                                                                        })}
                                                                                     </div>
                                                                                 )}
                                                                             </div>
@@ -3167,7 +3186,7 @@ export default function FinancialHealthPage() {
                                                                 <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
                                                                     <Button size="sm" variant="ghost" className="h-8 text-xs gap-1 text-slate-600 hover:text-slate-900" onClick={(e) => { e.stopPropagation(); toggleProject(`emp-${ep.employeeId}`); }}>
                                                                         {isExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
-                                                                        Desglose
+                                                                        {t('financialHealth.expand.breakdown')}
                                                                     </Button>
                                                                 </td>
                                                             </tr>
@@ -3206,25 +3225,25 @@ export default function FinancialHealthPage() {
                                                                             <div className="px-4 py-4">
                                                                                 <div className="flex flex-col lg:flex-row gap-4">
                                                                                     <div className="shrink-0 w-64 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                                                                                        <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Desglose del empleado</div>
+                                                                                        <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">{t('financialHealth.employeeExpand.employeeBreakdownTitle')}</div>
                                                                                         <dl className="space-y-2.5 text-sm">
                                                                                             <div>
-                                                                                                <dt className="text-slate-500 text-xs">Nómina del mes</dt>
+                                                                                                <dt className="text-slate-500 text-xs">{t('financialHealth.employee.payroll')}</dt>
                                                                                                 <dd className="font-mono font-semibold text-slate-800">{formatMoney(ep.payrollMonthly)}</dd>
                                                                                             </div>
                                                                                             <div>
-                                                                                                <dt className="text-slate-500 text-xs">Horas del mes ({hoursMode === 'computed' ? 'computadas' : 'reales'})</dt>
+                                                                                                <dt className="text-slate-500 text-xs">{t('financialHealth.employeeExpand.monthHoursLabel', { mode: hoursMode === 'computed' ? t('financialHealth.expand.hoursComputed') : t('financialHealth.expand.hoursActual') })}</dt>
                                                                                                 <dd className="font-mono font-semibold text-slate-800">{(q ? sumHours : ep.totalHoursGlobal).toFixed(1)} h</dd>
                                                                                             </div>
                                                                                             <div className="border-t border-slate-100 pt-2">
-                                                                                                <dt className="text-slate-500 text-xs">Ingreso atribuido</dt>
+                                                                                                <dt className="text-slate-500 text-xs">{t('financialHealth.employeeExpand.attributedRevenue')}</dt>
                                                                                                 <dd className="font-mono font-semibold text-slate-800">{(q ? sumAttr :formatMoney(ep.attributedRevenue))}</dd>
                                                                                             </div>
                                                                                             <div>
                                                                                                 <dt className="text-slate-500 text-xs flex items-center gap-1">
                                                                                                     <Tooltip>
                                                                                                         <TooltipTrigger asChild>
-                                                                                                            <span className="cursor-help underline decoration-dotted">Nómina en coste</span>
+                                                                                                            <span className="cursor-help underline decoration-dotted">{t('financialHealth.employeeExpand.payrollInCost')}</span>
                                                                                                         </TooltipTrigger>
                                                                                                         <TooltipContent side="top" className="text-xs max-w-xs">
                                                                                                             {t('financialHealth.employee.payrollInCostTooltip')}
@@ -3251,7 +3270,7 @@ export default function FinancialHealthPage() {
                                                                                                 </div>
                                                                                             )}
                                                                                             <div>
-                                                                                                <dt className="text-slate-500 text-xs">Gastos comunes</dt>
+                                                                                                <dt className="text-slate-500 text-xs">{t('financialHealth.expand.commonOverhead')}</dt>
                                                                                                 <dd className="font-mono font-semibold text-slate-800">{(q ? sumOverhead :formatMoney(ep.overheadCost))}</dd>
                                                                                             </div>
                                                                                             {!q && ep.hoursNotAttributed > 0.001 && (
@@ -3259,12 +3278,12 @@ export default function FinancialHealthPage() {
                                                                                                     <dt className="text-slate-500 text-xs flex items-center gap-1">
                                                                                                         <Tooltip>
                                                                                                             <TooltipTrigger asChild>
-                                                                                                                <span className="cursor-help underline decoration-dotted">No imputado</span>
+                                                                                                                <span className="cursor-help underline decoration-dotted">{t('financialHealth.employeeExpand.unattributed')}</span>
                                                                                                             </TooltipTrigger>
                                                                                                             <TooltipContent side="top" className="text-xs max-w-xs">
                                                                                                                 {dynamicMode
-                                                                                                                    ? `${ep.hoursNotAttributed.toFixed(1)} h en tareas internas o proyectos fuera de la vista. Suma al coste para cuadrar con la nómina.`
-                                                                                                                    : `${ep.hoursNotAttributed.toFixed(1)} h en tareas internas o fuera de vista. En modo Operativo el coste se calcula sobre capacidad teórica, por lo que la suma puede no cuadrar exactamente con la nómina.`}
+                                                                                                                    ? t('financialHealth.employee.unattributedTooltipDyn', { hours: ep.hoursNotAttributed.toFixed(1) })
+                                                                                                                    : t('financialHealth.employee.unattributedTooltipStd', { hours: ep.hoursNotAttributed.toFixed(1) })}
                                                                                                             </TooltipContent>
                                                                                                         </Tooltip>
                                                                                                     </dt>
@@ -3275,7 +3294,7 @@ export default function FinancialHealthPage() {
                                                                                                 </div>
                                                                                             )}
                                                                                             <div className="border-t border-slate-100 pt-2">
-                                                                                                <dt className="text-slate-500 text-xs">{`Margen ${inCurrencyParens}`}</dt>
+                                                                                                <dt className="text-slate-500 text-xs">{t('financialHealth.columns.margin', currencyLabels)}</dt>
                                                                                                 <dd className={cn("font-mono font-semibold", getMarginSemaphore(marginPct).className)}>{(q ? sumMargin :formatMoney(ep.margin))}</dd>
                                                                                             </div>
                                                                                             <div>
@@ -3299,11 +3318,11 @@ export default function FinancialHealthPage() {
                                                                                                 </colgroup>
                                                                                                 <thead>
                                                                                                     <tr className="bg-slate-50 border-b border-slate-200">
-                                                                                                        <th className="text-left py-3 px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Proyecto</th>
-                                                                                                        <th className="text-right py-3 px-3 text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">Horas</th>
-                                                                                                        <th className="text-right py-3 px-3 text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">{`Ingreso atrib. ${inCurrencyParens}`}</th>
-                                                                                                        <th className="text-right py-3 px-3 text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">Nómina imput.</th>
-                                                                                                        <th className="text-right py-3 px-3 text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">G. comunes</th>
+                                                                                                        <th className="text-left py-3 px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">{t('financialHealth.employeeExpand.project')}</th>
+                                                                                                        <th className="text-right py-3 px-3 text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">{t('financialHealth.employeeExpand.hours')}</th>
+                                                                                                        <th className="text-right py-3 px-3 text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">{t('financialHealth.employeeExpand.attributedRevenueCol', { currency: inCurrencyParens })}</th>
+                                                                                                        <th className="text-right py-3 px-3 text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">{t('financialHealth.columns.payrollImputed')}</th>
+                                                                                                        <th className="text-right py-3 px-3 text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">{t('financialHealth.employeeExpand.commonShort')}</th>
                                                                                                         <th className="text-right py-3 px-3 text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                                                                                                             <Tooltip>
                                                                                                                 <TooltipTrigger asChild>
@@ -3324,10 +3343,10 @@ export default function FinancialHealthPage() {
                                                                                                                 </TooltipContent>
                                                                                                             </Tooltip>
                                                                                                         </th>
-                                                                                                        <th className="text-right py-3 px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">{`Margen ${inCurrencyParens}`}</th>
+                                                                                                        <th className="text-right py-3 px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">{t('financialHealth.columns.margin', currencyLabels)}</th>
                                                                                                     </tr>
                                                                                                     <tr className="bg-slate-50/80">
-                                                                                                        <th className="text-left py-0.5 px-4 text-[11px] font-normal text-slate-400" colSpan={8}>{hoursMode === 'computed' ? 'Horas computadas' : 'Horas reales'}</th>
+                                                                                                        <th className="text-left py-0.5 px-4 text-[11px] font-normal text-slate-400" colSpan={8}>{t('financialHealth.employeeExpand.hoursModeRow', { mode: hoursMode === 'computed' ? t('financialHealth.expand.hoursComputed') : t('financialHealth.expand.hoursActual') })}</th>
                                                                                                     </tr>
                                                                                                 </thead>
                                                                                                 <tbody className="divide-y divide-slate-100">
@@ -3378,8 +3397,8 @@ export default function FinancialHealthPage() {
                                                                                                                     </TooltipTrigger>
                                                                                                                     <TooltipContent side="right" className="text-xs max-w-xs">
                                                                                                                         {dynamicMode
-                                                                                                                            ? 'Horas en tareas internas o proyectos fuera de esta vista. Se añaden aquí para que el total cuadre con la nómina.'
-                                                                                                                            : 'Horas en tareas internas o fuera de vista. En modo Operativo el coste se calcula con capacidad teórica y puede no cuadrar exactamente con la nómina.'}
+                                                                                                                            ? t('financialHealth.employee.unattributedTooltipDyn')
+                                                                                                                            : t('financialHealth.employee.unattributedTooltipStd')}
                                                                                                                     </TooltipContent>
                                                                                                                 </Tooltip>
                                                                                                             </td>
@@ -3414,7 +3433,7 @@ export default function FinancialHealthPage() {
                                                                                                         </tr>
                                                                                                     )}
                                                                                                     <tr className="border-t-2 border-slate-200 bg-slate-100/90 font-semibold text-slate-800">
-                                                                                                        <td className="py-3 px-4">Total</td>
+                                                                                                        <td className="py-3 px-4">{t('financialHealth.expand.total')}</td>
                                                                                                         <td className="py-3 px-3 text-right font-mono tabular-nums text-sm">{totalHoursRow.toFixed(1)} h</td>
                                                                                                         <td className="py-3 px-3 text-right font-mono tabular-nums text-sm">{formatMoney(sumAttr)}</td>
                                                                                                         <td className="py-3 px-3 text-right font-mono tabular-nums text-sm">{formatMoney(totalPayrollRow)}</td>

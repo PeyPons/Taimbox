@@ -56,7 +56,7 @@ import type { LucideIcon } from 'lucide-react';
 import { startOfMonth, endOfMonth, format, isSameMonth, parseISO, addDays } from 'date-fns';
 import { useMonthNavigation } from '@/hooks/useMonthNavigation';
 import { useEnsureMonthWithLoading } from '@/hooks/useEnsureMonthWithLoading';
-import { es } from 'date-fns/locale';
+import { useDateLocale } from '@/hooks/useDateLocale';
 import { toast } from '@/lib/notify';
 import { cn } from '@/lib/utils';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -76,6 +76,7 @@ const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
 export default function EmployeeDashboard() {
   const { t } = useAppTranslation();
+  const dateLocale = useDateLocale();
   const { employees, projects, clients, allocations, absences, teamEvents, getEmployeeAllocationsForWeek, getEmployeeLoadForWeek, addAllocation, updateAllocation, deleteAllocation, isLoading: isGlobalLoading, weeklyFeedback, getEmployeeMonthlyLoad, currentUser: appCurrentUser } = useApp();
 
   const { currentAgency } = useAgency();
@@ -604,7 +605,7 @@ export default function EmployeeDashboard() {
   if (isLoadingMonth) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="text-slate-400">Cargando tareas...</div>
+        <div className="text-slate-400">{t('employeeDashboard.page.loadingTasks')}</div>
       </div>
     );
   }
@@ -901,7 +902,7 @@ export default function EmployeeDashboard() {
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white/60 p-3 rounded-lg border border-slate-200 backdrop-blur-sm">
             <div className="flex items-center gap-2">
               <h2 className="text-lg font-bold capitalize text-slate-800 flex items-center gap-2">
-                {getMonthName(currentMonth)}
+                {getMonthName(currentMonth, dateLocale)}
                 <Badge variant="secondary" className="font-normal text-slate-500 bg-slate-100">{currentMonth.getFullYear()}</Badge>
               </h2>
             </div>
@@ -943,8 +944,8 @@ export default function EmployeeDashboard() {
                     const firstWorkingDay = workingDays[0];
                     const lastWorkingDay = workingDays[workingDays.length - 1];
                     const weekDateLabel = firstWorkingDay && lastWorkingDay
-                      ? `${format(firstWorkingDay, 'd', { locale: es })}-${format(lastWorkingDay, 'd MMM', { locale: es })}`
-                      : `${format(effectiveStart, 'd', { locale: es })}-${format(effectiveEnd, 'd MMM', { locale: es })}`;
+                      ? `${format(firstWorkingDay, 'd', { locale: dateLocale })}-${format(lastWorkingDay, 'd MMM', { locale: dateLocale })}`
+                      : `${format(effectiveStart, 'd', { locale: dateLocale })}-${format(effectiveEnd, 'd MMM', { locale: dateLocale })}`;
 
                     return (
                       <div key={week.weekStart.toISOString()} className="text-center px-1 py-2 border-r flex flex-col justify-center">

@@ -14,7 +14,8 @@ import {
     AlertCircle, ArrowRight, User, Ban, AlertTriangle, Trash2
 } from 'lucide-react';
 import { format, addDays, parseISO, startOfWeek, addMonths, getWeekOfMonth } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { useTranslation } from 'react-i18next';
+import { useDateLocale } from '@/hooks/useDateLocale';
 import { toast } from '@/lib/notify';
 import { cn } from '@/lib/utils';
 import { getWeeksForMonth } from '@/utils/dateUtils';
@@ -31,6 +32,8 @@ interface TransferAcceptanceDialogProps {
 type AcceptanceMode = 'keep' | 'move' | 'distribute' | 'rollover';
 
 export function TransferAcceptanceDialog({ open, onOpenChange, transfer, onSuccess }: TransferAcceptanceDialogProps) {
+    const { t } = useTranslation('app');
+    const dateLocale = useDateLocale();
     const { acceptTransfer, rejectTransfer } = useTaskTransfers();
     const { addAllocation, addWeeklyFeedback } = useApp();
 
@@ -373,7 +376,7 @@ export function TransferAcceptanceDialog({ open, onOpenChange, transfer, onSucce
                                     >
                                         {availableWeeks.map((week) => {
                                             const weekStart = week.weekStart;
-                                            const monthName = format(weekStart, 'MMMM', { locale: es });
+                                            const monthName = format(weekStart, 'MMMM', { locale: dateLocale });
                                             // Capitalizar primera letra del mes
                                             const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
 
@@ -443,7 +446,7 @@ export function TransferAcceptanceDialog({ open, onOpenChange, transfer, onSucce
                                                 >
                                                     {availableWeeks.map((week) => {
                                                         const weekStart = week.weekStart;
-                                                        const monthName = format(weekStart, 'MMMM', { locale: es });
+                                                        const monthName = format(weekStart, 'MMMM', { locale: dateLocale });
                                                         const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
 
                                                         // @ts-ignore

@@ -10,7 +10,8 @@ import { CreditCard, Loader2, ExternalLink, Check, Calendar, XCircle, AlertTrian
 import { PLAN_LIMITS } from '@/config/plans';
 import type { PlanId } from '@/types';
 import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { useDateLocale } from '@/hooks/useDateLocale';
+import { useAppTranslation } from '@/hooks/useAppTranslation';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,22 +34,15 @@ const PLAN_PRICES: Record<PlanId, string> = {
   starter: '0',
   pro: '49',
   business: '149',
-  enterprise: 'Personalizado',
-};
-
-const STATUS_LABELS: Record<string, string> = {
-  active: 'Activa',
-  trialing: 'En prueba',
-  past_due: 'Pago pendiente',
-  canceled: 'Cancelada',
-  incomplete: 'Incompleta',
-  incomplete_expired: 'Expirada',
+  enterprise: '',
 };
 
 const PRICE_ID_PRO = import.meta.env.VITE_STRIPE_PRICE_ID_PRO ?? '';
 const PRICE_ID_BUSINESS = import.meta.env.VITE_STRIPE_PRICE_ID_BUSINESS ?? '';
 
 export function AgencyBillingTab() {
+  const { t } = useAppTranslation();
+  const dateLocale = useDateLocale();
   const { currentAgency, refreshAgency } = useAgency();
   const {
     planId,
@@ -83,7 +77,7 @@ export function AgencyBillingTab() {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
       if (!token) {
-        toast.error('Debes iniciar sesión');
+        toast.error(t('agency.billing.signInRequired'));
         setLoadingCheckout(null);
         return;
       }
@@ -98,7 +92,7 @@ export function AgencyBillingTab() {
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       if (data?.updated) {
-        toast.success('Plan actualizado. Los cambios se reflejan en unos segundos.');
+        toast.success(t('agency.billing.planUpdated'));
         refreshAgency();
         return;
       }
@@ -106,9 +100,9 @@ export function AgencyBillingTab() {
         window.location.href = data.url;
         return;
       }
-      toast.error('No se recibió URL de pago');
+      toast.error(t('agency.billing.noCheckoutUrl'));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Error al iniciar el pago');
+      toast.error(err instanceof Error ? err.message : t('agency.billing.checkoutError'));
     } finally {
       setLoadingCheckout(null);
     }
@@ -141,7 +135,7 @@ export function AgencyBillingTab() {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
       if (!token) {
-        toast.error('Debes iniciar sesión');
+        toast.error(t('agency.billing.signInRequired'));
         setLoadingPortal(false);
         return;
       }
@@ -155,9 +149,9 @@ export function AgencyBillingTab() {
         window.location.href = data.url;
         return;
       }
-      toast.error('No se recibió URL del portal');
+      toast.error(t('agency.billing.noPortalUrl'));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Error al abrir el portal de facturación');
+      toast.error(err instanceof Error ? err.message : t('agency.billing.portalError'));
     } finally {
       setLoadingPortal(false);
     }
@@ -169,19 +163,20 @@ export function AgencyBillingTab() {
   const canManageSubscription = hasPaidPlan && !!currentAgency.stripeCustomerId;
 
   const limits = PLAN_LIMITS[planId];
-  const trialEndDate = trialEndsAt ? format(new Date(trialEndsAt), "d 'de' MMMM yyyy", { locale: es }) : null;
+  const trialEndDate = trialEndsAt ? format(new Date(trialEndsAt), 'PPP', { locale: dateLocale }) : null;
   const periodEndDate = subscriptionPeriodEndsAt
-    ? format(new Date(subscriptionPeriodEndsAt), "d 'de' MMMM yyyy", { locale: es })
+    ? format(new Date(subscriptionPeriodEndsAt), 'PPP', { locale: dateLocale })
     : null;
   const periodEndShort = subscriptionPeriodEndsAt
-    ? format(new Date(subscriptionPeriodEndsAt), 'd MMM', { locale: es })
+    ? format(new Date(subscriptionPeriodEndsAt), 'd MMM', { locale: dateLocale })
     : null;
-  const statusLabel = subscriptionStatus ? STATUS_LABELS[subscriptionStatus] ?? subscriptionStatus : null;
+  const statusLabel = subscriptionStatus
+    ? t(`agency.billing.status.${subscriptionStatus}`, { defaultValue: subscriptionStatus })
+    : null;
 
-  // Business button label: show trial only if not used yet
   const businessLabel = trialUsedAt
-    ? 'Business ($149/mes)'
-    : 'Business ($149/mes, 14 días de prueba)';
+    ? t('agency.billing.businessNoTrial')
+    : t('agency.billing.businessWithTrial');
 
   return (
     <div className="space-y-6">
@@ -193,9 +188,9 @@ export function AgencyBillingTab() {
         >
           <AlertTriangle className="h-5 w-5 shrink-0 text-amber-600" />
           <div className="flex-1">
-            <p className="font-medium">Pago pendiente</p>
+            <p className="font-medium">{t('agency.billing.pastDueTitle')}</p>
             <p className="text-amber-700 mt-0.5">
-              No hemos podido procesar tu último pago. Actualiza tu método de pago para evitar la interrupción del servicio.
+              {t('agency.billing.pastDueBody')}
             </p>
           </div>
           {canManageSubscription && (
@@ -206,7 +201,7 @@ export function AgencyBillingTab() {
               disabled={loadingPortal}
               className="shrink-0 border-amber-300 text-amber-800 hover:bg-amber-100"
             >
-              {loadingPortal ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Actualizar pago'}
+              {loadingPortal ? <Loader2 className="h-4 w-4 animate-spin" /> : t('agency.billing.updatePayment')}
             </Button>
           )}
         </div>
@@ -216,21 +211,21 @@ export function AgencyBillingTab() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <CreditCard className="h-5 w-5 text-primary" />
-            Plan y facturación
+            {t('agency.billing.title')}
           </CardTitle>
           <CardDescription>
-            Plan actual, uso y opciones para cambiar de plan
+            {t('agency.billing.cardDescription')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm font-medium">Plan actual:</span>
+            <span className="text-sm font-medium">{t('agency.billing.currentPlanLabel')}</span>
             <Badge variant={planId === 'business' ? 'default' : planId === 'pro' ? 'secondary' : 'outline'}>
               {PLAN_NAMES[planId]}
             </Badge>
             {cancelAtPeriodEnd && periodEndShort ? (
               <Badge variant="outline" className="text-slate-600 bg-slate-100">
-                Se cancela el {periodEndShort}
+                {t('agency.billing.cancelsOn', { date: periodEndShort })}
               </Badge>
             ) : statusLabel ? (
               <Badge variant="outline" className="text-slate-600">
@@ -244,10 +239,10 @@ export function AgencyBillingTab() {
               <Calendar className="h-4 w-4 text-slate-500" />
               {trialEndDate && (
                 <>
-                  <span>Prueba hasta el {trialEndDate}</span>
+                  <span>{t('agency.billing.trialUntil', { date: trialEndDate })}</span>
                   {daysRemainingTrial !== null && daysRemainingTrial > 0 && (
                     <span className="font-medium">
-                      ({daysRemainingTrial} {daysRemainingTrial === 1 ? 'día' : 'días'} restantes)
+                      {t('agency.billing.daysRemaining', { count: daysRemainingTrial })}
                     </span>
                   )}
                 </>
@@ -260,19 +255,19 @@ export function AgencyBillingTab() {
               <Calendar className="h-4 w-4 text-slate-500 shrink-0" />
               {cancelAtPeriodEnd ? (
                 <>
-                  <span>Tu servicio finalizará el {periodEndDate}. Después pasarás a Starter.</span>
+                  <span>{t('agency.billing.serviceEndsOn', { date: periodEndDate })}</span>
                   {daysRemainingPeriod !== null && daysRemainingPeriod > 0 && (
                     <span className="text-slate-600">
-                      ({daysRemainingPeriod} {daysRemainingPeriod === 1 ? 'día' : 'días'} restantes)
+                      {t('agency.billing.daysRemaining', { count: daysRemainingPeriod })}
                     </span>
                   )}
                 </>
               ) : (
                 <>
-                  <span>Próxima facturación: {periodEndDate}</span>
+                  <span>{t('agency.billing.nextBilling', { date: periodEndDate })}</span>
                   {daysRemainingPeriod !== null && daysRemainingPeriod > 0 && (
                     <span className="text-slate-600">
-                      ({daysRemainingPeriod} {daysRemainingPeriod === 1 ? 'día' : 'días'} restantes en el periodo actual)
+                      {t('agency.billing.daysRemainingInPeriod', { count: daysRemainingPeriod })}
                     </span>
                   )}
                 </>
@@ -281,16 +276,17 @@ export function AgencyBillingTab() {
           )}
 
           <div className="text-sm">
-            <strong>Uso:</strong> {currentEmployees} de {limits.maxEmployees} empleados
+            <strong>{t('agency.billing.usageLabel')}</strong>{' '}
+            {t('agency.billing.usageEmployees', { current: currentEmployees, max: limits.maxEmployees })}
             {isOverLimit && (
               <p className="mt-1 text-amber-600 font-medium">
-                Tu agencia supera el límite del plan actual. Pasa a un plan superior para desbloquear la edición.
+                {t('agency.billing.overLimitWarning')}
               </p>
             )}
           </div>
 
           <div className="flex flex-col gap-2">
-            <p className="text-sm font-medium">Cambiar de plan</p>
+            <p className="text-sm font-medium">{t('agency.billing.changePlan')}</p>
             <div className="flex flex-wrap gap-2">
               {planId !== 'pro' && PRICE_ID_PRO && (
                 <Button
@@ -303,7 +299,7 @@ export function AgencyBillingTab() {
                   ) : (
                     <>
                       <ExternalLink className="h-4 w-4 mr-1" />
-                      Pro ($49/mes)
+                      {t('agency.billing.proButton')}
                     </>
                   )}
                 </Button>
@@ -326,7 +322,7 @@ export function AgencyBillingTab() {
               )}
               {(!PRICE_ID_PRO || !PRICE_ID_BUSINESS) && (
                 <p className="text-xs text-slate-500">
-                  Configura VITE_STRIPE_PRICE_ID_PRO y VITE_STRIPE_PRICE_ID_BUSINESS para habilitar los botones.
+                  {t('agency.billing.stripeEnvHint')}
                 </p>
               )}
             </div>
@@ -334,9 +330,9 @@ export function AgencyBillingTab() {
 
           {canManageSubscription && (
             <div className="flex flex-col gap-2 pt-4 border-t">
-              <p className="text-sm font-medium">Gestionar o cancelar suscripción</p>
+              <p className="text-sm font-medium">{t('agency.billing.manageSubscription')}</p>
               <p className="text-xs text-slate-500">
-                Abre el portal de Stripe para actualizar el método de pago, ver facturas o cancelar la suscripción. Al cancelar, pasarás a plan Starter al final del periodo facturado.
+                {t('agency.billing.portalDescription')}
               </p>
               <Button
                 variant="outline"
@@ -350,7 +346,7 @@ export function AgencyBillingTab() {
                 ) : (
                   <>
                     <XCircle className="h-4 w-4 mr-1" />
-                    Gestionar suscripción / Cancelar
+                    {t('agency.billing.portalButton')}
                   </>
                 )}
               </Button>
@@ -364,36 +360,39 @@ export function AgencyBillingTab() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              Cambiar a {PLAN_NAMES[confirmDialog.targetPlan]}
+              {t('agency.billing.confirmChangeTitle', { plan: PLAN_NAMES[confirmDialog.targetPlan] })}
             </AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-3">
-                <p>
-                  Vas a cambiar de <strong>{PLAN_NAMES[planId]}</strong> a{' '}
-                  <strong>{PLAN_NAMES[confirmDialog.targetPlan]}</strong> (${PLAN_PRICES[confirmDialog.targetPlan]}/mes).
-                </p>
+                <p
+                  dangerouslySetInnerHTML={{
+                    __html: t('agency.billing.confirmChangeBody', {
+                      from: PLAN_NAMES[planId],
+                      to: PLAN_NAMES[confirmDialog.targetPlan],
+                      price: PLAN_PRICES[confirmDialog.targetPlan] || t('agency.billing.enterprisePrice'),
+                    }),
+                  }}
+                />
 
                 {confirmDialog.loseTrial && (
                   <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-md text-amber-800 text-sm">
                     <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-amber-600" />
-                    <span>
-                      Estás en periodo de prueba Business. Al cambiar a Pro, <strong>la prueba terminará inmediatamente</strong> y se cobrará Pro ($49/mes) desde hoy.
-                    </span>
+                    <span dangerouslySetInnerHTML={{ __html: t('agency.billing.loseTrialWarning') }} />
                   </div>
                 )}
 
                 {!confirmDialog.loseTrial && (
                   <p className="text-sm text-muted-foreground">
-                    Se aplicará un prorrateo sobre la diferencia de precio en tu próxima factura.
+                    {t('agency.billing.prorateNote')}
                   </p>
                 )}
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel>{t('agency.billing.cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={handleConfirmPlanChange}>
-              Confirmar cambio
+              {t('agency.billing.confirmChange')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

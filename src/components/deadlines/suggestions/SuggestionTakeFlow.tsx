@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { formatDeadlineHoursForDisplay, roundDeadlineHours } from '@/utils/deadlineUtils';
@@ -20,8 +21,6 @@ import type {
   EmployeeRecommendation,
   SuggestionDonor,
 } from '@/components/deadlines/suggestions/types';
-
-const STEP_LABELS = ['¿De quién?', 'Reglas', 'Destinos', 'Revisar'];
 
 export function SuggestionTakeFlow({
   step,
@@ -84,6 +83,14 @@ export function SuggestionTakeFlow({
   onInitializeRules: (donorId: string) => void;
   onOpenProject?: (projectId: string) => void;
 }) {
+  const { t } = useTranslation('app');
+  const stepLabels = [
+    t('deadlines.suggestions.stepWho', '¿De quién?'),
+    t('deadlines.suggestions.stepRules', 'Reglas'),
+    t('deadlines.suggestions.stepDestinations', 'Destinos'),
+    t('deadlines.suggestions.stepReview', 'Revisar'),
+  ] as const;
+
   const donorOptions = buildDonorOptions(
     suggestionDonors,
     suggestionsByEmployeeAndProject,
@@ -120,15 +127,15 @@ export function SuggestionTakeFlow({
     const selectedName = donorOptions.find((o) => o.id === focusEmployeeId)?.name;
     return (
       <SuggestionWizardStepShell
-        header={<SuggestionStepBar step={1} labels={STEP_LABELS} />}
+        header={<SuggestionStepBar step={1} labels={stepLabels} />}
         footer={
           <div className="flex items-center justify-end gap-3">
             {selectedName ? (
               <p className="text-xs text-slate-600 truncate flex-1 min-w-0 mr-auto">
-                Seleccionado: <span className="font-medium text-slate-900">{selectedName}</span>
+                {t('deadlines.suggestions.selected', 'Seleccionado: {{name}}', { name: selectedName })}
               </p>
             ) : (
-              <p className="text-xs text-slate-500 flex-1 min-w-0 mr-auto">Elige una persona de la lista</p>
+              <p className="text-xs text-slate-500 flex-1 min-w-0 mr-auto">{t('deadlines.suggestions.chooseFromList', 'Elige una persona de la lista')}</p>
             )}
             <Button
               className="shrink-0"
@@ -138,19 +145,19 @@ export function SuggestionTakeFlow({
                 setStep(2);
               }}
             >
-              Siguiente: reglas
+              {t('deadlines.suggestions.nextRules', 'Siguiente: reglas')}
             </Button>
           </div>
         }
       >
         <EmployeePickerList
           fillHeight
-          title="¿De quién quieres quitar carga?"
-          hint={`Personas al ${minSenderLoadPct}% o más de carga con horas en proyectos visibles.`}
+          title={t('deadlines.suggestions.takeWhoTitle', '¿De quién quieres quitar carga?')}
+          hint={t('deadlines.suggestions.takeWhoHint', 'Personas al {{pct}}% o más de carga con horas en proyectos visibles.', { pct: minSenderLoadPct })}
           options={donorOptions}
           selectedId={focusEmployeeId}
           onSelect={(id) => setFocusEmployeeId(id)}
-          emptyMessage="Nadie puede ceder horas con los filtros actuales. Baja el % mínimo de quien cede o revisa asignaciones."
+          emptyMessage={t('deadlines.suggestions.takeWhoEmpty', 'Nadie puede ceder horas con los filtros actuales. Baja el % mínimo de quien cede o revisa asignaciones.')}
         />
       </SuggestionWizardStepShell>
     );
@@ -160,11 +167,11 @@ export function SuggestionTakeFlow({
     const pct = employeeLoadPct(focusEmployeeId, getMonthlyCapacity, getEmployeeAssignedHours);
     return (
       <SuggestionWizardStepShell
-        header={<SuggestionStepBar step={2} labels={STEP_LABELS} />}
+        header={<SuggestionStepBar step={2} labels={stepLabels} />}
         footer={
           <div className="flex justify-between gap-2">
             <Button variant="outline" onClick={() => setStep(1)}>
-              Atrás
+              {t('deadlines.suggestions.back', 'Atrás')}
             </Button>
             <Button
               onClick={() => setStep(3)}
@@ -174,7 +181,7 @@ export function SuggestionTakeFlow({
                 (flowProjectScope === 'manual' && includedProjectIds.size === 0)
               }
             >
-              Ver destinos
+              {t('deadlines.suggestions.stepDestinations', 'Destinos')}
             </Button>
           </div>
         }
@@ -227,7 +234,7 @@ export function SuggestionTakeFlow({
   if (step === 3 && focusEmployeeId) {
     return (
       <SuggestionWizardStepShell
-        header={<SuggestionStepBar step={3} labels={STEP_LABELS} />}
+        header={<SuggestionStepBar step={3} labels={stepLabels} />}
         footer={
           <div className="flex justify-between gap-2">
             <Button variant="outline" onClick={() => setStep(2)}>
@@ -247,7 +254,7 @@ export function SuggestionTakeFlow({
   if (step === 4 && focusEmployeeId) {
     return (
       <SuggestionWizardStepShell
-        header={<SuggestionStepBar step={4} labels={STEP_LABELS} />}
+        header={<SuggestionStepBar step={4} labels={stepLabels} />}
         footer={
           <div className="flex justify-end">
             <Button variant="outline" onClick={() => setStep(3)}>

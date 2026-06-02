@@ -7,8 +7,9 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ChevronLeft, ChevronRight, Copy, Trash2, PanelRight } from 'lucide-react';
 import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
+import { useDateLocale } from '@/hooks/useDateLocale';
 import { DeadlinesAvailabilityCard } from '@/components/deadlines/DeadlinesAvailabilityCard';
 
 export interface EmployeeOption {
@@ -53,6 +54,9 @@ export function DeadlinesPageHeader({
   getMonthlyCapacity = () => ({ available: 0 }),
   getEmployeeAssignedHours = () => 0,
 }: DeadlinesPageHeaderProps) {
+  const { t } = useTranslation('app');
+  const dateLocale = useDateLocale();
+
   return (
     <div
       className={cn(
@@ -61,8 +65,8 @@ export function DeadlinesPageHeader({
       )}
     >
       <div>
-        <h1 className="text-xl md:text-2xl font-bold text-slate-900">Deadline</h1>
-        <p className="text-xs md:text-sm text-slate-500">Asignación mensual de horas</p>
+        <h1 className="text-xl md:text-2xl font-bold text-slate-900">{t('deadlines.page.title', 'Deadline')}</h1>
+        <p className="text-xs md:text-sm text-slate-500">{t('deadlines.page.subtitle', 'Asignación mensual de horas')}</p>
       </div>
       <div className="flex items-center gap-2">
         <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1" data-tour="month-selector">
@@ -71,19 +75,19 @@ export function DeadlinesPageHeader({
             size="icon"
             className={cn('h-7 w-7 md:h-8 md:w-8', isMobile && 'h-11 w-11')}
             onClick={onPrevMonth}
-            aria-label="Mes anterior"
+            aria-label={t('deadlines.page.prevMonth', 'Mes anterior')}
           >
             <ChevronLeft className={cn('h-4 w-4', isMobile && 'h-5 w-5')} />
           </Button>
           <span className="text-xs md:text-sm font-medium px-1 md:px-2 min-w-[90px] md:min-w-[140px] text-center capitalize">
-            {format(currentMonthDate, isMobile ? 'MMM yy' : 'MMMM yyyy', { locale: es })}
+            {format(currentMonthDate, isMobile ? 'MMM yy' : 'MMMM yyyy', { locale: dateLocale })}
           </span>
           <Button
             variant="ghost"
             size="icon"
             className={cn('h-7 w-7 md:h-8 md:w-8', isMobile && 'h-11 w-11')}
             onClick={onNextMonth}
-            aria-label="Mes siguiente"
+            aria-label={t('deadlines.page.nextMonth', 'Mes siguiente')}
           >
             <ChevronRight className={cn('h-4 w-4', isMobile && 'h-5 w-5')} />
           </Button>
@@ -97,7 +101,7 @@ export function DeadlinesPageHeader({
                     <Copy className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>Copiar del mes anterior</TooltipContent>
+                <TooltipContent>{t('deadlines.page.copyFromPrevious', 'Copiar del mes anterior')}</TooltipContent>
               </Tooltip>
             </TooltipProvider>
             <TooltipProvider>
@@ -112,7 +116,7 @@ export function DeadlinesPageHeader({
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>Resetear mes completo (Eliminar todo)</TooltipContent>
+                <TooltipContent>{t('deadlines.page.resetMonth', 'Resetear mes completo (Eliminar todo)')}</TooltipContent>
               </Tooltip>
             </TooltipProvider>
           </div>
@@ -122,12 +126,12 @@ export function DeadlinesPageHeader({
             <SheetTrigger asChild>
               <Button variant="outline" size="sm" className="gap-1.5">
                 <PanelRight className="h-4 w-4" />
-                <span className="text-xs">Equipo</span>
+                <span className="text-xs">{t('deadlines.page.team', 'Equipo')}</span>
               </Button>
               </SheetTrigger>
             <SheetContent side="right" className="w-[85vw] max-w-xs p-4 overflow-y-auto">
               <SheetHeader className="mb-4">
-                <SheetTitle className="text-base">Disponibilidad del equipo</SheetTitle>
+                <SheetTitle className="text-base">{t('deadlines.page.teamAvailability', 'Disponibilidad del equipo')}</SheetTitle>
               </SheetHeader>
               <div className="space-y-4">
                 <DeadlinesAvailabilityCard

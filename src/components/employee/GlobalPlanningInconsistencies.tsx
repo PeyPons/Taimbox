@@ -25,7 +25,6 @@ import { fetchDeadlinesForMonth } from '@/utils/deadlineUtils';
 import { fetchGlobalAssignmentsForMonth } from '@/utils/globalAssignmentsUtils';
 import { filterEmployeesForOperationalMonth } from '@/utils/employeeAssignmentVisibility';
 import { format, parseISO, endOfWeek, isSameMonth, startOfMonth, isBefore, isAfter, subDays, type Locale } from 'date-fns';
-import { enUS, es } from 'date-fns/locale';
 import { normalizeDepartments, employeeBelongsToDepartment } from '@/utils/departmentUtils';
 import { SensitiveText } from '@/components/privacy/SensitiveText';
 import { usePrivacyDemo } from '@/contexts/PrivacyDemoContext';
@@ -39,7 +38,8 @@ import { getEffectiveCompletedHours } from '@/utils/hoursTracking';
 import { fetchAllocationsForDeliverablePhase } from '@/hooks/useDeliverableLifecycleCore';
 
 export type OperationsRadarStatusFilter = 'all' | ProjectStatusType | 'lifecycle-risk';
-import { useAppTranslation } from '@/hooks/useAppTranslation';
+import { AppTrans, useAppTranslation } from '@/hooks/useAppTranslation';
+import { useDateLocale } from '@/hooks/useDateLocale';
 import { usePermissions } from '@/hooks/usePermissions';
 import { CoherenceAllocationEditDialog } from '@/components/employee/CoherenceAllocationEditDialog';
 
@@ -99,8 +99,8 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
   const { currentAgency } = useAgency();
   const preference = currentAgency?.settings?.hoursTrackingPreference;
   const { selectedDepartmentId } = useDepartmentView();
-  const { t, i18n } = useAppTranslation();
-  const dateLocale = i18n.language?.toLowerCase().startsWith('en') ? enUS : es;
+  const { t } = useAppTranslation();
+  const dateLocale = useDateLocale();
   const [deadlines, setDeadlines] = useState<Deadline[]>([]);
   const [globalAssignments, setGlobalAssignments] = useState<GlobalAssignment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -255,9 +255,7 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
       setPhaseModalAllocations(null);
       setPhaseModalLoading(false);
       setPhaseModalError(
-        new Error(
-          'No hay agencia activa; no se puede cargar la fase. Recarga la página o vuelve a entrar en la agencia.'
-        )
+        new Error(t('employeeDashboard.globalCoherence.noAgencyError'))
       );
       return;
     }
@@ -407,11 +405,11 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
         <CardHeader className="pb-2">
           <CardTitle className="text-base flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-amber-600" />
-            <span>Coherencia de planificación global</span>
+            <span>{t('employeeDashboard.globalCoherence.title')}</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-slate-500">Cargando...</p>
+          <p className="text-sm text-slate-500">{t('employeeDashboard.common.loading')}</p>
         </CardContent>
       </Card>
     );
@@ -423,12 +421,12 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
         <CardHeader className="pb-2">
           <CardTitle className="text-base flex items-center gap-2">
             <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-            <span>Coherencia de planificación global</span>
+            <span>{t('employeeDashboard.globalCoherence.title')}</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-slate-600">
-            ✅ Todas las tareas del equipo coinciden con lo planificado en los deadlines.
+            {t('employeeDashboard.globalCoherence.allMatch')}
           </p>
         </CardContent>
       </Card>
@@ -442,15 +440,14 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
           <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
             <CardTitle className="text-base flex items-center gap-2 shrink-0">
               <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0" />
-              <span className="leading-snug">Coherencia de planificación global</span>
+              <span className="leading-snug">{t('employeeDashboard.globalCoherence.title')}</span>
               <Tooltip>
                 <TooltipTrigger className="shrink-0">
                   <Info className="h-4 w-4 text-slate-400" />
                 </TooltipTrigger>
                 <TooltipContent className="max-w-[min(300px,calc(100vw-2rem))]">
                   <p className="text-xs">
-                    Vista global de diferencias entre lo planificado en deadlines y lo realmente ejecutado.
-                    Agrupado por proyecto para evitar duplicidades.
+                    {t('employeeDashboard.globalCoherence.tooltip')}
                   </p>
                 </TooltipContent>
               </Tooltip>
@@ -459,7 +456,7 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
               {showLocalProjectSearch && (
                 <div className="flex items-center gap-2">
                   <Filter className="h-4 w-4 text-slate-400 shrink-0" />
-                  <span className="text-xs text-slate-600">Filtros y búsqueda</span>
+                  <span className="text-xs text-slate-600">{t('employeeDashboard.common.filtersAndSearch')}</span>
                 </div>
               )}
               <div className="flex flex-wrap items-center gap-3">
@@ -468,11 +465,11 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
                     <div className="relative min-w-[200px] flex-1 sm:flex-initial sm:min-w-[200px] max-w-full">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                       <Input
-                        placeholder="Buscar por proyecto o cliente..."
+                        placeholder={t('employeeDashboard.globalCoherence.searchPlaceholder')}
                         value={coherenceSearchQuery}
                         onChange={(e) => setCoherenceSearchQuery(e.target.value)}
                         className="pl-9 h-10"
-                        aria-label="Buscar en coherencia"
+                        aria-label={t('employeeDashboard.common.searchCoherenceAria')}
                       />
                     </div>
                     <Popover open={openFilterProject} onOpenChange={setOpenFilterProject}>
@@ -480,7 +477,7 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
                         <Button variant="outline" className="min-w-[220px] h-10 text-sm justify-between font-normal w-full sm:w-auto">
                           <span className="truncate">
                             {selectedProjectId === 'all'
-                              ? 'Todos los proyectos'
+                              ? t('employeeDashboard.common.allProjects')
                               : (
                                   <SensitiveText kind="project" id={selectedProjectId}>
                                     {formatProjectName(projects.find(p => p.id === selectedProjectId)?.name ?? '')}
@@ -492,13 +489,13 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
                       </PopoverTrigger>
                       <PopoverContent className="min-w-[300px] p-0" align="start">
                         <Command>
-                          <CommandInput placeholder="Buscar proyecto..." />
+                          <CommandInput placeholder={t('employeeDashboard.common.searchProject')} />
                           <CommandList className="max-h-[320px]">
-                            <CommandEmpty>No se encontraron proyectos.</CommandEmpty>
+                            <CommandEmpty>{t('employeeDashboard.common.noProjectsFound')}</CommandEmpty>
                             <CommandGroup>
-                              <CommandItem value="Todos los proyectos" className="py-2.5" onSelect={() => { setSelectedProjectId('all'); setOpenFilterProject(false); }}>
+                              <CommandItem value={t('employeeDashboard.common.allProjects')} className="py-2.5" onSelect={() => { setSelectedProjectId('all'); setOpenFilterProject(false); }}>
                                 <Check className={cn('mr-2 h-4 w-4 shrink-0', selectedProjectId === 'all' ? 'opacity-100' : 'opacity-0')} />
-                                Todos los proyectos
+                                {t('employeeDashboard.common.allProjects')}
                               </CommandItem>
                               {projects.map(proj => (
                                 <CommandItem key={proj.id} value={formatProjectName(proj.name || '')} className="py-2.5" onSelect={() => { setSelectedProjectId(proj.id); setOpenFilterProject(false); }}>
@@ -553,13 +550,13 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
                   </PopoverTrigger>
                   <PopoverContent className="min-w-[300px] p-0" align="start">
                     <Command>
-                      <CommandInput placeholder="Buscar empleado..." />
+                      <CommandInput placeholder={t('operationsRadar.coherenceEmployeeFilterPlaceholder', 'Filtrar por empleado...')} />
                       <CommandList className="max-h-[320px]">
-                        <CommandEmpty>No se encontraron empleados.</CommandEmpty>
+                        <CommandEmpty>{t('employeeDashboard.common.noTeammatesFound')}</CommandEmpty>
                         <CommandGroup>
-                          <CommandItem value="Todos los empleados" className="py-2.5" onSelect={() => { setSelectedEmployeeId('all'); setOpenFilterEmployee(false); }}>
+                          <CommandItem value={t('operationsRadar.allEmployees', 'Todos los empleados')} className="py-2.5" onSelect={() => { setSelectedEmployeeId('all'); setOpenFilterEmployee(false); }}>
                             <Check className={cn('mr-2 h-4 w-4 shrink-0', selectedEmployeeId === 'all' ? 'opacity-100' : 'opacity-0')} />
-                            Todos los empleados
+                            {t('operationsRadar.allEmployees', 'Todos los empleados')}
                           </CommandItem>
                           {employeesForCoherenceFilter.map(emp => (
                             <CommandItem key={emp.id} value={emp.name || ''} className="py-2.5" onSelect={() => { setSelectedEmployeeId(emp.id); setOpenFilterEmployee(false); }}>
@@ -585,9 +582,16 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
         </CardHeader>
         <CardContent className="space-y-3" ref={listTopRef}>
           <p className="text-sm text-slate-600">
-            Se han detectado <strong>{filteredCoherence.length}</strong> proyecto{filteredCoherence.length !== 1 ? 's' : ''}
-            {' '}con variaciones en {format(viewDate, 'MMMM yyyy', { locale: es })}
-            {(coherenceSearchQuery.trim() || (searchQueryProp ?? '').trim()) && inconsistencies.length !== filteredBySearch.length && ' (filtrado por búsqueda)'}
+            <AppTrans
+              i18nKey="employeeDashboard.globalCoherence.projectsWithVariations"
+              count={filteredCoherence.length}
+              values={{
+                count: filteredCoherence.length,
+                month: format(viewDate, 'MMMM yyyy', { locale: dateLocale }),
+              }}
+              components={{ strong: <strong /> }}
+            />
+            {(coherenceSearchQuery.trim() || (searchQueryProp ?? '').trim()) && inconsistencies.length !== filteredBySearch.length && t('employeeDashboard.globalCoherence.filteredBySearch')}
             {operationsRadar && operationsRadar.statusFilter !== 'all' && filteredBySearch.length !== filteredCoherence.length && ` (${t('operationsRadar.coherenceStatusFilterNote', 'filtrado por estado operativo')})`}.
           </p>
 
@@ -790,7 +794,7 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
           )}
 
           {filteredBySearch.length === 0 && inconsistencies.length > 0 ? (
-            <p className="text-sm text-slate-500 py-4 text-center">Ningún resultado con la búsqueda actual.</p>
+            <p className="text-sm text-slate-500 py-4 text-center">{t('employeeDashboard.common.noSearchResults')}</p>
           ) : null}
 
           {filteredCoherence.length === 0 && filteredBySearch.length > 0 && operationsRadar && operationsRadar.statusFilter !== 'all' ? (
@@ -813,11 +817,11 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
             <div className="flex flex-wrap items-center gap-2">
               <Button variant="outline" size="sm" className="h-8 text-xs" onClick={expandAll} disabled={allExpanded}>
                 <ChevronDown className="h-3.5 w-3.5 mr-1" />
-                Expandir todo
+                {t('employeeDashboard.common.expandAll')}
               </Button>
               <Button variant="outline" size="sm" className="h-8 text-xs" onClick={collapseAll} disabled={noneExpanded}>
                 <ChevronUp className="h-3.5 w-3.5 mr-1" />
-                Colapsar todo
+                {t('employeeDashboard.common.collapseAll')}
               </Button>
             </div>
           )}
@@ -916,11 +920,11 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
                       {(inc.budgetHours > 0 || inc.minimumHours > 0) && (
                         <div className="mt-1 text-[10px] text-slate-500">
                           {inc.budgetHours > 0 && (
-                            <span>Asignadas: <strong>{inc.budgetHours}h</strong></span>
+                            <span>{t('employeeDashboard.hours.assigned')} <strong>{inc.budgetHours}h</strong></span>
                           )}
                           {inc.budgetHours > 0 && inc.minimumHours > 0 && <span> • </span>}
                           {inc.minimumHours > 0 && (
-                            <span>Mínimo: <strong>{inc.minimumHours}h</strong></span>
+                            <span>{t('employeeDashboard.hours.minimum')} <strong>{inc.minimumHours}h</strong></span>
                           )}
                         </div>
                       )}
@@ -935,14 +939,14 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
                       <div className="flex items-center gap-3 mt-1.5 text-xs flex-wrap gap-y-1">
                         {inc.totalDeadlineHours === 0 ? (
                           <>
-                            <div className="text-slate-500 italic">Sin deadline</div>
+                            <div className="text-slate-500 italic">{t('employeeDashboard.hours.noDeadline')}</div>
                             <span className="text-slate-300">→</span>
                             <div className="flex items-center gap-2">
                               <span className="text-blue-600">
-                                Plan: <span className="font-medium">{inc.totalPlannedHours}h</span>
+                                {t('employeeDashboard.hours.planShort')} <span className="font-medium">{inc.totalPlannedHours}h</span>
                               </span>
                               <span className="text-emerald-600">
-                                Comp: <span className="font-medium">{inc.totalComputedHours}h</span>
+                                {t('employeeDashboard.hours.compShort')} <span className="font-medium">{inc.totalComputedHours}h</span>
                               </span>
                             </div>
                             {hoursToCompute !== null && operationsRadar && (
@@ -976,16 +980,16 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
                         ) : (
                           <>
                             <div>
-                              <span className="text-slate-500">Deadline:</span>{' '}
+                              <span className="text-slate-500">{t('employeeDashboard.hours.deadlineLabel')}</span>{' '}
                               <span className="font-medium">{inc.totalDeadlineHours}h</span>
                             </div>
                             <span className="text-slate-300">→</span>
                             <div className="flex items-center gap-2">
                               <span className="text-blue-600">
-                                Plan: <span className="font-medium">{inc.totalPlannedHours}h</span>
+                                {t('employeeDashboard.hours.planShort')} <span className="font-medium">{inc.totalPlannedHours}h</span>
                               </span>
                               <span className="text-emerald-600">
-                                Comp: <span className="font-medium">{inc.totalComputedHours}h</span>
+                                {t('employeeDashboard.hours.compShort')} <span className="font-medium">{inc.totalComputedHours}h</span>
                               </span>
                             </div>
                             {hoursToCompute !== null && operationsRadar && (
@@ -1064,7 +1068,7 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
                     <div className="mt-3 pt-3 border-t border-amber-300">
                       <div className="flex items-center gap-1 text-[10px] font-semibold text-slate-600 uppercase mb-2">
                         <Users className="h-3 w-3" />
-                        Empleados afectados ({inc.employees.length})
+                        {t('employeeDashboard.globalCoherence.affectedEmployees', { count: inc.employees.length })}
                       </div>
                       <div className="space-y-1.5">
                         {inc.employees.map((emp, empIndex) => {
@@ -1089,18 +1093,18 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
                                     {emp.hasDeadline ? (
                                       <>
                                         <span className="text-slate-500">
-                                          Deadline: <span className="font-medium">{emp.deadlineHours}h</span>
+                                          {t('employeeDashboard.hours.deadlineLabel')} <span className="font-medium">{emp.deadlineHours}h</span>
                                         </span>
                                         <span className="text-slate-400">→</span>
                                       </>
                                     ) : (
-                                      <span className="text-amber-600 italic font-medium">No incluido en deadline</span>
+                                      <span className="text-amber-600 italic font-medium">{t('employeeDashboard.globalCoherence.notInDeadline')}</span>
                                     )}
                                     <span className="text-blue-600">
-                                      Plan: <span className="font-medium">{emp.plannedHours}h</span>
+                                      {t('employeeDashboard.hours.planShort')} <span className="font-medium">{emp.plannedHours}h</span>
                                     </span>
                                     <span className="text-emerald-600">
-                                      Comp: <span className="font-medium">{emp.computedHours}h</span>
+                                      {t('employeeDashboard.hours.compShort')} <span className="font-medium">{emp.computedHours}h</span>
                                     </span>
                                     <span className="text-slate-400">→</span>
                                     <span className="text-slate-500 shrink-0">

@@ -13,7 +13,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { format, parseISO, addDays } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { useDateLocale } from '@/hooks/useDateLocale';
 import { Users, ChevronLeft, ChevronRight, CalendarDays, Check, ChevronDown, Activity, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { loadPercentageTone } from '@/components/planner/allocation/allocationWeekMetrics';
@@ -27,6 +27,7 @@ import { useWeeklyForecastRedistribution } from '@/hooks/useWeeklyForecastRedist
 
 export default function WeeklyForecastPage() {
   const { t } = useTranslation('app');
+  const dateLocale = useDateLocale();
   const { projects, clients } = useAppProjects();
   const { allocations, getEmployeeLoadForWeek } = useAppAllocations();
   const { employees } = useAppEmployees();
@@ -115,7 +116,7 @@ export default function WeeklyForecastPage() {
       <div className="flex items-center gap-4 bg-white p-2 rounded-lg border shadow-sm w-fit">
         <h2 className="text-lg font-bold capitalize text-slate-900 flex items-center gap-2 ml-2">
           {isLoadingMonth && <Loader2 className="h-4 w-4 animate-spin text-slate-400" />}
-          {format(currentMonth, 'MMMM yyyy', { locale: es })}
+          {format(currentMonth, 'MMMM yyyy', { locale: dateLocale })}
         </h2>
         <div className="h-6 w-px bg-slate-200 mx-2" />
         <div className="flex items-center gap-1">
@@ -337,7 +338,7 @@ export default function WeeklyForecastPage() {
                                         return idx >= 0
                                           ? t('weeklyForecast.weekPick', {
                                               n: idx + 1,
-                                              date: format(futureWeeks[idx].weekStart, 'd MMM', { locale: es }),
+                                              date: format(futureWeeks[idx].weekStart, 'd MMM', { locale: dateLocale }),
                                               defaultValue: 'Sem {{n}} ({{date}})',
                                             })
                                           : t('weeklyForecast.selectWeek', { defaultValue: 'Seleccionar semana' });
@@ -369,7 +370,7 @@ export default function WeeklyForecastPage() {
                                         />
                                         {t('weeklyForecast.weekPick', {
                                           n: idx + 1,
-                                          date: format(week.weekStart, 'd MMM', { locale: es }),
+                                          date: format(week.weekStart, 'd MMM', { locale: dateLocale }),
                                           defaultValue: 'Sem {{n}} ({{date}})',
                                         })}
                                       </CommandItem>
@@ -414,7 +415,7 @@ export default function WeeklyForecastPage() {
                                 </Label>
                                 <div className="space-y-2">
                                   <div className="flex items-center justify-between p-2 bg-white rounded text-xs">
-                                    <span>{format(weekData.weekStart, 'd MMM', { locale: es })}</span>
+                                    <span>{format(weekData.weekStart, 'd MMM', { locale: dateLocale })}</span>
                                     <span
                                       className={cn(
                                         'font-semibold',

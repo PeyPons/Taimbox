@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -43,12 +44,14 @@ function TeamLimitsFields({
     condicionantesBlock,
   } = props;
 
+  const { t } = useTranslation('app');
+
   return (
     <div className="space-y-2.5">
       <div className="space-y-2">
         <SuggestionPercentField
           id={`${idPrefix}-min-sender-load-pct`}
-          label="Mín. para ceder (%)"
+          label={t('deadlines.suggestions.minSenderCompact')}
           value={minSenderLoadPct}
           inputValue={minSenderLoadPctInput}
           onInputChange={setMinSenderLoadPctInput}
@@ -59,7 +62,7 @@ function TeamLimitsFields({
         />
         <SuggestionPercentField
           id={`${idPrefix}-max-receiver-load-pct`}
-          label="Máx. quien recibe (%)"
+          label={t('deadlines.suggestions.maxReceiverCompact')}
           value={maxReceiverLoadPct}
           inputValue={maxReceiverLoadPctInput}
           onInputChange={setMaxReceiverLoadPctInput}
@@ -71,7 +74,7 @@ function TeamLimitsFields({
       </div>
       <div className="space-y-1">
         <Label htmlFor={`${idPrefix}-min-transfer-h`} className="text-[11px] font-medium text-slate-600">
-          Mín. h por movimiento
+          {t('deadlines.suggestions.minTransferHoursLabel')}
         </Label>
         <Input
           id={`${idPrefix}-min-transfer-h`}
@@ -100,6 +103,7 @@ export function SuggestionTeamLimitsSidebar({
   onResetFilters,
   ...props
 }: SuggestionTeamLimitsSidebarProps) {
+  const { t } = useTranslation('app');
   const fields = <TeamLimitsFields {...props} idPrefix={variant === 'embedded' ? 'team-m' : 'team'} />;
 
   if (variant === 'embedded') {
@@ -109,10 +113,10 @@ export function SuggestionTeamLimitsSidebar({
   return (
     <aside className="flex flex-col h-full min-h-0 w-full md:w-[min(240px,20vw)] shrink-0 bg-slate-50 border-r border-slate-200">
       <div className="shrink-0 px-2.5 py-2 border-b border-slate-200 bg-white flex items-center justify-between gap-2">
-        <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Límites</p>
+        <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">{t('deadlines.suggestions.limitsTitle')}</p>
         {onResetFilters && (
           <Button type="button" variant="ghost" size="sm" className="h-6 text-[10px] px-1.5" onClick={onResetFilters}>
-            Restaurar
+            {t('deadlines.suggestions.restore')}
           </Button>
         )}
       </div>

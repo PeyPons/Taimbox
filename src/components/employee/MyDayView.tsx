@@ -2,13 +2,13 @@ import { useMemo, useState, useCallback, useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { useAgency } from '@/contexts/AgencyContext';
 import { useAppTranslation } from '@/hooks/useAppTranslation';
+import { useDateLocale } from '@/hooks/useDateLocale';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
 import { TaskTimer } from '@/components/employee/TaskTimer';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, Clock, Sun, Calendar, ChevronUp, ChevronDown, Search, X, ArrowRight, Undo2, ListChecks } from 'lucide-react';
 import { format, isSameWeek, startOfWeek, getDay, startOfDay, startOfMonth } from 'date-fns';
-import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -22,6 +22,7 @@ import { round2 } from '@/utils/numbers';
 import { TaskNotesTrigger } from '@/components/planner/allocation/TaskNotesTrigger';
 import { useAllocationNoteCounts } from '@/hooks/useAllocationNotes';
 import { searchAllocationIdsByNoteBody } from '@/services/allocationNotesService';
+import { toast } from '@/lib/notify';
 
 export interface MyDayViewProps {
   employeeId: string;
@@ -54,6 +55,7 @@ export function MyDayView({
   onOpenPlanning,
 }: MyDayViewProps) {
   const { t } = useAppTranslation();
+  const dateLocale = useDateLocale();
   const { projects, clients, updateAllocation, allocations, loadDataForMonth, ensureMonthLoaded, currentUser } = useApp();
   const { currentAgency } = useAgency();
   const { formatName: formatProjectName } = useProjectAliasing();
@@ -211,7 +213,7 @@ export function MyDayView({
           p_date: pDate,
         });
         if (error) {
-          toast.error('No se pudo cerrar el cronómetro. Para el cronómetro e inténtalo de nuevo.');
+          toast.error(t('employeeDashboard.myDay.timerStopError'));
           return;
         }
         flushHappened = true;
@@ -288,7 +290,7 @@ export function MyDayView({
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0 flex-1">
               <h4 className="font-semibold text-sm text-slate-800 truncate" title={task.taskName}>
-                {task.taskName || 'Tarea sin nombre'}
+                {task.taskName || t('employeeDashboard.myDay.unnamedTask')}
               </h4>
               <div className="flex items-center gap-1.5 mt-1">
                 <span
@@ -299,16 +301,16 @@ export function MyDayView({
                   {formatProjectName(project?.name || '')}
                 </span>
                 {isOverdue && (
-                  <Badge variant="outline" className="h-4 px-1.5 text-[9px] border-red-200 text-red-600 bg-red-50">Retrasada</Badge>
+                  <Badge variant="outline" className="h-4 px-1.5 text-[9px] border-red-200 text-red-600 bg-red-50">{t('employeeDashboard.myDay.overdue')}</Badge>
                 )}
               </div>
             </div>
             {options.showReorder && (
               <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                <Button type="button" variant="ghost" size="icon" className="h-6 w-6" disabled={idxInBacklog <= 0} onClick={() => void moveInBacklog(task, 'up')} aria-label="Subir">
+                <Button type="button" variant="ghost" size="icon" className="h-6 w-6" disabled={idxInBacklog <= 0} onClick={() => void moveInBacklog(task, 'up')} aria-label={t('employeeDashboard.myDay.moveUpAria')}>
                   <ChevronUp className="h-3.5 w-3.5" />
                 </Button>
-                <Button type="button" variant="ghost" size="icon" className="h-6 w-6" disabled={idxInBacklog < 0 || idxInBacklog >= sortedBacklog.length - 1} onClick={() => void moveInBacklog(task, 'down')} aria-label="Bajar">
+                <Button type="button" variant="ghost" size="icon" className="h-6 w-6" disabled={idxInBacklog < 0 || idxInBacklog >= sortedBacklog.length - 1} onClick={() => void moveInBacklog(task, 'down')} aria-label={t('employeeDashboard.myDay.moveDownAria')}>
                   <ChevronDown className="h-3.5 w-3.5" />
                 </Button>
               </div>
@@ -334,8 +336,8 @@ export function MyDayView({
                 size="sm"
                 variant="ghost"
                 className="h-7 w-7 p-0 rounded-full text-slate-500 hover:bg-indigo-50 hover:text-indigo-700"
-                title="Opciones Weekly…"
-                aria-label="Opciones Weekly: posponer, distribuir o transferir"
+                title={t('employeeDashboard.myDay.weeklyOptionsTitle')}
+                aria-label={t('employeeDashboard.myDay.weeklyOptionsAria')}
                 onClick={() => onOpenWeeklyForAllocation(task.id)}
               >
                 <ListChecks className="h-4 w-4" />
@@ -343,16 +345,16 @@ export function MyDayView({
             )}
           <Popover open={popoverOpenId === task.id} onOpenChange={open => { if (open) openCompletion(task); else setPopoverOpenId(null); }}>
             <PopoverTrigger asChild>
-              <Button size="sm" variant="ghost" className="h-7 w-7 p-0 rounded-full hover:bg-emerald-50 hover:text-emerald-600 shrink-0" title="Completar">
+              <Button size="sm" variant="ghost" className="h-7 w-7 p-0 rounded-full hover:bg-emerald-50 hover:text-emerald-600 shrink-0" title={t('employeeDashboard.myDay.completeTitle')}>
                 <CheckCircle2 className="h-5 w-5" />
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-56 p-3" align="end">
               <div className="space-y-3">
-                <h4 className="font-semibold text-sm">Completar tarea</h4>
+                <h4 className="font-semibold text-sm">{t('employeeDashboard.myDay.completeTask')}</h4>
                 <div className={cn('grid gap-2', preference === 'actual' ? 'grid-cols-1' : 'grid-cols-2')}>
                   <div className="space-y-1">
-                    <Label className="text-[10px] text-muted-foreground">Horas reales</Label>
+                    <Label className="text-[10px] text-muted-foreground">{t('employeeDashboard.myDay.actualHours')}</Label>
                     <Input
                       type="number"
                       className="h-7 text-xs"
@@ -369,12 +371,12 @@ export function MyDayView({
                   </div>
                   {preference !== 'actual' && (
                     <div className="space-y-1">
-                      <Label className="text-[10px] text-muted-foreground">Computadas</Label>
+                      <Label className="text-[10px] text-muted-foreground">{t('employeeDashboard.myDay.computedHours')}</Label>
                       <Input type="number" className="h-7 text-xs" value={completionData.computed} onChange={e => setCompletionData(p => ({ ...p, computed: parseFloat(e.target.value) || 0 }))} />
                     </div>
                   )}
                 </div>
-                <Button size="sm" className="w-full text-xs h-7" onClick={() => void handleCompleteSubmit(task)}>Confirmar</Button>
+                <Button size="sm" className="w-full text-xs h-7" onClick={() => void handleCompleteSubmit(task)}>{t('employeeDashboard.myDay.confirm')}</Button>
               </div>
             </PopoverContent>
           </Popover>
@@ -388,7 +390,7 @@ export function MyDayView({
             onClick={() => void togglePin(task)}
           >
             <Sun className="h-3.5 w-3.5" />
-            Añadir a mi día
+            {t('employeeDashboard.myDay.addToMyDay')}
           </button>
         )}
         {isFocused && (
@@ -398,7 +400,7 @@ export function MyDayView({
             onClick={() => void togglePin(task)}
           >
             <Undo2 className="h-3 w-3" />
-            Devolver al backlog
+            {t('employeeDashboard.myDay.returnToBacklog')}
           </button>
         )}
       </div>
@@ -453,20 +455,24 @@ export function MyDayView({
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <h2 className="text-xl font-bold text-slate-900">
-                Hola, {currentUser?.name?.split(' ')[0] ?? 'equipo'}
+                {t('employeeDashboard.myDay.greeting', {
+                  name: currentUser?.name?.split(' ')[0] ?? t('employeeDashboard.myDay.greetingFallback'),
+                })}
               </h2>
               <p className="text-sm text-slate-500 mt-0.5">
-                {format(today, "EEEE d 'de' MMMM", { locale: es })}
+                {format(today, t('employeeDashboard.myDay.dateFormat'), { locale: dateLocale })}
                 <span className="mx-1.5 text-slate-300">·</span>
-                Jornada: <span className="font-semibold text-slate-700">{dailyCapacity}h</span>
+                {t('employeeDashboard.myDay.workday')}{' '}
+                <span className="font-semibold text-slate-700">{dailyCapacity}h</span>
                 <span className="mx-1.5 text-slate-300">·</span>
-                En foco: <span className="font-semibold text-amber-700">{totalFocusHours}h</span>
+                {t('employeeDashboard.myDay.inFocus')}{' '}
+                <span className="font-semibold text-amber-700">{totalFocusHours}h</span>
               </p>
             </div>
             <div className="relative max-w-xs w-full sm:w-64">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
               <Input
-                placeholder="Buscar tarea o proyecto…"
+                placeholder={t('employeeDashboard.myDay.searchPlaceholder')}
                 className="h-8 pl-8 pr-8 text-sm bg-white/80 border-slate-200"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
@@ -484,7 +490,7 @@ export function MyDayView({
       {focusTasks.length > 4 && (
         <Alert className="border-amber-200 bg-amber-50/80">
           <AlertDescription className="text-amber-900 text-sm">
-            Tienes más de 4 tareas en foco: puede ser difícil terminarlas todas. Considera priorizar menos ítems.
+            {t('employeeDashboard.myDay.tooManyFocus')}
           </AlertDescription>
         </Alert>
       )}
@@ -493,7 +499,7 @@ export function MyDayView({
       <div>
         <div className="flex items-center gap-2 mb-3 px-0.5">
           <Sun className="h-4 w-4 text-amber-500" />
-          <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide">En foco hoy</h3>
+          <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide">{t('employeeDashboard.myDay.focusToday')}</h3>
           {focusTasks.length > 0 && (
             <Badge variant="secondary" className="h-5 text-[10px] bg-amber-100 text-amber-700 border-amber-200">
               {focusTasks.length}
@@ -504,7 +510,7 @@ export function MyDayView({
           <Card className="border-dashed border-slate-200 bg-slate-50/50">
             <CardContent className="py-6 text-center">
               <p className="text-sm text-slate-500">
-                {searchQuery ? 'Sin resultados en foco.' : 'Nada en foco todavía. Usa "Añadir a mi día" en el backlog o inicia el cronómetro.'}
+                {searchQuery ? t('employeeDashboard.myDay.noFocusSearch') : t('employeeDashboard.myDay.noFocusEmpty')}
               </p>
             </CardContent>
           </Card>
@@ -519,7 +525,7 @@ export function MyDayView({
       <div>
         <div className="flex items-center gap-2 mb-3 px-0.5">
           <ArrowRight className="h-4 w-4 text-slate-400" />
-          <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide">Backlog semanal</h3>
+          <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide">{t('employeeDashboard.myDay.weeklyBacklog')}</h3>
           {backlogTasks.length > 0 && (
             <Badge variant="secondary" className="h-5 text-[10px]">
               {backlogTasks.length}
@@ -530,7 +536,7 @@ export function MyDayView({
           <Card className="border-dashed border-slate-200 bg-slate-50/50">
             <CardContent className="py-4 text-center">
               <p className="text-sm text-slate-500">
-                {searchQuery ? 'Sin resultados en el backlog.' : 'Todas las tareas están en foco o completadas.'}
+                {searchQuery ? t('employeeDashboard.myDay.noBacklogSearch') : t('employeeDashboard.myDay.noBacklogEmpty')}
               </p>
             </CardContent>
           </Card>

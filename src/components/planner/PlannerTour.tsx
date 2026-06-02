@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useId } from 'react';
+import { useTranslation } from 'react-i18next';
 import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -148,6 +149,7 @@ interface PlannerTourProps {
 }
 
 export function PlannerTour({ onComplete, forceShow = false, onVisibilityChange }: PlannerTourProps) {
+  const { t } = useTranslation('app');
   const { currentUser, updateEmployee } = useApp();
   const maskId = useId().replace(/:/g, '');
   const [isVisible, setIsVisible] = useState(false);
@@ -383,6 +385,11 @@ export function PlannerTour({ onComplete, forceShow = false, onVisibilityChange 
   const step = tourSteps[currentStep];
   const isLastStep = currentStep === tourSteps.length - 1;
   const isFirstStep = currentStep === 0;
+  const stepTitle = t(`planner.tour.steps.${step.id}.title`, step.title);
+  const stepDescription = t(`planner.tour.steps.${step.id}.description`, step.description);
+  const stepInteractionHint = step.interactionHint
+    ? t(`planner.tour.steps.${step.id}.interactionHint`, step.interactionHint)
+    : undefined;
   const isCentered = step.position === 'center' || !highlightPos;
   const blocksPageInteraction = Boolean(step.highlight && highlightPos && isReady);
 
@@ -480,7 +487,7 @@ export function PlannerTour({ onComplete, forceShow = false, onVisibilityChange 
                 <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
                   {step.icon}
                 </div>
-                <h3 className="font-bold text-lg">{step.title}</h3>
+                <h3 className="font-bold text-lg">{stepTitle}</h3>
               </div>
               <Button
                 variant="ghost"
@@ -498,42 +505,42 @@ export function PlannerTour({ onComplete, forceShow = false, onVisibilityChange 
             {step.customContent && isLastStep ? (
               <div className="space-y-4">
                 <p className="text-slate-600">
-                  Ya conoces las herramientas del planificador. Recuerda:
+                  {t('planner.tour.finish.intro', 'Ya conoces las herramientas del planificador. Recuerda:')}
                 </p>
                 <ul className="space-y-2 text-sm text-slate-600">
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                    <span>Doble clic para editar nombres rápidamente</span>
+                    <span>{t('planner.tour.finish.tip1', 'Doble clic para editar nombres rápidamente')}</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                    <span>Los colores te indican el estado de las horas contratadas</span>
+                    <span>{t('planner.tour.finish.tip2', 'Los colores te indican el estado de las horas contratadas')}</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                    <span>Las tareas completadas bajan automáticamente</span>
+                    <span>{t('planner.tour.finish.tip3', 'Las tareas completadas bajan automáticamente')}</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                    <span>Puedes ver las dependencias con compañeros</span>
+                    <span>{t('planner.tour.finish.tip4', 'Puedes ver las dependencias con compañeros')}</span>
                   </li>
                 </ul>
                 <Button
                   className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
                   onClick={(e) => { e.stopPropagation(); handleComplete(); }}
                 >
-                  ¡Empezar a planificar!
+                  {t('planner.tour.finish.cta', '¡Empezar a planificar!')}
                 </Button>
               </div>
             ) : (
               <>
                 <p className="text-slate-600 leading-relaxed mb-4">
-                  {step.description}
+                  {stepDescription}
                 </p>
-                {step.interactive && step.interactionHint && (
+                {step.interactive && stepInteractionHint && (
                   <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
                     <p className="text-sm text-amber-800 font-medium">
-                      {step.interactionHint}
+                      {stepInteractionHint}
                     </p>
                   </div>
                 )}
@@ -558,7 +565,7 @@ export function PlannerTour({ onComplete, forceShow = false, onVisibilityChange 
                     onClick={(e) => { e.stopPropagation(); handleSkip(); }}
                     className="text-slate-400 hover:text-slate-600 h-8 px-2"
                   >
-                    Saltar
+                    {t('planner.tour.nav.skip', 'Saltar')}
                   </Button>
                   {!isFirstStep && (
                     <Button
@@ -575,7 +582,7 @@ export function PlannerTour({ onComplete, forceShow = false, onVisibilityChange 
                     className="bg-primary hover:bg-primary/90 h-8 px-4"
                     onClick={(e) => { e.stopPropagation(); if (isLastStep) handleComplete(); else handleNext(); }}
                   >
-                    {isLastStep ? '¡Listo!' : 'Siguiente'}
+                    {isLastStep ? t('planner.tour.nav.done', '¡Listo!') : t('planner.tour.nav.next', 'Siguiente')}
                     <ChevronRight className="h-4 w-4 ml-1" />
                   </Button>
                 </div>

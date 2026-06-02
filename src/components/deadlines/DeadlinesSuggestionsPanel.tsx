@@ -16,6 +16,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Sparkles,
   ChevronDown,
@@ -199,12 +200,15 @@ function CondicionantesBlock({
   /** Filas y paddings más pequeños en vista compacta. */
   dense?: boolean;
 }) {
+  const { t } = useTranslation('app');
   const [projectSearch, setProjectSearch] = useState('');
   const projectsFilteredBySearch = projectSearch.trim()
     ? filteredProjects.filter((p) => p.name.toLowerCase().includes(projectSearch.trim().toLowerCase()))
     : filteredProjects;
 
-  const triggerLabel = compact ? 'Ajustar condicionantes' : 'Condicionantes del reparto';
+  const triggerLabel = compact
+    ? t('deadlines.suggestions.adjustConditions', 'Ajustar condicionantes')
+    : t('deadlines.suggestions.conditionsTitle', 'Condicionantes del reparto');
 
   return (
     <Collapsible open={suggestionsCondicionantesOpen} onOpenChange={setSuggestionsCondicionantesOpen}>
@@ -218,7 +222,7 @@ function CondicionantesBlock({
                 ? 'text-xs text-slate-600 hover:text-slate-800 hover:bg-slate-100 py-2 px-2'
                 : 'text-sm text-slate-700 hover:text-slate-900 hover:bg-slate-100 py-2.5 px-3 border border-slate-200 bg-slate-50/50 hover:border-slate-300'
             )}
-            title="Quién puede ceder, límites de carga y proyectos a considerar"
+            title={t('deadlines.suggestions.conditionsTooltip', 'Quién puede ceder, límites de carga y proyectos a considerar')}
           >
             {suggestionsCondicionantesOpen ? (
               <ChevronUp className={cn(compact ? 'h-3.5 w-3.5' : 'h-4 w-4', 'shrink-0')} />
@@ -228,7 +232,7 @@ function CondicionantesBlock({
             <span className="flex-1 truncate">{triggerLabel}</span>
             {hasRestrictiveFilters && (
               <Badge variant="outline" className="text-[10px] shrink-0 border-amber-200 text-amber-800">
-                Activos
+                {t('deadlines.suggestions.activeFilters')}
               </Badge>
             )}
           </button>
@@ -240,10 +244,10 @@ function CondicionantesBlock({
             size="sm"
             className={cn('shrink-0 text-slate-500', compact ? 'h-8 px-2 text-[10px]' : 'h-9 text-xs')}
             onClick={onResetFilters}
-            title="Volver a 100% receptor, 30% mín. cedente, sin exclusiones ni filtros de proyecto"
+            title={t('deadlines.suggestions.restoreTooltip', 'Volver a 100% receptor, 30% mín. cedente, sin exclusiones ni filtros de proyecto')}
           >
             <RotateCcw className={cn(compact ? 'h-3 w-3' : 'h-3.5 w-3.5', 'mr-1')} />
-            Restaurar
+            {t('deadlines.suggestions.restore', 'Restaurar')}
           </Button>
         )}
       </div>
@@ -256,7 +260,7 @@ function CondicionantesBlock({
             )}
           >
             <p className={cn('font-semibold text-slate-500 uppercase', dense ? 'text-[10px]' : 'text-[11px]')}>
-              Quién puede ceder
+              {t('deadlines.suggestions.whoCanDonate')}
             </p>
             <div className={cn('grid grid-cols-1', dense ? 'gap-1' : 'gap-2')}>
               {suggestionDonors.map((d) => {
@@ -301,8 +305,8 @@ function CondicionantesBlock({
                     <Inbox className="h-4 w-4" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-slate-800">Quien recibe horas</p>
-                    <p className="text-xs text-slate-500">No superará este % de carga</p>
+                    <p className="text-sm font-semibold text-slate-800">{t('deadlines.suggestions.receiverHoursTitle')}</p>
+                    <p className="text-xs text-slate-500">{t('deadlines.suggestions.maxReceiverHint')}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
@@ -337,8 +341,8 @@ function CondicionantesBlock({
                     <Share2 className="h-4 w-4" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-slate-800">Quien cede horas</p>
-                    <p className="text-xs text-slate-500">No bajará de este % de carga</p>
+                    <p className="text-sm font-semibold text-slate-800">{t('deadlines.suggestions.senderHoursTitle')}</p>
+                    <p className="text-xs text-slate-500">{t('deadlines.suggestions.minSenderHint')}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
@@ -384,7 +388,7 @@ function CondicionantesBlock({
                 <div className="flex items-center gap-2 min-w-0">
                   <FolderKanban className={cn('text-slate-500 shrink-0', dense ? 'h-3.5 w-3.5' : 'h-4 w-4')} />
                   <span className={cn('font-medium text-slate-700', dense ? 'text-[11px]' : 'text-xs')}>
-                    Solo proyectos en común
+                    {t('deadlines.suggestions.sharedProjectsOnly', 'Solo proyectos en común')}
                   </span>
                 </div>
                 <Switch checked={onlySharedProjects} onCheckedChange={setOnlySharedProjects} className="shrink-0 scale-90" />
@@ -398,7 +402,9 @@ function CondicionantesBlock({
                       className={cn('w-full justify-start', dense ? 'text-[11px] h-7' : 'text-xs h-8')}
                     >
                       <FolderKanban className="h-3.5 w-3.5 mr-1.5" />
-                      {includedProjectIds.size === 0 ? 'Todos los proyectos' : `${includedProjectIds.size} proyecto(s) seleccionados`}
+                      {includedProjectIds.size === 0
+                        ? t('deadlines.suggestions.allProjects', 'Todos los proyectos')
+                        : t('deadlines.suggestions.projectsSelected', '{{count}} proyectos seleccionados', { count: includedProjectIds.size })}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-64 p-2 max-h-56 overflow-auto" align="start">
@@ -406,7 +412,7 @@ function CondicionantesBlock({
                     <div className="relative mb-2">
                       <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
                       <Input
-                        placeholder="Buscar proyecto..."
+                        placeholder={t('deadlines.suggestions.searchProject', 'Buscar proyecto...')}
                         value={projectSearch}
                         onChange={(e) => setProjectSearch(e.target.value)}
                         className="pl-8 h-8 text-xs"
@@ -451,7 +457,7 @@ function CondicionantesBlock({
           <div className="grid grid-cols-1 lg:grid-cols-[1fr,auto] gap-6 py-4 px-4 border border-slate-200 rounded-xl bg-gradient-to-br from-slate-50 to-white shadow-sm">
             <div>
               <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-3">
-                Quién puede ceder horas
+                {t('deadlines.suggestions.whoCanDonateHours')}
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                 {suggestionDonors.map((d) => {
@@ -504,8 +510,8 @@ function CondicionantesBlock({
                       <Inbox className="h-5 w-5" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-base font-semibold text-slate-800 leading-tight">Quien recibe horas</p>
-                      <p className="text-sm text-slate-500 mt-0.5">No superará este % de carga</p>
+                      <p className="text-base font-semibold text-slate-800 leading-tight">{t('deadlines.suggestions.receiverHoursTitle')}</p>
+                      <p className="text-sm text-slate-500 mt-0.5">{t('deadlines.suggestions.maxReceiverHint')}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -540,8 +546,8 @@ function CondicionantesBlock({
                       <Share2 className="h-5 w-5" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-base font-semibold text-slate-800 leading-tight">Quien cede horas</p>
-                      <p className="text-sm text-slate-500 mt-0.5">No bajará de este % de carga</p>
+                      <p className="text-base font-semibold text-slate-800 leading-tight">{t('deadlines.suggestions.senderHoursTitle')}</p>
+                      <p className="text-sm text-slate-500 mt-0.5">{t('deadlines.suggestions.minSenderHint')}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -576,8 +582,8 @@ function CondicionantesBlock({
                   <div className="flex items-center gap-2 min-w-0">
                     <FolderKanban className="h-4 w-4 text-slate-500 shrink-0" />
                     <div>
-                      <p className="text-sm font-semibold text-slate-800">Solo proyectos en común</p>
-                      <p className="text-[11px] text-slate-500">Sugerir solo en proyectos que donante y receptor comparten</p>
+                      <p className="text-sm font-semibold text-slate-800">{t('deadlines.suggestions.sharedProjectsOnly')}</p>
+                      <p className="text-[11px] text-slate-500">{t('deadlines.suggestions.sharedProjectsHint')}</p>
                     </div>
                   </div>
                   <Switch checked={onlySharedProjects} onCheckedChange={setOnlySharedProjects} className="shrink-0" />
@@ -592,11 +598,11 @@ function CondicionantesBlock({
                     </PopoverTrigger>
                     <PopoverContent className="w-72 p-2 max-h-80 overflow-hidden flex flex-col" align="start">
                       <p className="text-[11px] font-semibold text-slate-500 uppercase mb-2">Solo considerar estos proyectos</p>
-                      <p className="text-[11px] text-slate-500 mb-2">Vacío = todos. Selecciona para limitar.</p>
+                      <p className="text-[11px] text-slate-500 mb-2">{t('deadlines.suggestions.emptyMeansAll')}</p>
                       <div className="relative mb-2">
                         <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                         <Input
-                          placeholder="Buscar proyecto..."
+                          placeholder={t('deadlines.suggestions.searchProject', 'Buscar proyecto...')}
                           value={projectSearch}
                           onChange={(e) => setProjectSearch(e.target.value)}
                           className="pl-9 h-9 text-sm"
@@ -750,7 +756,7 @@ function ResumenPropuesto({
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
-              <p className="text-[11px] text-slate-500">Añadir horas a</p>
+              <p className="text-[11px] text-slate-500">{t('deadlines.suggestions.addHoursTo')}</p>
               <p className="font-semibold text-slate-900 text-sm truncate">{group.employeeName}</p>
             </div>
             <Badge className="shrink-0 bg-primary text-primary-foreground text-xs font-mono">
@@ -959,6 +965,7 @@ export function DeadlinesSuggestionsPanel(props: DeadlinesSuggestionsPanelProps)
     onOpenProject,
   } = props;
 
+  const { t } = useTranslation('app');
   const [teamLimitsOpen, setTeamLimitsOpen] = useState(false);
 
   const onClose = () => handleClose(onOpenChange, setExpandedProjects, setExpandedEmployees);
@@ -976,12 +983,12 @@ export function DeadlinesSuggestionsPanel(props: DeadlinesSuggestionsPanelProps)
 
   const titleText =
     panelFlowView === 'intent'
-      ? 'Repartir carga del mes'
+      ? t('deadlines.suggestions.panelTitleIntent', 'Repartir carga del mes')
       : panelFlowView === 'give'
-        ? 'Dar horas a alguien'
+        ? t('deadlines.suggestions.giveHours', 'Dar horas a alguien')
         : panelFlowView === 'take'
-          ? 'Quitar carga a alguien'
-          : 'Equilibrar el equipo';
+          ? t('deadlines.suggestions.takeLoad', 'Quitar carga a alguien')
+          : t('deadlines.suggestions.balanceTeam', 'Equilibrar todo el equipo');
 
   const title = (
     <span className="flex items-center gap-2">
@@ -997,12 +1004,12 @@ export function DeadlinesSuggestionsPanel(props: DeadlinesSuggestionsPanelProps)
 
   const descriptionText =
     panelFlowView === 'intent'
-      ? 'Elige cómo quieres repartir la carga. Los cambios se aplican en cada proyecto.'
+      ? t('deadlines.suggestions.panelGive', 'Elige cómo quieres repartir la carga. Los cambios se aplican en cada proyecto.')
       : panelFlowView === 'give'
-        ? 'Guía paso a paso para sumar horas a una persona.'
+        ? t('deadlines.suggestions.panelGiveFlow', 'Guía paso a paso para sumar horas a una persona.')
         : panelFlowView === 'take'
-          ? 'Guía paso a paso para aliviar a alguien sobrecargado.'
-          : 'Reparto sugerido para todo el equipo. Ajusta límites y revisa cada persona.';
+          ? t('deadlines.suggestions.panelTakeFlow', 'Guía paso a paso para aliviar a alguien sobrecargado.')
+          : t('deadlines.suggestions.panelTeam', 'Reparto sugerido para todo el equipo. Ajusta límites y revisa cada persona.');
 
   const flowBody =
     panelFlowView === 'intent' ? (
@@ -1175,7 +1182,7 @@ export function DeadlinesSuggestionsPanel(props: DeadlinesSuggestionsPanelProps)
       {onResetFilters && (
         <Button variant="outline" size="sm" onClick={onResetFilters}>
           <RotateCcw className="h-4 w-4 mr-2" />
-          Restaurar filtros por defecto
+          {t('deadlines.suggestions.restoreDefaultFilters', 'Restaurar filtros por defecto')}
         </Button>
       )}
     </div>
@@ -1314,7 +1321,7 @@ export function DeadlinesSuggestionsPanel(props: DeadlinesSuggestionsPanelProps)
                                 <SensitiveText kind="project" id={proj.projectId}>{proj.projectName}</SensitiveText>
                               </span>
                               <span className="text-[11px] text-slate-500 shrink-0">
-                                {proj.transfers.length} {proj.transfers.length === 1 ? 'origen' : 'orígenes'}
+                                {t('deadlines.suggestions.origin', { count: proj.transfers.length })}
                               </span>
                               {isProjectOpen ? (
                                 <ChevronUp className="h-3.5 w-3.5 text-slate-400" />
@@ -1406,7 +1413,7 @@ export function DeadlinesSuggestionsPanel(props: DeadlinesSuggestionsPanelProps)
         </div>
       ) : teamSummary.transferCount > 0 ? (
         <p className="text-xs text-slate-500 mt-4 leading-relaxed">
-          Expande una fila en la lista para ver aquí el desglose por proyecto.
+          {t('deadlines.suggestions.expandRowHint', 'Expande una fila en la lista para ver aquí el desglose por proyecto.')}
         </p>
       ) : null}
     </>

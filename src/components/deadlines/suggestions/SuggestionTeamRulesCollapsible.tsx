@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ChevronDown, ChevronUp, RotateCcw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -22,6 +23,8 @@ export function SuggestionTeamRulesCollapsible({
   /** Sin scroll interno: el contenido crece y el scroll queda en la columna principal. */
   unboundedContent?: boolean;
 }) {
+  const { t } = useTranslation('app');
+
   return (
     <Collapsible open={open} onOpenChange={onOpenChange} className="shrink-0">
       <div className="flex items-center gap-2 mb-1">
@@ -38,10 +41,10 @@ export function SuggestionTeamRulesCollapsible({
             ) : (
               <ChevronDown className="h-4 w-4 shrink-0 text-slate-500" />
             )}
-            <span className="flex-1 truncate">Límites y condicionantes</span>
+            <span className="flex-1 truncate">{t('deadlines.suggestions.limitsAndConditions')}</span>
             {hasRestrictiveFilters && (
               <Badge variant="outline" className="text-[10px] shrink-0 border-amber-200 text-amber-800">
-                Activos
+                {t('deadlines.suggestions.activeFilters')}
               </Badge>
             )}
           </button>
@@ -53,10 +56,10 @@ export function SuggestionTeamRulesCollapsible({
             size="sm"
             className="shrink-0 h-9 text-xs text-slate-500"
             onClick={onResetFilters}
-            title="Restaurar valores por defecto"
+            title={t('deadlines.suggestions.restoreDefaultTooltip')}
           >
             <RotateCcw className="h-3.5 w-3.5 mr-1" />
-            Restaurar
+            {t('deadlines.suggestions.restore')}
           </Button>
         )}
       </div>

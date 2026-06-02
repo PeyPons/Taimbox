@@ -311,7 +311,7 @@ export function ProjectMutateDialog({
                       <Command>
                         <CommandInput placeholder="Buscar cliente..." />
                         <CommandList>
-                          <CommandEmpty>No se encontró el cliente.</CommandEmpty>
+                          <CommandEmpty>{t('clientsAndProjects.clientNotFound')}</CommandEmpty>
                           <CommandGroup>
                             {clients.map(client => (
                               <CommandItem

@@ -12,6 +12,7 @@ import { SensitiveText } from '@/components/privacy/SensitiveText';
 import { DeadlineEmployeeRow } from '@/components/deadlines/DeadlineEmployeeRow';
 import { cn } from '@/lib/utils';
 import { CheckCircle2 } from 'lucide-react';
+import { useAppTranslation } from '@/hooks/useAppTranslation';
 import type {
   DeadlinesProjectEditSheetProps,
   InlineFormData,
@@ -51,9 +52,11 @@ export function DeadlinesProjectEditForm({
   isLockAcquiring = false,
   onClose,
   showTitle = true,
-  closeButtonLabel = 'Cerrar',
+  closeButtonLabel,
   layout = 'stacked',
 }: DeadlinesProjectEditFormProps) {
+  const { t } = useAppTranslation();
+  const resolvedCloseLabel = closeButtonLabel ?? t('deadlines.projectList.close');
   const totalAssigned = (Object.values(formData.employeeHours) as number[]).reduce(
     (sum, h) => sum + (h || 0),
     0
@@ -83,7 +86,7 @@ export function DeadlinesProjectEditForm({
       {layout === 'inline' ? (
         <>
           {isLockAcquiring && (
-            <p className="text-xs text-slate-500 animate-pulse mb-2">Verificando bloqueo de edición...</p>
+            <p className="text-xs text-slate-500 animate-pulse mb-2">{t('deadlines.projectList.checkingLock')}</p>
           )}
           <div className={cn('rounded-lg bg-slate-50 border border-slate-200 p-3', isLockAcquiring && 'opacity-80')}>
             <div className={cn(isLockAcquiring && 'pointer-events-none select-none')}>
@@ -102,7 +105,7 @@ export function DeadlinesProjectEditForm({
               </div>
               <div className="flex flex-wrap items-center gap-3 pt-3 mt-3 border-t border-slate-200">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-xs text-slate-500 shrink-0">Ajuste:</span>
+                  <span className="text-xs text-slate-500 shrink-0">{t('deadlines.projectEditForm.adjustment')}</span>
                   <Input
                     type="number"
                     step={0.5}
@@ -129,7 +132,7 @@ export function DeadlinesProjectEditForm({
                   )}
                 </div>
                 <Input
-                  placeholder="Notas..."
+                  placeholder={t('deadlines.projectList.notesPlaceholder')}
                   value={formData.notes}
                   onChange={(e) => onFormPatch({ notes: e.target.value }, 800)}
                   className="h-7 text-xs flex-1 min-w-[140px]"
@@ -142,19 +145,19 @@ export function DeadlinesProjectEditForm({
                     className="scale-75"
                     disabled={isLockAcquiring}
                   />
-                  <span className="text-slate-500">Ocultar</span>
+                  <span className="text-slate-500">{t('deadlines.projectList.hide')}</span>
                 </label>
                 <div className="ml-auto flex items-center gap-2 shrink-0">
                   {saveStatus === 'saving' && (
-                    <span className="text-slate-400 text-xs animate-pulse">Guardando...</span>
+                    <span className="text-slate-400 text-xs animate-pulse">{t('deadlines.projectList.saving')}</span>
                   )}
                   {saveStatus === 'saved' && (
                     <span className="text-emerald-600 text-xs flex items-center gap-1">
-                      <CheckCircle2 className="h-3 w-3" /> Guardado
+                      <CheckCircle2 className="h-3 w-3" /> {t('deadlines.projectList.saved')}
                     </span>
                   )}
                   <Button size="sm" variant="secondary" className="h-8 text-xs" onClick={onClose}>
-                    {closeButtonLabel}
+                    {resolvedCloseLabel}
                   </Button>
                 </div>
               </div>
@@ -164,9 +167,9 @@ export function DeadlinesProjectEditForm({
       ) : (
         <>
           <div className="space-y-3">
-            <Label className="text-slate-600">Horas por empleado</Label>
+            <Label className="text-slate-600">{t('deadlines.projectEditForm.hoursPerEmployee')}</Label>
             {isLockAcquiring && (
-              <p className="text-xs text-slate-500 animate-pulse">Verificando bloqueo de edición...</p>
+              <p className="text-xs text-slate-500 animate-pulse">{t('deadlines.projectList.checkingLock')}</p>
             )}
             {employeesForEdit.map((emp) => (
               <div key={emp.id} className="flex items-center gap-3 bg-slate-50 rounded-lg px-3 py-2.5">
@@ -203,7 +206,7 @@ export function DeadlinesProjectEditForm({
             ))}
           </div>
           <div>
-            <Label className="text-slate-600 mb-1.5 block">Ajuste presupuesto (h)</Label>
+            <Label className="text-slate-600 mb-1.5 block">{t('deadlines.projectEditForm.budgetAdjustment')}</Label>
             <Input
               type="number"
               step={0.5}
@@ -225,7 +228,7 @@ export function DeadlinesProjectEditForm({
             />
           </div>
           <div>
-            <Label className="text-slate-600 mb-1.5 block">Notas</Label>
+            <Label className="text-slate-600 mb-1.5 block">{t('deadlines.projectEditForm.notes')}</Label>
             <Textarea
               placeholder="Notas..."
               value={formData.notes}
@@ -235,7 +238,7 @@ export function DeadlinesProjectEditForm({
             />
           </div>
           <div className="flex items-center justify-between py-2">
-            <span className="text-slate-600">Ocultar proyecto</span>
+            <span className="text-slate-600">{t('deadlines.projectEditForm.hideProject')}</span>
             <Switch
               checked={formData.isHidden}
               onCheckedChange={(checked) => onFormPatch({ isHidden: checked })}

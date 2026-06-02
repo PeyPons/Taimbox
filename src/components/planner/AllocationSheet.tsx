@@ -18,7 +18,8 @@ import { cn } from '@/lib/utils';
 import { getWeeksForMonth, getStorageKey, isAllocationInEffectiveMonth, getWeekEndDate } from '@/utils/dateUtils';
 import { useWeeklyCloseDay } from '@/hooks/useWeeklyCloseDay';
 import { format, addMonths, subMonths, isSameMonth, parseISO, addDays, isBefore, startOfWeek, startOfMonth, endOfMonth } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { useAppTranslation } from '@/hooks/useAppTranslation';
+import { useDateLocale } from '@/hooks/useDateLocale';
 import { toast } from '@/lib/notify';
 import { PlannerTour } from './PlannerTour';
 import { ProjectImpactSummary } from './ProjectImpactSummary';
@@ -77,6 +78,8 @@ const MONTH_SCROLL_WEEK_COL_CLASS =
   'flex-none w-[280px] sm:w-[300px] snap-center';
 
 export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, viewDateContext }: AllocationSheetProps) {
+  const { t } = useAppTranslation();
+  const dateLocale = useDateLocale();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const { employees, currentUser } = useAppEmployees();
   const { projects, clients, getProjectById } = useAppProjects();
@@ -245,14 +248,16 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
   });
 
   const sortOptionLabels: Record<SortOption, string> = {
-    budget_desc: 'Horas contratadas (Mayor)',
-    budget_asc: 'Horas contratadas (Menor)',
-    my_hours_desc: 'Mis horas (Mayor)',
-    my_hours_asc: 'Mis horas (Menor)',
-    name_asc: 'Nombre (A-Z)',
-    name_desc: 'Nombre (Z-A)',
+    budget_desc: t('planner.allocationSheet.sort.budgetDesc', 'Horas contratadas (Mayor)'),
+    budget_asc: t('planner.allocationSheet.sort.budgetAsc', 'Horas contratadas (Menor)'),
+    my_hours_desc: t('planner.allocationSheet.sort.myHoursDesc', 'Mis horas (Mayor)'),
+    my_hours_asc: t('planner.allocationSheet.sort.myHoursAsc', 'Mis horas (Menor)'),
+    name_asc: t('planner.allocationSheet.sort.nameAsc', 'Nombre (A-Z)'),
+    name_desc: t('planner.allocationSheet.sort.nameDesc', 'Nombre (Z-A)'),
   };
-  const sortButtonLabel = effectiveShowAllWeeks ? 'Opciones' : 'Ordenar';
+  const sortButtonLabel = effectiveShowAllWeeks
+    ? t('planner.allocationSheet.sort.optionsButton', 'Opciones')
+    : t('planner.allocationSheet.sort.sortButton', 'Ordenar');
   const sortOptionLabel = sortOptionLabels[sortOption];
 
   // Proyecto seleccionado para mostrar detalles en panel lateral
@@ -433,7 +438,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
       ? 'full'
       : 'compact';
 
-  const monthName = format(viewDate, 'MMMM', { locale: es });
+  const monthName = format(viewDate, 'MMMM', { locale: dateLocale });
   const monthLabel = `${monthName.charAt(0).toUpperCase() + monthName.slice(1)} - ${format(viewDate, 'yyyy')}`;
 
   const getAvailableDependencies = (projectId: string, currentTaskId?: string) => {
@@ -557,10 +562,10 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
     const isExact100 = budgetMax > 0 && Math.abs(totalComputed - budgetMax) < 0.1;
     const isAtMinimum = budgetMin > 0 && totalComputed >= budgetMin && (budgetMax === 0 || totalComputed <= budgetMax);
     const statusConfig = {
-      healthy: { color: 'bg-emerald-500', textColor: 'text-emerald-700', label: 'Saludable' },
-      warning: { color: 'bg-amber-500', textColor: 'text-amber-700', label: 'Cerca del límite' },
-      overload: { color: 'bg-red-500', textColor: 'text-red-700', label: 'Excedido' },
-      under: { color: 'bg-blue-500', textColor: 'text-blue-700', label: 'Por debajo' }
+      healthy: { color: 'bg-emerald-500', textColor: 'text-emerald-700', label: t('planner.allocationSheet.budgetStatus.healthy', 'Saludable') },
+      warning: { color: 'bg-amber-500', textColor: 'text-amber-700', label: t('planner.allocationSheet.budgetStatus.warning', 'Cerca del límite') },
+      overload: { color: 'bg-red-500', textColor: 'text-red-700', label: t('planner.allocationSheet.budgetStatus.overload', 'Excedido') },
+      under: { color: 'bg-blue-500', textColor: 'text-blue-700', label: t('planner.allocationSheet.budgetStatus.under', 'Por debajo') }
     };
     const config = statusConfig[status];
     return (
@@ -578,18 +583,18 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
         <div className="p-4 space-y-4 overflow-y-auto max-h-[70vh]">
           {budgetMax > 0 && (
             <div className="space-y-2">
-              <div className="text-[10px] font-semibold text-slate-500 uppercase">Total cliente</div>
+              <div className="text-[10px] font-semibold text-slate-500 uppercase">{t('planner.allocationSheet.projectDetail.clientTotal')}</div>
               <div className="space-y-1.5 text-xs">
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Asignadas:</span>
+                  <span className="text-slate-500">{t('planner.allocationSheet.projectDetail.assigned')}</span>
                   <span className="font-medium">{budgetMin > 0 ? `${budgetMin}-` : ''}{budgetMax}h</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Planificado:</span>
+                  <span className="text-slate-500">{t('planner.allocationSheet.projectDetail.planned')}</span>
                   <span className="text-blue-600">{totalPlanned.toFixed(1)}h</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Computado (todos):</span>
+                  <span className="text-slate-500">{t('planner.allocationSheet.projectDetail.computed')}</span>
                   <span className={cn("font-bold", status === 'overload' ? 'text-red-600' : 'text-emerald-600')}>
                     {totalComputed.toFixed(1)}h
                   </span>
@@ -604,10 +609,12 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                 </div>
                 <div className="flex justify-between items-center mt-1">
                   <span className={cn("text-[10px] font-medium", isExact100 || isAtMinimum ? "text-emerald-700" : config.textColor)}>
-                    {Math.round(percentage)}% usado
+                    {t('planner.allocationSheet.projectDetail.usedPct', { percent: Math.round(percentage) })}
                   </span>
                   {exceededBy > 0 && (
-                    <span className="text-[10px] font-bold text-red-600">+{exceededBy.toFixed(1)}h exceso</span>
+                    <span className="text-[10px] font-bold text-red-600">
+                      {t('planner.allocationSheet.projectDetail.excess', { hours: exceededBy.toFixed(1) })}
+                    </span>
                   )}
                 </div>
               </div>
@@ -618,23 +625,35 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                     {status === 'overload' && (
                       <div className="bg-red-50 text-red-700 text-[11px] p-2 rounded border border-red-200 flex items-center gap-2">
                         <AlertOctagon className="w-4 h-4 flex-shrink-0" />
-                        <span>Se han excedido las horas contratadas máximas</span>
+                        <span>{t('planner.allocationSheet.projectDetail.overloadWarning')}</span>
                       </div>
                     )}
                     {status === 'warning' && (
                       <div className="bg-amber-50 text-amber-700 text-[11px] p-2 rounded border border-amber-200 flex items-center gap-2">
                         <AlertTriangle className="w-4 h-4 flex-shrink-0" />
                         {projection > budgetMax ? (
-                          <span>Cuidado: La proyección total ({projection.toFixed(1)}h) ya supera el límite</span>
+                          <span>
+                            {t('planner.allocationSheet.projectDetail.projectionOverLimit', {
+                              projection: projection.toFixed(1),
+                            })}
+                          </span>
                         ) : (
-                          <span>Quedan {(budgetMax - totalComputed).toFixed(1)}h disponibles</span>
+                          <span>
+                            {t('planner.allocationSheet.projectDetail.hoursRemaining', {
+                              hours: (budgetMax - totalComputed).toFixed(1),
+                            })}
+                          </span>
                         )}
                       </div>
                     )}
                     {projection > budgetMax && status !== 'overload' && status !== 'warning' && (
                       <div className="bg-orange-50 text-orange-700 text-[11px] p-2 rounded border border-orange-200 flex items-center gap-2 mt-2">
                         <AlertTriangle className="w-4 h-4 flex-shrink-0" />
-                        <span>La proyección ({projection.toFixed(1)}h) supera contratadas</span>
+                        <span>
+                          {t('planner.allocationSheet.projectDetail.projectionOverBudget', {
+                            projection: projection.toFixed(1),
+                          })}
+                        </span>
                       </div>
                     )}
                   </>
@@ -643,7 +662,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
               {breakdown.length > 1 && (
                 <div className="border-t pt-3">
                   <div className="flex items-center gap-1 text-[10px] font-semibold text-slate-500 uppercase mb-2">
-                    <Users className="w-3 h-3" /> Equipo ({breakdown.length})
+                    <Users className="w-3 h-3" /> {t('planner.allocationSheet.projectDetail.team', { count: breakdown.length })}
                   </div>
                   <div className="space-y-1.5">
                     {breakdown.map(({ employeeId: empId, employeeName, computed, planned }) => {
@@ -662,11 +681,11 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                           </Avatar>
                           <div className="flex-1 min-w-0">
                             <div className={cn("font-medium truncate", isMe ? "text-indigo-700" : "text-slate-600")}>
-                              <SensitiveText kind="employee" id={empId}>{employeeName}</SensitiveText> {isMe && "(tú)"}
+                              <SensitiveText kind="employee" id={empId}>{employeeName}</SensitiveText> {isMe && t('planner.allocationSheet.you', '(you)')}
                             </div>
                             <div className="flex gap-3 text-[10px] mt-0.5">
-                              <span className="text-blue-600">Plan: {planned.toFixed(1)}h</span>
-                              <span className="text-emerald-600">Comp: {computed.toFixed(1)}h</span>
+                              <span className="text-blue-600">{t('planner.allocationSheet.projectDetail.planShort')} {planned.toFixed(1)}h</span>
+                              <span className="text-emerald-600">{t('planner.allocationSheet.projectDetail.compShort')} {computed.toFixed(1)}h</span>
                             </div>
                           </div>
                         </div>
@@ -742,7 +761,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
             <div className={cn('flex items-center justify-center', effectiveShowAllWeeks ? 'flex-1 min-h-0' : 'min-h-[400px]')}>
               <div className="text-slate-400 flex flex-col items-center gap-2">
                 <div className="h-8 w-8 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
-                <span>Cargando tareas...</span>
+                <span>{t('planner.allocationSheet.loading', 'Cargando tareas...')}</span>
               </div>
             </div>
           ) : (
@@ -839,8 +858,8 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                       const firstWorkingDay = workingDays[0];
                       const lastWorkingDay = workingDays[workingDays.length - 1];
                       const weekDateLabel = firstWorkingDay && lastWorkingDay
-                        ? `${format(firstWorkingDay, 'd', { locale: es })}-${format(lastWorkingDay, 'd MMM', { locale: es })}`
-                        : `${format(effectiveStart, 'd', { locale: es })}-${format(effectiveEnd, 'd MMM', { locale: es })}`;
+                        ? `${format(firstWorkingDay, 'd', { locale: dateLocale })}-${format(lastWorkingDay, 'd MMM', { locale: dateLocale })}`
+                        : `${format(effectiveStart, 'd', { locale: dateLocale })}-${format(effectiveEnd, 'd MMM', { locale: dateLocale })}`;
 
                       // Agrupar y ordenar
                       const grouped = weekAllocations.reduce((acc, a) => ({ ...acc, [a.projectId]: [...(acc[a.projectId] || []), a] }), {} as Record<string, Allocation[]>);
@@ -920,8 +939,8 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                           const transferReadOnlyMobile = transferUiMobile.isReadOnly;
                                           const cleanName = cleanTransferredTaskName(alloc.taskName);
                                           const transferMenuLabelMobile = transferUiMobile.pendingTransfer
-                                            ? 'Transferencia pendiente'
-                                            : 'Tarea transferida';
+                                            ? t('planner.allocationSheet.transfer.pendingMenu', 'Transfer pending')
+                                            : t('planner.allocationSheet.transfer.transferredMenu', 'Task transferred');
 
                                           return (
                                             <div key={alloc.id} className={cn("group flex flex-col gap-2 p-3 bg-white touch-manipulation", isCompleted && "bg-slate-50/50")}>
@@ -948,7 +967,9 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                     </span>
                                                     {transferUiMobile.showTransferBadge && (
                                                       <AllocationTransferBadge
-                                                        label={transferUiMobile.pendingTransfer ? 'Pendiente' : 'Transferida'}
+                                                        label={transferUiMobile.pendingTransfer
+                                                            ? t('planner.allocationSheet.transfer.pending', 'Pending')
+                                                            : t('planner.allocationSheet.transfer.transferred', 'Transferred')}
                                                         tooltip={transferUiMobile.transferBadgeTooltip}
                                                         compact
                                                       />
@@ -1026,7 +1047,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                               <th className="py-2 px-3 text-left font-medium w-8"></th>
                                               <th className="py-2 px-3 text-left font-medium">Tarea</th>
                                               <th className="py-2 px-3 text-center font-medium w-20">Horas</th>
-                                              {isTimeTrackerEnabled && <th className="py-2 px-2 text-center font-medium w-28">Cronómetro</th>}
+                                              {isTimeTrackerEnabled && <th className="py-2 px-2 text-center font-medium w-28">{t('planner.allocationSheet.stopwatch')}</th>}
                                               <th className="py-2 px-3 text-center font-medium w-24">Real</th>
                                               {preference !== 'actual' && <th className="py-2 px-3 text-center font-medium w-24">Comp</th>}
                                               <th className="py-2 px-3 text-center font-medium w-20">Balance</th>
@@ -1055,8 +1076,8 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                               );
                                               const transferReadOnly = transferUi.isReadOnly;
                                               const transferMenuLabel = transferUi.pendingTransfer
-                                                ? 'Transferencia pendiente'
-                                                : 'Tarea transferida';
+                                                ? t('planner.allocationSheet.transfer.pendingMenu', 'Transfer pending')
+                                                : t('planner.allocationSheet.transfer.transferredMenu', 'Task transferred');
 
                                               return (
                                                 <tr
@@ -1115,7 +1136,9 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                         </div>
                                                         {transferUi.showTransferBadge && (
                                                           <AllocationTransferBadge
-                                                            label={transferUi.pendingTransfer ? 'Pendiente' : 'Transferida'}
+                                                            label={transferUi.pendingTransfer
+                                                                ? t('planner.allocationSheet.transfer.pending', 'Pending')
+                                                                : t('planner.allocationSheet.transfer.transferred', 'Transferred')}
                                                             tooltip={transferUi.transferBadgeTooltip}
                                                             compact
                                                           />
@@ -1149,7 +1172,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                         <div className="flex flex-col gap-0.5">
                                                           {blockingTasks.map(bt => {
                                                             const blockedUser = (employees || []).find(e => e.id === bt.employeeId);
-                                                            const firstName = blockedUser?.name?.split(' ')[0] || 'Compañero';
+                                                            const firstName = blockedUser?.name?.split(' ')[0] || t('planner.allocationSheet.teammateFallback');
                                                             return (
                                                               <div key={bt.id} className="flex items-center gap-1 text-[9px] text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded w-fit border border-amber-200">
                                                                 <Users className="w-2.5 h-2.5" />
@@ -1189,7 +1212,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                               'inline-flex items-center justify-center mx-auto px-2.5 py-0.5 rounded-full border font-mono text-xs font-medium tabular-nums max-w-full',
                                                               'bg-slate-50 border-slate-200 text-slate-600'
                                                             )}
-                                                            title="Tiempo imputado con el cronómetro (registros). Puede diferir del Real si ajustas horas a mano. La tarea completada no reanuda el cronómetro."
+                                                            title={t('planner.allocationSheet.stopwatchTooltip')}
                                                             role="status"
                                                           >
                                                             {formatDecimalHoursAsHm(trackedFromTimer)}
@@ -1303,8 +1326,8 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                 <div className="space-y-4" data-tour="planner-loading-state">
                                   <div className="text-center py-6 text-slate-400">
                                     <Calendar className="w-10 h-10 mx-auto mb-2 opacity-50 animate-pulse" />
-                                    <p className="font-medium mb-1">Cargando tareas...</p>
-                                    <p className="text-xs">Por favor espera</p>
+                                    <p className="font-medium mb-1">{t('planner.allocationSheet.loading', 'Cargando tareas...')}</p>
+                                    <p className="text-xs">{t('planner.allocationSheet.loadingPleaseWait', 'Por favor espera')}</p>
                                   </div>
                                 </div>
                               )}
@@ -1315,8 +1338,8 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                   {/* Mensaje principal */}
                                   <div className="text-center py-6 text-slate-400">
                                     <Calendar className="w-10 h-10 mx-auto mb-2 opacity-50" />
-                                    <p className="font-medium mb-1">No tienes tareas esta semana</p>
-                                    <p className="text-xs">Usa el botón "Añadir" para planificar tu trabajo</p>
+                                    <p className="font-medium mb-1">{t('planner.allocationSheet.emptyWeekTitle', 'No tienes tareas esta semana')}</p>
+                                    <p className="text-xs">{t('planner.allocationSheet.emptyWeekHint', 'Usa el botón "Añadir" para planificar tu trabajo')}</p>
                                   </div>
 
                                   {/* Ejemplo visual de cómo se vería */}
@@ -1346,7 +1369,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                               <Checkbox checked={false} />
                                             </td>
                                             <td className="py-2 px-3" data-tour="planner-task-name">
-                                              <span className="font-medium">Brief de campaña</span>
+                                              <span className="font-medium">{t('planner.allocationSheet.campaignBrief')}</span>
                                               <div className="mt-1" data-tour="planner-dependency">
                                                 <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-50 text-amber-700 rounded text-[10px]">
                                                   <Users className="h-3 w-3" />
@@ -1459,13 +1482,13 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                             onClick={() => startAdd(week.weekStart)}
                           >
                             <Plus className="h-3.5 w-3.5" />
-                            Añadir tarea
+                            {t('planner.allocationSheet.addTask', 'Añadir tarea')}
                           </Button>
 
                           {/* LISTA TAREAS */}
                           <ScrollWheelArea className={cn('flex-1 overflow-y-auto space-y-1.5 custom-scrollbar min-h-0', isMobile ? 'pr-2' : 'pr-0.5')}>
                             {sortedGroups.length === 0 ? (
-                              <p className="text-center py-4 text-xs text-slate-400">Sin tareas</p>
+                              <p className="text-center py-4 text-xs text-slate-400">{t('planner.allocationSheet.noTasks', 'Sin tareas')}</p>
                             ) : sortedGroups.map(([projId, projAllocations]) => {
                               const project = getProjectById(projId);
                               const allCompleted = projAllocations.every(a => a.status === 'completed') && !projAllocations.some(a => recentlyToggled.has(a.id));
@@ -1666,7 +1689,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                     })}
                                     {projectIds.length === 0 && (
                                       <p className="text-xs text-slate-400 text-center py-4">
-                                        No tienes tareas esta semana
+                                        {t('planner.allocationSheet.emptyWeekTitle', 'No tienes tareas esta semana')}
                                       </p>
                                     )}
                                   </div>

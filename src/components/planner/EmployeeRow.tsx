@@ -2,10 +2,11 @@ import { Employee, Project, Allocation, TeamEvent, Absence } from '@/types';
 import { WeekCell } from './WeekCell';
 import { useApp } from '@/contexts/AppContext';
 import { useAgency } from '@/contexts/AgencyContext';
-import { getValidRole } from '@/utils/roleUtils';
+import { getValidRole, translateRoleLabel } from '@/utils/roleUtils';
 import { format, startOfWeek } from 'date-fns';
 import { isCurrentWeek, isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { SensitiveText } from '@/components/privacy/SensitiveText';
+import { useAppTranslation } from '@/hooks/useAppTranslation';
 
 interface EmployeeRowProps {
   employee: Employee;
@@ -25,9 +26,10 @@ export function EmployeeRow({
 
   const { getEmployeeLoadForWeek } = useApp();
   const { currentAgency } = useAgency();
+  const { t } = useAppTranslation();
 
   const availableRoles = currentAgency?.settings?.roles || [];
-  const displayRole = getValidRole(employee, availableRoles);
+  const displayRole = translateRoleLabel(getValidRole(employee, availableRoles), t);
 
   return (
     <div className="contents group">
@@ -41,7 +43,7 @@ export function EmployeeRow({
             );
             onOpenSheet(employee.id, currentWeek?.weekStart || weeks[0].weekStart);
           }}
-          title="Ver detalle de tareas"
+          title={t('planner.grid.viewTaskDetail', 'View task details')}
         >
           <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-xs border border-indigo-200 shrink-0">
             {employee.avatarUrl ? (

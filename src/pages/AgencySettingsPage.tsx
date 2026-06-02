@@ -105,6 +105,7 @@ function GoogleAdsAccountSelect({
   /** Solo pide el listado cuando la pestaña Integraciones está visible (evita trabajo en segundo plano). */
   fetchEnabled: boolean;
 }) {
+  const { t } = useAppTranslation();
   const [accounts, setAccounts] = useState<GoogleAccountRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -146,9 +147,19 @@ function GoogleAdsAccountSelect({
   }, [agencyId, fetchEnabled, retryTick]);
 
   if (!fetchEnabled) {
-    return <SelectItem value="__idle__" disabled>Abre la pestaña Integraciones para cargar cuentas</SelectItem>;
+    return (
+      <SelectItem value="__idle__" disabled>
+        {t('agency.integrations.googleAds.openTabToLoad', 'Abre la pestaña Integraciones para cargar cuentas')}
+      </SelectItem>
+    );
   }
-  if (loading) return <SelectItem value="__loading__" disabled>Cargando cuentas...</SelectItem>;
+  if (loading) {
+    return (
+      <SelectItem value="__loading__" disabled>
+        {t('agency.integrations.googleAds.loadingAccounts', 'Cargando cuentas...')}
+      </SelectItem>
+    );
+  }
   if (error) {
     return (
       <>
@@ -1825,7 +1836,7 @@ export default function AgencySettingsPage() {
 
                     <div className="grid gap-4 md:grid-cols-2">
                       <div className="space-y-2">
-                        <Label>Conexión con Meta (OAuth)</Label>
+                        <Label>{t('agency.integrations.metaAds.oauthConnection', 'Conexión con Meta (OAuth)')}</Label>
                         {currentAgency?.meta_ads_access_token ? (
                           <div className="flex flex-wrap items-center gap-2">
                             <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">✅ {t('agency.integrations.metaAds.tokenConfigured', 'Token configurado')}</Badge>

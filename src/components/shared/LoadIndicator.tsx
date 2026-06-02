@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
@@ -23,6 +24,7 @@ export function LoadIndicator({
   className,
   variant = 'compact'
 }: LoadIndicatorProps) {
+  const { t } = useTranslation('app');
   const calculatedPercentage = percentage ?? (capacity > 0 ? (hours / capacity) * 100 : 0);
   const hoursRemaining = capacity - hours;
   const isOverload = hours > capacity; // Rojo: se pasa del límite
@@ -91,14 +93,14 @@ export function LoadIndicator({
           </TooltipTrigger>
           <TooltipContent>
             <div className="space-y-1">
-              <p><span className="font-medium">Horas asignadas:</span> {hours}h</p>
-              <p><span className="font-medium">Capacidad:</span> {capacity}h</p>
-              <p><span className="font-medium">Ocupación:</span> {calculatedPercentage.toFixed(1)}%</p>
+              <p><span className="font-medium">{t('planner.loadIndicator.assignedHours')}</span> {hours}h</p>
+              <p><span className="font-medium">{t('planner.loadIndicator.capacity')}</span> {capacity}h</p>
+              <p><span className="font-medium">{t('planner.loadIndicator.occupancy')}</span> {calculatedPercentage.toFixed(1)}%</p>
               {isOverload && (
-                <p className="text-red-600 mt-1">⚠️ Sobrecarga</p>
+                <p className="text-red-600 mt-1">⚠️ {t('planner.loadIndicator.overload')}</p>
               )}
               {isNearLimit && !isOverload && (
-                <p className="text-amber-600 mt-1">Carga alta</p>
+                <p className="text-amber-600 mt-1">{t('planner.loadIndicator.highLoad')}</p>
               )}
             </div>
           </TooltipContent>

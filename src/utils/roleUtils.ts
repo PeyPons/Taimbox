@@ -1,9 +1,5 @@
-/**
- * Utilidades para manejar roles de empleados de forma robusta
- */
-
 import { Employee } from '@/types';
-import { RolePermissions } from '@/types';
+import type { RolePermissions } from '@/types';
 
 /**
  * Obtiene el rol válido de un empleado
@@ -78,5 +74,19 @@ export function getValidDepartment(
   }
 
   return employee.department || 'General';
+}
+
+/** System roles stored in Spanish in DB → localized label for display. */
+const SYSTEM_ROLE_KEYS: Record<string, string> = {
+  administrador: 'team.roles.admin',
+  administrator: 'team.roles.admin',
+};
+
+export function translateRoleLabel(
+  role: string,
+  t: (key: string, fallback?: string) => string,
+): string {
+  const i18nKey = SYSTEM_ROLE_KEYS[role.trim().toLowerCase()];
+  return i18nKey ? t(i18nKey, role) : role;
 }
 

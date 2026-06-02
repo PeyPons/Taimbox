@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useMouseWheelScroll } from '@/hooks/useMouseWheelScroll';
 import { formatDistanceToNow } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { useDateLocale } from '@/hooks/useDateLocale';
 import { StickyNote, Trash2, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -34,8 +34,10 @@ function NoteItem({
   onDelete: (id: string) => void;
   isDeleting: boolean;
 }) {
-  const authorLabel = note.authorName ?? 'Usuario';
-  const when = formatDistanceToNow(new Date(note.createdAt), { addSuffix: true, locale: es });
+  const { t } = useTranslation('app');
+  const dateLocale = useDateLocale();
+  const authorLabel = note.authorName ?? t('taskNotes.authorFallback', 'Usuario');
+  const when = formatDistanceToNow(new Date(note.createdAt), { addSuffix: true, locale: dateLocale });
 
   return (
     <div className="rounded-lg border border-slate-200 bg-slate-50/80 p-3 text-sm">
@@ -60,7 +62,7 @@ function NoteItem({
             className="h-7 w-7 shrink-0 text-slate-400 hover:text-red-600"
             disabled={isDeleting}
             onClick={() => onDelete(note.id)}
-            aria-label="Eliminar anotación"
+            aria-label={t('taskNotes.deleteAria', 'Eliminar anotación')}
           >
             <Trash2 className="h-3.5 w-3.5" />
           </Button>
