@@ -150,6 +150,8 @@ export const NotificationRulesSection = forwardRef<NotificationRulesSectionHandl
   const [previewSubject, setPreviewSubject] = useState<string | null>(null);
   const [previewNote, setPreviewNote] = useState<string | null>(null);
   const [previewError, setPreviewError] = useState<string | null>(null);
+  const [expandedRuleIds, setExpandedRuleIds] = useState<string[]>([]);
+  const rulesListRef = useRef<HTMLDivElement>(null);
   const rulesRef = useRef(rules);
   rulesRef.current = rules;
 
@@ -171,7 +173,7 @@ export const NotificationRulesSection = forwardRef<NotificationRulesSectionHandl
       .from('notification_rules')
       .select('*')
       .eq('agency_id', agencyId)
-      .order('created_at', { ascending: true });
+      .order('created_at', { ascending: false });
 
     if (error) {
       console.error(error);
@@ -237,6 +239,12 @@ export const NotificationRulesSection = forwardRef<NotificationRulesSectionHandl
     void load();
   }, [load]);
 
+  useEffect(() => {
+    if (rules.length > 0 && expandedRuleIds.length === 0) {
+      setExpandedRuleIds([rules[0].id]);
+    }
+  }, [rules, expandedRuleIds.length]);
+
   const addRule = async () => {
     const payload = rowToInsertPayload({
       agencyId,
@@ -255,7 +263,12 @@ export const NotificationRulesSection = forwardRef<NotificationRulesSectionHandl
       return;
     }
     if (data) {
-      setRules((prev) => [...prev, mapNotificationRuleFromDb(data as Record<string, unknown>)]);
+      const created = mapNotificationRuleFromDb(data as Record<string, unknown>);
+      setRules((prev) => [created, ...prev]);
+      setExpandedRuleIds([created.id]);
+      requestAnimationFrame(() => {
+        rulesListRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
       toast({ title: t(`${tk}.toastRuleCreated`) });
     }
   };
@@ -448,12 +461,17 @@ export const NotificationRulesSection = forwardRef<NotificationRulesSectionHandl
           <CardContent className="py-10 text-center text-muted-foreground text-sm">{t(`${tk}.empty`)}</CardContent>
         </Card>
       ) : rules.length > 1 ? (
-        <div className="space-y-2">
+        <div ref={rulesListRef} className="space-y-2">
           <div>
             <h3 className="text-sm font-semibold tracking-tight">{t(`${tk}.sectionTitle`)}</h3>
             <p className="text-xs text-muted-foreground mt-0.5">{t(`${tk}.sectionHint`)}</p>
           </div>
-          <Accordion type="multiple" className="space-y-2" defaultValue={rules[0] ? [rules[0].id] : undefined}>
+          <Accordion
+            type="multiple"
+            className="space-y-2"
+            value={expandedRuleIds}
+            onValueChange={setExpandedRuleIds}
+          >
             {rules.map((rule) => (
               <AccordionItem key={rule.id} value={rule.id} className="relative rounded-xl border bg-card shadow-sm overflow-hidden">
                 <div className="relative">

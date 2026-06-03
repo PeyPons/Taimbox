@@ -1,4 +1,4 @@
-import type { AdsPpcAlertDetail } from "./ads-ppc-alert-build.ts";
+import type { AdsPpcAlertDetail } from '@/utils/adsPpcAlertBuild';
 
 function escapeHtml(input: string): string {
   return input

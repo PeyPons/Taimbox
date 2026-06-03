@@ -1,5 +1,6 @@
 import { Eye, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { EmailChipsInput } from '@/components/ui/email-chips-input';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -229,9 +230,6 @@ export function NotificationRuleFormFields({
             </div>
           </div>
           <p className="text-xs text-muted-foreground">{t(`${tk}.hourHelp`)}</p>
-          {evalMode !== 'ads_ppc_budget' ? (
-            <RuleScheduledScopeFilters rule={rule} clients={clients} projects={projects} updateLocal={updateLocal} />
-          ) : null}
           <div className="space-y-2 max-w-lg">
             <Label>{t(`${tk}.evalType`)}</Label>
             <Select
@@ -286,6 +284,9 @@ export function NotificationRuleFormFields({
               <p className="text-xs text-muted-foreground">{t(evalHelpKey)}</p>
             ) : null}
           </div>
+          {evalMode !== 'ads_ppc_budget' ? (
+            <RuleScheduledScopeFilters rule={rule} clients={clients} projects={projects} updateLocal={updateLocal} />
+          ) : null}
           {evalMode === 'project_month_health' ? (
             <div className="space-y-2">
               <Label>{t(`${tk}.conditionsLabel`)}</Label>
@@ -496,17 +497,11 @@ export function NotificationRuleFormFields({
 
       <div className="space-y-2">
         <Label>{t(`${tk}.extraEmails`)}</Label>
-        <Input
-          value={rule.extraEmails.join(', ')}
-          onChange={(e) =>
-            updateLocal(rule.id, {
-              extraEmails: e.target.value
-                .split(',')
-                .map((s) => s.trim())
-                .filter(Boolean),
-            })
-          }
+        <EmailChipsInput
+          emails={rule.extraEmails}
+          onChange={(extraEmails) => updateLocal(rule.id, { extraEmails })}
           placeholder={t(`${tk}.extraEmailsPlaceholder`)}
+          invalidHint={t(`${tk}.extraEmailsInvalid`)}
         />
       </div>
 

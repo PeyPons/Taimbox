@@ -32,9 +32,9 @@ import {
 } from "../_shared/ads-ppc-email-html.ts";
 import {
   adsPpcAlertMatchesFlags,
-  computeAdsPpcAlerts,
-  type AdsPpcAlert,
-} from "../_shared/ads-ppc-notification-metrics.ts";
+  buildAdsPpcAlerts,
+  type AdsPpcAlertDetail,
+} from "../_shared/ads-ppc-alert-build.ts";
 import {
   hoursPreferenceFromSettings,
   resolveEmailsForPolicy,
@@ -399,49 +399,71 @@ serve(async (req) => {
       const hasBudgets = settings.some((s) => Number(s.budget_limit) > 0 && !s.is_hidden);
       if (!hasBudgets) continue;
 
-      let googleRows: Array<{ client_id: string; cost: number; date: string }> = [];
-      let metaRows: Array<{ client_id: string; cost: number; date: string }> = [];
+      const campaignFields =
+        "client_id, client_name, cost, date, daily_budget, status, budget_id, campaign_name";
 
-      if (cond.adsPlatforms.includes("google")) {
-        const { data } = await supabaseAdmin
-          .from("google_ads_campaigns")
-          .select("client_id, cost, date")
-          .eq("agency_id", agencyId)
-          .gte("date", monthStart)
-          .lte("date", monthEnd);
-        googleRows = (data || []) as typeof googleRows;
-      }
-      if (cond.adsPlatforms.includes("meta")) {
-        const { data } = await supabaseAdmin
-          .from("meta_ads_campaigns")
-          .select("client_id, cost, date")
-          .eq("agency_id", agencyId)
-          .gte("date", monthStart)
-          .lte("date", monthEnd);
-        metaRows = (data || []) as typeof metaRows;
-      }
+      const googlePayload = cond.adsPlatforms.includes("google")
+        ? await Promise.all([
+            supabaseAdmin
+              .from("google_ads_campaigns")
+              .select(campaignFields)
+              .eq("agency_id", agencyId)
+              .gte("date", monthStart)
+              .lte("date", monthEnd),
+            supabaseAdmin
+              .from("ad_accounts_config")
+              .select("account_id, account_name, currency")
+              .eq("agency_id", agencyId)
+              .eq("platform", "google")
+              .eq("is_active", true),
+            supabaseAdmin
+              .from("segmentation_rules")
+              .select("account_id, keyword, virtual_name")
+              .eq("agency_id", agencyId)
+              .eq("platform", "google"),
+          ])
+        : null;
 
-      let alerts: AdsPpcAlert[] = computeAdsPpcAlerts(
+      const metaPayload = cond.adsPlatforms.includes("meta")
+        ? await Promise.all([
+            supabaseAdmin
+              .from("meta_ads_campaigns")
+              .select("client_id, client_name, cost, date, status, campaign_name")
+              .eq("agency_id", agencyId)
+              .gte("date", monthStart)
+              .lte("date", monthEnd),
+            supabaseAdmin
+              .from("ad_accounts_config")
+              .select("account_id, account_name, currency")
+              .eq("agency_id", agencyId)
+              .eq("platform", "meta")
+              .eq("is_active", true),
+            supabaseAdmin
+              .from("segmentation_rules")
+              .select("account_id, keyword, virtual_name")
+              .eq("agency_id", agencyId)
+              .eq("platform", "meta"),
+          ])
+        : null;
+
+      const googleCampaigns = googlePayload ? (googlePayload[0].data || []) : [];
+      const googleAccounts = googlePayload ? (googlePayload[1].data || []) : [];
+      const googleRules = googlePayload ? (googlePayload[2].data || []) : [];
+      const metaCampaigns = metaPayload ? (metaPayload[0].data || []) : [];
+      const metaAccounts = metaPayload ? (metaPayload[1].data || []) : [];
+      const metaRules = metaPayload ? (metaPayload[2].data || []) : [];
+
+      const alerts: AdsPpcAlertDetail[] = buildAdsPpcAlerts({
         settings,
-        googleRows,
-        metaRows,
-        cond.adsPlatforms,
+        google: googlePayload
+          ? { campaigns: googleCampaigns, accounts: googleAccounts, rules: googleRules }
+          : undefined,
+        meta: metaPayload
+          ? { campaigns: metaCampaigns, accounts: metaAccounts, rules: metaRules }
+          : undefined,
+        platforms: cond.adsPlatforms,
         now,
-      ).filter((a) => adsPpcAlertMatchesFlags(a, cond.adsMatchAny));
-
-      const { data: clientsRows } = await supabaseAdmin
-        .from("clients")
-        .select("id, name")
-        .eq("agency_id", agencyId);
-      const clientNameById = new Map(
-        (clientsRows || []).map((c) => [String(c.id), String(c.name ?? c.id)]),
-      );
-      alerts = alerts.map((a) => {
-        if (!a.clientKey.startsWith("GROUP-") && clientNameById.has(a.clientKey)) {
-          return { ...a, displayName: clientNameById.get(a.clientKey)! };
-        }
-        return a;
-      });
+      }).filter((a) => adsPpcAlertMatchesFlags(a, cond.adsMatchAny));
 
       console.log(`[process-notification-rules] ads_ppc alerts=${alerts.length} platforms=${cond.adsPlatforms.join(",")}`);
       if (!alerts.length) continue;

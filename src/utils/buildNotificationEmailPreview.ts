@@ -10,10 +10,11 @@ import type {
 } from '@/types/notifications';
 import { fetchDeadlinesForMonth } from '@/utils/deadlineUtils';
 import {
-  computeAdsBudgetAlerts,
+  buildAdsPpcAlerts,
+  sampleAdsPpcAlertDetail,
+  type AdsCampaignRow,
   type AdsClientSettingRow,
-  type AdsSpendRow,
-} from '@/utils/adsBudgetAlerts';
+} from '@/utils/adsPpcAlertBuild';
 import {
   analyzeProjectMonthForNotifications,
   passesProjectClientFilters,
@@ -172,65 +173,99 @@ export async function buildNotificationEmailPreview(
     const monthStart = `${year}-${String(month).padStart(2, '0')}-01`;
     const monthEnd = `${year}-${String(month).padStart(2, '0')}-${String(new Date(year, month, 0).getDate()).padStart(2, '0')}`;
 
-    const { data: settingsRows } = await supabase
-      .from('client_settings')
-      .select('client_id, budget_limit, group_name, is_hidden')
-      .eq('agency_id', input.agencyId);
-    const settings = (settingsRows ?? []) as AdsClientSettingRow[];
+    const campaignFields =
+      'client_id, client_name, cost, date, daily_budget, status, budget_id, campaign_name';
 
-    let googleRows: AdsSpendRow[] = [];
-    let metaRows: AdsSpendRow[] = [];
-    if (platforms.includes('google')) {
-      const { data } = await supabase
-        .from('google_ads_campaigns')
-        .select('client_id, cost, date')
-        .eq('agency_id', input.agencyId)
-        .gte('date', monthStart)
-        .lte('date', monthEnd);
-      googleRows = (data ?? []) as AdsSpendRow[];
-    }
-    if (platforms.includes('meta')) {
-      const { data } = await supabase
-        .from('meta_ads_campaigns')
-        .select('client_id, cost, date')
-        .eq('agency_id', input.agencyId)
-        .gte('date', monthStart)
-        .lte('date', monthEnd);
-      metaRows = (data ?? []) as AdsSpendRow[];
-    }
+    const [
+      settingsRes,
+      googleCampaignsRes,
+      metaCampaignsRes,
+      googleAccountsRes,
+      metaAccountsRes,
+      googleRulesRes,
+      metaRulesRes,
+    ] = await Promise.all([
+      supabase
+        .from('client_settings')
+        .select('client_id, budget_limit, group_name, is_hidden')
+        .eq('agency_id', input.agencyId),
+      platforms.includes('google')
+        ? supabase
+            .from('google_ads_campaigns')
+            .select(campaignFields)
+            .eq('agency_id', input.agencyId)
+            .gte('date', monthStart)
+            .lte('date', monthEnd)
+        : Promise.resolve({ data: [] }),
+      platforms.includes('meta')
+        ? supabase
+            .from('meta_ads_campaigns')
+            .select('client_id, client_name, cost, date, status, campaign_name')
+            .eq('agency_id', input.agencyId)
+            .gte('date', monthStart)
+            .lte('date', monthEnd)
+        : Promise.resolve({ data: [] }),
+      platforms.includes('google')
+        ? supabase
+            .from('ad_accounts_config')
+            .select('account_id, account_name, currency')
+            .eq('agency_id', input.agencyId)
+            .eq('platform', 'google')
+            .eq('is_active', true)
+        : Promise.resolve({ data: [] }),
+      platforms.includes('meta')
+        ? supabase
+            .from('ad_accounts_config')
+            .select('account_id, account_name, currency')
+            .eq('agency_id', input.agencyId)
+            .eq('platform', 'meta')
+            .eq('is_active', true)
+        : Promise.resolve({ data: [] }),
+      platforms.includes('google')
+        ? supabase
+            .from('segmentation_rules')
+            .select('account_id, keyword, virtual_name')
+            .eq('agency_id', input.agencyId)
+            .eq('platform', 'google')
+        : Promise.resolve({ data: [] }),
+      platforms.includes('meta')
+        ? supabase
+            .from('segmentation_rules')
+            .select('account_id, keyword, virtual_name')
+            .eq('agency_id', input.agencyId)
+            .eq('platform', 'meta')
+        : Promise.resolve({ data: [] }),
+    ]);
 
-    let alerts = computeAdsBudgetAlerts(settings, googleRows, metaRows).filter((a) => {
-      if (!platforms.includes(a.platform)) return false;
-      return matchAny.includes(a.status);
-    });
+    const settings = (settingsRes.data ?? []) as AdsClientSettingRow[];
+    const googleCampaigns = (googleCampaignsRes.data ?? []) as AdsCampaignRow[];
+    const metaCampaigns = (metaCampaignsRes.data ?? []) as AdsCampaignRow[];
 
-    const { data: clientsRows } = await supabase
-      .from('clients')
-      .select('id, name')
-      .eq('agency_id', input.agencyId);
-    const clientNameById = new Map(
-      (clientsRows ?? []).map((c) => [String(c.id), String(c.name ?? c.id)]),
-    );
-    alerts = alerts.map((a) => {
-      if (!a.clientKey.startsWith('GROUP-') && clientNameById.has(a.clientKey)) {
-        return { ...a, displayName: clientNameById.get(a.clientKey)! };
-      }
-      return a;
-    });
+    let alerts = buildAdsPpcAlerts({
+      settings,
+      google: platforms.includes('google')
+        ? {
+            campaigns: googleCampaigns,
+            accounts: googleAccountsRes.data ?? [],
+            rules: googleRulesRes.data ?? [],
+          }
+        : undefined,
+      meta: platforms.includes('meta')
+        ? {
+            campaigns: metaCampaigns,
+            accounts: metaAccountsRes.data ?? [],
+            rules: metaRulesRes.data ?? [],
+          }
+        : undefined,
+      platforms,
+      now,
+    }).filter((a) => matchAny.includes(a.status));
 
     const siteUrl = absoluteUrl('');
+    const monthKey = `${year}-${String(month).padStart(2, '0')}`;
 
     if (alerts.length === 0) {
-      const sample = {
-        platform: 'google' as const,
-        clientKey: 'sample',
-        displayName: 'Ejemplo — cuenta cliente',
-        status: 'risk' as const,
-        spent: 4200,
-        budget: 5000,
-        forecast: 5800,
-        monthKey,
-      };
+      const sample = { ...sampleAdsPpcAlertDetail(), monthKey };
       const { html } = adsPpcSingleAccountEmailHtml({
         agencyName,
         alert: sample,
@@ -240,7 +275,7 @@ export async function buildNotificationEmailPreview(
         html,
         subject: `PPC: ${sample.displayName} — ${adsPpcStatusLabelEs(sample.status)} (${monthKey})`,
         note:
-          'Ahora mismo ninguna cuenta cumple estas condiciones. El ejemplo muestra cómo se vería un aviso con datos reales de Google/Meta y presupuestos configurados.',
+          'Ahora mismo ninguna cuenta cumple estas condiciones. El ejemplo muestra el nivel de detalle del correo real (nombre, IDs, presupuestos y ritmo diario).',
       };
     }
 
