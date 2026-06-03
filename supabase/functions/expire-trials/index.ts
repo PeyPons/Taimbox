@@ -12,7 +12,9 @@ const corsHeaders = {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   const secret =
-    Deno.env.get("EXPIRE_TRIALS_CRON_SECRET") ?? Deno.env.get("NOTIFICATIONS_CRON_SECRET");
+    Deno.env.get("EXPIRE_TRIALS_CRON_SECRET") ??
+    Deno.env.get("NOTIFICATIONS_CRON_SECRET") ??
+    Deno.env.get("ADS_CRON_SECRET");
   const authHeader = req.headers.get("Authorization") || "";
   const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
   if (!secret || token !== secret) {
