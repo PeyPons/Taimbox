@@ -6,6 +6,16 @@ set -euo pipefail
 SUPABASE_URL="${SUPABASE_URL:-https://api.taimbox.com}"
 DOCKER_ENV="${DOCKER_ENV:-/home/alex/supabase-pi/supabase/docker/.env}"
 
+# En la Pi: llamar a Kong local evita timeout de Cloudflare (504 ~60s)
+if [ -z "${SUPABASE_URL_FORCE:-}" ] && [ -z "${SUPABASE_INTERNAL_SKIP:-}" ]; then
+  for internal in "${SUPABASE_INTERNAL_URL:-http://127.0.0.1:8001}" "http://127.0.0.1:8000"; do
+    if curl -sS -o /dev/null --connect-timeout 2 --max-time 3 "${internal}/functions/v1/" 2>/dev/null; then
+      SUPABASE_URL="$internal"
+      break
+    fi
+  done
+fi
+
 if [ -z "${ADS_CRON_SECRET:-}" ] && [ -f "$DOCKER_ENV" ]; then
   ADS_CRON_SECRET="$(grep '^ADS_CRON_SECRET=' "$DOCKER_ENV" | cut -d= -f2- | tr -d '"\r' || true)"
 fi
