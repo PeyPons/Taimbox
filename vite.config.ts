@@ -5,32 +5,7 @@ import path from "path";
 // https://vitejs.dev/config/
 export default defineConfig({
   build: {
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          if (!id.includes("node_modules")) {
-            if (id.includes("/pages/LandingPage") || id.includes("/pages/PreciosPage") || id.includes("/pages/SecurityLandingPage")) {
-              return "marketing-core";
-            }
-            if (id.includes("LandingPage") || id.includes("landing/") || id.includes("/pages/Privacy") || id.includes("/pages/Terms")) {
-              return "marketing-pages";
-            }
-          }
-          // React + i18n en el mismo chunk (evita createContext undefined por orden/ciclos entre chunks)
-          if (
-            id.includes("node_modules/react-dom") ||
-            id.includes("node_modules/react/") ||
-            id.includes("node_modules/react-i18next/") ||
-            id.includes("node_modules/i18next/") ||
-            id.includes("node_modules/i18next-browser-languagedetector/")
-          ) {
-            return "vendor-react";
-          }
-          if (id.includes("node_modules/@radix-ui")) return "vendor-radix";
-          if (id.includes("node_modules/framer-motion")) return "vendor-motion";
-        },
-      },
-    },
+    emptyOutDir: true,
   },
   server: {
     host: "::",
@@ -42,5 +17,7 @@ export default defineConfig({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+    // Una sola copia de React (evita createContext undefined con chunks manuales)
+    dedupe: ["react", "react-dom"],
   },
 });
