@@ -16,17 +16,18 @@ export default defineConfig({
               return "marketing-pages";
             }
           }
+          // React + i18n en el mismo chunk (evita createContext undefined por orden/ciclos entre chunks)
           if (
             id.includes("node_modules/react-dom") ||
             id.includes("node_modules/react/") ||
-            id.includes("node_modules/react-i18next")
+            id.includes("node_modules/react-i18next/") ||
+            id.includes("node_modules/i18next/") ||
+            id.includes("node_modules/i18next-browser-languagedetector/")
           ) {
             return "vendor-react";
           }
           if (id.includes("node_modules/@radix-ui")) return "vendor-radix";
           if (id.includes("node_modules/framer-motion")) return "vendor-motion";
-          // Solo i18next core: react-i18next debe ir con React para evitar createContext undefined
-          if (id.includes("node_modules/i18next")) return "vendor-i18n";
         },
       },
     },
