@@ -54,7 +54,9 @@ import { NewTaskRow, Deadline } from '@/types';
 import { ChevronLeft, ChevronRight, CalendarDays, TrendingUp, Calendar, Clock, CheckCircle2, Plus, X, Check, ListPlus, AlertTriangle, HelpCircle, RotateCcw, FileDown, CheckSquare, AlertCircle, Trash2, Sun, MoreHorizontal, Users, BarChart3 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { startOfMonth, endOfMonth, format, isSameMonth, parseISO, addDays } from 'date-fns';
-import { useMonthNavigation } from '@/hooks/useMonthNavigation';
+import { usePlanMonthNavigation } from '@/hooks/usePlanMonthNavigation';
+import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
+import { isAtPlanHistoryMinMonth } from '@/utils/planHistoryUtils';
 import { useEnsureMonthWithLoading } from '@/hooks/useEnsureMonthWithLoading';
 import { useDateLocale } from '@/hooks/useDateLocale';
 import { toast } from '@/lib/notify';
@@ -91,7 +93,9 @@ export default function EmployeeDashboard() {
   const { activeView, showToggle, setView, isSaving: isSavingViewPref } = useDashboardView();
 
   const { currentMonth, goToPrevMonth: handlePrevMonth, goToNextMonth: handleNextMonth, goToToday: handleToday } =
-    useMonthNavigation();
+    usePlanMonthNavigation();
+  const { historyMinDate } = useSubscriptionLimits();
+  const prevMonthDisabled = isAtPlanHistoryMinMonth(currentMonth, historyMinDate);
   const isLoadingMonth = useEnsureMonthWithLoading(currentMonth, {
     enabled: !isGlobalLoading && !isLoadingProfile,
   });
@@ -907,7 +911,7 @@ export default function EmployeeDashboard() {
               </h2>
             </div>
             <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-md">
-              <Button variant="ghost" size="icon" className={cn("h-7 w-7", isMobile && "h-11 w-11 min-h-[44px]")} onClick={handlePrevMonth}><ChevronLeft className="h-4 w-4" /></Button>
+              <Button variant="ghost" size="icon" disabled={prevMonthDisabled} className={cn("h-7 w-7", isMobile && "h-11 w-11 min-h-[44px]")} onClick={handlePrevMonth}><ChevronLeft className="h-4 w-4" /></Button>
               <Button variant="ghost" size="sm" onClick={handleToday} className={cn("h-7 text-xs px-2", isMobile && "h-11 min-h-[44px] text-sm px-3")} aria-label={t('team.dashboard.currentMonth', 'Mes actual')}>{t('team.dashboard.currentMonth', 'Mes actual')}</Button>
               <Button variant="ghost" size="icon" className={cn("h-7 w-7", isMobile && "h-11 w-11 min-h-[44px]")} onClick={handleNextMonth}><ChevronRight className="h-4 w-4" /></Button>
             </div>

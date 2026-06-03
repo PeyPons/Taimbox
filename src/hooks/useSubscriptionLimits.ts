@@ -10,8 +10,14 @@ import {
   planIncludesWeekly,
   planIncludesRadar,
   planIncludesApi,
+  planIncludesScheduledSync,
+  planIncludesAdvancedExports,
+  planIncludesFullReports,
+  PLAN_DISPLAY_NAMES,
+  billableExtraManagedUsers,
   type PlanId,
 } from '@/config/plans';
+import { countManagedUsers } from '@/utils/managedUsers';
 
 function daysUntil(isoDate: string | null | undefined): number | null {
   if (!isoDate) return null;
@@ -25,7 +31,6 @@ export function useSubscriptionLimits() {
   const { currentAgency } = useAgency();
   const { employees } = useApp();
 
-  // Safety net: if subscription is 'trialing' but trial_ends_at is in the past, treat as Starter
   const rawPlanId: PlanId = currentAgency?.planId ?? 'starter';
   const rawStatus = currentAgency?.subscriptionStatus;
   const isTrialExpired =
@@ -34,26 +39,21 @@ export function useSubscriptionLimits() {
     new Date(currentAgency.trialEndsAt).getTime() <= Date.now();
   const planId: PlanId = isTrialExpired ? 'starter' : rawPlanId;
   const limits = getPlanLimit(planId);
-  const currentEmployees = useMemo(
-    () => employees.filter((e) => e.isActive !== false).length,
-    [employees]
-  );
-  // maxEmployees is null for enterprise (unlimited)
-  const isOverLimit = limits.maxEmployees !== null && currentEmployees > limits.maxEmployees;
+  const managedCount = useMemo(() => countManagedUsers(employees), [employees]);
+  const maxManaged = limits.maxManagedUsers;
+  const isOverLimit = maxManaged !== null && managedCount > maxManaged;
   const isSoftLocked = Boolean(currentAgency) && isOverLimit && planId === 'starter';
+  const extraBillable = billableExtraManagedUsers(planId, managedCount);
 
-  /**
-   * Fecha mínima de histórico para el plan actual.
-   * Si limitHistoryToTwoMonths === true → 1 del mes anterior (ej: hoy 15 marzo → 1 febrero 00:00:00)
-   * Si false → null (sin límite)
-   */
   const historyMinDate = useMemo<Date | null>(() => {
     if (!limits.limitHistoryToTwoMonths) return null;
     return startOfMonth(subMonths(new Date(), 1));
   }, [limits.limitHistoryToTwoMonths]);
 
   const canAccessRouteByPlan = (path: string) => canAccessRoute(planId, path);
-  const canAddEmployee = !isSoftLocked && (limits.maxEmployees === null || currentEmployees < limits.maxEmployees);
+  const canAddEmployee =
+    !isSoftLocked &&
+    (maxManaged === null || managedCount < maxManaged);
 
   const trialEndsAt = currentAgency?.trialEndsAt;
   const subscriptionPeriodEndsAt = currentAgency?.subscriptionPeriodEndsAt;
@@ -73,8 +73,11 @@ export function useSubscriptionLimits() {
 
   return {
     planId,
-    limitEmployees: limits.maxEmployees,
-    currentEmployees,
+    planDisplayName: PLAN_DISPLAY_NAMES[planId],
+    limitEmployees: maxManaged,
+    includedManagedUsers: limits.includedManagedUsers,
+    extraBillableSeats: extraBillable,
+    currentEmployees: managedCount,
     isOverLimit,
     isSoftLocked,
     historyMinDate,
@@ -85,6 +88,9 @@ export function useSubscriptionLimits() {
     planIncludesWeekly: planIncludesWeekly(planId),
     planIncludesRadar: planIncludesRadar(planId),
     planIncludesApi: planIncludesApi(planId),
+    planIncludesScheduledSync: planIncludesScheduledSync(planId),
+    planIncludesAdvancedExports: planIncludesAdvancedExports(planId),
+    planIncludesFullReports: planIncludesFullReports(planId),
     trialEndsAt,
     subscriptionPeriodEndsAt,
     subscriptionStatus,

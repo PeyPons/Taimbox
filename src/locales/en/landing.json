@@ -459,8 +459,8 @@
     "currencyBillingUsd": "Prices and subscription in USD. Charges are processed in US dollars via Stripe.",
     "currencyBillingEur": "Indicative amounts in EUR. Your subscription is billed in USD.",
     "currencyBillingConverted": "Indicative amounts in {{currency}}. Your subscription is billed in USD.",
-    "enterpriseTitle": "More than 50 people or need something custom?",
-    "enterpriseSub": "Unlimited Enterprise · SLA · Dedicated support · Custom billing",
+    "enterpriseTitle": "More than 100 people or enterprise requirements?",
+    "enterpriseSub": "Unlimited people · SLA · SSO · DPA · Custom billing & hosting",
     "enterpriseCta": "Talk to sales",
     "enterpriseMailSubject": "Enterprise plan",
     "includedTitle": "Everything you need",
@@ -476,7 +476,7 @@
     "finalCta": "Start free",
     "finalLogin": "Already have an account?",
     "finalLoginLink": "Log in",
-    "rewardBanner": "🎯 We’ll reward the first agencies that trust us by keeping this rate for life, before we move to official pricing of $99 and $249.",
+    "rewardBanner": "🎯 We’ll reward the first agencies that trust us by keeping this rate for life, before we move to official pricing of 99 $ and 249 $.",
     "plans": {
       "starter": {
         "period": "forever",
@@ -492,34 +492,47 @@
       },
       "pro": {
         "period": "month",
-        "description": "The efficient agency.",
-        "cta": "Choose Pro",
+        "description": "Team: forecast, OKRs, and ops radar.",
+        "cta": "Choose Team",
         "features": [
-          "Everything in Starter, plus:",
-          "Up to 20 people",
+          "Everything in Free, plus:",
+          "10 people included (+5 $/extra, max 25)",
           "Unlimited history",
-          "Weekly module & forecasts",
-          "Reliability matrix (performance)",
-          "Profitability per project (EHR)"
+          "Weekly & forecasts",
+          "OKRs & ops radar",
+          "Full reports & basic exports"
         ]
       },
       "business": {
         "period": "month",
-        "description": "Automation and control for performance agencies.",
-        "cta": "Try Business 14 days",
+        "description": "Agency: Ads, API, and scheduled sync.",
+        "cta": "Try Agency 14 days",
         "features": [
-          "Everything in Pro, plus:",
-          "Up to 50 people",
-          "Client budget monitor (PPC)",
-          "Overspend prevention (Google/Meta Ads)",
-          "Bleeding radar (live P&L)",
-          "REST API & webhooks",
-          "OKRs & strategic alignment"
+          "Everything in Team, plus:",
+          "40 people included (+3.50 $/extra, max 100)",
+          "PPC monitor (Google/Meta)",
+          "Manual & scheduled sync",
+          "REST API (HTTP examples)",
+          "Advanced exports"
+        ]
+      },
+      "scale": {
+        "period": "month",
+        "description": "Multi-agency ops at scale (up to ~100 managed users on product).",
+        "cta": "Contact sales",
+        "customPrice": "",
+        "features": [
+          "Everything in Agency, plus:",
+          "100 people included (+2.50 $/extra)",
+          "Several agencies / brands in one account",
+          "Audit trail & priority support",
+          "Higher API limits",
+          "Quarterly onboarding"
         ]
       },
       "enterprise": {
         "period": "",
-        "description": "For holdings and teams over 50 people with SLA.",
+        "description": "100+ people, holdings, or SLA/SSO/DPA and dedicated hosting.",
         "cta": "Talk to sales",
         "customPrice": "Custom",
         "features": [
@@ -587,15 +600,15 @@
       },
       {
         "q": "Will early adopter pricing stay?",
-        "a": "Yes. If you subscribe now, your rate is locked for life even if prices rise to $99/$249 later."
+        "a": "Yes. If you subscribe now, your rate is locked for life even if prices rise to 99 $/249 $ later."
       },
       {
         "q": "Does the Business trial require a card?",
-        "a": "Yes, Stripe will ask for a payment method when you start the subscription, but nothing is charged during the 14-day trial. After that your Business rate applies ($149/month USD). Cancel before and there’s no charge."
+        "a": "Sign-up includes 14 days on the Agency (Business) plan with no card. Stripe checkout later may require a payment method depending on the plan; one trial per agency. When it ends without a paid plan, you move to Free and keep your data."
       },
       {
         "q": "Are there annual discounts?",
-        "a": "For now we offer flexible monthly billing. For very large teams (>50) or special invoicing, contact Support in the app or hello@taimbox.com."
+        "a": "For now we offer flexible monthly billing. If you exceed ~100 managed users or need SLA, SSO, or special invoicing, contact sales (Enterprise plan)."
       }
     ]
   },
@@ -1069,7 +1082,7 @@
           "s33Title": "3.3 We do not sell Google data:",
           "s33P": "Under no circumstances do we sell, transfer, or provide Google API data to third parties, whether for free or for financial consideration.",
           "s34Title": "3.4 Sharing with third parties:",
-          "s34P": "We do not share, transfer, or disclose Google data to third parties, except as strictly necessary for service provision (e.g., encrypted storage in our Supabase/AWS infrastructure within the EU) or as required by applicable law through a court or government order.",
+          "s34P": "We do not share, transfer, or disclose Google data to third parties, except as strictly necessary for service provision (e.g., encrypted storage in our EU infrastructure) or as required by applicable law through a court or government order.",
           "s35Title": "3.5 Prohibited uses:",
           "s35P": "Data received from Google APIs will <0>never</0> be used for:",
           "s35Item1": "Targeted, segmented, personalized, or retargeting advertising.",
@@ -1108,7 +1121,7 @@
             "vendor": "Provider",
             "function": "Function",
             "location": "Location",
-            "awsFunction": "Hosting and infrastructure",
+            "awsFunction": "Application infrastructure (EU)",
             "supabaseFunction": "Database and authentication",
             "stripeFunction": "Payment processing",
             "googleFunction": "Campaign sync (read-only)",
@@ -1121,7 +1134,7 @@
         },
         "transfers": {
           "title": "7. International Data Transfers",
-          "p1": "We host Taimbox's main infrastructure in <0>Amazon Web Services data centers in Frankfurt (EU)</0>, ensuring your data remains within the European Union.",
+          "p1": "Taimbox's main instance operates in the <0>European Union</0> (PostgreSQL/Supabase under our operational control). Application data is processed under GDPR.",
           "p2": "In cases involving providers with a presence outside the European Economic Area (Stripe, Google, Meta), transfers are covered by <0>Standard Contractual Clauses (SCCs)</0> approved by the European Commission, adequacy decisions, or equivalent mechanisms that ensure an adequate level of protection."
         },
         "retention": {
@@ -2451,7 +2464,7 @@
             },
             {
               "label": "SDK",
-              "desc": "Node.js and Python"
+              "desc": "HTTP API (Node/Python examples)"
             }
           ]
         },
@@ -2520,9 +2533,9 @@
     },
     "ppc": {
       "seoTitle": "PPC budget monitor | Taimbox",
-      "seoDescription": "Monitor all client ad budgets in one dashboard. Google Ads and Meta Ads together with real-time overspend prevention.",
+      "seoDescription": "Monitor all client ad budgets in one dashboard. Google Ads and Meta Ads unified. Manual and scheduled sync (Agency/Scale plans).",
       "jsonName": "PPC budget monitor — Taimbox",
-      "jsonDescription": "Monitor all client ad budgets in one dashboard. Google Ads and Meta Ads together with real-time overspend prevention.",
+      "jsonDescription": "Monitor all client ad budgets in one dashboard. Google Ads and Meta Ads unified. Manual and scheduled sync (Agency/Scale plans).",
       "page": {
         "chart": {
           "title": "Spend pacing vs ideal monthly run rate",
@@ -2611,9 +2624,9 @@
           "titleBefore": "Sleep better.",
           "titleGradient": "Control every budget",
           "titleAfter": "for all your clients from one place.",
-          "subtitle": "Stop opening twenty Google and Meta tabs every morning. Taimbox unifies campaign spend in real time and warns you before you blow the agreed budget.",
-          "cta": "Try free (14 days)",
-          "ctaSub": "Free Business trial · Sync in two clicks"
+          "subtitle": "Stop opening twenty Google and Meta tabs every morning. Taimbox unifies spend after sync (manual or scheduled on Agency/Scale) and helps you spot budget drift.",
+          "cta": "Try Agency 14 days",
+          "ctaSub": "Agency trial, no card · Sync in two clicks"
         },
         "problem": {
           "kicker": "The pain",
@@ -2760,13 +2773,13 @@
         "pillar2Body": "All traffic uses <strong>TLS 1.3</strong> (in transit). Database disks use <strong>AES‑256</strong> (at rest). Production database access follows least-privilege policies and requires explicit justification for support work.",
         "pillar3Title": "Zero shared credentials",
         "pillar3Body": "When you connect Google or Meta Ads, <strong>we never store your passwords</strong>. OAuth2 short‑lived JWT tokens are issued by the providers. You can revoke access from Google in one click.",
-        "infraH2": "Certified infrastructure (AWS)",
-        "infraP": "Taimbox runs on ISO 27001 and SOC 2–aligned data centres in the <strong>European Union (Frankfurt / Ireland)</strong>, aligned with <strong>GDPR</strong> requirements.",
+        "infraH2": "Infrastructure and operations (EU)",
+        "infraP": "Taimbox runs on <strong>PostgreSQL and Supabase</strong> hosted in the <strong>European Union</strong>, with TLS in transit and encryption at rest on provider disks. We process data under <strong>GDPR</strong>. We do not claim SOC 2 or ISO certifications for Taimbox itself—we publish real practices and documented recovery objectives.",
         "infraBullets": [
-          "Certified data infrastructure (ISO 27001, SOC 2 Type II).",
-          "Automatic Point‑in‑Time Recovery (PITR) backups retained for 7 days.",
-          "Read replicas for high availability (99.99% uptime).",
-          "Advanced DDoS protection (AWS Shield)."
+          "Multi-tenant isolation with PostgreSQL Row Level Security (RLS).",
+          "Daily backups with 24h RPO and 8h RTO targets (self-hosted operations).",
+          "Availability monitoring; no 99.99% SLA until managed HA infrastructure.",
+          "Card payments handled by Stripe (PCI DSS Level 1)."
         ],
         "mockNodeLabel": "Node 01 (EU-Central-1)",
         "mockHealthy": "Healthy",
@@ -2804,9 +2817,9 @@
         "complianceCard2P": "Your data is yours—no vendor lock‑in. Use our REST API to export history, profitability metrics, and time tables to CSV/JSON whenever you need.",
         "faqH3": "FAQ: security, IT, and ISO",
         "faq1q": "Which subprocessors does Taimbox use?",
-        "faq1a": "We rely on industry leaders: <strong>AWS</strong> (hosting in Frankfurt), <strong>Supabase</strong> (database and auth), <strong>Stripe</strong> (payments), and <strong>Google/Meta</strong> (read‑only via official OAuth2 APIs). Our supply chain is transparent.",
-        "faq2q": "Where are servers physically hosted?",
-        "faq2a": "Core infrastructure runs on AWS with Supabase managed services, primarily in <strong>Frankfurt (eu‑central‑1)</strong>, within the EU and aligned with GDPR.",
+        "faq1a": "Typical subprocessors: <strong>Supabase</strong> (database and auth, EU deployment), <strong>Stripe</strong> (payments), transactional email if enabled, and <strong>Google/Meta</strong> (read‑only OAuth2 for Ads). We do not sell your campaign data to third parties.",
+        "faq2q": "Where is data hosted?",
+        "faq2a": "Production runs in the <strong>European Union</strong> (self-hosted infrastructure under our operational control). Processing follows <strong>GDPR</strong>. For Enterprise dedicated hosting or extended DPA, contact sales.",
         "faq3q": "What happens to my data if I cancel?",
         "faq3a": "We support full deletion (right to erasure). On definitive cancellation, cascading processes remove client accounts, integrations, timers, payroll costs, and ad tokens. Backup copies are purged within 30 days.",
         "faq4q": "How do Taimbox engineers access production?",

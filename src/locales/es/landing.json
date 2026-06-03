@@ -459,8 +459,8 @@
     "currencyBillingUsd": "Precios y suscripción en USD. El cobro se procesa en dólares vía Stripe.",
     "currencyBillingEur": "Importes orientativos en EUR. La suscripción se cobra en USD.",
     "currencyBillingConverted": "Importes orientativos en {{currency}}. La suscripción se cobra en USD.",
-    "enterpriseTitle": "¿Más de 50 personas o necesitas algo a medida?",
-    "enterpriseSub": "Enterprise sin límites · SLA · Soporte dedicado · Facturación personalizada",
+    "enterpriseTitle": "¿Más de 100 personas o requisitos enterprise?",
+    "enterpriseSub": "Personas sin límite · SLA · SSO · DPA · Facturación y hosting a medida",
     "enterpriseCta": "Hablar con ventas",
     "enterpriseMailSubject": "Plan Enterprise",
     "includedTitle": "Todo lo que necesitas",
@@ -476,7 +476,7 @@
     "finalCta": "Empezar gratis",
     "finalLogin": "¿Ya tienes cuenta?",
     "finalLoginLink": "Iniciar sesión",
-    "rewardBanner": "🎯 Premiaremos a las primeras agencias que confíen en nosotros manteniendo esta cuota de por vida, antes de aplicar las tarifas oficiales de $99 y $249.",
+    "rewardBanner": "🎯 Premiaremos a las primeras agencias que confíen en nosotros manteniendo esta cuota de por vida, antes de aplicar las tarifas oficiales de 99 $ y 249 $.",
     "plans": {
       "starter": {
         "period": "siempre",
@@ -492,34 +492,47 @@
       },
       "pro": {
         "period": "mes",
-        "description": "La agencia eficiente.",
-        "cta": "Elegir Pro",
+        "description": "Team: forecast, OKRs y radar operativo.",
+        "cta": "Elegir Team",
         "features": [
-          "Todo lo de Starter, más:",
-          "Hasta 20 personas",
+          "Todo lo de Free, más:",
+          "10 personas incluidas (+5 $/extra, máx. 25)",
           "Histórico ilimitado",
-          "Módulo Weekly y pronósticos",
-          "Matriz de Fiabilidad (Performance)",
-          "Rentabilidad por proyecto (EHR)"
+          "Weekly y pronósticos",
+          "OKRs y radar operativo",
+          "Reportes completos y exports básicos"
         ]
       },
       "business": {
         "period": "mes",
-        "description": "Automatización y control para agencias Performance.",
-        "cta": "Probar Business 14 días",
+        "description": "Agency: Ads, API y sync programada.",
+        "cta": "Probar Agency 14 días",
         "features": [
-          "Todo lo de Pro, más:",
-          "Hasta 50 personas",
-          "Monitor de presupuestos clientes (PPC)",
-          "Prevención de sobrecostes (Google/Meta Ads)",
-          "Radar de Hemorragias (P&L en vivo)",
-          "API REST y webhooks",
-          "OKRs y alineación estratégica"
+          "Todo lo de Team, más:",
+          "40 personas incluidas (+3,50 $/extra, máx. 100)",
+          "Monitor PPC (Google/Meta)",
+          "Sync manual y programada",
+          "API REST (ejemplos HTTP)",
+          "Exports avanzados"
+        ]
+      },
+      "scale": {
+        "period": "mes",
+        "description": "Multi-agencia y operación a gran escala (hasta ~100 personas en producto).",
+        "cta": "Contactar ventas",
+        "customPrice": "",
+        "features": [
+          "Todo lo de Agency, más:",
+          "100 personas incluidas (+2,50 $/extra)",
+          "Varias agencias / marcas en una cuenta",
+          "Auditoría y soporte prioritario",
+          "Límites API ampliados",
+          "Onboarding trimestral"
         ]
       },
       "enterprise": {
         "period": "",
-        "description": "Para holdings y equipos de más de 50 personas con SLA.",
+        "description": "Más de 100 personas, holdings o SLA/SSO/DPA y hosting dedicado.",
         "cta": "Hablar con ventas",
         "customPrice": "A medida",
         "features": [
@@ -587,15 +600,15 @@
       },
       {
         "q": "¿Los precios de early adopter se mantendrán?",
-        "a": "Sí. Si contratas ahora, tu tarifa queda congelada de por vida aunque los precios suban a $99/$249 en el futuro."
+        "a": "Sí. Si contratas ahora, tu tarifa queda congelada de por vida aunque los precios suban a 99 $/249 $ en el futuro."
       },
       {
         "q": "¿La prueba de Business requiere tarjeta de crédito?",
-        "a": "Sí, Stripe te pedirá un método de pago al iniciar la suscripción, pero no se cobrará absolutamente nada durante los 14 días de prueba. Al finalizar se aplicará tu tarifa Business ($149/mes en USD). Si cancelas antes, no habrá cargo."
+        "a": "Al registrarte obtienes 14 días del plan Agency (Business) sin tarjeta. Si contratas por Stripe después, el checkout puede pedir método de pago según el plan elegido; solo hay un trial por agencia. Al terminar sin suscripción, pasas a Free conservando tus datos."
       },
       {
         "q": "¿Hay descuentos por pago anual?",
-        "a": "Por el momento ofrecemos facturación mensual flexible. Si sois un equipo muy grande (>50 personas) o requerís facturación especial, podéis contactar con Soporte en la app o en hello@taimbox.com."
+        "a": "Por el momento ofrecemos facturación mensual flexible. Si superáis ~100 personas gestionadas o necesitáis SLA, SSO o facturación especial, contactad ventas (plan Enterprise)."
       }
     ]
   },
@@ -1069,7 +1082,7 @@
           "s33Title": "3.3 No vendemos datos de Google:",
           "s33P": "En ningún caso vendemos, cedemos ni facilitamos a terceros datos obtenidos a través de las API de Google, ya sea de forma gratuita o por contraprestación económica.",
           "s34Title": "3.4 Compartición con terceros:",
-          "s34P": "No compartimos, transferimos ni divulgamos datos de Google a terceros, salvo cuando sea estrictamente necesario para la prestación del servicio (por ejemplo, el almacenamiento cifrado en nuestra infraestructura de Supabase/AWS dentro de la UE) o cuando así lo requiera la legislación aplicable mediante orden judicial o gubernamental.",
+          "s34P": "No compartimos, transferimos ni divulgamos datos de Google a terceros, salvo cuando sea estrictamente necesario para la prestación del servicio (por ejemplo, el almacenamiento cifrado en nuestra infraestructura en la UE) o cuando así lo requiera la legislación aplicable mediante orden judicial o gubernamental.",
           "s35Title": "3.5 Usos prohibidos:",
           "s35P": "Los datos recibidos de las API de Google <0>nunca</0> se utilizarán para:",
           "s35Item1": "Publicidad dirigida, segmentada, personalizada o retargeting.",
@@ -1108,20 +1121,20 @@
             "vendor": "Proveedor",
             "function": "Función",
             "location": "Ubicación",
-            "awsFunction": "Hosting e infraestructura",
+            "awsFunction": "Infraestructura de aplicación (UE)",
             "supabaseFunction": "Base de datos y autenticación",
             "stripeFunction": "Procesamiento de pagos",
             "googleFunction": "Sincronización de campañas (solo lectura)",
             "metaFunction": "Sincronización de campañas (solo lectura)",
-            "locationFrankfurt": "Frankfurt, UE",
-            "locationUE": "UE (AWS Frankfurt)",
+            "locationFrankfurt": "Unión Europea",
+            "locationUE": "Unión Europea",
             "locationStripe": "UE / EE.UU. (PCI-DSS L1)",
             "locationGlobal": "Global (Cláusulas Contractuales Tipo)"
           }
         },
         "transfers": {
           "title": "7. Transferencias Internacionales de Datos",
-          "p1": "Alojamos la infraestructura principal de Taimbox en centros de datos de <0>Amazon Web Services en Frankfurt (UE)</0>, garantizando que tus datos permanecen dentro de la Unión Europea.",
+          "p1": "La instancia principal de Taimbox opera en la <0>Unión Europea</0> (infraestructura bajo nuestro control operativo con PostgreSQL/Supabase). Los datos de la aplicación se tratan conforme al RGPD.",
           "p2": "En los casos donde intervienen proveedores con presencia fuera del Espacio Económico Europeo (Stripe, Google, Meta), las transferencias se amparan en <0>Cláusulas Contractuales Tipo (SCC)</0> aprobadas por la Comisión Europea, decisiones de adecuación o mecanismos equivalentes que garantizan un nivel adecuado de protección."
         },
         "retention": {
@@ -2450,8 +2463,8 @@
               "desc": "Tokens seguros"
             },
             {
-              "label": "SDK",
-              "desc": "Node.js y Python"
+              "label": "REST",
+              "desc": "API HTTP (ejemplos Node/Python)"
             }
           ]
         },
@@ -2520,9 +2533,9 @@
     },
     "ppc": {
       "seoTitle": "Monitor de presupuestos PPC | Taimbox",
-      "seoDescription": "Controla el presupuesto publicitario de todos tus clientes desde un solo dashboard. Google Ads y Meta Ads unificados. Prevención de sobrecostes en tiempo real.",
+      "seoDescription": "Controla el presupuesto publicitario de todos tus clientes desde un solo dashboard. Google Ads y Meta Ads unificados. Sincronización manual y programada (planes Agency/Scale).",
       "jsonName": "Monitor de presupuestos PPC — Taimbox",
-      "jsonDescription": "Controla el presupuesto publicitario de todos tus clientes desde un solo dashboard. Google Ads y Meta Ads unificados. Prevención de sobrecostes en tiempo real.",
+      "jsonDescription": "Controla el presupuesto publicitario de todos tus clientes desde un solo dashboard. Google Ads y Meta Ads unificados. Sincronización manual y programada (planes Agency/Scale).",
       "page": {
         "chart": {
           "title": "Pacing de gasto vs ritmo ideal del mes",
@@ -2537,7 +2550,7 @@
         },
         "mockDashboard": {
           "title": "Monitor de presupuestos",
-          "live": "En vivo",
+          "live": "Última sync",
           "spent": "Gastado:",
           "budget": "Presupuesto:",
           "syncHint": "Sync a demanda con un botón",
@@ -2611,9 +2624,9 @@
           "titleBefore": "Duerme tranquilo.",
           "titleGradient": "Controla el presupuesto",
           "titleAfter": "de todos tus clientes desde un solo lugar.",
-          "subtitle": "Olvídate de abrir 20 pestañas de Google y Meta Ads cada mañana. Taimbox unifica el gasto de tus campañas en tiempo real y te avisa antes de que te pases del budget pactado.",
-          "cta": "Probar gratis (14 días)",
-          "ctaSub": "Prueba Business gratis · Sincroniza en 2 clics"
+          "subtitle": "Olvídate de abrir 20 pestañas de Google y Meta Ads cada mañana. Taimbox unifica el gasto tras sincronizar (manual o programada en planes Agency/Scale) y te ayuda a detectar desvíos de presupuesto.",
+          "cta": "Probar Agency 14 días",
+          "ctaSub": "Trial Agency sin tarjeta · Sincroniza en 2 clics"
         },
         "problem": {
           "kicker": "El dolor",
@@ -2660,7 +2673,7 @@
         "advanced": {
           "kicker": "Herramientas Avanzadas",
           "h2": "Diseñado para agencias complejas",
-          "p": "Ve un paso más allá de visualizar datos. Configura proyecciones de gasto en tiempo real, agrupa corporaciones bajo un solo paraguas, y divide cuentas masivas."
+          "p": "Ve un paso más allá de visualizar datos. Configura proyecciones de gasto a partir de tus sincronizaciones, agrupa corporaciones bajo un solo paraguas y divide cuentas masivas."
         },
         "segCopy": {
           "h3": "Reglas de segmentación automáticas",
@@ -2760,13 +2773,13 @@
         "pillar2Body": "Toda comunicación viaja sobre <strong>TLS 1.3</strong> (cifrado en tránsito) y todos los discos de la base de datos utilizan el estándar <strong>AES-256</strong> (cifrado en reposo). El acceso interno a bases de datos de producción está estrictamente restringido por políticas de 'Mínimo Privilegio' y requiere justificación expresa para labores de soporte.",
         "pillar3Title": "Cero credenciales compartidas",
         "pillar3Body": "Al conectar Google o Meta Ads, <strong>nunca almacenamos tus contraseñas</strong>. Se procesan delegaciones mediante OAuth2 (Tokens JWT de corta vida) avalados directamente por los proveedores externos. Puedes revocar el acceso desde Google en 1 clic.",
-        "infraH2": "Infraestructura Certificada (AWS)",
-        "infraP": "Alojamos Taimbox en infraestructuras y centros de datos certificados con ISO 27001 y SOC 2, ubicados estrictamente dentro de la Unión Europea (Frankfurt / Irlanda), manteniendo total cumplimiento con las directivas del <strong>Reglamento General de Protección de Datos (RGPD)</strong> europeo.",
+        "infraH2": "Infraestructura y operación (UE)",
+        "infraP": "Taimbox se despliega sobre <strong>PostgreSQL y Supabase</strong> en infraestructura alojada en la Unión Europea, con cifrado en tránsito (TLS) y en reposo en los discos del proveedor. Tratamos los datos conforme al <strong>RGPD</strong>. No afirmamos certificaciones SOC 2 ni ISO propias de Taimbox: publicamos prácticas reales y objetivos de recuperación documentados.",
         "infraBullets": [
-          "Infraestructura de datos certificada (ISO 27001, SOC 2 Type II).",
-          "Backups automáticos Point-in-Time Recovery (PITR) retenidos 7 días.",
-          "Réplicas de lectura (Read-Replicas) para alta disponibilidad (99.99% Uptime).",
-          "Protección avanzada contra ataques DDoS (AWS Shield)."
+          "Aislamiento multi-tenant con Row Level Security (RLS) en PostgreSQL.",
+          "Backups diarios con objetivo RPO 24 h y RTO 8 h (operación self-hosted).",
+          "Monitor de disponibilidad; sin SLA 99,99% hasta infraestructura gestionada HA.",
+          "Pagos y datos de tarjeta delegados en Stripe (PCI DSS Nivel 1)."
         ],
         "mockNodeLabel": "Node 01 (EU-Central-1)",
         "mockHealthy": "Healthy",
@@ -2804,9 +2817,9 @@
         "complianceCard2P": "Tus datos son tuyos. No practicamos el 'Vendor Lock-in'. Ofrecemos endpoints a través de nuestra API REST para que puedas exportar el histórico de tu agencia, tus métricas de rentabilidad y tus tablas de tiempos a CSV/JSON en el momento que lo necesites.",
         "faqH3": "Preguntas Frecuentes sobre Seguridad IT e ISO",
         "faq1q": "¿Qué terceros (Subencargados) intervienen en Taimbox?",
-        "faq1a": "Para ofrecerte un servicio de grado Enterprise, nos apoyamos exclusivamente en líderes de la industria tecnológica: <strong>Amazon Web Services (AWS)</strong> (Hosting físico en Frankfurt), <strong>Supabase</strong> (Gestión de Base de Datos y Autenticación), <strong>Stripe</strong> (Procesamiento de pagos) y <strong>Google/Meta</strong> (Solo lectura mediante API oficial OAuth2). Tienes total visibilidad sobre nuestra cadena de suministro digital.",
-        "faq2q": "¿Dónde están hospedados físicamente los servidores?",
-        "faq2a": "La infraestructura base operativa recae sobre Amazon Web Services (AWS) en conjunto con Supabase Managed Provider, concretamente en la región principal de <strong>Frankfurt (eu-central-1)</strong>, dentro del marco de la Unión Europea. Cumplimos sin excepciones con los mandatos de soberanía de datos y tratamiento del Reglamento General de Protección de Datos (RGPD / GDPR) europeo.",
+        "faq1a": "Subencargados habituales: <strong>Supabase</strong> (base de datos y autenticación, despliegue en UE), <strong>Stripe</strong> (pagos), <strong>Resend</strong> u otro proveedor de email transaccional si está activo, y <strong>Google/Meta</strong> (solo lectura vía OAuth2 para Ads). No vendemos ni transferimos tus datos de campañas a terceros con fines publicitarios.",
+        "faq2q": "¿Dónde están hospedados los datos?",
+        "faq2a": "La instancia de producción opera en la <strong>Unión Europea</strong> (infraestructura self-hosted bajo nuestro control operativo). El tratamiento de datos personales se realiza conforme al <strong>RGPD</strong>. Para clientes Enterprise con requisitos de hosting dedicado o DPA ampliado, contacta con ventas.",
         "faq3q": "¿Qué ocurre con mis datos en caso de cancelación total?",
         "faq3a": "Entendemos y defendemos en los marcos contractuales del Software tu Derecho al borrado permanente (Derecho al Olvido RGPD). Al solicitar la cancelación definitiva, se activan procesos atómicos en cascada (ON DELETE CASCADE) que purgan para siempre y de un plumazo todo el histórico de tu agencia: cuentas de clientes, integraciones, cronómetros, costes salariales y tokens Ads. Todas las copias de retención o Back-ups automatizados se descartan de forma técnica en un plazo máximo no superior a 30 días.",
         "faq4q": "¿Cómo protegen el acceso al sistema los ingenieros de Taimbox?",

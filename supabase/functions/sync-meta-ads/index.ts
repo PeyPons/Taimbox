@@ -36,16 +36,6 @@ Deno.serve(async (req) => {
             throw new Error('Faltan variables de entorno SUPABASE_URL, SUPABASE_ANON_KEY o SUPABASE_SERVICE_ROLE_KEY')
         }
 
-        const bearer = getBearerToken(req)
-        if (!bearer) {
-            return new Response(JSON.stringify({ error: 'No autorizado.' }), {
-                status: 401,
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            })
-        }
-
-        const supabase = createClient(supabaseUrl, supabaseKey)
-
         let requestData: { agency_id?: string; job_id?: string } = {}
         try {
             requestData = await req.json()
@@ -54,18 +44,35 @@ Deno.serve(async (req) => {
         }
 
         const { agency_id, job_id } = requestData
+        const adsCronSecret = Deno.env.get('ADS_CRON_SECRET')
+        const cronHeader = req.headers.get('X-Ads-Cron-Secret')
+        const isAdsCron = !!(adsCronSecret && cronHeader === adsCronSecret && agency_id)
 
-        if (!agency_id) {
-            await assertPlatformAdmin({ supabaseUrl, supabaseAnonKey, token: bearer })
-        } else {
-            await assertAgencyPermission({
-                supabaseUrl,
-                supabaseAnonKey,
-                supabaseServiceKey: supabaseKey,
-                token: bearer,
-                agencyId: agency_id,
-                permission: 'can_access_meta_ads',
-            })
+        const bearer = getBearerToken(req)
+        if (!isAdsCron) {
+            if (!bearer) {
+                return new Response(JSON.stringify({ error: 'No autorizado.' }), {
+                    status: 401,
+                    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                })
+            }
+        }
+
+        const supabase = createClient(supabaseUrl, supabaseKey)
+
+        if (!isAdsCron) {
+            if (!agency_id) {
+                await assertPlatformAdmin({ supabaseUrl, supabaseAnonKey, token: bearer! })
+            } else {
+                await assertAgencyPermission({
+                    supabaseUrl,
+                    supabaseAnonKey,
+                    supabaseServiceKey: supabaseKey,
+                    token: bearer!,
+                    agencyId: agency_id,
+                    permission: 'can_access_meta_ads',
+                })
+            }
         }
         const logMessages: string[] = []
 

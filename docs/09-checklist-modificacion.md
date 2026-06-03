@@ -46,4 +46,13 @@ Antes de modificar cualquier archivo crítico, usa este checklist:
 - [ ] Usar `formatProjectName(project.name)` en el renderizado
 - [ ] Actualizar la tabla en Sección 2.1 "Componentes que usan aliasing"
 
+### Al modificar planes, precios o gates por suscripción:
+- [ ] Actualizar `src/config/plans.ts` y ejecutar `plans.access.test.ts`
+- [ ] Si cambian exports: `planExportBlocks.ts` + `DataExportHubPage`
+- [ ] Si cambian precios públicos: `publicPricing.ts`, `publicPricingLayout.ts`, `landing.json` (`pricing.plans.*`) — home y `/precios` deben coincidir
+- [ ] Si cambian rutas por plan: `ROUTES_*` en `plans.ts`, `PlanGuard` en `App.tsx`, filtro `canAccessNav` en `Sidebar.tsx`
+- [ ] Si afecta histórico Free: `usePlanMonthNavigation` en todas las vistas con selector de mes
+- [ ] Edge: `sync-agency-modules.ts`, `create-checkout-session`, `stripe-webhook`, `register-agency`, `expire-trials`; RPC/migración si nuevos `plan_id`
+- [ ] Documentar en [16-planes-suscripcion-precios.md](16-planes-suscripcion-precios.md) y §5.2 de [05-integraciones-automatizacion.md](05-integraciones-automatizacion.md)
+
 ---

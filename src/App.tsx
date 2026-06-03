@@ -251,8 +251,8 @@ const App = () => (
 
                             {/* Nuevas vistas del Manager Hub */}
                             <Route path="/operaciones" element={<PlanGuard><PermissionProtectedRoute requiredPermission="/operaciones"><OperationsRadarPage /></PermissionProtectedRoute></PlanGuard>} />
-                            <Route path="/finanzas" element={<PermissionProtectedRoute requiredPermission="/finanzas"><FinancialHealthPage /></PermissionProtectedRoute>} />
-                            <Route path="/capacidad" element={<PermissionProtectedRoute requiredPermission="/team-capacity"><TeamCapacityDashboard /></PermissionProtectedRoute>} />
+                            <Route path="/finanzas" element={<PlanGuard><PermissionProtectedRoute requiredPermission="/finanzas"><FinancialHealthPage /></PermissionProtectedRoute></PlanGuard>} />
+                            <Route path="/capacidad" element={<PlanGuard><PermissionProtectedRoute requiredPermission="/team-capacity"><TeamCapacityDashboard /></PermissionProtectedRoute></PlanGuard>} />
 
                             <Route path="/clients" element={<PermissionProtectedRoute requiredPermission="/clients"><ClientsAndProjectsPage /></PermissionProtectedRoute>} />
                             <Route path="/projects" element={<PermissionProtectedRoute requiredPermission="/projects"><ClientsAndProjectsPage /></PermissionProtectedRoute>} />
@@ -261,10 +261,10 @@ const App = () => (
                             {/* Ruta legacy /reports redirige a Seguimiento operativo */}
                             <Route path="/reports" element={<Navigate to="/operaciones" replace />} />
                             {/* Weekly Forecast: cierre semanal y redistribución (acceso restaurado) */}
-                            <Route path="/weekly-forecast" element={<PlanGuard><PermissionProtectedRoute requiredPermission="/weekly-forecast"><WeeklyForecastPage /></PermissionProtectedRoute></PlanGuard>} />
+                            <Route path="/weekly-forecast" element={<PlanGuard><PermissionProtectedRoute requiredPermission="/weekly-forecast"><ModuleGuard module="weeklyFeedback"><WeeklyForecastPage /></ModuleGuard></PermissionProtectedRoute></PlanGuard>} />
                             <Route path="/settings" element={<PermissionProtectedRoute requiredPermission="/settings"><SettingsPage /></PermissionProtectedRoute>} />
                             <Route path="/agency" element={<PermissionProtectedRoute requiredPermission="/agency"><AgencySettingsPage /></PermissionProtectedRoute>} />
-                            <Route path="/exportacion-informes" element={<PermissionProtectedRoute requiredPermission="/exportacion-informes"><DataExportHubPage /></PermissionProtectedRoute>} />
+                            <Route path="/exportacion-informes" element={<PlanGuard><PermissionProtectedRoute requiredPermission="/exportacion-informes"><DataExportHubPage /></PermissionProtectedRoute></PlanGuard>} />
                             <Route path="/agencies" element={<AgenciesPage />} />
                             <Route path="/agencies/:id/manage" element={<PermissionProtectedRoute requiredPermission="/settings"><AgencyManagementPage /></PermissionProtectedRoute>} />
                             <Route path="/ads" element={<PlanGuard><PermissionProtectedRoute requiredPermission="/ads"><ModuleGuard module="ppc"><AdsPage /></ModuleGuard></PermissionProtectedRoute></PlanGuard>} />

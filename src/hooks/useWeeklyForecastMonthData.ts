@@ -1,11 +1,11 @@
 import { useApp } from '@/contexts/AppContext';
 import { useEnsureMonthWithLoading } from '@/hooks/useEnsureMonthWithLoading';
-import { useMonthNavigation } from '@/hooks/useMonthNavigation';
+import { usePlanMonthNavigation } from '@/hooks/usePlanMonthNavigation';
 
 export function useWeeklyForecastMonthData() {
   const { isLoading: isGlobalLoading } = useApp();
   const { currentMonth, setCurrentMonth, goToPrevMonth, goToNextMonth, goToToday } =
-    useMonthNavigation();
+    usePlanMonthNavigation();
   const isLoadingMonth = useEnsureMonthWithLoading(currentMonth, { enabled: !isGlobalLoading });
 
   return {

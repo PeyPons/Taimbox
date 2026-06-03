@@ -37,6 +37,8 @@ interface PlannerGridToolbarProps {
 
   onPrevMonth: () => void;
 
+  prevMonthDisabled?: boolean;
+
   onNextMonth: () => void;
 
   onToday: () => void;
@@ -106,6 +108,8 @@ export function PlannerGridToolbar({
 
   onPrevMonth,
 
+  prevMonthDisabled = false,
+
   onNextMonth,
 
   onToday,
@@ -166,7 +170,7 @@ export function PlannerGridToolbar({
 
           <div className="flex items-center gap-0.5 bg-slate-100 dark:bg-slate-800 rounded-md p-0.5 shrink-0">
 
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onPrevMonth} aria-label={t('planner.toolbar.prevMonth', 'Mes anterior')}>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onPrevMonth} disabled={prevMonthDisabled} aria-label={t('planner.toolbar.prevMonth', 'Mes anterior')}>
 
               <ChevronLeft className="h-4 w-4" />
 

@@ -34,7 +34,9 @@ import { toast } from '@/lib/notify';
 import { INPUT_LIMITS } from '@/constants/inputLimits';
 import { format, subMonths, addMonths, isSameMonth, parseISO, getDaysInMonth, getDate, startOfMonth } from 'date-fns';
 import { isAllocationInEffectiveMonth, getWeeksForMonth } from '@/utils/dateUtils';
-import { useMonthNavigation } from '@/hooks/useMonthNavigation';
+import { usePlanMonthNavigation } from '@/hooks/usePlanMonthNavigation';
+import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
+import { isAtPlanHistoryMinMonth } from '@/utils/planHistoryUtils';
 import { useEnsureMonthWithLoading } from '@/hooks/useEnsureMonthWithLoading';
 import { Loader2 } from 'lucide-react';
 import { useDateLocale } from '@/hooks/useDateLocale';
@@ -158,7 +160,9 @@ export default function ClientsAndProjectsPage() {
   }, [employees, selectedDepartmentId, departmentOptions]);
 
   // Estados
-  const { currentMonth, goToPrevMonth, goToNextMonth, goToToday } = useMonthNavigation();
+  const { currentMonth, goToPrevMonth, goToNextMonth, goToToday } = usePlanMonthNavigation();
+  const { historyMinDate } = useSubscriptionLimits();
+  const prevMonthDisabled = isAtPlanHistoryMinMonth(currentMonth, historyMinDate);
   const isLoadingMonth = useEnsureMonthWithLoading(currentMonth);
   const [isAddingClient, setIsAddingClient] = useState(false);
   const [isAddingProject, setIsAddingProject] = useState(false);
@@ -1020,6 +1024,7 @@ export default function ClientsAndProjectsPage() {
               variant="ghost"
               size="icon"
               className="h-8 w-8"
+              disabled={prevMonthDisabled}
               onClick={goToPrevMonth}
             >
               <ChevronLeft className="h-4 w-4" />

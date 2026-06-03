@@ -7,6 +7,7 @@ import {
   readStripePlanEnv,
   resolvePlanIdFromSubscriptionAsync,
 } from "../_shared/stripe-plan.ts";
+import { syncAgencyModulesForPlan } from "../_shared/sync-agency-modules.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -94,6 +95,7 @@ Deno.serve(async (req) => {
         status: 500,
       });
     }
+    await syncAgencyModulesForPlan(supabase, agencyId, planId as "starter" | "pro" | "business" | "scale" | "enterprise");
   } else if (event.type === "invoice.payment_failed") {
     const invoice = event.data.object as Stripe.Invoice;
     const subId =
@@ -153,6 +155,7 @@ Deno.serve(async (req) => {
         status: 500,
       });
     }
+    await syncAgencyModulesForPlan(supabase, agencyId, "starter");
   } else {
     console.log("Unhandled Stripe event type:", event.type);
   }

@@ -9,7 +9,7 @@ BEGIN
   IF NOT public.is_platform_admin() THEN
     RAISE EXCEPTION 'access_denied';
   END IF;
-  IF p_plan_id IS NULL OR p_plan_id NOT IN ('starter', 'pro', 'business') THEN
+  IF p_plan_id IS NULL OR p_plan_id NOT IN ('starter', 'pro', 'business', 'scale', 'enterprise') THEN
     RAISE EXCEPTION 'invalid_plan';
   END IF;
   UPDATE public.agencies

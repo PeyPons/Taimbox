@@ -63,6 +63,7 @@ export default function OperationsRadarPage() {
         handlePrevMonth,
         handleNextMonth,
         handleToday,
+        prevMonthDisabled,
     } = useOperationsRadarMonthState({
         searchParams,
         navigate,
@@ -347,7 +348,7 @@ export default function OperationsRadarPage() {
                     <div className="flex flex-wrap items-center gap-2">
                         {isLoadingMonth && <Loader2 className="h-4 w-4 animate-spin text-slate-400" />}
                         <div className="flex items-center gap-1 bg-white rounded-lg border p-1 shadow-sm">
-                            <Button variant="ghost" size="icon" onClick={handlePrevMonth} className="h-9 w-9 text-slate-500" aria-label={t('operationsRadar.prevMonth')}>
+                            <Button variant="ghost" size="icon" onClick={handlePrevMonth} disabled={prevMonthDisabled} className="h-9 w-9 text-slate-500" aria-label={t('operationsRadar.prevMonth')}>
                                 &lt;
                             </Button>
                             <Button variant="ghost" onClick={handleToday} className="h-9 px-3 text-sm font-medium text-slate-700 capitalize">

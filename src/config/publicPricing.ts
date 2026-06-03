@@ -1,7 +1,22 @@
 import type { AgencyCurrencyCode } from '@/constants/currencies';
 
 /** Planes mostrados en home (s07) y /precios. Importes base y cobro Stripe en USD. */
-export type PublicPlanId = 'starter' | 'pro' | 'business' | 'enterprise';
+export type PublicPlanId = 'starter' | 'pro' | 'business' | 'scale' | 'enterprise';
+
+/** Nombres comerciales (IDs internos sin cambiar en BD) */
+export const PUBLIC_PLAN_LABELS: Record<PublicPlanId, string> = {
+  starter: 'Free',
+  pro: 'Team',
+  business: 'Agency',
+  scale: 'Scale',
+  enterprise: 'Enterprise',
+};
+
+export const PUBLIC_PLAN_LATAM_USD: Partial<Record<Exclude<PublicPlanId, 'starter' | 'enterprise'>, number>> = {
+  pro: 29,
+  business: 89,
+  scale: 179,
+};
 
 export interface PublicPlanPricing {
   id: PublicPlanId;
@@ -25,7 +40,6 @@ export const PUBLIC_PLAN_PRICING: PublicPlanPricing[] = [
     id: 'pro',
     usdMonthly: 49,
     usdMonthlyOfficial: 99,
-    featuredOnHome: true,
     href: '/login?tab=register',
   },
   {
@@ -33,7 +47,14 @@ export const PUBLIC_PLAN_PRICING: PublicPlanPricing[] = [
     usdMonthly: 149,
     usdMonthlyOfficial: 249,
     recommended: true,
+    featuredOnHome: true,
     href: '/login?tab=register',
+  },
+  {
+    id: 'scale',
+    usdMonthly: 299,
+    href: '/contacto',
+    mailtoSubjectKey: 'enterpriseMailSubject',
   },
   {
     id: 'enterprise',

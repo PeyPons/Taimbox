@@ -2,7 +2,7 @@
 
 ## Flujo resumido
 
-1. **Registro** (`/login?tab=register`): el cliente envía email, contraseña, nombre y nombre de agencia. La Edge Function `register-agency` crea usuario en Auth, fila en `agencies` (trial Business 14 días si aplica), empleado administrador y relación `user_agencies`. Inserta `settings` mínimos (módulos base: deadlines + timeTracker; roles con Administrador).
+1. **Registro** (`/login?tab=register`): el cliente envía email, contraseña, nombre y nombre de agencia. La Edge Function `register-agency` crea usuario en Auth, fila en `agencies` con `plan_id = business` (plan **Agency** en UI) y trial 14 días si `trial_used_at` es null (un trial por agencia; ver [16-planes-suscripcion-precios.md](16-planes-suscripcion-precios.md)), empleado administrador y relación `user_agencies`. Inserta `settings` mínimos (módulos base: deadlines + timeTracker; roles con Administrador). Durante el trial la agencia tiene entitlements de Agency (OKR, finanzas, Ads, etc.).
 2. **Login automático** y redirección a `/onboarding`.
 3. **OnboardingWizard** (pasos en orden):
    - **Cómo trabaja tu agencia**: `ehrTarget`, `hoursTrackingPreference`, módulos (`ppc`, `professionalGoals`, `deadlines`, `timeTracker`) respetando `PLAN_MODULES` del plan efectivo, y `timeTrackerMaxHours` si el cronómetro está activo. Sin OAuth de anuncios.

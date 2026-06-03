@@ -1,4 +1,4 @@
-// Edge Function: crear sesión de Stripe Checkout para suscripción (Pro o Business)
+// Edge Function: crear sesi?n de Stripe Checkout para suscripci?n (Pro o Business)
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import Stripe from "npm:stripe@14.21.0";
 
@@ -20,7 +20,7 @@ Deno.serve(async (req) => {
 
     if (!supabaseUrl || !supabaseServiceKey || !stripeSecret) {
       return new Response(
-        JSON.stringify({ error: "Configuración del servidor incompleta." }),
+        JSON.stringify({ error: "Configuraci?n del servidor incompleta." }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
       );
     }
@@ -43,19 +43,27 @@ Deno.serve(async (req) => {
       );
     }
 
-    let body: { agency_id?: string; price_id?: string; plan_id?: string; success_url?: string; cancel_url?: string };
+    let body: {
+      agency_id?: string;
+      price_id?: string;
+      plan_id?: string;
+      success_url?: string;
+      cancel_url?: string;
+      extra_managed_users?: number;
+    };
     try {
       body = await req.json();
     } catch {
       return new Response(
-        JSON.stringify({ error: "Formato de datos inválido." }),
+        JSON.stringify({ error: "Formato de datos inv?lido." }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
       );
     }
 
     const agencyId = body.agency_id;
     const priceId = body.price_id;
-    const planId = body.plan_id === "business" ? "business" : "pro";
+    const rawPlan = body.plan_id === "business" ? "business" : body.plan_id === "scale" ? "scale" : "pro";
+    const planId = rawPlan;
     if (!agencyId || !priceId) {
       return new Response(
         JSON.stringify({ error: "Faltan agency_id o price_id." }),
@@ -100,7 +108,7 @@ Deno.serve(async (req) => {
     );
     if (!isAdmin) {
       return new Response(
-        JSON.stringify({ error: "Sin permiso para gestionar la facturación de esta agencia." }),
+        JSON.stringify({ error: "Sin permiso para gestionar la facturaci?n de esta agencia." }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 403 }
       );
     }
@@ -108,7 +116,7 @@ Deno.serve(async (req) => {
     const stripe = new Stripe(stripeSecret, { apiVersion: "2024-11-20.acacia" });
     let customerId = agency.stripe_customer_id;
 
-    // Si ya tiene una suscripción activa o en trial, actualizamos el plan en lugar de crear otra (evita doble suscripción)
+    // Si ya tiene una suscripci?n activa o en trial, actualizamos el plan en lugar de crear otra (evita doble suscripci?n)
     if (agency.stripe_subscription_id) {
       try {
         const existingSub = await stripe.subscriptions.retrieve(agency.stripe_subscription_id);
@@ -116,7 +124,7 @@ Deno.serve(async (req) => {
           const itemId = existingSub.items.data[0]?.id;
           if (!itemId) {
             return new Response(
-              JSON.stringify({ error: "Suscripción sin ítem válido. Contacta con soporte." }),
+              JSON.stringify({ error: "Suscripci?n sin ?tem v?lido. Contacta con soporte." }),
               { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
             );
           }
@@ -130,7 +138,7 @@ Deno.serve(async (req) => {
             updateParams.trial_end = "now";
           }
           await stripe.subscriptions.update(agency.stripe_subscription_id, updateParams);
-          // El webhook subscription.updated actualizará plan_id y estado en agencies
+          // El webhook subscription.updated actualizar? plan_id y estado en agencies
           return new Response(JSON.stringify({ updated: true }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
             status: 200,
@@ -138,7 +146,7 @@ Deno.serve(async (req) => {
         }
       } catch (e) {
         console.warn("Could not update existing subscription, falling back to checkout:", e);
-        // Si la suscripción ya no existe o falla, seguimos con Checkout
+        // Si la suscripci?n ya no existe o falla, seguimos con Checkout
       }
     }
 
@@ -152,18 +160,30 @@ Deno.serve(async (req) => {
       await supabase.from("agencies").update({ stripe_customer_id: customerId }).eq("id", agencyId);
     }
 
-    const isBusiness = planId === "business";
-    const allowTrial = isBusiness && !agency.trial_used_at;
+    const extraQty =
+      typeof body.extra_managed_users === "number" && body.extra_managed_users >= 0
+        ? Math.floor(body.extra_managed_users)
+        : 0;
+    const seatPricePro = Deno.env.get("STRIPE_PRICE_ID_PRO_SEAT")?.trim();
+    const seatPriceBusiness = Deno.env.get("STRIPE_PRICE_ID_BUSINESS_SEAT")?.trim();
+    const seatPriceScale = Deno.env.get("STRIPE_PRICE_ID_SCALE_SEAT")?.trim();
+    const seatPrice =
+      planId === "business" ? seatPriceBusiness : planId === "scale" ? seatPriceScale : seatPricePro;
+    const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [
+      { price: priceId, quantity: 1 },
+    ];
+    if (seatPrice && extraQty > 0) {
+      lineItems.push({ price: seatPrice, quantity: extraQty });
+    }
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
       mode: "subscription",
       customer: customerId,
-      line_items: [{ price: priceId, quantity: 1 }],
+      line_items: lineItems,
       success_url: successUrl,
       cancel_url: cancelUrl,
       metadata: { agency_id: agencyId, plan_id: planId },
       subscription_data: {
-        metadata: { agency_id: agencyId, plan_id: planId },
-        ...(allowTrial ? { trial_period_days: TRIAL_DAYS_BUSINESS } : {}),
+        metadata: { agency_id: agencyId, plan_id: planId, extra_managed_users: String(extraQty) },
       },
     };
 
@@ -176,7 +196,7 @@ Deno.serve(async (req) => {
   } catch (err) {
     console.error("create-checkout-session error:", err);
     return new Response(
-      JSON.stringify({ error: err instanceof Error ? err.message : "Error al crear la sesión de pago." }),
+      JSON.stringify({ error: err instanceof Error ? err.message : "Error al crear la sesi?n de pago." }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
     );
   }

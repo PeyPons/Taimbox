@@ -489,76 +489,7 @@
     "title": "Empieza con cuatro personas.",
     "titleHighlight": "Crece a tu ritmo.",
     "subtitle": "Si entras ahora como early adopter, mantienes el 50% de por vida antes de que suban las tarifas oficiales.",
-    "plans": [
-      {
-        "id": "starter",
-        "name": "Starter",
-        "desc": "Para probar con un equipo pequeño, sin compromiso.",
-        "priceSuffix": "/mes · siempre gratis",
-        "features": [
-          "Hasta 5 personas",
-          "Planificador, Dashboard del Empleado",
-          "Histórico mes actual + anterior",
-          "Exports CSV / Excel",
-          "Sin tarjeta"
-        ],
-        "cta": "Empezar gratis",
-        "ctaHref": "/login?tab=register",
-        "featured": false
-      },
-      {
-        "id": "pro",
-        "name": "Pro",
-        "desc": "Para quien ya vive entre Excel y Slack.",
-        "priceSuffix": "/mes",
-        "discountBadge": "−50%",
-        "features": [
-          "Hasta 20 personas",
-          "Histórico ilimitado",
-          "Weekly Forecast + redistribución",
-          "Matriz de Fiabilidad",
-          "EHR (Effective Hourly Rate)",
-          "Soporte prioritario"
-        ],
-        "cta": "Empezar 14 días Pro",
-        "ctaHref": "/login?tab=register",
-        "featured": true
-      },
-      {
-        "id": "business",
-        "name": "Business",
-        "desc": "Para equipos con PPC, plazos ajustados y control financiero fino.",
-        "priceSuffix": "/mes",
-        "features": [
-          "Hasta 50 personas",
-          "Monitor PPC + Google/Meta Ads",
-          "Radar de Hemorragias",
-          "API REST + Webhooks",
-          "OKRs + Deadlines + Coherencia",
-          "Onboarding asistido"
-        ],
-        "cta": "Empezar 14 días Business",
-        "ctaHref": "/login?tab=register",
-        "featured": false
-      },
-      {
-        "id": "enterprise",
-        "name": "Enterprise",
-        "desc": "Para holdings y equipos de más de 50 personas con SLA.",
-        "features": [
-          "Personas sin límite",
-          "SLA y soporte dedicado",
-          "Integraciones a medida",
-          "Facturación personalizada",
-          "Single Sign-On",
-          "Cuenta técnica asignada"
-        ],
-        "cta": "Hablar con ventas",
-        "ctaHref": "/contacto",
-        "featured": false
-      }
-    ],
-    "compareLink": "Ver comparativa completa de planes",
+    "compareLink": "Ver todos los planes (incl. Scale)",
     "compareHref": "/precios"
   },
   "s04": {

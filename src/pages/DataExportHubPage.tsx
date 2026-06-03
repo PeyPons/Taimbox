@@ -19,6 +19,11 @@ import { useApp } from '@/contexts/AppContext';
 import { useAgency } from '@/contexts/AgencyContext';
 import { useDepartmentView } from '@/contexts/DepartmentViewContext';
 import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
+import {
+  canDownloadFullExportBundle,
+  canExportBlock,
+  type PlanExportBlockId,
+} from '@/config/planExportBlocks';
 import { normalizeDepartments, employeeBelongsToDepartment } from '@/utils/departmentUtils';
 import { fetchDeadlinesForMonth } from '@/utils/deadlineUtils';
 import { fetchGlobalAssignmentsForMonth } from '@/utils/globalAssignmentsUtils';
@@ -126,22 +131,32 @@ export default function DataExportHubPage() {
   } = useApp();
   const { currentAgency } = useAgency();
   const { selectedDepartmentId, setSelectedDepartmentId } = useDepartmentView();
-  const { historyMinDate: minReportingMonth } = useSubscriptionLimits();
+  const {
+    historyMinDate: minReportingMonth,
+    planId,
+    planIncludesAdvancedExports,
+  } = useSubscriptionLimits();
 
-  /** El hub solo es accesible con permiso de configuración de agencia: el export incluye todos los bloques útiles para informes / burnout. */
+  const agencyOnlyHint = t(
+    'dataExportHub.agencyOnlyBlock',
+    'Requiere plan Agency o superior. Actualiza en Plan y facturación.',
+  );
+  const canFullBundle = canDownloadFullExportBundle(planId);
+
+  /** Team: exports básicos; Agency+: bundle completo (coherencia, radar, rentabilidad, burnout). */
   const bundleInclude = useMemo(
     () =>
       ({
         deadlines: true,
         globalAssignments: true,
         planning: true,
-        coherence: true,
-        radar: true,
-        rentability: true,
+        coherence: planIncludesAdvancedExports,
+        radar: planIncludesAdvancedExports,
+        rentability: planIncludesAdvancedExports,
         absences: true,
-        burnout: true,
+        burnout: planIncludesAdvancedExports,
       }) as const,
-    []
+    [planIncludesAdvancedExports],
   );
 
   const departments = useMemo(
@@ -470,6 +485,10 @@ export default function DataExportHubPage() {
   );
 
   const onDownloadBundle = async () => {
+    if (!canFullBundle) {
+      toast.error(agencyOnlyHint);
+      return;
+    }
     if (sortedSelectedMonths.length === 0) {
       toast.error(t('dataExportHub.noMonths', 'Selecciona al menos un mes'));
       return;
@@ -514,6 +533,10 @@ export default function DataExportHubPage() {
   };
 
   const onDownloadZipBundle = async () => {
+    if (!canFullBundle) {
+      toast.error(agencyOnlyHint);
+      return;
+    }
     if (sortedSelectedMonths.length === 0) {
       toast.error(t('dataExportHub.noMonths', 'Selecciona al menos un mes'));
       return;
@@ -612,6 +635,8 @@ export default function DataExportHubPage() {
       setBusy(false);
     }
   };
+
+  const blockAllowed = (block: PlanExportBlockId) => canExportBlock(planId, block);
 
   const exportOne = async (
     label: string,
@@ -721,6 +746,7 @@ export default function DataExportHubPage() {
         </div>
       </section>
 
+      {planIncludesAdvancedExports ? (
       <section className="space-y-3 rounded-lg border border-slate-200 bg-white p-4">
         <h2 className="text-sm font-medium">{t('dataExportHub.finanzasOptions', 'Opciones rentabilidad')}</h2>
         <div className="flex flex-wrap gap-4">
@@ -748,12 +774,21 @@ export default function DataExportHubPage() {
           </div>
         </div>
       </section>
+      ) : (
+        <p className="text-xs text-slate-600 rounded-lg border border-dashed border-slate-300 bg-slate-50 p-3">
+          {t(
+            'dataExportHub.basicExportsNote',
+            'En plan Team puedes exportar deadlines, planificación y ausencias. Radar, rentabilidad y ZIP completo requieren Agency.',
+          )}
+        </p>
+      )}
 
       <section className="space-y-4">
         <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
           <Button
             type="button"
-            disabled={busy || sortedSelectedMonths.length === 0}
+            disabled={busy || sortedSelectedMonths.length === 0 || !canFullBundle}
+            title={!canFullBundle ? agencyOnlyHint : undefined}
             onClick={onDownloadZipBundle}
             className="gap-2"
           >
@@ -763,7 +798,8 @@ export default function DataExportHubPage() {
           <Button
             type="button"
             variant="outline"
-            disabled={busy || sortedSelectedMonths.length === 0}
+            disabled={busy || sortedSelectedMonths.length === 0 || !canFullBundle}
+            title={!canFullBundle ? agencyOnlyHint : undefined}
             onClick={onDownloadBundle}
             className="gap-2"
           >
@@ -780,8 +816,8 @@ export default function DataExportHubPage() {
 
         <ExportBlock
           title={t('dataExportHub.block.deadlines', 'Deadlines')}
-          disabled={false}
-          disabledHint=""
+          disabled={!blockAllowed('deadlines')}
+          disabledHint={agencyOnlyHint}
           busy={busy}
           onDownload={() =>
             exportOne(
@@ -800,8 +836,8 @@ export default function DataExportHubPage() {
 
         <ExportBlock
           title={t('dataExportHub.block.globalAssignments', 'Asignaciones globales (Deadlines)')}
-          disabled={false}
-          disabledHint=""
+          disabled={!blockAllowed('globalAssignments')}
+          disabledHint={agencyOnlyHint}
           busy={busy}
           onDownload={() =>
             exportOne(
@@ -823,8 +859,8 @@ export default function DataExportHubPage() {
 
         <ExportBlock
           title={t('dataExportHub.block.planning', 'Planificación (allocations del mes)')}
-          disabled={false}
-          disabledHint=""
+          disabled={!blockAllowed('planning')}
+          disabledHint={agencyOnlyHint}
           busy={busy}
           onDownload={() =>
             exportOne(
@@ -847,8 +883,8 @@ export default function DataExportHubPage() {
 
         <ExportBlock
           title={t('dataExportHub.block.coherence', 'Coherencia / control de planificación global')}
-          disabled={false}
-          disabledHint=""
+          disabled={!blockAllowed('coherence')}
+          disabledHint={agencyOnlyHint}
           busy={busy}
           onDownload={() =>
             exportOne(
@@ -882,8 +918,8 @@ export default function DataExportHubPage() {
 
         <ExportBlock
           title={t('dataExportHub.block.radar', 'Seguimiento operativo (radar)')}
-          disabled={false}
-          disabledHint=""
+          disabled={!blockAllowed('radar')}
+          disabledHint={agencyOnlyHint}
           busy={busy}
           onDownload={() =>
             exportOne(
@@ -933,8 +969,8 @@ export default function DataExportHubPage() {
 
         <ExportBlock
           title={t('dataExportHub.block.rentability', 'Rentabilidad (diagnóstico JSON)')}
-          disabled={false}
-          disabledHint=""
+          disabled={!blockAllowed('rentability')}
+          disabledHint={agencyOnlyHint}
           busy={busy}
           onDownload={() =>
             exportOne(
@@ -975,8 +1011,8 @@ export default function DataExportHubPage() {
 
         <ExportBlock
           title={t('dataExportHub.block.absences', 'Ausencias, eventos de equipo y feedback semanal')}
-          disabled={false}
-          disabledHint=""
+          disabled={!blockAllowed('absences')}
+          disabledHint={agencyOnlyHint}
           busy={busy}
           onDownload={() =>
             exportOne(
@@ -999,8 +1035,8 @@ export default function DataExportHubPage() {
 
         <ExportBlock
           title={t('dataExportHub.block.burnout', 'Burnout y capacidad (por empleado)')}
-          disabled={false}
-          disabledHint=""
+          disabled={!blockAllowed('burnout')}
+          disabledHint={agencyOnlyHint}
           busy={busy}
           onDownload={() =>
             exportOne(

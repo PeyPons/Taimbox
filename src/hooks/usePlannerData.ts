@@ -13,8 +13,10 @@ import { getWeeksForMonth, isAllocationInEffectiveMonth } from '@/utils/dateUtil
 import { useAgency } from '@/contexts/AgencyContext';
 import { employeeBelongsToDepartment, normalizeDepartments } from '@/utils/departmentUtils';
 import { usePlatformAdmin } from '@/hooks/usePlatformAdmin';
-import { useMonthNavigation } from '@/hooks/useMonthNavigation';
+import { usePlanMonthNavigation } from '@/hooks/usePlanMonthNavigation';
+import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
 import { useEnsureMonthWithLoading } from '@/hooks/useEnsureMonthWithLoading';
+import { isAtPlanHistoryMinMonth } from '@/utils/planHistoryUtils';
 import { Employee } from '@/types';
 import {
   employeeIdsWithOperationalWorkloadInMonth,
@@ -54,9 +56,11 @@ export function usePlannerData(options: UsePlannerDataOptions = {}) {
     goToNextMonth,
     goToToday,
     monthKey,
-  } = useMonthNavigation({ initialMonth: options.initialDate });
+  } = usePlanMonthNavigation({ initialMonth: options.initialDate });
+  const { historyMinDate } = useSubscriptionLimits();
 
   const isLoadingMonth = useEnsureMonthWithLoading(currentMonth, { enabled: !isGlobalLoading });
+  const prevMonthDisabled = isAtPlanHistoryMinMonth(currentMonth, historyMinDate);
 
   const weeks = useMemo(() => getWeeksForMonth(currentMonth), [currentMonth]);
   const year = currentMonth.getFullYear();
@@ -152,6 +156,7 @@ export function usePlannerData(options: UsePlannerDataOptions = {}) {
     goToPrevMonth,
     goToNextMonth,
     goToToday,
+    prevMonthDisabled,
     setCurrentMonth,
     filteredEmployees,
     sortedProjects,

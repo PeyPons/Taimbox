@@ -489,76 +489,7 @@
     "title": "Start with four people.",
     "titleHighlight": "Grow at your pace.",
     "subtitle": "Join now as an early adopter and keep 50% for life before official pricing kicks in.",
-    "plans": [
-      {
-        "id": "starter",
-        "name": "Starter",
-        "desc": "Try it with a small team, no strings attached.",
-        "priceSuffix": "/mo · always free",
-        "features": [
-          "Up to 5 people",
-          "Planner, Employee Dashboard",
-          "Current + previous month history",
-          "CSV / Excel exports",
-          "No card required"
-        ],
-        "cta": "Start free",
-        "ctaHref": "/login?tab=register",
-        "featured": false
-      },
-      {
-        "id": "pro",
-        "name": "Pro",
-        "desc": "For teams already living between Excel and Slack.",
-        "priceSuffix": "/mo",
-        "discountBadge": "−50%",
-        "features": [
-          "Up to 20 people",
-          "Unlimited history",
-          "Weekly Forecast + redistribution",
-          "Reliability Matrix",
-          "EHR (Effective Hourly Rate)",
-          "Priority support"
-        ],
-        "cta": "Start 14-day Pro",
-        "ctaHref": "/login?tab=register",
-        "featured": true
-      },
-      {
-        "id": "business",
-        "name": "Business",
-        "desc": "For teams with PPC, tight deadlines, and close financial control.",
-        "priceSuffix": "/mo",
-        "features": [
-          "Up to 50 people",
-          "PPC Monitor + Google/Meta Ads",
-          "Bleed Radar",
-          "REST API + Webhooks",
-          "OKRs + Deadlines + Coherence",
-          "Assisted onboarding"
-        ],
-        "cta": "Start 14-day Business",
-        "ctaHref": "/login?tab=register",
-        "featured": false
-      },
-      {
-        "id": "enterprise",
-        "name": "Enterprise",
-        "desc": "For holdings and teams over 50 people with SLA.",
-        "features": [
-          "Unlimited people",
-          "SLA and dedicated support",
-          "Custom integrations",
-          "Custom billing",
-          "Single Sign-On",
-          "Assigned technical account"
-        ],
-        "cta": "Talk to sales",
-        "ctaHref": "/contacto",
-        "featured": false
-      }
-    ],
-    "compareLink": "See full plan comparison",
+    "compareLink": "See all plans (incl. Scale)",
     "compareHref": "/precios"
   },
   "s04": {

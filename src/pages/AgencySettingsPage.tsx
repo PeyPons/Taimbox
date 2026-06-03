@@ -12,6 +12,7 @@ import { invokeEdgeFunctionWithRetry } from '@/lib/invokeEdgeFunction';
 import { cn } from '@/lib/utils';
 import { useAgency } from '@/contexts/AgencyContext';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
 import { toast } from '@/lib/notify';
 import {
   Building2, Settings, Users, Palette, Save, Loader2,
@@ -229,6 +230,7 @@ export default function AgencySettingsPage() {
 
   const { currentAgency, refreshAgency, updateSettings, updateAgencyName, isLoading: isAgencyLoading } = useAgency();
   const { hasPermission } = usePermissions();
+  const { canAccessRouteByPlan } = useSubscriptionLimits();
   const { projects, clients } = useApp();
   const [saving, setSaving] = useState(false);
   const notificationRulesRef = React.useRef<NotificationRulesSectionHandle | null>(null);
@@ -843,12 +845,14 @@ export default function AgencySettingsPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
+                {canAccessRouteByPlan('/exportacion-informes') ? (
                 <Button variant="outline" size="sm" asChild>
                   <Link to="/exportacion-informes" className="gap-2">
                     <Download className="h-4 w-4" />
                     {t('agency.general.dataExportButton', 'Abrir hub de exportación')}
                   </Link>
                 </Button>
+                ) : null}
               </CardContent>
             </Card>
           </TabsContent>

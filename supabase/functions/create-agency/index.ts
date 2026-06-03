@@ -160,6 +160,7 @@ serve(async (req) => {
         plan_id: "business",
         subscription_status: "trialing",
         trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+        trial_used_at: new Date().toISOString(),
       })
       .select()
       .single();

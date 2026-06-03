@@ -7,7 +7,7 @@ import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/lib/notify';
 import { CreditCard, Loader2, ExternalLink, Check, Calendar, XCircle, AlertTriangle } from 'lucide-react';
-import { PLAN_LIMITS } from '@/config/plans';
+import { PLAN_LIMITS, PLAN_DISPLAY_NAMES } from '@/config/plans';
 import type { PlanId } from '@/types';
 import { format } from 'date-fns';
 import { useDateLocale } from '@/hooks/useDateLocale';
@@ -23,17 +23,13 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
-const PLAN_NAMES: Record<PlanId, string> = {
-  starter: 'Starter',
-  pro: 'Pro',
-  business: 'Business',
-  enterprise: 'Enterprise',
-};
+const PLAN_NAMES: Record<PlanId, string> = PLAN_DISPLAY_NAMES;
 
 const PLAN_PRICES: Record<PlanId, string> = {
   starter: '0',
   pro: '49',
   business: '149',
+  scale: '299',
   enterprise: '',
 };
 
@@ -48,6 +44,8 @@ export function AgencyBillingTab() {
     planId,
     currentEmployees,
     limitEmployees,
+    extraBillableSeats,
+    includedManagedUsers,
     isOverLimit,
     trialEndsAt,
     subscriptionStatus,
@@ -86,6 +84,7 @@ export function AgencyBillingTab() {
           agency_id: currentAgency.id,
           price_id: priceId,
           plan_id: plan,
+          extra_managed_users: extraBillableSeats > 0 ? extraBillableSeats : 0,
         },
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -277,7 +276,15 @@ export function AgencyBillingTab() {
 
           <div className="text-sm">
             <strong>{t('agency.billing.usageLabel')}</strong>{' '}
-            {t('agency.billing.usageEmployees', { current: currentEmployees, max: limits.maxEmployees })}
+            {t('agency.billing.usageEmployees', {
+              current: currentEmployees,
+              max: limits.maxManagedUsers ?? includedManagedUsers,
+            })}
+            {extraBillableSeats > 0 && limits.extraUserPriceUsd != null && (
+              <span className="block text-slate-600 mt-1">
+                +{extraBillableSeats} {t('agency.billing.extraSeats', { price: limits.extraUserPriceUsd })}
+              </span>
+            )}
             {isOverLimit && (
               <p className="mt-1 text-amber-600 font-medium">
                 {t('agency.billing.overLimitWarning')}

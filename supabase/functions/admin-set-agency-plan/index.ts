@@ -13,7 +13,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-type AgencyPlanId = "starter" | "pro" | "business";
+type AgencyPlanId = "starter" | "pro" | "business" | "scale" | "enterprise";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -52,8 +52,8 @@ Deno.serve(async (req) => {
 
     const agencyId = typeof body.agency_id === "string" ? body.agency_id.trim() : "";
     const planId = body.plan_id as AgencyPlanId;
-    if (!agencyId || !["starter", "pro", "business"].includes(planId)) {
-      return json({ error: "agency_id y plan_id (starter|pro|business) son obligatorios." }, 400);
+    if (!agencyId || !["starter", "pro", "business", "scale", "enterprise"].includes(planId)) {
+      return json({ error: "agency_id y plan_id válido son obligatorios." }, 400);
     }
 
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);

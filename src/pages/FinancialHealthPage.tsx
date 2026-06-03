@@ -78,8 +78,9 @@ import { DeliverableLifecycleTable } from '@/components/financial/DeliverableLif
 import { deliverablePhaseOverlapsMonth, getDeliverablePhase } from '@/utils/deliverableLifecycle';
 import { PROJECT_TYPE_ENTREGABLE } from '@/config/projectTypePresets';
 import { useFormatMoney } from '@/hooks/useFormatMoney';
-import { useMonthNavigation } from '@/hooks/useMonthNavigation';
+import { usePlanMonthNavigation } from '@/hooks/usePlanMonthNavigation';
 import { useEnsureMonthWithLoading } from '@/hooks/useEnsureMonthWithLoading';
+import { isAtPlanHistoryMinMonth } from '@/utils/planHistoryUtils';
 
 export default function FinancialHealthPage() {
     const { t } = useTranslation('app');
@@ -115,7 +116,7 @@ export default function FinancialHealthPage() {
         goToPrevMonth: handlePrevMonth,
         goToNextMonth: handleNextMonth,
         goToToday: handleToday,
-    } = useMonthNavigation({ minMonth: minReportingMonth ?? undefined });
+    } = usePlanMonthNavigation();
     const isLoadingMonth = useEnsureMonthWithLoading(currentMonth, { enabled: !isGlobalLoading });
 
     useEffect(() => {
@@ -1108,7 +1109,7 @@ export default function FinancialHealthPage() {
                                     variant="ghost"
                                     size="icon"
                                     onClick={handlePrevMonth}
-                                    disabled={minReportingMonth != null && isSameMonth(currentMonth, minReportingMonth)}
+                                    disabled={isAtPlanHistoryMinMonth(currentMonth, minReportingMonth)}
                                     className="h-9 w-9 text-slate-600 hover:bg-slate-100 disabled:opacity-50"
                                     aria-label={t('financialHealth.controls.prevMonth')}
                                 >

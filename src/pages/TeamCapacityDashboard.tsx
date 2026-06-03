@@ -15,7 +15,9 @@ import { getAbsenceHoursInRange } from '@/utils/absenceUtils';
 import { getTeamEventHoursInRange } from '@/utils/teamEventUtils';
 import { WorkSchedule, Allocation, Employee } from '@/types';
 import { filterEmployeesForOperationalMonthDate } from '@/utils/employeeAssignmentVisibility';
-import { useMonthNavigation } from '@/hooks/useMonthNavigation';
+import { usePlanMonthNavigation } from '@/hooks/usePlanMonthNavigation';
+import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
+import { isAtPlanHistoryMinMonth } from '@/utils/planHistoryUtils';
 import { useEnsureMonthWithLoading } from '@/hooks/useEnsureMonthWithLoading';
 import { Loader2 } from 'lucide-react';
 
@@ -30,8 +32,10 @@ export default function TeamCapacityDashboard() {
         goToPrevMonth: handlePrevMonth,
         goToNextMonth: handleNextMonth,
         goToToday: handleToday,
-    } = useMonthNavigation();
+    } = usePlanMonthNavigation();
+    const { historyMinDate } = useSubscriptionLimits();
     const isLoadingMonth = useEnsureMonthWithLoading(currentMonth, { enabled: !isGlobalLoading });
+    const prevMonthDisabled = isAtPlanHistoryMinMonth(currentMonth, historyMinDate);
 
     const monthAllocations = useMemo(() => {
         return (allocations || []).filter(a => {
@@ -198,7 +202,7 @@ export default function TeamCapacityDashboard() {
                 </div>
                 <div className="flex items-center gap-2 bg-white rounded-lg border p-1 shadow-sm shrink-0">
                     {isLoadingMonth && <Loader2 className="h-4 w-4 animate-spin text-slate-400" />}
-                    <Button variant="ghost" size="icon" onClick={handlePrevMonth} className="h-8 w-8 text-slate-500">
+                    <Button variant="ghost" size="icon" onClick={handlePrevMonth} disabled={prevMonthDisabled} className="h-8 w-8 text-slate-500">
                         <span className="sr-only">{t('teamCapacityDashboard.controls.prevMonth', 'Mes anterior')}</span>
                         &lt;
                     </Button>

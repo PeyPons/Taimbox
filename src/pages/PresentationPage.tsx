@@ -562,10 +562,13 @@ function S14_ROI({ isActive, direction }: SlideProps) {
                         <ROICard value="100%" label="visibilidad financiera" icon={Shield} color="indigo" />
                     </div>
                 </div>
+                <p className="text-white/50 text-xs sm:text-sm max-w-xl mb-4">
+                    Ilustración estimada (ejemplo interno, no garantía contractual). Tus resultados dependen del uso y del contexto de tu agencia.
+                </p>
                 <div className="p-4 sm:p-7 rounded-xl sm:rounded-2xl border border-emerald-400/30 bg-emerald-500/10 max-w-md w-full">
-                    <p className="text-emerald-100 font-medium text-sm sm:text-lg">Con un equipo de 20 personas, Taimbox puede recuperar hasta</p>
-                    <p className="text-2xl sm:text-4xl md:text-5xl font-black text-emerald-400 mt-2">180.000€/año</p>
-                    <p className="text-emerald-200/80 text-sm sm:text-lg mt-1.5">en rentabilidad hoy invisible</p>
+                    <p className="text-emerald-100 font-medium text-sm sm:text-lg">Ejemplo orientativo (equipo ~20 personas)</p>
+                    <p className="text-2xl sm:text-4xl md:text-5xl font-black text-emerald-400 mt-2">hasta 180.000€/año</p>
+                    <p className="text-emerald-200/80 text-sm sm:text-lg mt-1.5">mejora potencial de visibilidad operativa</p>
                 </div>
             </div>
         </SlideWrapper>

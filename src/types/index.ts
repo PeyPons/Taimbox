@@ -196,7 +196,7 @@ export interface AgencySettings {
 export type AgencyStatus = 'active' | 'suspended';
 
 /** Plan de suscripci?n (Stripe) */
-export type PlanId = 'starter' | 'pro' | 'business' | 'enterprise';
+export type PlanId = 'starter' | 'pro' | 'business' | 'scale' | 'enterprise';
 
 export interface Agency {
   id: string;

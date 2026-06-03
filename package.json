@@ -15,6 +15,7 @@
     "test:coverage": "vitest --coverage",
     "generate:openapi": "node scripts/generate-openapi.mjs",
     "check:blog-i18n": "node scripts/check-blog-i18n.mjs",
+    "check:marketing-claims": "node scripts/check-marketing-claims.mjs",
     "informe:html": "node scripts/informe-md-to-html.mjs",
     "sitemap:blog": "node scripts/generate-blog-sitemap.mjs",
     "migrate:blog-content": "node scripts/migrate-blog-content.mjs"

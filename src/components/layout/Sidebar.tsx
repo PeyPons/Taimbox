@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { NavLink } from '@/components/NavLink';
 import { useApp } from '@/contexts/AppContext';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
 import { useAgency } from '@/contexts/AgencyContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePlatformAdmin } from '@/hooks/usePlatformAdmin';
@@ -92,6 +93,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const navigate = useNavigate();
   const { currentUser, employees, projects, isLoading: isAppDataLoading } = useApp();
   const { canAccess, hasPermission } = usePermissions();
+  const { canAccessRouteByPlan, planIncludesAds } = useSubscriptionLimits();
+  const canAccessNav = (route: string) => canAccess(route) && canAccessRouteByPlan(route);
   const { agencyId } = useSupportAgencyView();
   const { currentAgency, isLoading: isAgencyLoading } = useAgency();
   const { t } = useAppTranslation();
@@ -189,7 +192,12 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
   })();
 
-  const isSuperior = canAccess('/planner') || canAccess('/team') || canAccess('/operaciones') || canAccess('/finanzas') || canAccess('/settings');
+  const isSuperior =
+    canAccess('/planner') ||
+    canAccess('/team') ||
+    canAccessNav('/operaciones') ||
+    canAccessNav('/finanzas') ||
+    canAccess('/settings');
 
   return (
     <>
@@ -266,27 +274,29 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           {isSuperior && (
             <div className="space-y-4">
               {/* SEGUIMIENTO */}
-              {(canAccess('/operaciones') || canAccess('/finanzas') || canAccess('/team-capacity')) && (
+              {(canAccessNav('/operaciones') ||
+                canAccessNav('/finanzas') ||
+                canAccessNav('/team-capacity')) && (
                 <NavGroup
                   label={t('sidebar.groups.tracking', 'Seguimiento')}
                   isActive={['/operaciones', '/finanzas', '/capacidad', '/weekly-forecast'].includes(location.pathname)}
                 >
-                  {canAccess('/operaciones') && (
+                  {canAccessNav('/operaciones') && (
                     <NavLink to="/operaciones" icon={Activity} active={location.pathname === '/operaciones'}>
                       {t('sidebar.menu.operations', 'Seguimiento operativo')}
                     </NavLink>
                   )}
-                  {canAccess('/finanzas') && (
+                  {canAccessNav('/finanzas') && (
                     <NavLink to="/finanzas" icon={DollarSign} active={location.pathname === '/finanzas'}>
                       {t('sidebar.menu.profitability', 'Rentabilidad')}
                     </NavLink>
                   )}
-                  {canAccess('/team-capacity') && (
+                  {canAccessNav('/team-capacity') && (
                     <NavLink to="/capacidad" icon={Users} active={location.pathname === '/capacidad'}>
                       {t('sidebar.menu.teamCapacity', 'Capacidad de Equipo')}
                     </NavLink>
                   )}
-                  {canAccess('/weekly-forecast') && (
+                  {canAccessNav('/weekly-forecast') && (
                     <NavLink to="/weekly-forecast" icon={FileText} active={location.pathname === '/weekly-forecast'}>
                       {t('sidebar.menu.weeklyForecast', 'Weekly Forecast')}
                     </NavLink>
@@ -314,7 +324,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               )}
 
               {/* EQUIPO */}
-              {(canAccess('/team') || canAccess('/okrs') || (modules.timeTracker && canAccess('/team'))) && (
+              {(canAccess('/team') || canAccessNav('/okrs') || (modules.timeTracker && canAccess('/team'))) && (
                 <NavGroup
                   label={t('sidebar.groups.team', 'Equipo')}
                   isActive={['/team', '/okrs', '/tiempos'].includes(location.pathname)}
@@ -329,7 +339,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                       {t('sidebar.menu.times', 'Tiempos')}
                     </NavLink>
                   )}
-                  {modules.professionalGoals !== false && canAccess('/okrs') && (
+                  {modules.professionalGoals !== false && canAccessNav('/okrs') && (
                     <NavLink to="/okrs" icon={Rocket} active={location.pathname === '/okrs'}>
                       {t('sidebar.menu.okrs', 'Objetivos')}
                     </NavLink>
@@ -354,17 +364,17 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               )}
 
               {/* PPC */}
-              {modules.ppc && (canAccess('/ads') || canAccess('/meta-ads')) && (
+              {modules.ppc && planIncludesAds && (canAccessNav('/ads') || canAccessNav('/meta-ads')) && (
                 <NavGroup
                   label={t('sidebar.groups.ppc', 'PPC & medios')}
                   isActive={['/ads', '/meta-ads'].includes(location.pathname)}
                 >
-                  {canAccess('/ads') && (
+                  {canAccessNav('/ads') && (
                     <NavLink to="/ads" icon={Megaphone} active={location.pathname === '/ads'}>
                       {t('sidebar.menu.googleAds', 'Google Ads')}
                     </NavLink>
                   )}
-                  {canAccess('/meta-ads') && (
+                  {canAccessNav('/meta-ads') && (
                     <NavLink to="/meta-ads" icon={Facebook} active={location.pathname === '/meta-ads'}>
                       {t('sidebar.menu.metaAds', 'Meta Ads')}
                     </NavLink>
@@ -389,7 +399,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                       {t('sidebar.menu.myAgencies', 'Mis Agencias')}
                     </NavLink>
                   )}
-                  {canAccess('/api-keys') && (
+                  {canAccessNav('/api-keys') && (
                     <NavLink to="/api-keys" icon={Key} active={location.pathname === '/api-keys'}>
                       {t('sidebar.menu.apiIntegrations', 'API & Integraciones')}
                     </NavLink>

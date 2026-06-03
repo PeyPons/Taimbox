@@ -14,7 +14,7 @@ Si el código o una migración **contradice** el snapshot, **prevalece el códig
 
 ## 13.2. Multi-tenant y membresía
 
-- **`agencies`**: tenant (nombre único, `slug`, `settings` JSONB, facturación Stripe, planes, tokens Ads opcionales).
+- **`agencies`**: tenant (nombre único, `slug`, `settings` JSONB, facturación Stripe, planes, tokens Ads opcionales). **`plan_id`:** `starter` | `pro` | `business` | `scale` | `enterprise` (UI: Free / Team / Agency / Scale / Enterprise). Suscripción: `subscription_status`, `stripe_customer_id`, `stripe_subscription_id`, `trial_ends_at`, `trial_used_at` (un trial por agencia), `subscription_period_ends_at`, `subscription_cancel_at_period_end`. Matriz producto: [16-planes-suscripcion-precios.md](16-planes-suscripcion-precios.md).
 - **`employees`**: persona en una agencia (`agency_id` obligatorio); `user_id` enlaza con `auth.users` cuando tiene login.
 - **`user_agencies`**: membresía Auth ↔ agencia (`role` / `department` opcionales, duplican en parte la ficha de empleado).
   - **`is_primary`**: agencia **por defecto** para ese usuario cuando tiene varias (login, selector). No es “propietario de la agencia”; el propietario de negocio/facturación debe reflejarse en **`agencies.settings.ownerUserId`** (ver cambios recientes en app y Edge Functions).
@@ -78,3 +78,4 @@ Baseline MCP: [`docs/review-agents-mcp-baseline.md`](review-agents-mcp-baseline.
 - [02-entidades-modelos.md](02-entidades-modelos.md) — glosario funcional.
 - [07-mantenimiento-extension.md](07-mantenimiento-extension.md) — RLS, `user_agency_ids`, extensión de tablas.
 - [12-onboarding-registro.md](12-onboarding-registro.md) — registro, invitaciones, `user_agencies`.
+- [16-planes-suscripcion-precios.md](16-planes-suscripcion-precios.md) — `plan_id`, trial, Stripe y gates de producto.

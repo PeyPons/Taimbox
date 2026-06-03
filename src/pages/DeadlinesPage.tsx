@@ -44,6 +44,8 @@ import { getEffectiveBudgetForMonth } from '@/utils/budgetUtils';
 import { cn } from '@/lib/utils';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
 import { format, addMonths, subMonths } from 'date-fns';
+import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
+import { isAtPlanHistoryMinMonth, isMonthBeforePlanHistory } from '@/utils/planHistoryUtils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useDeadlinesRedistribution } from '@/hooks/useDeadlinesRedistribution';
 import { useDeadlinesPageData } from '@/hooks/useDeadlinesPageData';
@@ -579,10 +581,22 @@ export default function DeadlinesPage() {
   };
 
   // Funciones para navegar entre meses
+  const { historyMinDate } = useSubscriptionLimits();
+
+  useEffect(() => {
+    if (!historyMinDate) return;
+    const [y, m] = selectedMonth.split('-').map(Number);
+    const d = new Date(y, m - 1, 1);
+    if (isMonthBeforePlanHistory(d, historyMinDate)) {
+      setSelectedMonth(format(historyMinDate, 'yyyy-MM'));
+    }
+  }, [historyMinDate, selectedMonth]);
+
   const handlePrevMonth = () => {
     const [year, month] = selectedMonth.split('-').map(Number);
     const date = new Date(year, month - 1, 1);
     const prevDate = subMonths(date, 1);
+    if (isMonthBeforePlanHistory(prevDate, historyMinDate)) return;
     setSelectedMonth(format(prevDate, 'yyyy-MM'));
   };
 
@@ -742,6 +756,7 @@ export default function DeadlinesPage() {
         <DeadlinesPageHeader
           currentMonthDate={currentMonthDate}
           onPrevMonth={handlePrevMonth}
+          prevMonthDisabled={isAtPlanHistoryMinMonth(currentMonthDate, historyMinDate)}
           onNextMonth={handleNextMonth}
           canEditDeadlines={canEditDeadlines}
           onCopyFromPreviousMonth={copyFromPreviousMonth}

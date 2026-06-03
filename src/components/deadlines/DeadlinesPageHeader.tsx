@@ -31,6 +31,7 @@ export interface CapacityData {
 export interface DeadlinesPageHeaderProps {
   currentMonthDate: Date;
   onPrevMonth: () => void;
+  prevMonthDisabled?: boolean;
   onNextMonth: () => void;
   canEditDeadlines: boolean;
   onCopyFromPreviousMonth: () => void;
@@ -45,6 +46,7 @@ export interface DeadlinesPageHeaderProps {
 export function DeadlinesPageHeader({
   currentMonthDate,
   onPrevMonth,
+  prevMonthDisabled = false,
   onNextMonth,
   canEditDeadlines,
   onCopyFromPreviousMonth,
@@ -75,6 +77,7 @@ export function DeadlinesPageHeader({
             size="icon"
             className={cn('h-7 w-7 md:h-8 md:w-8', isMobile && 'h-11 w-11')}
             onClick={onPrevMonth}
+            disabled={prevMonthDisabled}
             aria-label={t('deadlines.page.prevMonth', 'Mes anterior')}
           >
             <ChevronLeft className={cn('h-4 w-4', isMobile && 'h-5 w-5')} />
