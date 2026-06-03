@@ -26,6 +26,9 @@ run_root() {
 
 echo "[$(date +'%H:%M:%S')] 🚀 Iniciando actualización..."
 
+# Scripts de cron deben ser ejecutables (git pull no siempre preserva +x)
+chmod +x scripts/cron-ads-sync.sh scripts/cron-expire-trials.sh scripts/restore-taimbox-crontab.sh 2>/dev/null || true
+
 # 1. Verificar que estamos en el directorio correcto
 if [ ! -f "package.json" ]; then
     echo "❌ Error: No se encontró package.json. ¿Estás en el directorio correcto?"
