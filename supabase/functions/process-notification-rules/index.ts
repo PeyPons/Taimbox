@@ -412,7 +412,7 @@ serve(async (req) => {
               .lte("date", monthEnd),
             supabaseAdmin
               .from("ad_accounts_config")
-              .select("account_id, account_name, currency")
+              .select("account_id, account_name")
               .eq("agency_id", agencyId)
               .eq("platform", "google")
               .eq("is_active", true),
@@ -434,7 +434,7 @@ serve(async (req) => {
               .lte("date", monthEnd),
             supabaseAdmin
               .from("ad_accounts_config")
-              .select("account_id, account_name, currency")
+              .select("account_id, account_name")
               .eq("agency_id", agencyId)
               .eq("platform", "meta")
               .eq("is_active", true),

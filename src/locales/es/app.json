@@ -2786,7 +2786,7 @@
       "rules": {
         "sectionTitle": "Reglas de envío",
         "sectionHint": "Con varias reglas, usa el desplegable para revisar cada una sin alargar la página.",
-        "intro": "Aquí eliges cuándo y a quién enviamos avisos por correo (el mismo canal que invitaciones o recuperar contraseña). Las reglas programadas se revisan solas según la frecuencia y la hora que indiques. Si alojáis Taimbox en servidores propios, quien mantenga la instalación debe tener activada la revisión periódica en segundo plano; en el servicio gestionado no hace falta configurar nada extra aquí.",
+        "intro": "Configura avisos por correo para tu equipo: transferencias de tareas, revisiones periódicas de proyectos y alertas de presupuesto en Google o Meta. En cada regla defines la frecuencia, la hora (UTC) y quién recibe el mensaje.",
         "addRule": "Añadir regla",
         "loading": "Cargando reglas…",
         "empty": "No hay reglas todavía. Añade una para avisar por correo (por ejemplo al solicitar una transferencia de tarea).",

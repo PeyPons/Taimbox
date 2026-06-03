@@ -208,7 +208,7 @@ export async function buildNotificationEmailPreview(
       platforms.includes('google')
         ? supabase
             .from('ad_accounts_config')
-            .select('account_id, account_name, currency')
+            .select('account_id, account_name')
             .eq('agency_id', input.agencyId)
             .eq('platform', 'google')
             .eq('is_active', true)
@@ -216,7 +216,7 @@ export async function buildNotificationEmailPreview(
       platforms.includes('meta')
         ? supabase
             .from('ad_accounts_config')
-            .select('account_id, account_name, currency')
+            .select('account_id, account_name')
             .eq('agency_id', input.agencyId)
             .eq('platform', 'meta')
             .eq('is_active', true)

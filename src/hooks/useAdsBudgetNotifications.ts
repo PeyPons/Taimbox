@@ -74,7 +74,7 @@ export function useAdsBudgetNotifications(): void {
         canGoogle
           ? supabase
               .from('ad_accounts_config')
-              .select('account_id, account_name, currency')
+              .select('account_id, account_name')
               .eq('agency_id', currentAgency.id)
               .eq('platform', 'google')
               .eq('is_active', true)
@@ -82,7 +82,7 @@ export function useAdsBudgetNotifications(): void {
         canMeta
           ? supabase
               .from('ad_accounts_config')
-              .select('account_id, account_name, currency')
+              .select('account_id, account_name')
               .eq('agency_id', currentAgency.id)
               .eq('platform', 'meta')
               .eq('is_active', true)

@@ -2274,7 +2274,7 @@
       "rules": {
         "sectionTitle": "Delivery rules",
         "sectionHint": "With several rules, expand each panel to edit without scrolling a long page.",
-        "intro": "Choose when and who receives email alerts (same channel as invitations or password reset). Scheduled rules are checked automatically based on frequency and time. If you self-host Taimbox, whoever runs the stack should enable the periodic background check; on the managed service you don’t configure anything extra here.",
+        "intro": "Set up email alerts for your team: task transfers, periodic project reviews, and Google or Meta budget alerts. Each rule lets you choose frequency, time (UTC), and recipients.",
         "addRule": "Add rule",
         "loading": "Loading rules…",
         "empty": "No rules yet. Add one to send email alerts (e.g. when a task transfer is requested).",
