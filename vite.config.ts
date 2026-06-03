@@ -16,10 +16,17 @@ export default defineConfig({
               return "marketing-pages";
             }
           }
-          if (id.includes("node_modules/react-dom") || id.includes("node_modules/react/")) return "vendor-react";
+          if (
+            id.includes("node_modules/react-dom") ||
+            id.includes("node_modules/react/") ||
+            id.includes("node_modules/react-i18next")
+          ) {
+            return "vendor-react";
+          }
           if (id.includes("node_modules/@radix-ui")) return "vendor-radix";
           if (id.includes("node_modules/framer-motion")) return "vendor-motion";
-          if (id.includes("node_modules/i18next") || id.includes("react-i18next")) return "vendor-i18n";
+          // Solo i18next core: react-i18next debe ir con React para evitar createContext undefined
+          if (id.includes("node_modules/i18next")) return "vendor-i18n";
         },
       },
     },
