@@ -26,7 +26,10 @@ run_root() {
 
 echo "[$(date +'%H:%M:%S')] 🚀 Iniciando actualización..."
 
-# Scripts de cron deben ser ejecutables (git pull no siempre preserva +x)
+# Scripts de cron: ejecutables y finales de línea Unix (evita env: bash\r en la Pi)
+for f in scripts/cron-ads-sync.sh scripts/cron-expire-trials.sh scripts/restore-taimbox-crontab.sh; do
+  [ -f "$f" ] && sed -i 's/\r$//' "$f" 2>/dev/null || true
+done
 chmod +x scripts/cron-ads-sync.sh scripts/cron-expire-trials.sh scripts/restore-taimbox-crontab.sh 2>/dev/null || true
 
 # 1. Verificar que estamos en el directorio correcto
