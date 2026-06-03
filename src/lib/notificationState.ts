@@ -7,11 +7,14 @@ export interface UserNotificationState {
   budgetAlerts: Record<string, string>;
   /** yyyy-MM del mes del aviso de cierre -> ISO */
   deadlineAlerts: Record<string, string>;
+  /** dedupeKey ads PPC -> ISO */
+  adsBudgetAlerts: Record<string, string>;
 }
 
 const emptyState = (): UserNotificationState => ({
   budgetAlerts: {},
   deadlineAlerts: {},
+  adsBudgetAlerts: {},
 });
 
 export function storageKeyForNotifyState(agencyId: string, userId: string): string {
@@ -32,6 +35,10 @@ function normalizeState(raw: unknown): UserNotificationState {
       o.deadlineAlerts && typeof o.deadlineAlerts === 'object'
         ? { ...(o.deadlineAlerts as Record<string, string>) }
         : {},
+    adsBudgetAlerts:
+      o.adsBudgetAlerts && typeof o.adsBudgetAlerts === 'object'
+        ? { ...(o.adsBudgetAlerts as Record<string, string>) }
+        : {},
   };
 }
 
@@ -50,7 +57,12 @@ export function pruneNotificationState(
   for (const [key, iso] of Object.entries(state.deadlineAlerts)) {
     if (key >= currentMonth) deadlineAlerts[key] = iso;
   }
-  return { ...state, budgetAlerts, deadlineAlerts };
+  const adsBudgetAlerts: Record<string, string> = {};
+  for (const [key, iso] of Object.entries(state.adsBudgetAlerts)) {
+    const monthPart = key.split(':')[2];
+    if (!monthPart || monthPart >= currentMonth) adsBudgetAlerts[key] = iso;
+  }
+  return { ...state, budgetAlerts, deadlineAlerts, adsBudgetAlerts };
 }
 
 function collectDeadlineLegacyKeys(): string[] {

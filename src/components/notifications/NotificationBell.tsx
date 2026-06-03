@@ -1,5 +1,5 @@
 
-import { Bell, Check, Trash2, Info, AlertTriangle, Calendar, DollarSign } from 'lucide-react';
+import { Bell, Check, Trash2, Info, AlertTriangle, Calendar, DollarSign, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
     Popover,
@@ -58,6 +58,7 @@ export function NotificationBell() {
             case 'assignment': return <Info className="h-4 w-4 text-blue-500" />;
             case 'deadline': return <AlertTriangle className="h-4 w-4 text-amber-500" />;
             case 'budget': return <DollarSign className="h-4 w-4 text-red-500" />;
+            case 'ads': return <TrendingUp className="h-4 w-4 text-orange-500" />;
             case 'weekly': return <Calendar className="h-4 w-4 text-purple-500" />;
             default: return <Info className="h-4 w-4 text-slate-500" />;
         }

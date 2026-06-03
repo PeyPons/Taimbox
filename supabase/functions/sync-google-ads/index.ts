@@ -5,6 +5,7 @@ import {
     assertPlatformAdmin,
     getBearerToken,
 } from '../_shared/agency-access.ts'
+import { completeAdsSyncLog } from '../_shared/complete-ads-sync-log.ts'
 
 // Configuración de CORS
 const corsHeaders = {
@@ -530,12 +531,14 @@ Deno.serve(async (req) => {
 
         await log('🎉 Sincronización finalizada correctamente.')
 
-        if (job_id) {
-            await supabase.from('ads_sync_logs').update({
-                logs: logMessages.slice(-50),
-                status: 'completed'
-            }).eq('id', job_id)
-        }
+        await completeAdsSyncLog(supabase, {
+            platform: 'google',
+            agencyId: agency_id,
+            jobId: job_id,
+            logMessages,
+            status: 'completed',
+            source: isAdsCron ? 'cron' : 'manual',
+        })
 
         return new Response(JSON.stringify({ success: true, logs: logMessages }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },

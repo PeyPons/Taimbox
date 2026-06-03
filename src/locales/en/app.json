@@ -3310,7 +3310,17 @@
     "google": "Google Ads",
     "meta": "Meta Ads",
     "lastSync": "Last sync: {{time}}",
+    "lastSyncShort": "{{time}}",
     "noSync": "Never synced",
+    "syncSource": {
+      "scheduled": "scheduled"
+    },
+    "notifications": {
+      "budgetOverTitle": "PPC budget exceeded",
+      "budgetOverMessage": "{{platform}}: {{account}} exceeded the budget ({{spent}} / {{budget}}).",
+      "budgetRiskTitle": "PPC budget at risk",
+      "budgetRiskMessage": "{{platform}}: {{account}} may exceed the budget (proj. {{forecast}} / {{budget}})."
+    },
     "daysRange": "From 1 to {{days}}",
     "dayProgress": "Day {{current}} of {{total}}",
     "actions": {

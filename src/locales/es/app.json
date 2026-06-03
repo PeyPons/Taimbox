@@ -2175,7 +2175,17 @@
     "google": "Google Ads",
     "meta": "Meta Ads",
     "lastSync": "Última sincronización: {{time}}",
+    "lastSyncShort": "{{time}}",
     "noSync": "Sin sincronizar",
+    "syncSource": {
+      "scheduled": "automática"
+    },
+    "notifications": {
+      "budgetOverTitle": "Presupuesto PPC superado",
+      "budgetOverMessage": "{{platform}}: {{account}} ha superado el presupuesto ({{spent}} / {{budget}}).",
+      "budgetRiskTitle": "Riesgo de presupuesto PPC",
+      "budgetRiskMessage": "{{platform}}: {{account}} podría superar el presupuesto (proy. {{forecast}} / {{budget}})."
+    },
     "daysRange": "Del 1 al {{days}}",
     "dayProgress": "Día {{current}} de {{total}}",
     "actions": {

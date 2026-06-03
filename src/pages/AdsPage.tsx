@@ -19,7 +19,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
-  RefreshCw, Clock, Search, Settings, Layers,
+  RefreshCw, Search, Settings, Layers,
   TrendingUp, TrendingDown, Scissors, Plus, Trash2,
   AlertTriangle, CheckCircle2, Calendar, Target,
   ArrowUpRight, ArrowDownRight, Eye, EyeOff, X, Check, ChevronDown
@@ -32,6 +32,8 @@ import { toast } from '@/lib/notify';
 import { useAnonymizeAds } from '@/hooks/useAnonymizeAds';
 import { AnonymizedContent } from '@/components/ads/AnonymizedContent';
 import { AdsStatCard } from '@/components/ads/AdsStatCard';
+import { AdsSyncStatusLine } from '@/components/ads/AdsSyncStatusLine';
+import { useAdsLastSync } from '@/hooks/useAdsLastSync';
 
 const GoogleIcon = () => (
   <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="currentColor">
@@ -133,7 +135,9 @@ export default function AdsPage() {
   const [registeredAccounts, setRegisteredAccounts] = useState<RegisteredAccount[]>([]);
   const { formatMoney, currencySymbolForClient } = useAdsFormatMoney(registeredAccounts);
   const [loading, setLoading] = useState(true);
-  const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
+  const { google: googleSync, meta: metaSync, refresh: refreshLastSync } = useAdsLastSync();
+  const googleConnected = Boolean(currentAgency?.google_ads_refresh_token);
+  const metaConnected = Boolean(currentAgency?.meta_ads_access_token);
   const [segmentationRules, setSegmentationRules] = useState<SegmentationRule[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [showHidden, setShowHidden] = useState(false);
@@ -179,11 +183,10 @@ export default function AdsPage() {
     if (!currentAgency?.id) return;
 
     try {
-      const [adsRes, settingsRes, accountsRes, logsRes, rulesRes] = await Promise.all([
+      const [adsRes, settingsRes, accountsRes, rulesRes] = await Promise.all([
         supabase.from('google_ads_campaigns').select('*').eq('agency_id', currentAgency.id),
         supabase.from('client_settings').select('*').eq('agency_id', currentAgency.id),
         supabase.from('ad_accounts_config').select('*').eq('platform', 'google').eq('is_active', true).eq('agency_id', currentAgency.id),
-        supabase.from('ads_sync_logs').select('created_at').eq('agency_id', currentAgency.id).eq('status', 'completed').order('created_at', { ascending: false }).limit(1).maybeSingle(),
         supabase.from('segmentation_rules').select('*').eq('platform', 'google').eq('agency_id', currentAgency.id)
       ]);
 
@@ -202,12 +205,6 @@ export default function AdsPage() {
       setRegisteredAccounts(accountsRes.data || []);
       setSegmentationRules(rulesRes.data || []);
 
-      if (logsRes.data) {
-        setLastSyncTime(new Date(logsRes.data.created_at));
-      } else if (adsRes.data && adsRes.data.length > 0) {
-        const dates = adsRes.data.map((d: CampaignData & { created_at?: string; date?: string }) => new Date(d.created_at || d.date || '').getTime());
-        setLastSyncTime(new Date(Math.max(...dates)));
-      }
     } catch (error) {
       console.error('Error fetching data', error);
     } finally {
@@ -273,6 +270,7 @@ export default function AdsPage() {
         setSyncProgress(100);
         toast.success(t('ads.dialogs.sync.completed', 'Sincronización completada'));
         fetchData();
+        void refreshLastSync();
         cleanup();
         setTimeout(() => { setIsSyncing(false); setCurrentJobId(null); }, 2000);
       } else if (row.status === 'error') {
@@ -598,12 +596,15 @@ export default function AdsPage() {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-slate-900">{t('ads.google', 'Google Ads')}</h1>
-              <div className="flex items-center gap-3 mt-1">
-                <span className="text-sm text-slate-500 flex items-center gap-1">
-                  <Clock className="w-3.5 h-3.5" />
-                  {lastSyncTime ? t('ads.lastSync', { time: lastSyncTime.toLocaleString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }), defaultValue: `Última sincronización: ${lastSyncTime.toLocaleString()}` }) : t('ads.noSync', 'Sin sincronizar')}
-                </span>
-                <Badge variant="outline" className="text-xs">
+              <div className="mt-1 space-y-1">
+                <AdsSyncStatusLine
+                  google={googleSync}
+                  meta={metaSync}
+                  googleConnected={googleConnected}
+                  metaConnected={metaConnected}
+                  primaryPlatform="google"
+                />
+                <Badge variant="outline" className="text-xs w-fit">
                   <Calendar className="w-3 h-3 mr-1" />
                   {t('ads.daysRange', { days: daysInMonth, defaultValue: `Del 1 al ${daysInMonth}` })}
                 </Badge>

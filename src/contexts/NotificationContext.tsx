@@ -4,7 +4,7 @@ import { useAgency } from '@/contexts/AgencyContext';
 
 export interface Notification {
   id: string;
-  type: 'assignment' | 'deadline' | 'budget' | 'weekly' | 'info';
+  type: 'assignment' | 'deadline' | 'budget' | 'weekly' | 'info' | 'ads';
   title: string;
   message: string;
   date: Date;
