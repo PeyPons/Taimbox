@@ -973,6 +973,23 @@
         "relationWarning": "If you do not define deadlines for a project, coherence alerts for that project will not appear in My space. Projects without a deadline are shown as “no limit”.",
         "relationTip": "Set Deadlines at the beginning of each month so that alerts stay accurate throughout the period."
       },
+      "clientesProyectos": {
+        "introTitle": "What Clients & projects are",
+        "introBody": "Clients & projects is your agency catalog: it groups work by account, defines hour budgets, monthly fees, and each project’s status. From here you also manage monthly tasks and see progress against the budget.",
+        "introExample": "Client “Acme” has the “Monthly SEO” project with 35 contracted hours. You see 28h planned for March and a warning as you approach the limit.",
+        "featuresTitle": "Features",
+        "featuresClientsTitle": "Clients",
+        "featuresClientsDesc": "Create, edit, and assign a brand color. They group every project for the same account.",
+        "featuresProjectsTitle": "Projects",
+        "featuresProjectsDesc": "Hour budget, monthly fee, project type, and month tasks. Tied to Deadlines and the planner.",
+        "featuresAliasesTitle": "Aliasing",
+        "featuresAliasesDesc": "Rules in Settings to rename or group projects in the UI (e.g. Kit Digital variants under one visible name).",
+        "featuresStatusTitle": "Active / paused status",
+        "featuresStatusDesc": "Pause projects you are not working on this month: they stop appearing in new assignments without deleting history.",
+        "relationTitle": "How it connects to the rest of Taimbox",
+        "relationBody": "Every planner task belongs to a project (and each project to a client). Reports, Deadlines, and budget alerts all use the same data.",
+        "relationWarning": "If you change a project’s hour budget, also review that month’s Deadlines so per-person allocation still adds up."
+      },
       "configuracion": {
         "introTitle": "What Settings includes",
         "introBody": "Settings groups your agency configuration: roles, permissions, active modules, and integrations. In multi-agency environments you also manage each agency and its key parameters here.",

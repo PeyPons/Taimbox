@@ -12,6 +12,8 @@ import {
 } from '@/components/ui/select';
 import { useAppTranslation } from '@/hooks/useAppTranslation';
 import {
+  type AdsPlatformFilter,
+  type AdsPpcIssueFlag,
   type CoherenceOpStatus,
   type NotificationEvaluationMode,
   type NotificationIssueFlag,
@@ -20,6 +22,8 @@ import {
   type NotificationTriggerType,
 } from '@/types/notifications';
 import {
+  defaultAdsPpcFlags,
+  defaultAdsPlatforms,
   defaultConditions,
   DEFAULT_COHERENCE_STATUSES,
   preservedScheduleScopeAndFilters,
@@ -35,8 +39,12 @@ export type NotificationRuleFormFieldsProps = {
   updateLocal: (id: string, patch: Partial<NotificationRule>) => void;
   toggleIssueFlag: (rule: NotificationRule, flag: NotificationIssueFlag) => void;
   toggleCoherenceOpStatus: (rule: NotificationRule, st: CoherenceOpStatus) => void;
+  toggleAdsPpcFlag: (rule: NotificationRule, flag: AdsPpcIssueFlag) => void;
+  toggleAdsPlatform: (rule: NotificationRule, platform: AdsPlatformFilter) => void;
   issueFlagOptions: { id: NotificationIssueFlag; label: string }[];
   coherenceStatusOptions: { id: CoherenceOpStatus; label: string }[];
+  adsPpcFlagOptions: { id: AdsPpcIssueFlag; label: string }[];
+  adsPlatformOptions: { id: AdsPlatformFilter; label: string }[];
   saveRule: (rule: NotificationRule) => void | Promise<void>;
   openEmailPreview: (rule: NotificationRule) => void | Promise<void>;
   savingId: string | null;
@@ -49,8 +57,12 @@ export function NotificationRuleFormFields({
   updateLocal,
   toggleIssueFlag,
   toggleCoherenceOpStatus,
+  toggleAdsPpcFlag,
+  toggleAdsPlatform,
   issueFlagOptions,
   coherenceStatusOptions,
+  adsPpcFlagOptions,
+  adsPlatformOptions,
   saveRule,
   openEmailPreview,
   savingId,
@@ -75,6 +87,26 @@ export function NotificationRuleFormFields({
     rule.conditions.coherence_op_status_in && rule.conditions.coherence_op_status_in.length > 0
       ? rule.conditions.coherence_op_status_in
       : [...DEFAULT_COHERENCE_STATUSES];
+  const adsMatchAny =
+    rule.conditions.ads_match_any && rule.conditions.ads_match_any.length > 0
+      ? rule.conditions.ads_match_any
+      : defaultAdsPpcFlags();
+  const adsPlatforms =
+    rule.conditions.ads_platforms && rule.conditions.ads_platforms.length > 0
+      ? rule.conditions.ads_platforms
+      : defaultAdsPlatforms();
+
+  const evalHelpKey =
+    evalMode === 'ads_ppc_budget'
+      ? `${tk}.evalAdsHelp`
+      : evalMode === 'deadline_coherence'
+        ? `${tk}.evalCoherenceHelp`
+        : null;
+
+  const adsPpcInvalid = evalMode === 'ads_ppc_budget' && adsMatchAny.length === 0;
+  const healthInvalid = evalMode === 'project_month_health' && matchAny.length === 0;
+  const coherenceInvalid = evalMode === 'deadline_coherence' && coherenceOps.length === 0;
+  const ruleInvalid = healthInvalid || coherenceInvalid || adsPpcInvalid;
 
   return (
     <div className="space-y-4">
@@ -197,7 +229,9 @@ export function NotificationRuleFormFields({
             </div>
           </div>
           <p className="text-xs text-muted-foreground">{t(`${tk}.hourHelp`)}</p>
-          <RuleScheduledScopeFilters rule={rule} clients={clients} projects={projects} updateLocal={updateLocal} />
+          {evalMode !== 'ads_ppc_budget' ? (
+            <RuleScheduledScopeFilters rule={rule} clients={clients} projects={projects} updateLocal={updateLocal} />
+          ) : null}
           <div className="space-y-2 max-w-lg">
             <Label>{t(`${tk}.evalType`)}</Label>
             <Select
@@ -214,6 +248,18 @@ export function NotificationRuleFormFields({
                       coherence_op_status_in: [...DEFAULT_COHERENCE_STATUSES],
                       coherence_delivery_mode: 'per_project',
                       coherence_digest_max: 12,
+                    },
+                  });
+                } else if (mode === 'ads_ppc_budget') {
+                  updateLocal(rule.id, {
+                    conditions: {
+                      periodicity: preserved.periodicity ?? 'monthly',
+                      schedule_day_of_week: preserved.schedule_day_of_week,
+                      evaluation: 'ads_ppc_budget',
+                      ads_match_any: defaultAdsPpcFlags(),
+                      ads_platforms: defaultAdsPlatforms(),
+                      ads_delivery_mode: 'per_account',
+                      ads_digest_max: 12,
                     },
                   });
                 } else {
@@ -233,9 +279,12 @@ export function NotificationRuleFormFields({
               <SelectContent>
                 <SelectItem value="project_month_health">{t(`${tk}.evalHealth`)}</SelectItem>
                 <SelectItem value="deadline_coherence">{t(`${tk}.evalCoherence`)}</SelectItem>
+                <SelectItem value="ads_ppc_budget">{t(`${tk}.evalAds`)}</SelectItem>
               </SelectContent>
             </Select>
-            <p className="text-xs text-muted-foreground">{t(`${tk}.evalCoherenceHelp`)}</p>
+            {evalHelpKey ? (
+              <p className="text-xs text-muted-foreground">{t(evalHelpKey)}</p>
+            ) : null}
           </div>
           {evalMode === 'project_month_health' ? (
             <div className="space-y-2">
@@ -254,7 +303,7 @@ export function NotificationRuleFormFields({
                 ))}
               </div>
             </div>
-          ) : (
+          ) : evalMode === 'deadline_coherence' ? (
             <>
               <div className="space-y-2 max-w-xs">
                 <Label>{t(`${tk}.thresholdLabel`)}</Label>
@@ -334,6 +383,83 @@ export function NotificationRuleFormFields({
                 </div>
               ) : null}
             </>
+          ) : (
+            <>
+              <div className="space-y-2">
+                <Label>{t(`${tk}.adsPlatformsLabel`)}</Label>
+                <div className="flex flex-wrap gap-4">
+                  {adsPlatformOptions.map((p) => (
+                    <label key={p.id} className="flex items-center gap-2 text-sm cursor-pointer">
+                      <input
+                        type="checkbox"
+                        className="rounded border-slate-300"
+                        checked={adsPlatforms.includes(p.id)}
+                        onChange={() => toggleAdsPlatform(rule, p.id)}
+                      />
+                      {p.label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>{t(`${tk}.conditionsLabel`)}</Label>
+                <div className="grid sm:grid-cols-2 gap-2">
+                  {adsPpcFlagOptions.map((f) => (
+                    <label key={f.id} className="flex items-center gap-2 text-sm cursor-pointer">
+                      <input
+                        type="checkbox"
+                        className="rounded border-slate-300"
+                        checked={adsMatchAny.includes(f.id)}
+                        onChange={() => toggleAdsPpcFlag(rule, f.id)}
+                      />
+                      {f.label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-2 max-w-md">
+                <Label>{t(`${tk}.deliveryLabel`)}</Label>
+                <Select
+                  value={rule.conditions.ads_delivery_mode ?? 'per_account'}
+                  onValueChange={(v) =>
+                    updateLocal(rule.id, {
+                      conditions: {
+                        ...rule.conditions,
+                        ads_delivery_mode: v as 'per_account' | 'digest',
+                      },
+                    })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="per_account">{t(`${tk}.deliveryPerAccount`)}</SelectItem>
+                    <SelectItem value="digest">{t(`${tk}.deliveryDigestAds`)}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {(rule.conditions.ads_delivery_mode ?? 'per_account') === 'digest' ? (
+                <div className="space-y-2 max-w-xs">
+                  <Label>{t(`${tk}.digestMaxAds`)}</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={50}
+                    value={rule.conditions.ads_digest_max ?? 12}
+                    onChange={(e) => {
+                      const n = parseInt(e.target.value, 10);
+                      updateLocal(rule.id, {
+                        conditions: {
+                          ...rule.conditions,
+                          ads_digest_max: Number.isFinite(n) ? Math.min(50, Math.max(1, n)) : 12,
+                        },
+                      });
+                    }}
+                  />
+                </div>
+              ) : null}
+            </>
           )}
         </>
       ) : null}
@@ -389,12 +515,7 @@ export function NotificationRuleFormFields({
           type="button"
           variant="outline"
           onClick={() => void openEmailPreview(rule)}
-          disabled={
-            (rule.triggerType === 'scheduled' &&
-              evalMode === 'project_month_health' &&
-              matchAny.length === 0) ||
-            (rule.triggerType === 'scheduled' && evalMode === 'deadline_coherence' && coherenceOps.length === 0)
-          }
+          disabled={ruleInvalid}
         >
           <Eye className="h-4 w-4 mr-2" />
           {t(`${tk}.preview`)}
@@ -402,15 +523,7 @@ export function NotificationRuleFormFields({
         <Button
           type="button"
           onClick={() => void saveRule(rule)}
-          disabled={
-            savingId === rule.id ||
-            (rule.triggerType === 'scheduled' &&
-              evalMode === 'project_month_health' &&
-              matchAny.length === 0) ||
-            (rule.triggerType === 'scheduled' &&
-              evalMode === 'deadline_coherence' &&
-              coherenceOps.length === 0)
-          }
+          disabled={savingId === rule.id || ruleInvalid}
         >
           {savingId === rule.id ? (
             <>

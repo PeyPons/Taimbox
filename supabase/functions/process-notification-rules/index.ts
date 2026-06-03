@@ -26,6 +26,16 @@ import {
 } from "../_shared/coherence-operational-status.ts";
 import { coherenceDigestEmailHtml, coherenceSingleProjectEmailHtml } from "../_shared/coherence-email-html.ts";
 import {
+  adsPpcDigestEmailHtml,
+  adsPpcSingleAccountEmailHtml,
+  adsPpcStatusLabelEs,
+} from "../_shared/ads-ppc-email-html.ts";
+import {
+  adsPpcAlertMatchesFlags,
+  computeAdsPpcAlerts,
+  type AdsPpcAlert,
+} from "../_shared/ads-ppc-notification-metrics.ts";
+import {
   hoursPreferenceFromSettings,
   resolveEmailsForPolicy,
 } from "../_shared/notification-recipients.ts";
@@ -65,16 +75,24 @@ function issueLabels(flags: ProjectIssueFlag[]): string[] {
 }
 
 type SchedulePeriodicity = "daily" | "weekly" | "monthly";
+type AdsPpcIssueFlag = "over" | "risk";
+type AdsPlatformFilter = "google" | "meta";
+
+const ADS_PLANS_WITH_ACCESS = new Set(["business", "scale", "enterprise"]);
 
 function parseConditions(raw: unknown): {
   matchAny: ProjectIssueFlag[];
   projectIds?: string[];
   clientIds?: string[];
-  evaluation: "project_month_health" | "deadline_coherence";
+  evaluation: "project_month_health" | "deadline_coherence" | "ads_ppc_budget";
   coherenceMinAbs: number;
   coherenceOpStatusIn: CoherenceOpStatus[];
   coherenceDeliveryMode: "per_project" | "digest";
   coherenceDigestMax: number;
+  adsMatchAny: AdsPpcIssueFlag[];
+  adsPlatforms: AdsPlatformFilter[];
+  adsDeliveryMode: "per_account" | "digest";
+  adsDigestMax: number;
   periodicity: SchedulePeriodicity;
   scheduleDayOfWeek: number;
 } {
@@ -86,6 +104,10 @@ function parseConditions(raw: unknown): {
       coherenceOpStatusIn: [...DEFAULT_COHERENCE_STATUSES],
       coherenceDeliveryMode: "per_project",
       coherenceDigestMax: 12,
+      adsMatchAny: ["over", "risk"],
+      adsPlatforms: ["google", "meta"],
+      adsDeliveryMode: "per_account",
+      adsDigestMax: 12,
       periodicity: "monthly",
       scheduleDayOfWeek: 1,
     };
@@ -113,7 +135,12 @@ function parseConditions(raw: unknown): {
     ? o.client_ids.filter((x): x is string => typeof x === "string")
     : undefined;
 
-  const evaluation = o.evaluation === "deadline_coherence" ? "deadline_coherence" : "project_month_health";
+  const evaluation =
+    o.evaluation === "deadline_coherence"
+      ? "deadline_coherence"
+      : o.evaluation === "ads_ppc_budget"
+        ? "ads_ppc_budget"
+        : "project_month_health";
   const coherenceMinAbs = typeof o.coherence_min_abs_hours === "number" && o.coherence_min_abs_hours >= 0
     ? Number(o.coherence_min_abs_hours)
     : 0.05;
@@ -139,6 +166,30 @@ function parseConditions(raw: unknown): {
     ? Math.min(50, Math.floor(digestRaw))
     : 12;
 
+  const allowedAdsFlags: AdsPpcIssueFlag[] = ["over", "risk"];
+  let adsMatchAny: AdsPpcIssueFlag[] = [];
+  if (Array.isArray(o.ads_match_any)) {
+    adsMatchAny = o.ads_match_any.filter((x): x is AdsPpcIssueFlag =>
+      typeof x === "string" && (allowedAdsFlags as string[]).includes(x)
+    );
+  }
+  if (adsMatchAny.length === 0) adsMatchAny = ["over", "risk"];
+
+  let adsPlatforms: AdsPlatformFilter[] = [];
+  if (Array.isArray(o.ads_platforms) && o.ads_platforms.length > 0) {
+    adsPlatforms = o.ads_platforms.filter((x): x is AdsPlatformFilter =>
+      x === "google" || x === "meta"
+    );
+  } else {
+    adsPlatforms = ["google", "meta"];
+  }
+
+  const adsDeliveryMode = o.ads_delivery_mode === "digest" ? "digest" : "per_account";
+  const adsDigestRaw = o.ads_digest_max;
+  const adsDigestMax = typeof adsDigestRaw === "number" && adsDigestRaw > 0
+    ? Math.min(50, Math.floor(adsDigestRaw))
+    : 12;
+
   const periodicity: SchedulePeriodicity =
     o.periodicity === "daily" || o.periodicity === "weekly" ? o.periodicity : "monthly";
   const scheduleDayOfWeek =
@@ -155,6 +206,10 @@ function parseConditions(raw: unknown): {
     coherenceOpStatusIn,
     coherenceDeliveryMode,
     coherenceDigestMax,
+    adsMatchAny,
+    adsPlatforms,
+    adsDeliveryMode,
+    adsDigestMax,
     periodicity,
     scheduleDayOfWeek,
   };
@@ -312,6 +367,217 @@ serve(async (req) => {
     }
 
     console.log(`[process-notification-rules] rule=${rule.id} name="${rule.name}" eval=${cond.evaluation} periodicity=${cond.periodicity} suffix=${periodSuffix} agency="${agencyName}" hoursPref=${hoursPref}`);
+
+    if (cond.evaluation === "ads_ppc_budget") {
+      const { data: agencyPlanRow } = await supabaseAdmin
+        .from("agencies")
+        .select("plan_id")
+        .eq("id", agencyId)
+        .maybeSingle();
+      const planId = String(agencyPlanRow?.plan_id ?? "");
+      if (!ADS_PLANS_WITH_ACCESS.has(planId)) {
+        console.log(`[process-notification-rules] skip ads_ppc rule=${rule.id} plan=${planId}`);
+        continue;
+      }
+
+      const monthStart = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}-01`;
+      const monthEndDay = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0)).getUTCDate();
+      const monthEnd =
+        `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}-${String(monthEndDay).padStart(2, "0")}`;
+
+      const { data: settingsRows } = await supabaseAdmin
+        .from("client_settings")
+        .select("client_id, budget_limit, group_name, is_hidden")
+        .eq("agency_id", agencyId);
+
+      const settings = (settingsRows || []) as Array<{
+        client_id: string;
+        budget_limit: number;
+        group_name?: string | null;
+        is_hidden?: boolean | null;
+      }>;
+      const hasBudgets = settings.some((s) => Number(s.budget_limit) > 0 && !s.is_hidden);
+      if (!hasBudgets) continue;
+
+      let googleRows: Array<{ client_id: string; cost: number; date: string }> = [];
+      let metaRows: Array<{ client_id: string; cost: number; date: string }> = [];
+
+      if (cond.adsPlatforms.includes("google")) {
+        const { data } = await supabaseAdmin
+          .from("google_ads_campaigns")
+          .select("client_id, cost, date")
+          .eq("agency_id", agencyId)
+          .gte("date", monthStart)
+          .lte("date", monthEnd);
+        googleRows = (data || []) as typeof googleRows;
+      }
+      if (cond.adsPlatforms.includes("meta")) {
+        const { data } = await supabaseAdmin
+          .from("meta_ads_campaigns")
+          .select("client_id, cost, date")
+          .eq("agency_id", agencyId)
+          .gte("date", monthStart)
+          .lte("date", monthEnd);
+        metaRows = (data || []) as typeof metaRows;
+      }
+
+      let alerts: AdsPpcAlert[] = computeAdsPpcAlerts(
+        settings,
+        googleRows,
+        metaRows,
+        cond.adsPlatforms,
+        now,
+      ).filter((a) => adsPpcAlertMatchesFlags(a, cond.adsMatchAny));
+
+      const { data: clientsRows } = await supabaseAdmin
+        .from("clients")
+        .select("id, name")
+        .eq("agency_id", agencyId);
+      const clientNameById = new Map(
+        (clientsRows || []).map((c) => [String(c.id), String(c.name ?? c.id)]),
+      );
+      alerts = alerts.map((a) => {
+        if (!a.clientKey.startsWith("GROUP-") && clientNameById.has(a.clientKey)) {
+          return { ...a, displayName: clientNameById.get(a.clientKey)! };
+        }
+        return a;
+      });
+
+      console.log(`[process-notification-rules] ads_ppc alerts=${alerts.length} platforms=${cond.adsPlatforms.join(",")}`);
+      if (!alerts.length) continue;
+
+      const policy = rule.recipient_policy as RecipientPolicy;
+      const appUrlAds = `${siteUrl}/ads`;
+      const appUrlMeta = `${siteUrl}/meta-ads`;
+
+      if (cond.adsDeliveryMode === "digest") {
+        const slice = alerts.slice(0, cond.adsDigestMax);
+        const dedupeKey = `scheduled_ads_ppc_digest|${rule.id}|${periodSuffix}`;
+        const { data: existing } = await supabaseAdmin
+          .from("notification_deliveries")
+          .select("id")
+          .eq("agency_id", agencyId)
+          .eq("dedupe_key", dedupeKey)
+          .maybeSingle();
+        if (existing && !ignoreDedupe) continue;
+
+        const recipients = await resolveEmailsForPolicy({
+          supabaseAdmin,
+          policy,
+          recipientRoleName: rule.recipient_role_name as string | null,
+          extraEmails: (rule.extra_emails as string[]) || [],
+          agencyId,
+          agencySettings,
+          involvedEmployeeIds: [],
+        });
+        if (recipients.length === 0) continue;
+
+        const { html, text } = adsPpcDigestEmailHtml({
+          agencyName,
+          monthLabel: monthKey,
+          alerts: slice,
+          siteUrl,
+        });
+
+        emailsAttempted++;
+        const sendResult = await sendEmail({
+          to: recipients,
+          subject: `Alertas PPC — ${slice.length} cuenta(s) · ${monthKey}`,
+          html,
+          text,
+        });
+
+        if (sendResult.success) {
+          await supabaseAdmin.from("notification_deliveries").upsert(
+            {
+              agency_id: agencyId,
+              rule_id: rule.id as string,
+              dedupe_key: dedupeKey,
+              trigger_type: "scheduled",
+              payload: {
+                kind: "ads_ppc_budget_digest",
+                month: monthKey,
+                accounts: slice.map((a) => ({ platform: a.platform, client_key: a.clientKey })),
+              },
+              recipient_emails: recipients,
+              resend_id: sendResult.id ?? null,
+              success: true,
+              error_message: null,
+            },
+            { onConflict: "agency_id,dedupe_key" },
+          );
+          emailsSent++;
+        } else if (sendResult.error) {
+          errors.push(`ads digest ${rule.id}: ${sendResult.error}`);
+        }
+      } else {
+        for (const alert of alerts) {
+          const dedupeKey =
+            `scheduled_ads_ppc|${rule.id}|${alert.platform}|${alert.clientKey}|${periodSuffix}`;
+          const { data: existing } = await supabaseAdmin
+            .from("notification_deliveries")
+            .select("id")
+            .eq("agency_id", agencyId)
+            .eq("dedupe_key", dedupeKey)
+            .maybeSingle();
+          if (existing && !ignoreDedupe) continue;
+
+          const recipients = await resolveEmailsForPolicy({
+            supabaseAdmin,
+            policy,
+            recipientRoleName: rule.recipient_role_name as string | null,
+            extraEmails: (rule.extra_emails as string[]) || [],
+            agencyId,
+            agencySettings,
+            involvedEmployeeIds: [],
+          });
+          if (recipients.length === 0) continue;
+
+          const appUrl = alert.platform === "google" ? appUrlAds : appUrlMeta;
+          const { html, text } = adsPpcSingleAccountEmailHtml({
+            agencyName,
+            alert,
+            appUrl,
+          });
+
+          emailsAttempted++;
+          const sendResult = await sendEmail({
+            to: recipients,
+            subject: `PPC: ${alert.displayName} — ${adsPpcStatusLabelEs(alert.status)} (${monthKey})`,
+            html,
+            text,
+          });
+
+          if (sendResult.success) {
+            await supabaseAdmin.from("notification_deliveries").upsert(
+              {
+                agency_id: agencyId,
+                rule_id: rule.id as string,
+                dedupe_key: dedupeKey,
+                trigger_type: "scheduled",
+                payload: {
+                  kind: "ads_ppc_budget",
+                  month: monthKey,
+                  platform: alert.platform,
+                  client_key: alert.clientKey,
+                  status: alert.status,
+                },
+                recipient_emails: recipients,
+                resend_id: sendResult.id ?? null,
+                success: true,
+                error_message: null,
+              },
+              { onConflict: "agency_id,dedupe_key" },
+            );
+            emailsSent++;
+          } else if (sendResult.error) {
+            errors.push(`ads ${alert.clientKey}: ${sendResult.error}`);
+          }
+        }
+      }
+
+      continue;
+    }
 
     if (cond.evaluation === "deadline_coherence") {
       const { data: projectsFull } = await supabaseAdmin

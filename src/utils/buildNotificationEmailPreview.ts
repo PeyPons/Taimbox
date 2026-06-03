@@ -1,11 +1,19 @@
 import { absoluteUrl } from '@/lib/publicSiteUrl';
+import { supabase } from '@/lib/supabase';
 import type { Allocation, Project } from '@/types';
 import type {
+  AdsPlatformFilter,
+  AdsPpcIssueFlag,
   CoherenceOpStatus,
   NotificationIssueFlag,
   NotificationRule,
 } from '@/types/notifications';
 import { fetchDeadlinesForMonth } from '@/utils/deadlineUtils';
+import {
+  computeAdsBudgetAlerts,
+  type AdsClientSettingRow,
+  type AdsSpendRow,
+} from '@/utils/adsBudgetAlerts';
 import {
   analyzeProjectMonthForNotifications,
   passesProjectClientFilters,
@@ -15,6 +23,9 @@ import {
   type ProjectRow,
 } from '@/utils/projectNotificationMetrics';
 import {
+  adsPpcDigestEmailHtml,
+  adsPpcSingleAccountEmailHtml,
+  adsPpcStatusLabelEs,
   coherenceDigestEmailHtml,
   coherenceSingleProjectEmailHtml,
   operationalStatusFromInconsistency,
@@ -144,6 +155,124 @@ export async function buildNotificationEmailPreview(
 
   const { viewMonth, monthKey, monthProgress } = utcMonthContext();
   const evalMode = rule.conditions.evaluation ?? 'project_month_health';
+
+  if (evalMode === 'ads_ppc_budget') {
+    const matchAny = (rule.conditions.ads_match_any?.length
+      ? rule.conditions.ads_match_any
+      : ['over', 'risk']) as AdsPpcIssueFlag[];
+    const platforms = (rule.conditions.ads_platforms?.length
+      ? rule.conditions.ads_platforms
+      : ['google', 'meta']) as AdsPlatformFilter[];
+    const delivery = rule.conditions.ads_delivery_mode ?? 'per_account';
+    const digestMax = rule.conditions.ads_digest_max ?? 12;
+
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1;
+    const monthStart = `${year}-${String(month).padStart(2, '0')}-01`;
+    const monthEnd = `${year}-${String(month).padStart(2, '0')}-${String(new Date(year, month, 0).getDate()).padStart(2, '0')}`;
+
+    const { data: settingsRows } = await supabase
+      .from('client_settings')
+      .select('client_id, budget_limit, group_name, is_hidden')
+      .eq('agency_id', input.agencyId);
+    const settings = (settingsRows ?? []) as AdsClientSettingRow[];
+
+    let googleRows: AdsSpendRow[] = [];
+    let metaRows: AdsSpendRow[] = [];
+    if (platforms.includes('google')) {
+      const { data } = await supabase
+        .from('google_ads_campaigns')
+        .select('client_id, cost, date')
+        .eq('agency_id', input.agencyId)
+        .gte('date', monthStart)
+        .lte('date', monthEnd);
+      googleRows = (data ?? []) as AdsSpendRow[];
+    }
+    if (platforms.includes('meta')) {
+      const { data } = await supabase
+        .from('meta_ads_campaigns')
+        .select('client_id, cost, date')
+        .eq('agency_id', input.agencyId)
+        .gte('date', monthStart)
+        .lte('date', monthEnd);
+      metaRows = (data ?? []) as AdsSpendRow[];
+    }
+
+    let alerts = computeAdsBudgetAlerts(settings, googleRows, metaRows).filter((a) => {
+      if (!platforms.includes(a.platform)) return false;
+      return matchAny.includes(a.status);
+    });
+
+    const { data: clientsRows } = await supabase
+      .from('clients')
+      .select('id, name')
+      .eq('agency_id', input.agencyId);
+    const clientNameById = new Map(
+      (clientsRows ?? []).map((c) => [String(c.id), String(c.name ?? c.id)]),
+    );
+    alerts = alerts.map((a) => {
+      if (!a.clientKey.startsWith('GROUP-') && clientNameById.has(a.clientKey)) {
+        return { ...a, displayName: clientNameById.get(a.clientKey)! };
+      }
+      return a;
+    });
+
+    const siteUrl = absoluteUrl('');
+
+    if (alerts.length === 0) {
+      const sample = {
+        platform: 'google' as const,
+        clientKey: 'sample',
+        displayName: 'Ejemplo — cuenta cliente',
+        status: 'risk' as const,
+        spent: 4200,
+        budget: 5000,
+        forecast: 5800,
+        monthKey,
+      };
+      const { html } = adsPpcSingleAccountEmailHtml({
+        agencyName,
+        alert: sample,
+        appUrl: absoluteUrl('/ads'),
+      });
+      return {
+        html,
+        subject: `PPC: ${sample.displayName} — ${adsPpcStatusLabelEs(sample.status)} (${monthKey})`,
+        note:
+          'Ahora mismo ninguna cuenta cumple estas condiciones. El ejemplo muestra cómo se vería un aviso con datos reales de Google/Meta y presupuestos configurados.',
+      };
+    }
+
+    if (delivery === 'digest') {
+      const slice = alerts.slice(0, digestMax);
+      const { html } = adsPpcDigestEmailHtml({
+        agencyName,
+        monthLabel: monthKey,
+        alerts: slice,
+        siteUrl,
+      });
+      return {
+        html,
+        subject: `Alertas PPC — ${slice.length} cuenta(s) · ${monthKey}`,
+      };
+    }
+
+    const first = alerts[0];
+    const { html } = adsPpcSingleAccountEmailHtml({
+      agencyName,
+      alert: first,
+      appUrl: absoluteUrl(first.platform === 'google' ? '/ads' : '/meta-ads'),
+    });
+    return {
+      html,
+      subject: `PPC: ${first.displayName} — ${adsPpcStatusLabelEs(first.status)} (${monthKey})`,
+      note:
+        alerts.length > 1
+          ? `Con los datos actuales habría ${alerts.length} correos (uno por cuenta); aquí ves el primero.`
+          : undefined,
+    };
+  }
 
   if (evalMode === 'deadline_coherence') {
     const { data: deadlines = [], error } = await fetchDeadlinesForMonth(monthKey, input.agencyId);

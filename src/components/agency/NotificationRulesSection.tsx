@@ -19,12 +19,16 @@ import { useAppTranslation } from '@/hooks/useAppTranslation';
 import {
   COHERENCE_STATUS_IDS,
   DEFAULT_COHERENCE_STATUSES,
+  defaultAdsPpcFlags,
+  defaultAdsPlatforms,
   defaultConditions,
   ISSUE_FLAG_IDS,
 } from '@/components/agency/notificationRulesShared';
 import { NotificationRuleFormFields } from '@/components/agency/NotificationRuleFormFields';
 import {
   mapNotificationRuleFromDb,
+  type AdsPlatformFilter,
+  type AdsPpcIssueFlag,
   type CoherenceOpStatus,
   type NotificationEvaluationMode,
   type NotificationIssueFlag,
@@ -65,6 +69,24 @@ function scheduledConditionsPayload(r: Partial<NotificationRule>): Record<string
       coherence_op_status_in: opIn,
       coherence_delivery_mode: r.conditions?.coherence_delivery_mode ?? 'per_project',
       coherence_digest_max: r.conditions?.coherence_digest_max ?? 12,
+    };
+  }
+  if (evalMode === 'ads_ppc_budget') {
+    const adsFlags =
+      r.conditions?.ads_match_any && r.conditions.ads_match_any.length > 0
+        ? r.conditions.ads_match_any
+        : defaultAdsPpcFlags();
+    const adsPlatforms =
+      r.conditions?.ads_platforms && r.conditions.ads_platforms.length > 0
+        ? r.conditions.ads_platforms
+        : defaultAdsPlatforms();
+    return {
+      evaluation: 'ads_ppc_budget',
+      ...schedule,
+      ads_match_any: adsFlags,
+      ads_platforms: adsPlatforms,
+      ads_delivery_mode: r.conditions?.ads_delivery_mode ?? 'per_account',
+      ads_digest_max: r.conditions?.ads_digest_max ?? 12,
     };
   }
   return {
@@ -315,6 +337,42 @@ export const NotificationRulesSection = forwardRef<NotificationRulesSectionHandl
     updateLocal(rule.id, { conditions: { ...rule.conditions, coherence_op_status_in: next } });
   };
 
+  const toggleAdsPpcFlag = (rule: NotificationRule, flag: AdsPpcIssueFlag) => {
+    const current =
+      rule.conditions.ads_match_any && rule.conditions.ads_match_any.length > 0
+        ? rule.conditions.ads_match_any
+        : defaultAdsPpcFlags();
+    const next = current.includes(flag) ? current.filter((f) => f !== flag) : [...current, flag];
+    updateLocal(rule.id, { conditions: { ...rule.conditions, ads_match_any: next } });
+  };
+
+  const toggleAdsPlatform = (rule: NotificationRule, platform: AdsPlatformFilter) => {
+    const current =
+      rule.conditions.ads_platforms && rule.conditions.ads_platforms.length > 0
+        ? rule.conditions.ads_platforms
+        : defaultAdsPlatforms();
+    const next = current.includes(platform)
+      ? current.filter((p) => p !== platform)
+      : [...current, platform];
+    updateLocal(rule.id, {
+      conditions: {
+        ...rule.conditions,
+        ads_platforms: next.length ? next : defaultAdsPlatforms(),
+      },
+    });
+  };
+
+  const adsPpcFlagOptions = useMemo(
+    () =>
+      (['over', 'risk'] as const).map((id) => ({ id, label: t(`${tk}.adsFlags.${id}`) })),
+    [t],
+  );
+  const adsPlatformOptions = useMemo(
+    () =>
+      (['google', 'meta'] as const).map((id) => ({ id, label: t(`${tk}.adsPlatforms.${id}`) })),
+    [t],
+  );
+
   const newRuleLabel = t(`${tk}.newRuleDefault`);
 
   const ruleTitle = (rule: NotificationRule) =>
@@ -344,8 +402,12 @@ export const NotificationRulesSection = forwardRef<NotificationRulesSectionHandl
     updateLocal,
     toggleIssueFlag,
     toggleCoherenceOpStatus,
+    toggleAdsPpcFlag,
+    toggleAdsPlatform,
     issueFlagOptions,
     coherenceStatusOptions,
+    adsPpcFlagOptions,
+    adsPlatformOptions,
     saveRule,
     openEmailPreview,
     savingId,

@@ -14,6 +14,8 @@ import {
 import { cn } from '@/lib/utils';
 import { useAppTranslation } from '@/hooks/useAppTranslation';
 import {
+  type AdsPlatformFilter,
+  type AdsPpcIssueFlag,
   type CoherenceOpStatus,
   type NotificationIssueFlag,
   type NotificationRule,
@@ -46,6 +48,18 @@ export const RECIPIENT_VALUES_SCHEDULED: NotificationRecipientPolicy[] = [
 
 export function defaultConditions(): NotificationIssueFlag[] {
   return ['needs_planning', 'behind_schedule', 'over_budget', 'no_activity'];
+}
+
+export const ADS_PPC_FLAG_IDS: AdsPpcIssueFlag[] = ['over', 'risk'];
+
+export const ADS_PLATFORM_IDS: AdsPlatformFilter[] = ['google', 'meta'];
+
+export function defaultAdsPpcFlags(): AdsPpcIssueFlag[] {
+  return ['over', 'risk'];
+}
+
+export function defaultAdsPlatforms(): AdsPlatformFilter[] {
+  return ['google', 'meta'];
 }
 
 export const DEFAULT_COHERENCE_STATUSES: CoherenceOpStatus[] = [

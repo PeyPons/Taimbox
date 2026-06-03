@@ -2327,6 +2327,20 @@
         "evalHealth": "Month indicators (budget, pace, planning)",
         "evalCoherence": "Deadline coherence (same logic as Operations)",
         "evalCoherenceHelp": "Coherence emails include a per-project month summary and, when relevant, a row per person with their share of the target and planned or logged hours.",
+        "evalAds": "PPC budget (Google Ads and Meta Ads)",
+        "evalAdsHelp": "Same logic as in-app bell alerts: accounts with a budget limit that is already exceeded or at risk based on month pacing. Requires Agency plan or higher.",
+        "adsPlatformsLabel": "Platforms",
+        "deliveryPerAccount": "One email per account (Google or Meta)",
+        "deliveryDigestAds": "One digest with several accounts (max configurable)",
+        "digestMaxAds": "Max accounts in digest",
+        "adsFlags": {
+          "over": "Budget already exceeded",
+          "risk": "At risk of exceeding budget (month pacing)"
+        },
+        "adsPlatforms": {
+          "google": "Google Ads",
+          "meta": "Meta Ads"
+        },
         "conditionsLabel": "Notify if any of these apply",
         "thresholdLabel": "Minimum threshold (hours)",
         "thresholdHelp": "We only notify if the project total or any employee is off by at least this many hours vs the deadline.",

@@ -14,10 +14,19 @@ export type NotificationIssueFlag =
   | 'over_budget'
   | 'no_activity';
 
-/** Salud mensual (vista análisis en Clientes y Proyectos) vs coherencia deadlines / radar operativo */
-export type NotificationEvaluationMode = 'project_month_health' | 'deadline_coherence';
+/** Salud mensual (vista análisis en Clientes y Proyectos) vs coherencia deadlines / radar operativo vs PPC */
+export type NotificationEvaluationMode =
+  | 'project_month_health'
+  | 'deadline_coherence'
+  | 'ads_ppc_budget';
 
 export type CoherenceDeliveryMode = 'per_project' | 'digest';
+
+export type AdsPpcDeliveryMode = 'per_account' | 'digest';
+
+export type AdsPpcIssueFlag = 'over' | 'risk';
+
+export type AdsPlatformFilter = 'google' | 'meta';
 
 /** Alineado con etiquetas del radar operativo */
 export type CoherenceOpStatus =
@@ -39,6 +48,12 @@ export interface NotificationRuleConditions {
   coherence_op_status_in?: CoherenceOpStatus[];
   coherence_delivery_mode?: CoherenceDeliveryMode;
   coherence_digest_max?: number;
+
+  /** Solo reglas `scheduled` con evaluation `ads_ppc_budget`. */
+  ads_match_any?: AdsPpcIssueFlag[];
+  ads_platforms?: AdsPlatformFilter[];
+  ads_delivery_mode?: AdsPpcDeliveryMode;
+  ads_digest_max?: number;
 
   periodicity?: 'daily' | 'weekly' | 'monthly';
   /** Día de la semana (1-7), para reglas semanales */

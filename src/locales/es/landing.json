@@ -973,6 +973,23 @@
         "relationWarning": "Si no defines deadlines para un proyecto, no aparecerán alertas de coherencia para ese proyecto en Mi espacio. Los proyectos sin deadline se muestran como \"sin límite\".",
         "relationTip": "Configura los deadlines al inicio de cada mes para tener alertas precisas durante todo el periodo."
       },
+      "clientesProyectos": {
+        "introTitle": "Qué son Clientes y proyectos",
+        "introBody": "Clientes y proyectos es el catálogo de tu agencia: agrupa el trabajo por cuenta, define presupuestos de horas, cuotas mensuales y el estado de cada proyecto. Desde aquí también gestionas las tareas del mes y ves el avance frente al presupuesto.",
+        "introExample": "El cliente «Acme» tiene el proyecto «SEO Mensual» con 35h contratadas. Ves que lleváis 28h planificadas en marzo y un aviso cuando os acercáis al límite.",
+        "featuresTitle": "Funcionalidades",
+        "featuresClientsTitle": "Clientes",
+        "featuresClientsDesc": "Alta, edición y color identificativo. Agrupan todos los proyectos de una misma cuenta.",
+        "featuresProjectsTitle": "Proyectos",
+        "featuresProjectsDesc": "Presupuesto de horas, fee mensual, tipo de proyecto y tareas asociadas por mes. Enlaza con Deadlines y el planificador.",
+        "featuresAliasesTitle": "Aliasing",
+        "featuresAliasesDesc": "Reglas en Configuración para renombrar o agrupar proyectos en la vista (p. ej. variantes de Kit Digital bajo un mismo nombre visible).",
+        "featuresStatusTitle": "Estado activo/pausado",
+        "featuresStatusDesc": "Pausa proyectos que no trabajáis este mes: dejan de salir en asignaciones nuevas sin borrar su histórico.",
+        "relationTitle": "Relación con el resto de Taimbox",
+        "relationBody": "Cada tarea del planificador pertenece a un proyecto (y este a un cliente). Los informes, Deadlines y alertas de presupuesto usan esos mismos datos.",
+        "relationWarning": "Si cambias el presupuesto de horas de un proyecto, revisa también los Deadlines del mes para que la distribución por persona siga cuadrando."
+      },
       "configuracion": {
         "introTitle": "Qué incluye Configuración",
         "introBody": "Configuración agrupa los ajustes de la agencia: roles, permisos, módulos activos e integraciones. En entornos multi‑agencia también existe la gestión de agencias y sus parámetros clave.",

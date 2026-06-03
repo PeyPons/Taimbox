@@ -2839,6 +2839,20 @@
         "evalHealth": "Indicadores del mes (presupuesto, ritmo y planificación)",
         "evalCoherence": "Coherencia con deadlines (misma lógica que en Operaciones)",
         "evalCoherenceHelp": "Con coherencia, el correo incluye por proyecto el resumen del mes y, si aplica, una fila por persona con su parte del objetivo y las horas planificadas o imputadas.",
+        "evalAds": "Presupuesto PPC (Google Ads y Meta Ads)",
+        "evalAdsHelp": "Misma lógica que las alertas de la campanita: cuentas con límite de presupuesto configurado que ya lo superaron o están en riesgo según el ritmo del mes. Requiere plan Agency o superior.",
+        "adsPlatformsLabel": "Plataformas",
+        "deliveryPerAccount": "Un correo por cuenta (Google o Meta)",
+        "deliveryDigestAds": "Un solo resumen con varias cuentas (máx. configurable)",
+        "digestMaxAds": "Máx. cuentas en el resumen",
+        "adsFlags": {
+          "over": "Presupuesto ya superado",
+          "risk": "En riesgo de superar presupuesto (ritmo del mes)"
+        },
+        "adsPlatforms": {
+          "google": "Google Ads",
+          "meta": "Meta Ads"
+        },
         "conditionsLabel": "Avisar si se cumple alguna de estas condiciones",
         "thresholdLabel": "Umbral mínimo (horas)",
         "thresholdHelp": "Solo se avisa si el total del proyecto o algún empleado se desvía al menos estas horas respecto al deadline.",
