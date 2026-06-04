@@ -168,7 +168,7 @@
     },
     "toasts": {
       "weeklyPastEditBlocked": "No puedes editar tareas de semanas pasadas. Usa el botón \"Weekly\" para gestionarlas.",
-      "starterPlanSoftLock": "Tu agencia excede los límites del Plan Starter. Pasa a Pro o Business para editar.",
+      "starterPlanSoftLock": "Tu agencia excede los límites del plan Free. Pasa a Team, Agency o Scale para editar.",
       "batchAddReviewRows": "Revisa proyecto, nombre y horas en cada fila.",
       "batchAddSelectProject": "Selecciona un proyecto en cada fila que tenga nombre u horas.",
       "batchAddCompleteOneRow": "Completa al menos una fila: proyecto, nombre de tarea y horas.",
@@ -1843,7 +1843,7 @@
       "clear": "Borrar filtro"
     },
     "subscriptionBanner": {
-      "exceeds": "Tu agencia excede los límites del Plan Starter. Pasa a Pro o Business para volver a planificar.",
+      "exceeds": "Tu agencia excede los límites del plan {{planName}} ({{current}}/{{max}} personas). Pasa a {{upgradeOptions}} para volver a planificar.",
       "viewPlans": "Ver planes"
     },
     "departmentSelector": {
@@ -2427,7 +2427,7 @@
       "saveError": "Error al guardar el objetivo"
     },
     "limits": {
-      "starterLimit": "Tu agencia supera el límite del Plan Starter. Pasa a Pro o Business para añadir más empleados.",
+      "starterLimit": "Tu agencia supera el límite del plan Free. Pasa a Team, Agency o Scale para añadir más personas.",
       "planReached": "Has alcanzado el límite de empleados de tu plan. Actualiza tu plan en Plan y facturación."
     },
     "employeeCard": {
@@ -3057,8 +3057,8 @@
       "pastDueTitle": "Pago pendiente",
       "pastDueBody": "No hemos podido procesar tu último pago. Actualiza tu método de pago para evitar la interrupción del servicio.",
       "manageSubscription": "Gestionar o cancelar suscripción",
-      "businessWithTrial": "Business (149 $/mes, 14 días de prueba)",
-      "businessNoTrial": "Business (149 $/mes)",
+      "businessWithTrial": "Agency (149 $/mes, 14 días de prueba)",
+      "businessNoTrial": "Agency (149 $/mes)",
       "daysRemaining_one": "({{count}} día restante)",
       "daysRemaining_other": "({{count}} días restantes)",
       "daysRemainingInPeriod": "({{count}} días restantes en el periodo actual)",
@@ -3075,21 +3075,21 @@
       "currentPlanLabel": "Plan actual:",
       "cancelsOn": "Se cancela el {{date}}",
       "trialUntil": "Prueba hasta el {{date}}",
-      "serviceEndsOn": "Tu servicio finalizará el {{date}}. Después pasarás a Starter.",
+      "serviceEndsOn": "Tu servicio finalizará el {{date}}. Después pasarás al plan Free.",
       "nextBilling": "Próxima facturación: {{date}}",
       "usageLabel": "Uso:",
       "usageEmployees": "{{current}} de {{max}} personas gestionadas",
       "extraSeats": "+{{count}} adicionales ({{price}} $/persona/mes)",
-      "overLimitWarning": "Tu agencia supera el límite del plan actual. Pasa a un plan superior para desbloquear la edición.",
+      "overLimitWarning": "Tu agencia supera el límite del plan {{planName}}. Pasa a un plan superior para desbloquear la edición.",
       "changePlan": "Cambiar de plan",
-      "proButton": "Pro (49 $/mes)",
-      "stripeEnvHint": "Configura VITE_STRIPE_PRICE_ID_PRO y VITE_STRIPE_PRICE_ID_BUSINESS para habilitar los botones.",
-      "portalDescription": "Abre el portal de Stripe para actualizar el método de pago, ver facturas o cancelar la suscripción. Al cancelar, pasarás a plan Starter al final del periodo facturado.",
+      "contactScale": "Contactar — {{label}}",
+      "stripeEnvHint": "Configura VITE_STRIPE_PRICE_ID_PRO, VITE_STRIPE_PRICE_ID_BUSINESS y VITE_STRIPE_PRICE_ID_SCALE para habilitar el checkout.",
+      "portalDescription": "Abre el portal de Stripe para actualizar el método de pago, ver facturas o cancelar la suscripción. Al cancelar, pasarás al plan Free al final del periodo facturado.",
       "portalButton": "Gestionar suscripción / Cancelar",
       "updatePayment": "Actualizar pago",
       "confirmChangeTitle": "Cambiar a {{plan}}",
-      "confirmChangeBody": "Vas a cambiar de <strong>{{from}}</strong> a <strong>{{to}}</strong> ({{price}} €/mes).",
-      "loseTrialWarning": "Estás en periodo de prueba Business. Al cambiar a Pro, <strong>la prueba terminará inmediatamente</strong> y se cobrará Pro (49 €/mes) desde hoy.",
+      "confirmChangeBody": "Vas a cambiar de <strong>{{from}}</strong> a <strong>{{to}}</strong> ({{price}}).",
+      "loseTrialWarning": "Estás en periodo de prueba de {{fromPlan}}. Al cambiar a {{toPlan}}, <strong>la prueba terminará inmediatamente</strong> y se cobrará {{price}} desde hoy.",
       "prorateNote": "Se aplicará un prorrateo sobre la diferencia de precio en tu próxima factura.",
       "confirmChange": "Confirmar cambio",
       "cancel": "Cancelar"

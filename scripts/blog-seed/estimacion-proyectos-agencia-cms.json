@@ -35,7 +35,7 @@
       "id": "intro-callout",
       "type": "callout",
       "tone": "highlight",
-      "html": "Este artículo no es un manual PMBOK. Es lo que pasa en la trinchera cuando vendes horas, prometes fechas y el cliente responde «el viernes»."
+      "html": "Este artículo no es un manual PMBOK ni un curso de certificación. Es lo que pasa en la trinchera cuando vendes horas, prometes fechas y el cliente responde «el viernes» — y operaciones descubre el miércoles que la «última landing» tardó el doble."
     },
     {
       "id": "toc-1",
@@ -178,7 +178,7 @@
     {
       "id": "s4-p1",
       "type": "paragraph",
-      "html": "Un presupuesto sin contingencia no es planificación; es fe. El buffer no es «engordar el margen»: es provisionar la fricción normal de producir trabajo intelectual."
+      "html": "Un presupuesto sin contingencia no es planificación; es fe. El buffer no es «engordar el margen»: es provisionar la fricción normal de producir trabajo intelectual — revisiones creativas, esperas del cliente, coordinación entre departamentos y el imprevisto que siempre aparece cuando la semana ya está llena. Repartirlo por categoría (creativo, PM, esperas legales) evita el porcentaje opaco que nadie defiende en comité."
     },
     {
       "id": "visual-buffer",

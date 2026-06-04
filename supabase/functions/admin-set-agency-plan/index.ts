@@ -7,6 +7,7 @@ import {
   resolvePlanIdFromSubscriptionAsync,
   type PaidPlanId,
 } from "../_shared/stripe-plan.ts";
+import { syncAgencyModulesForPlan } from "../_shared/sync-agency-modules.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -110,7 +111,27 @@ Deno.serve(async (req) => {
         return json({ error: "No se pudo actualizar la agencia." }, 500);
       }
 
+      await syncAgencyModulesForPlan(supabaseAdmin, agencyId, "starter");
       return json({ ok: true, plan_id: "starter", stripe_synced: stripeSynced });
+    }
+
+    if (planId === "enterprise") {
+      const { error: updErr } = await supabaseAdmin
+        .from("agencies")
+        .update({
+          plan_id: "enterprise",
+          subscription_status: "active",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", agencyId);
+
+      if (updErr) {
+        console.error("admin-set-agency-plan: update enterprise", updErr);
+        return json({ error: "No se pudo actualizar la agencia." }, 500);
+      }
+
+      await syncAgencyModulesForPlan(supabaseAdmin, agencyId, "enterprise");
+      return json({ ok: true, plan_id: "enterprise", stripe_synced: false });
     }
 
     const paidPlan = planId as PaidPlanId;
@@ -175,6 +196,8 @@ Deno.serve(async (req) => {
             return json({ error: "Stripe actualizado pero falló la BD." }, 500);
           }
 
+          await syncAgencyModulesForPlan(supabaseAdmin, agencyId, resolvedPlan);
+
           if (resolvedPlan !== paidPlan) {
             stripeWarning =
               `Stripe quedó en plan "${resolvedPlan}" (esperado "${paidPlan}"). Revisa Price IDs y metadata.`;
@@ -209,6 +232,8 @@ Deno.serve(async (req) => {
       console.error("admin-set-agency-plan: update plan", updErr);
       return json({ error: "No se pudo actualizar la agencia." }, 500);
     }
+
+    await syncAgencyModulesForPlan(supabaseAdmin, agencyId, planId);
 
     return json({
       ok: true,

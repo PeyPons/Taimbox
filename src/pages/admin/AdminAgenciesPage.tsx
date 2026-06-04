@@ -39,6 +39,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { PLAN_DISPLAY_NAMES, PLAN_IDS, type PlanId } from "@/config/plans";
 
 interface AgencyRow {
   id: string;
@@ -108,7 +109,7 @@ export default function AdminAgenciesPage() {
     ? agencies
     : agencies.filter((a) => (a.plan_id ?? "starter") === planFilter);
 
-  const setAgencyPlan = async (agencyId: string, planId: "starter" | "pro" | "business") => {
+  const setAgencyPlan = async (agencyId: string, planId: PlanId) => {
     setSettingPlanId(agencyId);
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -126,14 +127,15 @@ export default function AdminAgenciesPage() {
       if (error) throw error;
       if (data?.error) throw new Error(String(data.error));
 
-      const appliedPlan = (data?.plan_id as string | undefined) ?? planId;
+      const appliedPlan = (data?.plan_id as PlanId | undefined) ?? planId;
+      const displayName = PLAN_DISPLAY_NAMES[appliedPlan] ?? appliedPlan;
       if (data?.warning) {
         toast.warning(String(data.warning));
       }
       toast.success(
         data?.stripe_synced
-          ? `Plan ${appliedPlan} (sincronizado con Stripe)`
-          : `Plan actualizado a ${appliedPlan}`,
+          ? `Plan ${displayName} (sincronizado con Stripe)`
+          : `Plan actualizado a ${displayName}`,
       );
 
       setAgencies((prev) =>
@@ -256,10 +258,8 @@ export default function AdminAgenciesPage() {
     }
   };
 
-  const planLabel = (planId: string | undefined) => {
-    const p = planId ?? "starter";
-    return p === "business" ? "Business" : p === "pro" ? "Pro" : "Starter";
-  };
+  const planLabel = (planId: string | undefined) =>
+    PLAN_DISPLAY_NAMES[(planId ?? "starter") as PlanId] ?? planId ?? "Free";
 
   const subscriptionLabel = (s: string | null | undefined) => {
     if (!s) return "—";
@@ -312,9 +312,11 @@ export default function AdminAgenciesPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">{t('admin.agencies.filterPlanAll')}</SelectItem>
-                  <SelectItem value="starter">Starter</SelectItem>
-                  <SelectItem value="pro">Pro</SelectItem>
-                  <SelectItem value="business">Business</SelectItem>
+                  {PLAN_IDS.map((id) => (
+                    <SelectItem key={id} value={id}>
+                      {PLAN_DISPLAY_NAMES[id]}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -397,15 +399,14 @@ export default function AdminAgenciesPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => setAgencyPlan(agency.id, "starter")}>
-                              Forzar Starter
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setAgencyPlan(agency.id, "pro")}>
-                              Forzar Pro
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setAgencyPlan(agency.id, "business")}>
-                              Forzar Business
-                            </DropdownMenuItem>
+                            {PLAN_IDS.map((id) => (
+                              <DropdownMenuItem
+                                key={id}
+                                onClick={() => setAgencyPlan(agency.id, id)}
+                              >
+                                Forzar {PLAN_DISPLAY_NAMES[id]}
+                              </DropdownMenuItem>
+                            ))}
                           </DropdownMenuContent>
                         </DropdownMenu>
                         <Button

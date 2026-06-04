@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +10,14 @@ import { toast } from '@/lib/notify';
 import { CreditCard, Loader2, ExternalLink, Check, Calendar, XCircle, AlertTriangle } from 'lucide-react';
 import { PLAN_LIMITS, PLAN_DISPLAY_NAMES } from '@/config/plans';
 import type { PlanId } from '@/types';
+import {
+  AGENCY_TRIAL_DAYS,
+  formatPlanButtonLabel,
+  formatPlanPriceUsd,
+  getStripePriceIdForCheckout,
+  getUpgradePlansFor,
+  isPaidStripePlan,
+} from '@/config/billingDisplay';
 import { format } from 'date-fns';
 import { useDateLocale } from '@/hooks/useDateLocale';
 import { useAppTranslation } from '@/hooks/useAppTranslation';
@@ -25,19 +34,9 @@ import {
 
 const PLAN_NAMES: Record<PlanId, string> = PLAN_DISPLAY_NAMES;
 
-const PLAN_PRICES: Record<PlanId, string> = {
-  starter: '0',
-  pro: '49',
-  business: '149',
-  scale: '299',
-  enterprise: '',
-};
-
-const PRICE_ID_PRO = import.meta.env.VITE_STRIPE_PRICE_ID_PRO ?? '';
-const PRICE_ID_BUSINESS = import.meta.env.VITE_STRIPE_PRICE_ID_BUSINESS ?? '';
-
 export function AgencyBillingTab() {
-  const { t } = useAppTranslation();
+  const { t, i18n } = useAppTranslation();
+  const locale = i18n.language.startsWith('es') ? 'es' : 'en';
   const dateLocale = useDateLocale();
   const { currentAgency, refreshAgency } = useAgency();
   const {
@@ -158,10 +157,14 @@ export function AgencyBillingTab() {
 
   if (!currentAgency) return null;
 
-  const hasPaidPlan = planId === 'pro' || planId === 'business';
+  const hasPaidPlan = isPaidStripePlan(planId);
   const canManageSubscription = hasPaidPlan && !!currentAgency.stripeCustomerId;
 
   const limits = PLAN_LIMITS[planId];
+  const upgradePlans = getUpgradePlansFor(planId);
+  const anyStripePriceConfigured = upgradePlans.some(
+    (id) => getStripePriceIdForCheckout(id).length > 0,
+  );
   const trialEndDate = trialEndsAt ? format(new Date(trialEndsAt), 'PPP', { locale: dateLocale }) : null;
   const periodEndDate = subscriptionPeriodEndsAt
     ? format(new Date(subscriptionPeriodEndsAt), 'PPP', { locale: dateLocale })
@@ -173,9 +176,14 @@ export function AgencyBillingTab() {
     ? t(`agency.billing.status.${subscriptionStatus}`, { defaultValue: subscriptionStatus })
     : null;
 
-  const businessLabel = trialUsedAt
-    ? t('agency.billing.businessNoTrial')
-    : t('agency.billing.businessWithTrial');
+  const planButtonLabel = (targetPlan: PlanId): string => {
+    const withTrial = targetPlan === 'business' && !trialUsedAt;
+    return formatPlanButtonLabel(targetPlan, {
+      locale,
+      withTrial,
+      trialDays: AGENCY_TRIAL_DAYS,
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -249,7 +257,7 @@ export function AgencyBillingTab() {
             </div>
           )}
 
-          {(subscriptionStatus === 'active' && (planId === 'pro' || planId === 'business') && periodEndDate) && (
+          {(subscriptionStatus === 'active' && isPaidStripePlan(planId) && periodEndDate) && (
             <div className="flex flex-wrap items-center gap-2 text-sm text-slate-700">
               <Calendar className="h-4 w-4 text-slate-500 shrink-0" />
               {cancelAtPeriodEnd ? (
@@ -282,58 +290,68 @@ export function AgencyBillingTab() {
             })}
             {extraBillableSeats > 0 && limits.extraUserPriceUsd != null && (
               <span className="block text-slate-600 mt-1">
-                +{extraBillableSeats} {t('agency.billing.extraSeats', { price: limits.extraUserPriceUsd })}
+                {t('agency.billing.extraSeats', {
+                  count: extraBillableSeats,
+                  price: limits.extraUserPriceUsd,
+                })}
               </span>
             )}
             {isOverLimit && (
               <p className="mt-1 text-amber-600 font-medium">
-                {t('agency.billing.overLimitWarning')}
+                {t('agency.billing.overLimitWarning', { planName: PLAN_NAMES[planId] })}
               </p>
             )}
           </div>
 
-          <div className="flex flex-col gap-2">
-            <p className="text-sm font-medium">{t('agency.billing.changePlan')}</p>
-            <div className="flex flex-wrap gap-2">
-              {planId !== 'pro' && PRICE_ID_PRO && (
-                <Button
-                  variant="outline"
-                  disabled={!!loadingCheckout}
-                  onClick={() => handlePlanChangeClick(PRICE_ID_PRO, 'pro')}
-                >
-                  {loadingCheckout === 'pro' ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <>
-                      <ExternalLink className="h-4 w-4 mr-1" />
-                      {t('agency.billing.proButton')}
-                    </>
-                  )}
-                </Button>
-              )}
-              {planId !== 'business' && PRICE_ID_BUSINESS && (
-                <Button
-                  variant="default"
-                  disabled={!!loadingCheckout}
-                  onClick={() => handlePlanChangeClick(PRICE_ID_BUSINESS, 'business')}
-                >
-                  {loadingCheckout === 'business' ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <>
-                      <Check className="h-4 w-4 mr-1" />
-                      {businessLabel}
-                    </>
-                  )}
-                </Button>
-              )}
-              {(!PRICE_ID_PRO || !PRICE_ID_BUSINESS) && (
+          {upgradePlans.length > 0 && (
+            <div className="flex flex-col gap-2">
+              <p className="text-sm font-medium">{t('agency.billing.changePlan')}</p>
+              <div className="flex flex-wrap gap-2">
+                {upgradePlans.map((targetPlan) => {
+                  const priceId = getStripePriceIdForCheckout(targetPlan);
+                  const label = planButtonLabel(targetPlan);
+                  const isRecommended = targetPlan === 'business';
+
+                  if (targetPlan === 'scale' && !priceId) {
+                    return (
+                      <Button key={targetPlan} variant="outline" asChild>
+                        <Link to="/contacto">{label}</Link>
+                      </Button>
+                    );
+                  }
+
+                  if (!priceId) return null;
+
+                  return (
+                    <Button
+                      key={targetPlan}
+                      variant={isRecommended ? 'default' : 'outline'}
+                      disabled={!!loadingCheckout}
+                      onClick={() => handlePlanChangeClick(priceId, targetPlan)}
+                    >
+                      {loadingCheckout === targetPlan ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <>
+                          {isRecommended ? (
+                            <Check className="h-4 w-4 mr-1" />
+                          ) : (
+                            <ExternalLink className="h-4 w-4 mr-1" />
+                          )}
+                          {label}
+                        </>
+                      )}
+                    </Button>
+                  );
+                })}
+              </div>
+              {!anyStripePriceConfigured && (
                 <p className="text-xs text-slate-500">
                   {t('agency.billing.stripeEnvHint')}
                 </p>
               )}
             </div>
-          </div>
+          )}
 
           {canManageSubscription && (
             <div className="flex flex-col gap-2 pt-4 border-t">
@@ -376,7 +394,7 @@ export function AgencyBillingTab() {
                     __html: t('agency.billing.confirmChangeBody', {
                       from: PLAN_NAMES[planId],
                       to: PLAN_NAMES[confirmDialog.targetPlan],
-                      price: PLAN_PRICES[confirmDialog.targetPlan] || t('agency.billing.enterprisePrice'),
+                      price: formatPlanPriceUsd(confirmDialog.targetPlan, locale),
                     }),
                   }}
                 />
@@ -384,7 +402,15 @@ export function AgencyBillingTab() {
                 {confirmDialog.loseTrial && (
                   <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-md text-amber-800 text-sm">
                     <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-amber-600" />
-                    <span dangerouslySetInnerHTML={{ __html: t('agency.billing.loseTrialWarning') }} />
+                    <span
+                      dangerouslySetInnerHTML={{
+                        __html: t('agency.billing.loseTrialWarning', {
+                          fromPlan: PLAN_NAMES.business,
+                          toPlan: PLAN_NAMES[confirmDialog.targetPlan],
+                          price: formatPlanPriceUsd(confirmDialog.targetPlan, locale),
+                        }),
+                      }}
+                    />
                   </div>
                 )}
 

@@ -95,7 +95,7 @@ Deno.serve(async (req) => {
         status: 500,
       });
     }
-    await syncAgencyModulesForPlan(supabase, agencyId, planId as "starter" | "pro" | "business" | "scale" | "enterprise");
+    await syncAgencyModulesForPlan(supabase, agencyId, planId);
   } else if (event.type === "invoice.payment_failed") {
     const invoice = event.data.object as Stripe.Invoice;
     const subId =

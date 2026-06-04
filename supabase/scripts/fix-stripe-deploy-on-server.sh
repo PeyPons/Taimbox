@@ -32,7 +32,7 @@ fi
 echo ""
 echo "[fix] 2/3 Comprobando STRIPE_PRICE_ID_* en $ENV_FILE ..."
 missing=0
-for v in STRIPE_PRICE_ID_PRO STRIPE_PRICE_ID_BUSINESS; do
+for v in STRIPE_PRICE_ID_PRO STRIPE_PRICE_ID_BUSINESS STRIPE_PRICE_ID_SCALE; do
   if [ -f "$ENV_FILE" ] && grep -q "^${v}=.\+" "$ENV_FILE" 2>/dev/null; then
     echo "  [OK] $v en .env"
   else
@@ -49,6 +49,7 @@ if [ "$missing" -eq 1 ]; then
   echo "Añade (sustituye por tus price_... reales de Stripe → Productos → Precios):"
   echo "  STRIPE_PRICE_ID_PRO=price_..."
   echo "  STRIPE_PRICE_ID_BUSINESS=price_..."
+  echo "  STRIPE_PRICE_ID_SCALE=price_..."
   echo ""
   echo "Asegúrate de que docker-compose.yml del servicio functions pasa esas variables al contenedor."
   echo "Luego: cd $DOCKER_DIR && docker compose up -d --force-recreate functions"

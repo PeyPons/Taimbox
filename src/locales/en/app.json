@@ -168,7 +168,7 @@
     },
     "toasts": {
       "weeklyPastEditBlocked": "You cannot edit tasks from past weeks. Use the \"Weekly\" button to manage them.",
-      "starterPlanSoftLock": "Your agency exceeds Starter Plan limits. Upgrade to Pro or Business to edit.",
+      "starterPlanSoftLock": "Your agency exceeds Free plan limits. Upgrade to Team, Agency or Scale to edit.",
       "batchAddReviewRows": "Check project, task name and hours in each row.",
       "batchAddSelectProject": "Select a project in each row that has a name or hours.",
       "batchAddCompleteOneRow": "Complete at least one row: project, task name and hours.",
@@ -1915,7 +1915,7 @@
       "saveError": "Failed to save goal"
     },
     "limits": {
-      "starterLimit": "Your agency exceeds the Starter Plan limit. Upgrade to Pro or Business to add more employees.",
+      "starterLimit": "Your agency exceeds the Free plan limit. Upgrade to Team, Agency or Scale to add more people.",
       "planReached": "You have reached your plan's employee limit. Update your plan in Plan & Billing."
     },
     "employeeCard": {
@@ -2545,8 +2545,8 @@
       "pastDueTitle": "Payment pending",
       "pastDueBody": "We could not process your last payment. Update your payment method to avoid service interruption.",
       "manageSubscription": "Manage or cancel subscription",
-      "businessWithTrial": "Business (149 $/mo, 14-day trial)",
-      "businessNoTrial": "Business (149 $/mo)",
+      "businessWithTrial": "Agency (149 $/mo, 14-day trial)",
+      "businessNoTrial": "Agency (149 $/mo)",
       "daysRemaining_one": "({{count}} day remaining)",
       "daysRemaining_other": "({{count}} days remaining)",
       "daysRemainingInPeriod": "({{count}} days remaining in current period)",
@@ -2563,21 +2563,21 @@
       "currentPlanLabel": "Current plan:",
       "cancelsOn": "Cancels on {{date}}",
       "trialUntil": "Trial until {{date}}",
-      "serviceEndsOn": "Your service will end on {{date}}. You will then move to Starter.",
+      "serviceEndsOn": "Your service will end on {{date}}. You will then move to the Free plan.",
       "nextBilling": "Next billing: {{date}}",
       "usageLabel": "Usage:",
       "usageEmployees": "{{current}} of {{max}} managed people",
       "extraSeats": "+{{count}} extra ({{price}} $/person/month)",
-      "overLimitWarning": "Your agency exceeds the current plan limit. Upgrade to unlock editing.",
+      "overLimitWarning": "Your agency exceeds the {{planName}} plan limit. Upgrade to unlock editing.",
       "changePlan": "Change plan",
-      "proButton": "Pro (49 $/mo)",
-      "stripeEnvHint": "Set VITE_STRIPE_PRICE_ID_PRO and VITE_STRIPE_PRICE_ID_BUSINESS to enable the buttons.",
-      "portalDescription": "Opens the Stripe portal to update payment method, view invoices or cancel. If you cancel, you move to Starter at the end of the billed period.",
+      "contactScale": "Contact us — {{label}}",
+      "stripeEnvHint": "Set VITE_STRIPE_PRICE_ID_PRO, VITE_STRIPE_PRICE_ID_BUSINESS and VITE_STRIPE_PRICE_ID_SCALE to enable checkout.",
+      "portalDescription": "Opens the Stripe portal to update payment method, view invoices or cancel. If you cancel, you move to the Free plan at the end of the billed period.",
       "portalButton": "Manage subscription / Cancel",
       "updatePayment": "Update payment",
       "confirmChangeTitle": "Switch to {{plan}}",
-      "confirmChangeBody": "You are switching from <strong>{{from}}</strong> to <strong>{{to}}</strong> ({{price}} $/mo).",
-      "loseTrialWarning": "You are on a Business trial. Switching to Pro will <strong>end the trial immediately</strong> and charge Pro (49 $/mo) from today.",
+      "confirmChangeBody": "You are switching from <strong>{{from}}</strong> to <strong>{{to}}</strong> ({{price}}).",
+      "loseTrialWarning": "You are on a {{fromPlan}} trial. Switching to {{toPlan}} will <strong>end the trial immediately</strong> and charge {{price}} from today.",
       "prorateNote": "Proration for the price difference will apply on your next invoice.",
       "confirmChange": "Confirm change",
       "cancel": "Cancel"
@@ -2712,7 +2712,7 @@
       "clear": "Clear filter"
     },
     "subscriptionBanner": {
-      "exceeds": "Your agency exceeds the limits of the Starter Plan. Upgrade to Pro or Business to plan again.",
+      "exceeds": "Your agency exceeds {{planName}} limits ({{current}}/{{max}} people). Upgrade to {{upgradeOptions}} to plan again.",
       "viewPlans": "View plans"
     },
     "departmentSelector": {

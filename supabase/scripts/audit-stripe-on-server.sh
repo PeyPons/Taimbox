@@ -36,6 +36,11 @@ if [ -d "$VOL" ]; then
     else
       echo "  [AVISO] stripe-webhook parece versión antigua (sin resolver async)"
     fi
+    if grep -q '"scale"' "$VOL/_shared/stripe-plan.ts" 2>/dev/null; then
+      echo "  [OK] stripe-plan incluye plan scale"
+    else
+      echo "  [AVISO] _shared/stripe-plan.ts sin soporte scale — git pull + redeploy"
+    fi
   fi
 else
   echo "No existe $VOL"
@@ -51,7 +56,7 @@ if docker inspect "$CONTAINER" &>/dev/null; then
     | grep -E '^STRIPE_|^SUPABASE_URL' \
     | sed -E 's/(STRIPE_SECRET_KEY|STRIPE_WEBHOOK_SECRET)=.+/\\1=***oculto***/' \
     | sed -E 's/(STRIPE_PRICE_ID_[A-Z]+)=.+/\\1=\\0/' || echo "  (sin vars STRIPE visibles)"
-  for v in STRIPE_PRICE_ID_PRO STRIPE_PRICE_ID_BUSINESS STRIPE_SECRET_KEY STRIPE_WEBHOOK_SECRET; do
+  for v in STRIPE_PRICE_ID_PRO STRIPE_PRICE_ID_BUSINESS STRIPE_PRICE_ID_SCALE STRIPE_SECRET_KEY STRIPE_WEBHOOK_SECRET; do
     if docker inspect "$CONTAINER" --format '{{range .Config.Env}}{{println .}}{{end}}' | grep -q "^${v}=$"; then
       echo "  [VACÍO] $v"
     elif docker inspect "$CONTAINER" --format '{{range .Config.Env}}{{println .}}{{end}}' | grep -q "^${v}="; then
@@ -73,6 +78,9 @@ for fn in stripe-webhook create-checkout-session admin-set-agency-plan; do
   body=$(head -c 100 /tmp/ef-audit.json 2>/dev/null || echo "")
   echo "  $fn -> HTTP $code  $body"
 done
+if [ -f /tmp/ef-audit.json ] && grep -q "No Stripe-Signature" /tmp/ef-audit.json 2>/dev/null; then
+  echo "  [OK] stripe-webhook desplegado (400 sin firma = env STRIPE_* cargado)"
+fi
 
 echo ""
 echo "========== 6. Agencias con suscripción (vía psql local si existe) =========="
