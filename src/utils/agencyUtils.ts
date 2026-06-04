@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { parsePlanId } from '@/config/plans';
 import { Agency, AgencySettings } from '@/types';
 import { resolveAgencyCurrency } from '@/utils/currencyUtils';
 import type { AgencyMember } from '@/contexts/AgencyContext';
@@ -165,7 +166,7 @@ export async function mapSupabaseAgency(data: SupabaseAgency): Promise<Agency> {
   const migratedSettings = await migrateIntegrations(data.id, settings);
 
   const status = (data.status === 'suspended' ? 'suspended' : 'active') as Agency['status'];
-  const planId = (data.plan_id === 'pro' || data.plan_id === 'business' ? data.plan_id : 'starter') as Agency['planId'];
+  const planId = parsePlanId(data.plan_id);
 
   const canSeeIntegrationSecrets =
     data.google_ads_refresh_token != null ||

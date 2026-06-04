@@ -18,6 +18,14 @@ export const PLAN_DISPLAY_NAMES: Record<PlanId, string> = {
 
 export const PLAN_IDS: PlanId[] = ['starter', 'pro', 'business', 'scale', 'enterprise'];
 
+/** Normaliza plan_id de Postgres a PlanId conocido (fallback: Free). */
+export function parsePlanId(value: string | null | undefined): PlanId {
+  if (value && PLAN_IDS.includes(value as PlanId)) {
+    return value as PlanId;
+  }
+  return 'starter';
+}
+
 export interface PlanLimits {
   /** Personas gestionadas incluidas en el precio base */
   includedManagedUsers: number;

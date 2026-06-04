@@ -342,7 +342,7 @@ export function AgencyBillingTab() {
             {selfServeReference.length > 0 && (
               <div className="pt-2 border-t border-slate-200 space-y-1">
                 <p className="text-xs font-medium text-slate-600 uppercase tracking-wide">
-                  {t('agency.billing.estimateReference')}
+                  {t('agency.billing.estimateReference', { count: currentEmployees })}
                 </p>
                 <ul className="text-slate-600 space-y-0.5">
                   {selfServeReference.map((ref) => (
