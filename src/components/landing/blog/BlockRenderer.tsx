@@ -10,6 +10,7 @@ import { RelatedPostBlock } from "./blocks/RelatedPostBlock";
 import { HtmlBlock } from "./blocks/HtmlBlock";
 import { CtaBlock } from "./blocks/CtaBlock";
 import { VisualRefBlock } from "./blocks/VisualRefBlock";
+import { groupBlocksForLayout, groupKey } from "./groupBlocksForLayout";
 
 interface BlockRendererProps {
   blocks: BlogBlock[];
@@ -80,17 +81,55 @@ function renderBlock(block: BlogBlock, allBlocks: BlogBlock[]) {
   }
 }
 
+function blockWrapperClass(block: BlogBlock): string | undefined {
+  if (block.type === "visualRef") return "py-1 sm:py-2";
+  return undefined;
+}
+
+function renderBlockGroup(group: ReturnType<typeof groupBlocksForLayout>[number], allBlocks: BlogBlock[]) {
+  if (group.kind === "prose") {
+    return (
+      <div className="space-y-3 sm:space-y-3.5 text-indigo-100/90">
+        {group.blocks.map((block) => (
+          <ParagraphBlock key={block.id} block={block} />
+        ))}
+      </div>
+    );
+  }
+
+  if (group.kind === "subsection") {
+    return (
+      <div className="space-y-2.5 sm:space-y-3">
+        <HeadingBlock block={group.heading} />
+        {group.blocks.length > 0 && (
+          <div className="space-y-3 sm:space-y-3.5 sm:border-l-2 sm:border-indigo-400/20 sm:pl-5">
+            {group.blocks.map((block) => (
+              <div key={block.id} data-block-type={block.type}>
+                {renderBlock(block, allBlocks)}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div key={group.block.id} data-block-type={group.block.type} className={blockWrapperClass(group.block)}>
+      {renderBlock(group.block, allBlocks)}
+    </div>
+  );
+}
+
 export function BlockRenderer({ blocks }: BlockRendererProps) {
   const { intro, sections } = splitIntoSections(blocks);
 
   return (
     <>
       {intro.length > 0 && (
-        <div className="flex flex-col gap-6 sm:gap-7 mb-10 sm:mb-14">
-          {intro.map((block) => (
-            <div key={block.id} data-block-type={block.type}>
-              {renderBlock(block, blocks)}
-            </div>
+        <div className="flex flex-col gap-5 sm:gap-6 mb-8 sm:mb-12">
+          {groupBlocksForLayout(intro).map((group) => (
+            <div key={groupKey(group)}>{renderBlockGroup(group, blocks)}</div>
           ))}
         </div>
       )}
@@ -99,23 +138,11 @@ export function BlockRenderer({ blocks }: BlockRendererProps) {
         <section
           key={heading.id}
           aria-labelledby={heading.anchorId}
-          className="flex flex-col gap-5 sm:gap-7 mb-12 sm:mb-16 pt-8 sm:pt-12 border-t border-white/10 scroll-mt-24"
+          className="flex flex-col gap-5 sm:gap-6 mb-10 sm:mb-14 pt-6 sm:pt-8 border-t border-white/10 scroll-mt-24"
         >
           <HeadingBlock block={{ ...heading, level: 2 }} sectionLead />
-          {sectionBlocks.map((block) => (
-            <div
-              key={block.id}
-              data-block-type={block.type}
-              className={
-                block.type === "visualRef"
-                  ? "py-1 sm:py-2"
-                  : block.type === "heading" && block.level === 3
-                    ? "mt-2 sm:mt-3"
-                    : undefined
-              }
-            >
-              {renderBlock(block, blocks)}
-            </div>
+          {groupBlocksForLayout(sectionBlocks).map((group) => (
+            <div key={groupKey(group)}>{renderBlockGroup(group, blocks)}</div>
           ))}
         </section>
       ))}

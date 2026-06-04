@@ -2,8 +2,45 @@
  * Etiquetas de facturación in-app: nombres comerciales + precios USD + asientos.
  * Combina `plans.ts` (límites) y `publicPricing.ts` (precio mensual Stripe).
  */
-import { PLAN_DISPLAY_NAMES, PLAN_LIMITS, type PlanId } from '@/config/plans';
+import { PLAN_DISPLAY_NAMES, PLAN_LIMITS, billableExtraManagedUsers, type PlanId } from '@/config/plans';
 import { PUBLIC_PLAN_PRICING } from '@/config/publicPricing';
+
+export interface MonthlyBillEstimate {
+  planId: PlanId;
+  managedCount: number;
+  baseUsd: number | null;
+  includedUsers: number;
+  extraSeats: number;
+  extraSeatPriceUsd: number | null;
+  extraUsd: number;
+  totalUsd: number | null;
+}
+
+/** Estimación mensual: precio base Stripe + asientos extra facturables. */
+export function estimateMonthlyBillUsd(planId: PlanId, managedCount: number): MonthlyBillEstimate {
+  const lim = PLAN_LIMITS[planId];
+  const baseUsd = getPlanMonthlyUsd(planId);
+  const extraSeats = billableExtraManagedUsers(planId, managedCount);
+  const extraSeatPriceUsd = lim.extraUserPriceUsd;
+  const extraUsd =
+    extraSeatPriceUsd != null ? extraSeats * extraSeatPriceUsd : 0;
+  const totalUsd = baseUsd != null ? baseUsd + extraUsd : null;
+
+  return {
+    planId,
+    managedCount,
+    baseUsd,
+    includedUsers: lim.includedManagedUsers,
+    extraSeats,
+    extraSeatPriceUsd,
+    extraUsd,
+    totalUsd,
+  };
+}
+
+export function formatUsdAmount(amount: number): string {
+  return `${amount.toLocaleString('es-ES', { maximumFractionDigits: 2 })} $`;
+}
 
 /** Planes que pueden contratarse por Stripe checkout (no enterprise manual). */
 export const SELF_SERVE_PAID_PLANS: PlanId[] = ['pro', 'business', 'scale'];

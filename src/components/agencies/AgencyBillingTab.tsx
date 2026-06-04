@@ -14,6 +14,8 @@ import {
   AGENCY_TRIAL_DAYS,
   formatPlanButtonLabel,
   formatPlanPriceUsd,
+  formatUsdAmount,
+  estimateMonthlyBillUsd,
   getStripePriceIdForCheckout,
   getUpgradePlansFor,
   isPaidStripePlan,
@@ -162,9 +164,10 @@ export function AgencyBillingTab() {
 
   const limits = PLAN_LIMITS[planId];
   const upgradePlans = getUpgradePlansFor(planId);
-  const anyStripePriceConfigured = upgradePlans.some(
-    (id) => getStripePriceIdForCheckout(id).length > 0,
-  );
+  const monthlyEstimate = estimateMonthlyBillUsd(planId, currentEmployees);
+  const selfServeReference = planId === 'enterprise' || planId === 'starter'
+    ? (['pro', 'business', 'scale'] as PlanId[]).map((id) => estimateMonthlyBillUsd(id, currentEmployees))
+    : [];
   const trialEndDate = trialEndsAt ? format(new Date(trialEndsAt), 'PPP', { locale: dateLocale }) : null;
   const periodEndDate = subscriptionPeriodEndsAt
     ? format(new Date(subscriptionPeriodEndsAt), 'PPP', { locale: dateLocale })
@@ -175,6 +178,9 @@ export function AgencyBillingTab() {
   const statusLabel = subscriptionStatus
     ? t(`agency.billing.status.${subscriptionStatus}`, { defaultValue: subscriptionStatus })
     : null;
+  const anyStripePriceConfigured = upgradePlans.some(
+    (id) => getStripePriceIdForCheckout(id).length > 0,
+  );
 
   const planButtonLabel = (targetPlan: PlanId): string => {
     const withTrial = targetPlan === 'business' && !trialUsedAt;
@@ -300,6 +306,59 @@ export function AgencyBillingTab() {
               <p className="mt-1 text-amber-600 font-medium">
                 {t('agency.billing.overLimitWarning', { planName: PLAN_NAMES[planId] })}
               </p>
+            )}
+          </div>
+
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm space-y-2">
+            <p className="font-medium text-slate-900">{t('agency.billing.estimateTitle')}</p>
+            {monthlyEstimate.totalUsd != null ? (
+              <div className="space-y-1 text-slate-700">
+                <p>
+                  {t('agency.billing.estimateBase', {
+                    plan: PLAN_NAMES[planId],
+                    amount: formatUsdAmount(monthlyEstimate.baseUsd ?? 0),
+                  })}
+                </p>
+                {monthlyEstimate.extraSeats > 0 && monthlyEstimate.extraSeatPriceUsd != null && (
+                  <p>
+                    {t('agency.billing.estimateExtras', {
+                      count: monthlyEstimate.extraSeats,
+                      price: monthlyEstimate.extraSeatPriceUsd,
+                      amount: formatUsdAmount(monthlyEstimate.extraUsd),
+                    })}
+                  </p>
+                )}
+                <p className="font-semibold text-slate-900 pt-1">
+                  {t('agency.billing.estimateTotal', {
+                    amount: formatUsdAmount(monthlyEstimate.totalUsd),
+                  })}
+                </p>
+              </div>
+            ) : (
+              <p className="text-slate-700">
+                {t('agency.billing.estimateCustom', { plan: PLAN_NAMES[planId] })}
+              </p>
+            )}
+            {selfServeReference.length > 0 && (
+              <div className="pt-2 border-t border-slate-200 space-y-1">
+                <p className="text-xs font-medium text-slate-600 uppercase tracking-wide">
+                  {t('agency.billing.estimateReference')}
+                </p>
+                <ul className="text-slate-600 space-y-0.5">
+                  {selfServeReference.map((ref) => (
+                    <li key={ref.planId}>
+                      {PLAN_NAMES[ref.planId]}:{' '}
+                      {ref.totalUsd != null
+                        ? t('agency.billing.estimateReferenceLine', {
+                            total: formatUsdAmount(ref.totalUsd),
+                            included: ref.includedUsers,
+                            extras: ref.extraSeats,
+                          })
+                        : t('agency.billing.enterprisePrice')}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             )}
           </div>
 

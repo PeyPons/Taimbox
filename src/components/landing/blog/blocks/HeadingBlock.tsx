@@ -57,8 +57,8 @@ export function HeadingBlock({ block, sectionLead = false }: HeadingBlockProps) 
         ? "mt-0 mb-0"
         : "mt-10 sm:mt-12 mb-5 sm:mb-6"
       : block.level === 3
-        ? "mt-5 sm:mt-8 mb-3 sm:mb-5"
-        : "mt-4 mb-3";
+        ? "mt-4 sm:mt-5 mb-2 sm:mb-2.5"
+        : "mt-3 mb-2";
 
   if (Icon && block.level === 2) {
     return (

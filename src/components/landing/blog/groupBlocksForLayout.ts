@@ -1,0 +1,74 @@
+import type { BlogBlock } from "@/lib/blog/blockSchema";
+
+type BlockGroup =
+  | { kind: "prose"; blocks: Extract<BlogBlock, { type: "paragraph" }>[] }
+  | { kind: "subsection"; heading: Extract<BlogBlock, { type: "heading" }>; blocks: BlogBlock[] }
+  | { kind: "block"; block: BlogBlock };
+
+function isSubheading(block: BlogBlock): block is Extract<BlogBlock, { type: "heading" }> {
+  return block.type === "heading" && (block.level === 3 || block.level === 4);
+}
+
+function isParagraph(block: BlogBlock): block is Extract<BlogBlock, { type: "paragraph" }> {
+  return block.type === "paragraph";
+}
+
+/** Agrupa bloques para evitar gap enorme entre párrafos consecutivos o bajo un H3. */
+export function groupBlocksForLayout(blocks: BlogBlock[]): BlockGroup[] {
+  const groups: BlockGroup[] = [];
+  let i = 0;
+
+  while (i < blocks.length) {
+    const block = blocks[i];
+
+    if (isSubheading(block)) {
+      const heading = block;
+      const body: BlogBlock[] = [];
+      i++;
+      while (i < blocks.length) {
+        const next = blocks[i];
+        if (isSubheading(next) || next.type === "heading") break;
+        if (
+          next.type === "visualRef" ||
+          next.type === "callout" ||
+          next.type === "cta" ||
+          next.type === "table" ||
+          next.type === "faq" ||
+          next.type === "toc" ||
+          next.type === "relatedPost" ||
+          next.type === "html"
+        ) {
+          break;
+        }
+        body.push(next);
+        i++;
+      }
+      groups.push({ kind: "subsection", heading, blocks: body });
+      continue;
+    }
+
+    if (isParagraph(block)) {
+      const prose: Extract<BlogBlock, { type: "paragraph" }>[] = [block];
+      i++;
+      while (i < blocks.length && isParagraph(blocks[i])) {
+        prose.push(blocks[i] as Extract<BlogBlock, { type: "paragraph" }>);
+        i++;
+      }
+      groups.push({ kind: "prose", blocks: prose });
+      continue;
+    }
+
+    groups.push({ kind: "block", block });
+    i++;
+  }
+
+  return groups;
+}
+
+export function groupKey(group: BlockGroup): string {
+  if (group.kind === "prose") return group.blocks.map((b) => b.id).join("-");
+  if (group.kind === "subsection") {
+    return `${group.heading.id}-${group.blocks.map((b) => b.id).join("-")}`;
+  }
+  return group.block.id;
+}
