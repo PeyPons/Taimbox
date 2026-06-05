@@ -8,6 +8,7 @@ import { Project, Employee, Allocation, NewTaskRow, Client, Deadline } from '@/t
 import { ProjectBudgetStatus } from '@/hooks/useAllocationSheet';
 import { useState, useMemo } from 'react';
 import { filterEmployeesForOperationalMonth } from '@/utils/employeeAssignmentVisibility';
+import { round2 } from '@/utils/numbers';
 import {
   computeEmployeeDeadlinePreview,
   resolveProjectBudgetForPreview,
