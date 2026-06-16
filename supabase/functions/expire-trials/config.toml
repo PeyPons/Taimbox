@@ -1,0 +1,3 @@
+# Bearer EXPIRE_TRIALS_CRON_SECRET
+verify_jwt = false
+

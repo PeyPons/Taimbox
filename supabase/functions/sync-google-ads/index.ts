@@ -25,16 +25,7 @@ Deno.serve(async (req) => {
         const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')
         const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
 
-        // Fallback para secrets locales en self-hosted
-        let localSecrets: any = {};
-        try {
-            const text = await Deno.readTextFile('/home/deno/functions/sync-google-ads/secrets.json');
-            localSecrets = JSON.parse(text);
-        } catch (e) {
-            // No hay archivo de secrets local
-        }
-
-        const getSecret = (key: string) => Deno.env.get(key) || Deno.env.get(`VITE_${key}`) || localSecrets[key];
+        const getSecret = (key: string) => Deno.env.get(key) || Deno.env.get(`VITE_${key}`);
 
         if (!supabaseUrl || !supabaseKey || !supabaseAnonKey) {
             throw new Error('Faltan variables de entorno SUPABASE_URL, SUPABASE_ANON_KEY o SUPABASE_SERVICE_ROLE_KEY')

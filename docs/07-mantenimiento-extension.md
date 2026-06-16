@@ -34,21 +34,21 @@
   Al cambiar de pestaña del navegador, Supabase Auth puede refrescar el token o re-emitir el evento de sesión (`onAuthStateChange`), lo que actualiza el objeto `user`/`session` en memoria (nueva referencia). Si los contextos reaccionan a esa referencia, se disparan fetches masivos (user_agencies, employees, agencies, etc.) sin necesidad. **AuthContext** se deja intacto: debe seguir recibiendo y guardando la nueva sesión para que el JWT esté siempre fresco y las peticiones con RLS no fallen con 401. Para evitar la cascada de fetching, en **AgencyContext** se usa un `prevUserIdRef`: en el `useEffect` que llama a `fetchAgencyForUser`, si `user.id` es igual a `prevUserIdRef.current` y ya existe `currentAgency`, se hace un return temprano y no se ejecuta el fetch. En **AppContext** se usa un `prevAuthUserIdRef` en el `useEffect` que vincula empleado con usuario Auth: si el id del usuario actual ya fue procesado y hay usuario vinculado, se hace return temprano. Así se evitan recargas masivas al cambiar de pestaña sin interferir con la actualización del token en AuthContext.
 
 - **Row Level Security (RLS) y tokens API**  
-  En la base de datos (Supabase), **todas las tablas públicas** tienen RLS habilitado. El acceso se controla mediante la función SQL `user_agency_ids()` (reemplaza a la anterior `requesting_agency_id()`), que:
-  1. Si la petición lleva un JWT de **API** con claim `agency_id` → devuelve solo esa agencia.
-  2. Si es un **usuario normal** (sin ese claim) → devuelve **todas** las agencias del usuario desde `user_agencies` (sin depender de `is_primary`).
+  En la base de datos (Supabase), **todas las tablas públicas** tienen RLS habilitado. El acceso se controla mediante la función SQL `user_agency_ids()` (migración `20260610120000_api_token_rls_functions.sql`), que:
+  1. Si la petición lleva un JWT de **API** (`iss = 'timeboxing-api'`, claims `agency_id` y `sub` = id en `api_tokens`) → devuelve solo esa agencia **si** la fila en `api_tokens` está activa y no expirada.
+  2. Si es un **usuario normal** → devuelve la unión de agencias desde `user_agencies` y `employees` para `auth.uid()`.
   
   La función anterior `requesting_agency_id()` solo devolvía **una** agencia (la primaria), lo que causaba que usuarios con múltiples agencias o con `is_primary = false` no pudieran operar en la agencia correcta. `user_agency_ids()` devuelve un `SETOF uuid` con todas las agencias, y las políticas RLS usan `IN (SELECT user_agency_ids())` en lugar de `= requesting_agency_id()`. El campo `is_primary` solo afecta a la UI (agencia por defecto al login), no a la seguridad.
 
   **Tabla `api_tokens`**: Almacena metadatos de tokens API emitidos (hash SHA-256, permisos, expiración). El JWT real solo se muestra una vez al crearlo.
 
-  **Revocación y expiración con efecto inmediato**: Por defecto, al revocar un token solo se pone `is_active = false` en la BD; el JWT sigue siendo válido hasta que expire. Para que la revocación niegue el acceso al instante, la función `requesting_agency_id()` debe comprobar si el token está revocado y devolver `NULL` en ese caso. También puede verificarse `expires_at` en la BD además de la validación automática del claim `exp` del JWT.
+  **Revocación y expiración con efecto inmediato**: `user_agency_ids()` y `can_write_via_api()` consultan `api_tokens` (`is_active`, `expires_at`) en cada petición con JWT API. Revocar un token (`is_active = false`) niega acceso al instante.
 
-  **Aplicar permisos readonly/readwrite**: Por defecto, las políticas RLS solo verifican `agency_id`, no el claim `permissions` del JWT. Para que tokens con `permissions='readonly'` no puedan hacer INSERT/UPDATE/DELETE, la BD debe tener la función `can_write_via_api()` y las políticas RLS de INSERT/UPDATE/DELETE deben comprobarla. Las tablas con `agency_id` directo, vía `employee_id` o vía `project_id` deben tener políticas coherentes con ese tipo.
+  **Permisos readonly/readwrite**: `can_write_via_api()` devuelve `false` para tokens API con `permissions = 'readonly'`. Las políticas RLS de INSERT/UPDATE/DELETE lo invocan junto con el scope de agencia.
 
   **Edge Functions relacionadas**:
-  - `generate-api-token`: Recibe `{ agency_id, name, permissions?, expires_in_days? }` del admin autenticado, firma un JWT con claim `agency_id` y `sub` = id del registro en `api_tokens`, guarda el hash en `api_tokens` y devuelve el JWT.
-  - `revoke-api-token`: Recibe `{ token_id }`, verifica que el caller es admin de la agencia dueña y marca `is_active = false`. El acceso se deniega en la siguiente petición solo si está aplicado el script anterior.
+  - `generate-api-token`: Recibe `{ agency_id, name, permissions?, expires_in_days? }` del admin autenticado. Si no se indica `expires_in_days`, expira a **365 días**. Firma JWT con `iss = 'timeboxing-api'`, claim `agency_id` y `sub` = id del registro en `api_tokens`.
+  - `revoke-api-token`: Recibe `{ token_id }`, verifica que el caller es admin de la agencia dueña y marca `is_active = false`. El acceso se deniega en la siguiente petición vía `user_agency_ids()` / `can_write_via_api()`.
 
   **Políticas RLS por tipo de tabla**:
   | Tipo | Tablas | Política |

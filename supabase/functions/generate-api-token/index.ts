@@ -98,6 +98,17 @@ serve(async (req) => {
 
     const validPermissions = permissions === 'readonly' ? 'readonly' : 'readwrite'
 
+    const MAX_EXPIRES_DAYS = 730
+    const DEFAULT_EXPIRES_DAYS = 365
+    let expiresDays = DEFAULT_EXPIRES_DAYS
+    if (expires_in_days != null) {
+      const parsed = Number(expires_in_days)
+      if (!Number.isFinite(parsed) || parsed < 1 || parsed > MAX_EXPIRES_DAYS) {
+        throw new Error(`expires_in_days debe estar entre 1 y ${MAX_EXPIRES_DAYS}.`)
+      }
+      expiresDays = Math.floor(parsed)
+    }
+
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
 
     const { data: callerEmployee, error: empError } = await supabaseAdmin
@@ -151,8 +162,8 @@ serve(async (req) => {
       iat: now,
     }
 
-    if (expires_in_days && expires_in_days > 0) {
-      const expTimestamp = now + (expires_in_days * 24 * 60 * 60)
+    if (expiresDays > 0) {
+      const expTimestamp = now + (expiresDays * 24 * 60 * 60)
       jwtPayload.exp = expTimestamp
       expiresAt = new Date(expTimestamp * 1000).toISOString()
     }

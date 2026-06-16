@@ -101,7 +101,7 @@ export default function ApiKeysPage() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newTokenName, setNewTokenName] = useState('');
   const [newTokenPermissions, setNewTokenPermissions] = useState<'readonly' | 'readwrite'>('readwrite');
-  const [newTokenExpiration, setNewTokenExpiration] = useState<string>('never');
+  const [newTokenExpiration, setNewTokenExpiration] = useState<string>('365d');
 
   const [generatedToken, setGeneratedToken] = useState<string | null>(null);
   const [generatedTokenName, setGeneratedTokenName] = useState('');

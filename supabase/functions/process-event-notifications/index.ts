@@ -121,6 +121,48 @@ serve(async (req) => {
     .maybeSingle();
 
   if (!membership) {
+    const { data: empMembership } = await supabaseAdmin
+      .from("employees")
+      .select("id")
+      .eq("agency_id", agencyId)
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (!empMembership) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+  }
+
+  const { data: callerEmployee } = await supabaseAdmin
+    .from("employees")
+    .select("id")
+    .eq("agency_id", agencyId)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  const isOwner = callerEmployee?.id === completed.employee_id;
+  let canTriggerForOthers = false;
+
+  if (!isOwner) {
+    const { data: isAdmin } = await supabaseUser.rpc("is_agency_admin", {
+      p_user_id: userId,
+      p_agency_id: agencyId,
+    });
+    if (isAdmin === true) {
+      canTriggerForOthers = true;
+    } else {
+      const { data: canAssign } = await supabaseUser.rpc("user_has_agency_role_permission", {
+        p_user_id: userId,
+        p_agency_id: agencyId,
+        p_permission: "can_assign_tasks_to_others",
+      });
+      canTriggerForOthers = canAssign === true;
+    }
+  }
+
+  if (!isOwner && !canTriggerForOthers) {
     return new Response(JSON.stringify({ error: "Forbidden" }), {
       status: 403,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

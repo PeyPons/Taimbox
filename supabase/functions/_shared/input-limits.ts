@@ -73,8 +73,8 @@ export function parsePassword(value: unknown): string {
   if (typeof value !== "string") {
     throw new Error("La contraseña es obligatoria.");
   }
-  if (value.length < 6) {
-    throw new Error("La contraseña debe tener al menos 6 caracteres.");
+  if (value.length < 8) {
+    throw new Error("La contraseña debe tener al menos 8 caracteres.");
   }
   if (value.length > INPUT_LIMITS.password) {
     throw new Error(`La contraseña supera el máximo de ${INPUT_LIMITS.password} caracteres.`);

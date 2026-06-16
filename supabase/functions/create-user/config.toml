@@ -1,0 +1,2 @@
+# Auth manual con JWT del admin de agencia
+verify_jwt = true

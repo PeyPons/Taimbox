@@ -14,6 +14,7 @@ import {
     getClientIp,
     RATE_LIMITS,
     RateLimitError,
+    RateLimitUnavailableError,
 } from "../_shared/rate-limit.ts"
 
 const corsHeaders = {
@@ -64,6 +65,7 @@ serve(async (req) => {
             supabaseAdmin,
             `register:ip:${clientIp}`,
             RATE_LIMITS.registerByIp,
+            true,
         )
 
         const { email, password, name, agencyName, currency: bodyCurrency } = body
@@ -82,6 +84,7 @@ serve(async (req) => {
             supabaseAdmin,
             `register:email:${cleanEmail}`,
             RATE_LIMITS.registerByEmail,
+            true,
         )
 
         const cleanPassword = parsePassword(password)
@@ -337,6 +340,8 @@ serve(async (req) => {
         const errorMessage = error instanceof Error ? error.message : 'Error desconocido al registrar'
         const status = error instanceof RateLimitError
             ? 429
+            : error instanceof RateLimitUnavailableError
+                ? 503
             : error instanceof Error && errorMessage.includes('supera')
                 ? 400
                 : 400

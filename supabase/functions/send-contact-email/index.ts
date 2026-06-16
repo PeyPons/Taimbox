@@ -10,6 +10,7 @@ import {
   getClientIp,
   RATE_LIMITS,
   RateLimitError,
+  RateLimitUnavailableError,
 } from "../_shared/rate-limit.ts"
 
 const corsHeaders = {
@@ -121,15 +122,21 @@ Deno.serve(async (req) => {
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-    if (supabaseUrl && supabaseServiceKey) {
-      const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
-      const clientIp = getClientIp(req)
-      await assertRateLimit(
-        supabaseAdmin,
-        `contact:ip:${clientIp}`,
-        RATE_LIMITS.contactByIp,
-      )
+    if (!supabaseUrl || !supabaseServiceKey) {
+      return new Response(JSON.stringify({ success: false, error: 'Configuración del servidor incompleta.' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500,
+      })
     }
+
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
+    const clientIp = getClientIp(req)
+    await assertRateLimit(
+      supabaseAdmin,
+      `contact:ip:${clientIp}`,
+      RATE_LIMITS.contactByIp,
+      true,
+    )
 
     const name = parseBoundedString(body?.name, {
       max: INPUT_LIMITS.personName,
@@ -172,6 +179,8 @@ Deno.serve(async (req) => {
     let status = 500
     if (err instanceof RateLimitError) {
       status = 429
+    } else if (err instanceof RateLimitUnavailableError) {
+      status = 503
     } else if (err instanceof Error) {
       status = 400
     }

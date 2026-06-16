@@ -4,6 +4,7 @@ import {
     assertAgencyPermission,
     getBearerToken,
 } from '../_shared/agency-access.ts'
+import { resolveOAuthRedirectUri } from '../_shared/oauth-redirect.ts'
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -75,12 +76,17 @@ Deno.serve(async (req) => {
             permission: 'can_access_agency_settings',
         })
 
-        // Usar redirect_uri del frontend (debe coincidir exactamente con la usada al iniciar el flujo)
-        const finalRedirectUri = redirect_uri || (
-            (req.headers.get('origin') || '').includes('localhost')
-                ? 'http://localhost:8080/google-callback'
-                : 'https://taimbox.com/google-callback'
+        const finalRedirectUri = resolveOAuthRedirectUri(
+            'google',
+            redirect_uri,
+            req.headers.get('origin'),
         )
+        if (!finalRedirectUri) {
+            return new Response(
+                JSON.stringify({ error: 'redirect_uri no permitido.' }),
+                { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+            )
+        }
 
         console.log(`[oauth-google-ads] Final Redirect URI used: ${finalRedirectUri}`)
 

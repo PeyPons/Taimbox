@@ -157,7 +157,7 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
 
     try {
       const isNewEmployee = !employeeToEdit;
-      const hasPassword = (data.password || '').length >= 6;
+      const hasPassword = (data.password || '').length >= 8;
       const emailValue = data.email?.trim() || '';
 
       // Para NUEVOS empleados, es OBLIGATORIO crear cuenta de acceso
@@ -170,7 +170,7 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
         }
         if (!hasPassword) {
           toast.error(t('team.employeeDialog.passwordRequired'));
-          form.setError('password', { message: 'La contraseña debe tener al menos 6 caracteres' });
+          form.setError('password', { message: 'La contraseña debe tener al menos 8 caracteres' });
           setIsProcessing(false);
           return;
         }
@@ -178,7 +178,7 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
         // Crear usuario en Supabase Auth
         console.log('[EmployeeDialog] Creando usuario en Auth:', emailValue);
         const { data: authData, error } = await supabase.functions.invoke('create-user', {
-          body: { email: emailValue, password: data.password, name: data.name }
+          body: { email: emailValue, password: data.password, name: data.name, agency_id: currentAgency?.id },
         });
 
         if (error) {
@@ -239,7 +239,7 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
           console.log('[EmployeeDialog] Creando cuenta Auth para empleado existente:', emailValue);
           // Renombrar 'data' a 'newAuthData' para evitar conflicto con el argumento 'data' de la función
           const { data: newAuthData, error } = await supabase.functions.invoke('create-user', {
-            body: { email: emailValue, password: data.password, name: data.name }
+            body: { email: emailValue, password: data.password, name: data.name, agency_id: currentAgency?.id },
           });
 
           if (error) {
@@ -432,7 +432,7 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
                                 placeholder={hasAccess ? "Dejar vacío para no cambiar" : "Mínimo 6 caracteres"}
                                 autoComplete="new-password"
                                 {...field}
-                                className={!isEditing && (field.value || '').length < 6 ? 'border-amber-300' : ''}
+                                className={!isEditing && (field.value || '').length < 8 ? 'border-amber-300' : ''}
                               />
                             </FormControl>
                             <FormMessage />

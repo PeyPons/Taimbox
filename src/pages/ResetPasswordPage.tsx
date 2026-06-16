@@ -60,7 +60,7 @@ export default function ResetPasswordPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (newPassword.length < 6) {
+        if (newPassword.length < 8) {
             toast.error(t('auth.resetPassword.passwordMinLength'));
             return;
         }

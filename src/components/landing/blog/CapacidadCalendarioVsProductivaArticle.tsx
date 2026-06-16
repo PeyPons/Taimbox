@@ -7,6 +7,7 @@ import { BlogTOC } from './BlogTOC';
 import { BlogRelatedPost } from './BlogRelatedPost';
 import type { BlogTOCItem } from './BlogTOC';
 import { useTranslation } from 'react-i18next';
+import { sanitizeInlineHtml } from '@/lib/blog/sanitize';
 
 export interface CapacidadCalendarioVsProductivaArticleProps {
   readingMinutes?: number;
@@ -38,8 +39,8 @@ export function CapacidadCalendarioVsProductivaArticle({
           {t(`posts.${postKey}.title`)}
         </h1>
         <div className="space-y-5 text-indigo-100/95 text-base sm:text-lg leading-[1.75]">
-          <p dangerouslySetInnerHTML={{ __html: t(`posts.${postKey}.intro.p1`) }} />
-          <p dangerouslySetInnerHTML={{ __html: t(`posts.${postKey}.intro.p2`) }} />
+          <p dangerouslySetInnerHTML={{ __html: sanitizeInlineHtml(t(`posts.${postKey}.intro.p1`)) }} />
+          <p dangerouslySetInnerHTML={{ __html: sanitizeInlineHtml(t(`posts.${postKey}.intro.p2`)) }} />
           <div className="rounded-2xl border-l-4 border-sky-400 bg-sky-500/10 border border-sky-500/20 p-4 sm:p-6 my-6">
             <p className="text-white/95 font-medium m-0">
               {t(`posts.${postKey}.intro.callout.prefix`)}{' '}
@@ -133,8 +134,8 @@ export function CapacidadCalendarioVsProductivaArticle({
             {t(`posts.${postKey}.sections.calendarLie.title`)}
           </h2>
           <div className="space-y-6 text-indigo-100/90 text-base sm:text-lg leading-relaxed">
-            <p dangerouslySetInnerHTML={{ __html: t(`posts.${postKey}.sections.calendarLie.p1`) }} />
-            <p dangerouslySetInnerHTML={{ __html: t(`posts.${postKey}.sections.calendarLie.p2`) }} />
+            <p dangerouslySetInnerHTML={{ __html: sanitizeInlineHtml(t(`posts.${postKey}.sections.calendarLie.p1`)) }} />
+            <p dangerouslySetInnerHTML={{ __html: sanitizeInlineHtml(t(`posts.${postKey}.sections.calendarLie.p2`)) }} />
           </div>
         </section>
       </RevealOnScroll>
@@ -146,8 +147,8 @@ export function CapacidadCalendarioVsProductivaArticle({
             {t(`posts.${postKey}.sections.deliverables.title`)}
           </h2>
           <div className="space-y-6 text-indigo-100/90 text-base sm:text-lg leading-relaxed">
-            <p dangerouslySetInnerHTML={{ __html: t(`posts.${postKey}.sections.deliverables.p1`) }} />
-            <p dangerouslySetInnerHTML={{ __html: t(`posts.${postKey}.sections.deliverables.p2`) }} />
+            <p dangerouslySetInnerHTML={{ __html: sanitizeInlineHtml(t(`posts.${postKey}.sections.deliverables.p1`)) }} />
+            <p dangerouslySetInnerHTML={{ __html: sanitizeInlineHtml(t(`posts.${postKey}.sections.deliverables.p2`)) }} />
           </div>
           <div className="overflow-x-auto rounded-2xl border border-white/10 bg-white/5 mt-8">
             <table className="w-full text-left text-sm sm:text-base">
@@ -199,14 +200,14 @@ export function CapacidadCalendarioVsProductivaArticle({
             {t(`posts.${postKey}.sections.monday.title`)}
           </h2>
           <div className="space-y-6 text-indigo-100/90 text-base sm:text-lg leading-relaxed">
-            <p dangerouslySetInnerHTML={{ __html: t(`posts.${postKey}.sections.monday.p1`) }} />
+            <p dangerouslySetInnerHTML={{ __html: sanitizeInlineHtml(t(`posts.${postKey}.sections.monday.p1`)) }} />
             <ul className="list-disc pl-5 space-y-3 marker:text-emerald-400">
-              <li dangerouslySetInnerHTML={{ __html: t(`posts.${postKey}.sections.monday.li1`) }} />
-              <li dangerouslySetInnerHTML={{ __html: t(`posts.${postKey}.sections.monday.li2`) }} />
-              <li dangerouslySetInnerHTML={{ __html: t(`posts.${postKey}.sections.monday.li3`) }} />
-              <li dangerouslySetInnerHTML={{ __html: t(`posts.${postKey}.sections.monday.li4`) }} />
+              <li dangerouslySetInnerHTML={{ __html: sanitizeInlineHtml(t(`posts.${postKey}.sections.monday.li1`)) }} />
+              <li dangerouslySetInnerHTML={{ __html: sanitizeInlineHtml(t(`posts.${postKey}.sections.monday.li2`)) }} />
+              <li dangerouslySetInnerHTML={{ __html: sanitizeInlineHtml(t(`posts.${postKey}.sections.monday.li3`)) }} />
+              <li dangerouslySetInnerHTML={{ __html: sanitizeInlineHtml(t(`posts.${postKey}.sections.monday.li4`)) }} />
             </ul>
-            <p className="mb-6" dangerouslySetInnerHTML={{ __html: t(`posts.${postKey}.sections.monday.p2`) }} />
+            <p className="mb-6" dangerouslySetInnerHTML={{ __html: sanitizeInlineHtml(t(`posts.${postKey}.sections.monday.p2`)) }} />
           </div>
         </section>
       </RevealOnScroll>
@@ -218,14 +219,14 @@ export function CapacidadCalendarioVsProductivaArticle({
             {t(`posts.${postKey}.sections.checklist.title`)}
           </h2>
           <div className="space-y-6 text-indigo-100/90 text-base sm:text-lg leading-relaxed">
-            <p dangerouslySetInnerHTML={{ __html: t(`posts.${postKey}.sections.checklist.p1`) }} />
-            <p dangerouslySetInnerHTML={{ __html: t(`posts.${postKey}.sections.checklist.p2`) }} />
+            <p dangerouslySetInnerHTML={{ __html: sanitizeInlineHtml(t(`posts.${postKey}.sections.checklist.p1`)) }} />
+            <p dangerouslySetInnerHTML={{ __html: sanitizeInlineHtml(t(`posts.${postKey}.sections.checklist.p2`)) }} />
             <ol className="list-decimal pl-6 space-y-3 marker:text-cyan-300">
-              <li dangerouslySetInnerHTML={{ __html: t(`posts.${postKey}.sections.checklist.step1`) }} />
-              <li dangerouslySetInnerHTML={{ __html: t(`posts.${postKey}.sections.checklist.step2`) }} />
-              <li dangerouslySetInnerHTML={{ __html: t(`posts.${postKey}.sections.checklist.step3`) }} />
-              <li dangerouslySetInnerHTML={{ __html: t(`posts.${postKey}.sections.checklist.step4`) }} />
-              <li dangerouslySetInnerHTML={{ __html: t(`posts.${postKey}.sections.checklist.step5`) }} />
+              <li dangerouslySetInnerHTML={{ __html: sanitizeInlineHtml(t(`posts.${postKey}.sections.checklist.step1`)) }} />
+              <li dangerouslySetInnerHTML={{ __html: sanitizeInlineHtml(t(`posts.${postKey}.sections.checklist.step2`)) }} />
+              <li dangerouslySetInnerHTML={{ __html: sanitizeInlineHtml(t(`posts.${postKey}.sections.checklist.step3`)) }} />
+              <li dangerouslySetInnerHTML={{ __html: sanitizeInlineHtml(t(`posts.${postKey}.sections.checklist.step4`)) }} />
+              <li dangerouslySetInnerHTML={{ __html: sanitizeInlineHtml(t(`posts.${postKey}.sections.checklist.step5`)) }} />
             </ol>
           </div>
           <div className="overflow-x-auto rounded-2xl border border-white/10 bg-white/5 mt-8">
@@ -329,7 +330,7 @@ export function CapacidadCalendarioVsProductivaArticle({
             {[1, 2, 3, 4, 5].map((i) => (
               <div key={i} className="rounded-xl border border-white/10 bg-white/5 p-5 sm:p-6 space-y-3">
                 <h3 className="text-white font-bold text-lg m-0">{t(`posts.${postKey}.faq.q${i}.q`)}</h3>
-                <p className="m-0" dangerouslySetInnerHTML={{ __html: t(`posts.${postKey}.faq.q${i}.a`) }} />
+                <p className="m-0" dangerouslySetInnerHTML={{ __html: sanitizeInlineHtml(t(`posts.${postKey}.faq.q${i}.a`)) }} />
               </div>
             ))}
           </div>

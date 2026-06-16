@@ -9,6 +9,7 @@ import type { BlogTOCItem } from './BlogTOC';
 import { CargaTrabajoFrameworkVisual } from './CargaTrabajoFrameworkVisual';
 import { SenalesCargaAlertaVisual } from './SenalesCargaAlertaVisual';
 import { useTranslation } from 'react-i18next';
+import { sanitizeInlineHtml } from '@/lib/blog/sanitize';
 import { parseGestionCapsule } from '@/lib/blogLocaleLinkSplit';
 
 export interface GestionCargaTrabajoEquipoArticleProps {
@@ -42,8 +43,8 @@ export function GestionCargaTrabajoEquipoArticle({
           {t(`posts.${postKey}.title`)}
         </h1>
         <div className="space-y-5 text-indigo-100/95 text-base sm:text-lg leading-[1.75]">
-          <p dangerouslySetInnerHTML={{ __html: t(`posts.${postKey}.intro.p1`) }} />
-          <p dangerouslySetInnerHTML={{ __html: t(`posts.${postKey}.intro.p2`) }} />
+          <p dangerouslySetInnerHTML={{ __html: sanitizeInlineHtml(t(`posts.${postKey}.intro.p1`)) }} />
+          <p dangerouslySetInnerHTML={{ __html: sanitizeInlineHtml(t(`posts.${postKey}.intro.p2`)) }} />
           <div className="rounded-2xl border-l-4 border-violet-400 bg-violet-500/10 border border-violet-500/20 p-4 sm:p-6 my-6">
             <p className="text-white/95 font-medium m-0">
               {capsule.ok ? (
@@ -113,7 +114,7 @@ export function GestionCargaTrabajoEquipoArticle({
             {t(`posts.${postKey}.sections.whatIs.title`)}
           </h2>
           <div className="space-y-4 text-indigo-100/90 text-base sm:text-lg leading-relaxed">
-            <p dangerouslySetInnerHTML={{ __html: t(`posts.${postKey}.sections.whatIs.p1`) }} />
+            <p dangerouslySetInnerHTML={{ __html: sanitizeInlineHtml(t(`posts.${postKey}.sections.whatIs.p1`)) }} />
           </div>
         </section>
       </RevealOnScroll>
@@ -124,7 +125,7 @@ export function GestionCargaTrabajoEquipoArticle({
             {t(`posts.${postKey}.sections.causes.title`)}
           </h2>
           <div className="space-y-4 text-indigo-100/90 text-base sm:text-lg leading-relaxed">
-            <p dangerouslySetInnerHTML={{ __html: t(`posts.${postKey}.sections.causes.p1`) }} />
+            <p dangerouslySetInnerHTML={{ __html: sanitizeInlineHtml(t(`posts.${postKey}.sections.causes.p1`)) }} />
           </div>
         </section>
       </RevealOnScroll>
@@ -135,7 +136,7 @@ export function GestionCargaTrabajoEquipoArticle({
             {t(`posts.${postKey}.sections.signals.title`)}
           </h2>
           <div className="space-y-4 text-indigo-100/90 text-base sm:text-lg leading-relaxed">
-            <p dangerouslySetInnerHTML={{ __html: t(`posts.${postKey}.sections.signals.p1`) }} />
+            <p dangerouslySetInnerHTML={{ __html: sanitizeInlineHtml(t(`posts.${postKey}.sections.signals.p1`)) }} />
           </div>
 
           <div className="my-8">
@@ -167,7 +168,7 @@ export function GestionCargaTrabajoEquipoArticle({
             {t(`posts.${postKey}.sections.manager.title`)}
           </h2>
           <div className="space-y-8 text-indigo-100/90 text-base sm:text-lg leading-relaxed">
-            <p dangerouslySetInnerHTML={{ __html: t(`posts.${postKey}.sections.manager.p1`) }} />
+            <p dangerouslySetInnerHTML={{ __html: sanitizeInlineHtml(t(`posts.${postKey}.sections.manager.p1`)) }} />
           </div>
         </section>
       </RevealOnScroll>
@@ -179,7 +180,7 @@ export function GestionCargaTrabajoEquipoArticle({
             {t(`posts.${postKey}.sections.installed.title`)}
           </h2>
           <div className="space-y-6 text-indigo-100/90 text-base sm:text-lg leading-relaxed">
-            <p dangerouslySetInnerHTML={{ __html: t(`posts.${postKey}.sections.installed.p1`) }} />
+            <p dangerouslySetInnerHTML={{ __html: sanitizeInlineHtml(t(`posts.${postKey}.sections.installed.p1`)) }} />
           </div>
         </section>
       </RevealOnScroll>
@@ -191,7 +192,7 @@ export function GestionCargaTrabajoEquipoArticle({
             {t(`posts.${postKey}.sections.metrics.title`)}
           </h2>
           <div className="space-y-4 text-indigo-100/90 text-base sm:text-lg leading-relaxed mb-6">
-            <p dangerouslySetInnerHTML={{ __html: t(`posts.${postKey}.sections.metrics.p1`) }} />
+            <p dangerouslySetInnerHTML={{ __html: sanitizeInlineHtml(t(`posts.${postKey}.sections.metrics.p1`)) }} />
           </div>
         </section>
       </RevealOnScroll>
@@ -202,7 +203,7 @@ export function GestionCargaTrabajoEquipoArticle({
             {t(`posts.${postKey}.sections.tools.title`)}
           </h2>
           <div className="space-y-5 text-indigo-100/90 text-base sm:text-lg leading-relaxed">
-            <p dangerouslySetInnerHTML={{ __html: t(`posts.${postKey}.sections.tools.p1`) }} />
+            <p dangerouslySetInnerHTML={{ __html: sanitizeInlineHtml(t(`posts.${postKey}.sections.tools.p1`)) }} />
           </div>
         </section>
       </RevealOnScroll>
@@ -213,7 +214,7 @@ export function GestionCargaTrabajoEquipoArticle({
             {t(`posts.${postKey}.sections.conclusion.title`)}
           </h2>
           <div className="space-y-5 text-indigo-100/90 text-base sm:text-lg leading-relaxed">
-            <p dangerouslySetInnerHTML={{ __html: t(`posts.${postKey}.sections.conclusion.p1`) }} />
+            <p dangerouslySetInnerHTML={{ __html: sanitizeInlineHtml(t(`posts.${postKey}.sections.conclusion.p1`)) }} />
           </div>
         </section>
       </RevealOnScroll>
@@ -225,7 +226,7 @@ export function GestionCargaTrabajoEquipoArticle({
             {[1, 2, 3, 4, 5].map(i => (
               <div key={i} className="rounded-xl border border-white/10 bg-white/5 p-5 sm:p-6 space-y-3">
                 <h3 className="text-white font-bold text-lg m-0">{t(`posts.${postKey}.faq.q${i}.q`)}</h3>
-                <p className="m-0" dangerouslySetInnerHTML={{ __html: t(`posts.${postKey}.faq.q${i}.a`) }} />
+                <p className="m-0" dangerouslySetInnerHTML={{ __html: sanitizeInlineHtml(t(`posts.${postKey}.faq.q${i}.a`)) }} />
               </div>
             ))}
           </div>

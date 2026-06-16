@@ -116,8 +116,8 @@ export function EmployeeSettings({ employeeId, compact = false }: EmployeeSettin
       return;
     }
 
-    if (newPassword.length < 6) {
-      toast.error(t('employeeSettings.password.toast.tooShort', 'Password must be at least 6 characters'));
+    if (newPassword.length < 8) {
+      toast.error(t('employeeSettings.password.toast.tooShort', 'Password must be at least 8 characters'));
       return;
     }
 
@@ -333,7 +333,7 @@ export function EmployeeSettings({ employeeId, compact = false }: EmployeeSettin
                   id="new-password"
                   type="password"
                   autoComplete="new-password"
-                  placeholder={t('employeeSettings.password.newPlaceholder', 'Minimum 6 characters')}
+                  placeholder={t('employeeSettings.password.newPlaceholder', 'Minimum 8 characters')}
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                 />

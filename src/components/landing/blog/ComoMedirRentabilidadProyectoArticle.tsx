@@ -8,6 +8,7 @@ import { BlogRelatedPost } from './BlogRelatedPost';
 import type { BlogTOCItem } from './BlogTOC';
 import { ScopeProtocoloInfographic } from './ScopeProtocoloInfographic';
 import { useTranslation } from 'react-i18next';
+import { sanitizeInlineHtml } from '@/lib/blog/sanitize';
 import { parseOneLocaleLink, parseTwoLocaleLinks } from '@/lib/blogLocaleLinkSplit';
 
 export interface ComoMedirRentabilidadProyectoArticleProps {
@@ -65,7 +66,7 @@ export function ComoMedirRentabilidadProyectoArticle({
               introP1.plain
             )}
           </p>
-          <p dangerouslySetInnerHTML={{ __html: t(`posts.${postKey}.intro.p2`) }} />
+          <p dangerouslySetInnerHTML={{ __html: sanitizeInlineHtml(t(`posts.${postKey}.intro.p2`)) }} />
         </div>
       </section>
 
@@ -82,9 +83,9 @@ export function ComoMedirRentabilidadProyectoArticle({
             {t(`posts.${postKey}.section1.title`)}
           </h2>
           <div className="space-y-4 text-indigo-100/90 text-base sm:text-lg leading-relaxed">
-            <p dangerouslySetInnerHTML={{ __html: t(`posts.${postKey}.section1.p1`) }} />
+            <p dangerouslySetInnerHTML={{ __html: sanitizeInlineHtml(t(`posts.${postKey}.section1.p1`)) }} />
             <p>{t(`posts.${postKey}.section1.p2`)}</p>
-            <p dangerouslySetInnerHTML={{ __html: t(`posts.${postKey}.section1.p3`) }} />
+            <p dangerouslySetInnerHTML={{ __html: sanitizeInlineHtml(t(`posts.${postKey}.section1.p3`)) }} />
           </div>
 
           <h3 className="text-lg sm:text-xl font-bold text-white mt-8 mb-3">{t(`posts.${postKey}.section1.sub.title`)}</h3>
@@ -136,7 +137,7 @@ export function ComoMedirRentabilidadProyectoArticle({
               <Shield className="h-6 w-6 text-violet-400" aria-hidden />
               {t(`posts.${postKey}.section2.hybrid.title`)}
             </h3>
-            <p className="text-indigo-100/90 text-base sm:text-lg leading-relaxed m-0" dangerouslySetInnerHTML={{ __html: t(`posts.${postKey}.section2.hybrid.p1`) }} />
+            <p className="text-indigo-100/90 text-base sm:text-lg leading-relaxed m-0" dangerouslySetInnerHTML={{ __html: sanitizeInlineHtml(t(`posts.${postKey}.section2.hybrid.p1`)) }} />
           </div>
         </section>
       </RevealOnScroll>
@@ -148,14 +149,14 @@ export function ComoMedirRentabilidadProyectoArticle({
             {t(`posts.${postKey}.section3.title`)}
           </h2>
           <div className="space-y-4 text-indigo-100/90 text-base sm:text-lg leading-relaxed">
-            <p dangerouslySetInnerHTML={{ __html: t(`posts.${postKey}.section3.p1`) }} />
+            <p dangerouslySetInnerHTML={{ __html: sanitizeInlineHtml(t(`posts.${postKey}.section3.p1`)) }} />
 
             <div className="rounded-2xl border border-indigo-500/30 bg-indigo-950/50 p-6 sm:p-8 my-8 text-center ring-1 ring-white/10">
               <p className="text-xs uppercase tracking-widest text-indigo-300 mb-2 font-bold">{t(`posts.${postKey}.section3.formula.title`)}</p>
               <div className="text-xl sm:text-2xl md:text-3xl font-black text-white py-4 font-mono transition-transform duration-300">
                 {t(`posts.${postKey}.section3.formula.text`)}
               </div>
-              <p className="text-sm text-indigo-200/80 mt-4 max-w-lg mx-auto" dangerouslySetInnerHTML={{ __html: t(`posts.${postKey}.section3.formula.p1`) }} />
+              <p className="text-sm text-indigo-200/80 mt-4 max-w-lg mx-auto" dangerouslySetInnerHTML={{ __html: sanitizeInlineHtml(t(`posts.${postKey}.section3.formula.p1`)) }} />
             </div>
 
             <h3 className="text-lg sm:text-xl font-bold text-white mb-3">{t(`posts.${postKey}.section3.benchmark.title`)}</h3>

@@ -9,10 +9,21 @@ export class RateLimitError extends Error {
   }
 }
 
+export class RateLimitUnavailableError extends Error {
+  status = 503;
+
+  constructor(message = "Servicio temporalmente no disponible. Inténtalo más tarde.") {
+    super(message);
+    this.name = "RateLimitUnavailableError";
+  }
+}
+
 export const RATE_LIMITS = {
   contactByIp: { maxAttempts: 5, windowMs: 15 * 60 * 1000 },
   registerByIp: { maxAttempts: 5, windowMs: 60 * 60 * 1000 },
   registerByEmail: { maxAttempts: 3, windowMs: 60 * 60 * 1000 },
+  passwordResetByIp: { maxAttempts: 5, windowMs: 15 * 60 * 1000 },
+  passwordResetByEmail: { maxAttempts: 3, windowMs: 60 * 60 * 1000 },
 } as const;
 
 export function getClientIp(req: Request): string {
@@ -30,6 +41,7 @@ export async function assertRateLimit(
   supabaseAdmin: SupabaseClient,
   bucket: string,
   options: { maxAttempts: number; windowMs: number },
+  failClosed = false,
 ): Promise<void> {
   const since = new Date(Date.now() - options.windowMs).toISOString();
 
@@ -40,7 +52,10 @@ export async function assertRateLimit(
     .gte("created_at", since);
 
   if (countError) {
-    console.warn("[rate-limit] count failed, allowing request:", countError.message);
+    console.warn("[rate-limit] count failed:", countError.message);
+    if (failClosed) {
+      throw new RateLimitUnavailableError();
+    }
     return;
   }
 
@@ -54,5 +69,8 @@ export async function assertRateLimit(
 
   if (insertError) {
     console.warn("[rate-limit] insert failed:", insertError.message);
+    if (failClosed) {
+      throw new RateLimitUnavailableError();
+    }
   }
 }

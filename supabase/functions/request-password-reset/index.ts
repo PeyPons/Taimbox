@@ -2,6 +2,13 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 import { sendEmail } from "../_shared/resend.ts"
 import { generatePasswordRecoveryUrl, getSiteUrl } from "../_shared/password-recovery-url.ts"
+import {
+  assertRateLimit,
+  getClientIp,
+  RATE_LIMITS,
+  RateLimitError,
+  RateLimitUnavailableError,
+} from "../_shared/rate-limit.ts"
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -158,6 +165,14 @@ Deno.serve(async (req) => {
 
         const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
 
+        const clientIp = getClientIp(req)
+        await assertRateLimit(
+            supabaseAdmin,
+            `password-reset:ip:${clientIp}`,
+            RATE_LIMITS.passwordResetByIp,
+            true,
+        )
+
         let body
         try {
             body = await req.json()
@@ -172,6 +187,14 @@ Deno.serve(async (req) => {
         }
 
         const cleanEmail = email.trim().toLowerCase()
+
+        await assertRateLimit(
+            supabaseAdmin,
+            `password-reset:email:${cleanEmail}`,
+            RATE_LIMITS.passwordResetByEmail,
+            true,
+        )
+
         const siteUrl = getSiteUrl()
 
         console.log(`[request-password-reset] Solicitud para: ${cleanEmail}`)
@@ -228,7 +251,25 @@ Deno.serve(async (req) => {
                 status: 200,
             }
         )
-    } catch (error: any) {
+    } catch (error: unknown) {
+        if (error instanceof RateLimitError) {
+            return new Response(
+                JSON.stringify({ error: error.message }),
+                {
+                    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                    status: 429,
+                },
+            )
+        }
+        if (error instanceof RateLimitUnavailableError) {
+            return new Response(
+                JSON.stringify({ error: error.message }),
+                {
+                    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                    status: 503,
+                },
+            )
+        }
         console.error('[request-password-reset] Error:', error)
         // Siempre devolver 200 para prevenir enumeración de usuarios
         return new Response(

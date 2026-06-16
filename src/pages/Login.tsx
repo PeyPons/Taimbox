@@ -62,7 +62,7 @@ export default function Login() {
         .object({
           name: z.string().min(2, t("auth.register.errors.nameTooShort")).max(INPUT_LIMITS.personName),
           email: z.string().email(t("auth.register.errors.invalidEmail")).max(INPUT_LIMITS.email),
-          password: z.string().min(6, t("auth.register.errors.passwordTooShort")).max(INPUT_LIMITS.password),
+          password: z.string().min(8, t("auth.register.errors.passwordTooShort")).max(INPUT_LIMITS.password),
           confirmPassword: z
             .string()
             .min(6, t("auth.register.errors.confirmPasswordRequired"))

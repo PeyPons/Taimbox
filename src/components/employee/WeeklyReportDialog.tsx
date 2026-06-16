@@ -45,6 +45,7 @@ import { cn } from '@/lib/utils';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useWeeklyReportI18n, type WeeklyActionId, type WeeklyOutcomeId } from '@/hooks/useWeeklyReportI18n';
+import { sanitizeInlineHtml } from '@/lib/blog/sanitize';
 
 import type { Allocation } from '@/types';
 
@@ -1201,7 +1202,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
                                   <p className="flex items-start gap-1.5 rounded-md border border-amber-200/80 bg-amber-50/80 px-2 py-1.5 text-[11px] leading-snug text-amber-950 dark:border-amber-900/40 dark:bg-amber-950/25 dark:text-amber-100">
                                     <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" aria-hidden />
                                     <span>
-                                      <span dangerouslySetInnerHTML={{ __html: t('weeklyReport.ui.unplannedKeepWarning', { hours: unplannedKeep.toFixed(2) }) }} />
+                                      <span dangerouslySetInnerHTML={{ __html: sanitizeInlineHtml(t('weeklyReport.ui.unplannedKeepWarning', { hours: unplannedKeep.toFixed(2) })) }} />
                                     </span>
                                   </p>
                                 )}
@@ -1266,7 +1267,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
                                     <p
                                       className="text-[11px] text-muted-foreground"
                                       dangerouslySetInnerHTML={{
-                                        __html: t('weeklyReport.ui.zeroAdvanceHint', { hours: pendNext.toFixed(2) }),
+                                        __html: sanitizeInlineHtml(t('weeklyReport.ui.zeroAdvanceHint', { hours: pendNext.toFixed(2) })),
                                       }}
                                     />
                                   </div>
@@ -1345,7 +1346,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
                             return (
                               <div className="space-y-3">
                                 <p className="text-[11px] text-muted-foreground">
-                                  <span dangerouslySetInnerHTML={{ __html: t('weeklyReport.ui.transferSummary', { hours: transferPending.toFixed(2) }) }} />
+                                  <span dangerouslySetInnerHTML={{ __html: sanitizeInlineHtml(t('weeklyReport.ui.transferSummary', { hours: transferPending.toFixed(2) })) }} />
                                 </p>
                                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                                   <div className="space-y-1">
@@ -1467,7 +1468,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
                     );
                   })}
                 </ul>
-                <p dangerouslySetInnerHTML={{ __html: t('weeklyReport.keepConfirm.continueLaterHint') }} />
+                <p dangerouslySetInnerHTML={{ __html: sanitizeInlineHtml(t('weeklyReport.keepConfirm.continueLaterHint')) }} />
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>

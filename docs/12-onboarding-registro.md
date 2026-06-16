@@ -20,7 +20,7 @@
 
 ## Correos transaccionales (plantillas ya en código; entrega vía Resend)
 
-Las plantillas HTML y el texto plano viven en `_shared/welcome-and-invitation-email.ts`; el envío lo hace `_shared/resend.ts` (misma pila que `request-password-reset`). `register-agency`, `invite-user-to-agency` y `create-user` llaman a ese módulo **en el mismo proceso** (sin `fetch` a otra Edge Function). La función HTTP `send-welcome-email` sigue disponible y delega en el mismo código. **No hace falta crear plantillas en el dashboard de Resend** salvo que quieras gestionarlas allí por tu cuenta.
+Las plantillas HTML y el texto plano viven en `_shared/welcome-and-invitation-email.ts`; el envío lo hace `_shared/resend.ts` (misma pila que `request-password-reset`). `register-agency`, `invite-user-to-agency` y `create-user` llaman a ese módulo **en el mismo proceso**. La función HTTP `send-welcome-email` está **retirada (410)**; no invocarla desde integraciones externas.
 
 Para que los correos **lleguen** (registro, invitación, reset):
 
