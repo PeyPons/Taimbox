@@ -40,7 +40,7 @@ export function EstimacionHeroVisual() {
           </div>
           <div className="h-3 rounded-full bg-white/10 overflow-hidden">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-[1.8s] ease-out"
+              className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-\[1.8s\] ease-out"
               style={{ width: animate ? '55%' : '0%' }}
             />
           </div>
@@ -52,7 +52,7 @@ export function EstimacionHeroVisual() {
           </div>
           <div className="h-3 rounded-full bg-white/10 overflow-hidden">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-amber-500 to-orange-500 transition-all duration-[2.2s] ease-out delay-300"
+              className="h-full rounded-full bg-gradient-to-r from-amber-500 to-orange-500 transition-all duration-\[2.2s\] ease-out delay-300"
               style={{ width: animate ? '100%' : '0%' }}
             />
           </div>

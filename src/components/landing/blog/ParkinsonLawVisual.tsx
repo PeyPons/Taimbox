@@ -24,7 +24,7 @@ export function ParkinsonLawVisual() {
           </div>
           <div className="h-10 rounded-lg bg-white/10 border border-white/10 overflow-hidden">
             <div
-              className="h-full rounded-lg bg-gradient-to-r from-amber-500/90 to-orange-500/90 origin-left transition-all duration-[2.5s] ease-out"
+              className="h-full rounded-lg bg-gradient-to-r from-amber-500/90 to-orange-500/90 origin-left transition-all duration-\[2.5s\] ease-out"
               style={{ width: start ? '100%' : '0%' }}
             />
           </div>
@@ -36,7 +36,7 @@ export function ParkinsonLawVisual() {
           </div>
           <div className="h-10 rounded-lg bg-white/10 border border-white/10 overflow-hidden">
             <div
-              className="h-full rounded-lg bg-gradient-to-r from-emerald-500/90 to-teal-500/90 origin-left transition-all duration-[2s] ease-out"
+              className="h-full rounded-lg bg-gradient-to-r from-emerald-500/90 to-teal-500/90 origin-left transition-all duration-\[2s\] ease-out"
               style={{ width: start ? '100%' : '0%' }}
             />
           </div>

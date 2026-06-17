@@ -30,7 +30,7 @@ interface SlideProps {
 function SlideWrapper({ isActive, direction, children }: SlideProps & { children: React.ReactNode }) {
     return (
         <div
-            className={`absolute inset-0 w-full h-full transition-all duration-700 ease-[cubic-bezier(0.2,0.8,0.2,1)] overflow-y-auto overflow-x-hidden ${isActive
+            className={`absolute inset-0 w-full h-full transition-all duration-700 ease-\[cubic-bezier(0.2,0.8,0.2,1)\] overflow-y-auto overflow-x-hidden ${isActive
                 ? 'opacity-100 translate-x-0 scale-100 z-10'
                 : direction === 'left'
                     ? 'opacity-0 -translate-x-[100vw] scale-[0.98] pointer-events-none z-0'

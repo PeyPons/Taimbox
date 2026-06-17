@@ -43,11 +43,11 @@ export function EstimadoVsRealChart() {
             </div>
             <div className="relative h-8 rounded-lg bg-white/5 overflow-hidden">
               <div
-                className="absolute inset-y-0 left-0 rounded-lg bg-indigo-500/35 border-r border-indigo-400/30 transition-all duration-[1.5s] ease-out"
+                className="absolute inset-y-0 left-0 rounded-lg bg-indigo-500/35 border-r border-indigo-400/30 transition-all duration-\[1.5s\] ease-out"
                 style={{ width: animate ? `${(row.estimated / maxActual) * 100}%` : '0%' }}
               />
               <div
-                className="absolute inset-y-0 left-0 rounded-lg bg-gradient-to-r from-amber-500/70 to-orange-500/70 transition-all duration-[1.8s] ease-out delay-200"
+                className="absolute inset-y-0 left-0 rounded-lg bg-gradient-to-r from-amber-500/70 to-orange-500/70 transition-all duration-\[1.8s\] ease-out delay-200"
                 style={{ width: animate ? `${(row.actual / maxActual) * 100}%` : '0%', opacity: 0.85 }}
               />
             </div>
