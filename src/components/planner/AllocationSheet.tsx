@@ -2,7 +2,6 @@ import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { WeeklyReportDialog } from '@/components/employee/WeeklyReportDialog';
 import { MyDayView } from '@/components/employee/MyDayView';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -1814,23 +1813,6 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
 
       {/* Tour interactivo del planificador */}
       {open && <PlannerTour onVisibilityChange={setIsTourActive} />}
-
-      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>¿Estás completamente seguro?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta acción no se puede deshacer. Se eliminará la tarea "{editingAllocation?.taskName}" y todos sus datos asociados.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">
-              Eliminar tarea
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       <WeeklyReportDialog
         open={weeklyOpen}

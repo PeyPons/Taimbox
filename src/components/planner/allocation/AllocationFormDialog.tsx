@@ -493,6 +493,25 @@ export function AllocationFormDialog({
       </AlertDialog>
     );
 
+    const deleteConfirmDialog = (
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Estás completamente seguro?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. Se eliminará la tarea &quot;{editingAllocation?.taskName}&quot; y todos sus datos asociados.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={onConfirmDelete} className="bg-red-600 hover:bg-red-700">
+              Eliminar tarea
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    );
+
     if (isMobile) {
         return (
             <>
@@ -502,6 +521,7 @@ export function AllocationFormDialog({
                 </SheetContent>
             </Sheet>
             {confirmDialog}
+            {deleteConfirmDialog}
             </>
         );
     }
@@ -514,6 +534,7 @@ export function AllocationFormDialog({
             </DialogContent>
         </Dialog>
         {confirmDialog}
+        {deleteConfirmDialog}
         </>
     );
 }
