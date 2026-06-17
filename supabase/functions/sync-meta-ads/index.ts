@@ -134,6 +134,37 @@ Deno.serve(async (req) => {
             } catch (e) { return 'UNKNOWN'; }
         }
 
+        async function refreshMissingMetaCurrencies(accessToken: string, agencyId: string) {
+            const { data: missing, error } = await supabase
+                .from('ad_accounts_config')
+                .select('account_id')
+                .eq('agency_id', agencyId)
+                .eq('platform', 'meta')
+                .eq('is_active', true)
+                .or('currency.is.null,currency.eq.');
+
+            if (error || !missing?.length) return;
+
+            const metaAccounts = await fetchAdAccounts(accessToken);
+            const currencyById = new Map<string, string>();
+            for (const acc of metaAccounts) {
+                const id = acc.account_id ? `act_${acc.account_id}` : '';
+                if (id && acc.currency) currencyById.set(id, String(acc.currency).toUpperCase());
+            }
+
+            for (const row of missing) {
+                const code = currencyById.get(row.account_id);
+                if (!code) continue;
+                const { error: updErr } = await supabase
+                    .from('ad_accounts_config')
+                    .update({ currency: code })
+                    .eq('agency_id', agencyId)
+                    .eq('platform', 'meta')
+                    .eq('account_id', row.account_id);
+                if (updErr) console.warn(`refresh meta currency ${row.account_id}:`, updErr.message);
+            }
+        }
+
         async function processAgency(agency: any) {
             const integrations = agency.settings?.integrations || {};
             const accessToken = agency.meta_ads_access_token || integrations.metaAccessToken || getSecret('META_ACCESS_TOKEN'); // Columna OAuth > JSON > env
@@ -165,6 +196,8 @@ Deno.serve(async (req) => {
                     const { error: upsertErr } = await supabase.from('ad_accounts_config').upsert(upsertConfigs, { onConflict: 'account_id,agency_id,platform' });
                     if (upsertErr) await log(`    ⚠️ Error actualizando configuración: ${upsertErr.message}`);
                 }
+
+                await refreshMissingMetaCurrencies(accessToken, agency.id);
 
                 // 2. Process ACTIVE accounts from DB
                 const { data: configAccounts, error: selectErr } = await supabase

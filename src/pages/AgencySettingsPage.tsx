@@ -81,7 +81,7 @@ function fetchGoogleAccountsDeduped(agencyId: string): Promise<GoogleAccountRow[
     try {
       const response = await invokeEdgeFunctionWithRetry(
         'list-google-accounts',
-        { agency_id: agencyId },
+        { agency_id: agencyId, sync_config: true },
         { retries: 2, baseDelayMs: 2000 }
       );
       const data = response.data as { error?: string; accounts?: GoogleAccountRow[] };

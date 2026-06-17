@@ -54,7 +54,7 @@ export function TaskNotesTrigger({ allocationId, noteCount = 0, className, inlin
       {...stopBubble}
     >
       <StickyNote className="h-3 w-3 shrink-0" />
-      {noteCount > 1 && <span>{noteCount > 9 ? '9+' : noteCount}</span>}
+      {hasNotes && <span>{noteCount > 9 ? '9+' : noteCount}</span>}
     </Button>
   ) : inline ? (
     <Button

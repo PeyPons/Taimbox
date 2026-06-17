@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAppTranslation } from '@/hooks/useAppTranslation';
 import { supabase } from '@/lib/supabase';
+import { invokeEdgeFunctionWithRetry } from '@/lib/invokeEdgeFunction';
 import { useAgency } from '@/contexts/AgencyContext';
 import { toast } from '@/lib/notify';
 
@@ -62,6 +63,17 @@ export default function GoogleCallbackPage() {
 
                 if (fnError) throw fnError;
                 if (data?.error) throw new Error(data.error);
+
+                try {
+                    const { error: listErr } = await invokeEdgeFunctionWithRetry(
+                        'list-google-accounts',
+                        { agency_id: agencyId, sync_config: true },
+                        { retries: 2, baseDelayMs: 600 },
+                    );
+                    if (listErr) console.warn('list-google-accounts tras OAuth:', listErr);
+                } catch (e) {
+                    console.warn('list-google-accounts tras OAuth:', e);
+                }
 
                 toast.success(t('auth.oauth.google.success'));
                 await refreshAgency();

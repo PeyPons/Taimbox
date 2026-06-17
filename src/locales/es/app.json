@@ -233,6 +233,9 @@
       "searchTooltip": "Filtra por nombre de tarea o de proyecto",
       "viewMonth": "Mes",
       "viewWeek": "Semana",
+      "viewDay": "Día",
+      "viewMyDayTooltip": "Foco de hoy y backlog semanal",
+      "viewDayTooltip": "Foco de hoy y backlog de la semana",
       "viewMonthTooltip": "Vista: mes completo (todas las semanas)",
       "viewWeekTooltip": "Vista: semana actual",
       "weeklyForecastTitle": "Previsión semanal",
@@ -263,7 +266,7 @@
         },
         "view-toggle": {
           "title": "Cambiar vista",
-          "description": "Alterna entre la vista semanal (tareas de una semana) y la vista mensual (todas las semanas del mes). En vista mensual puedes expandir o colapsar cada proyecto para ver sus tareas."
+          "description": "Alterna entre Mi día (foco de hoy y backlog), vista semanal y vista mensual (todas las semanas del mes). En vista mensual puedes expandir o colapsar cada proyecto para ver sus tareas."
         },
         "week-nav": {
           "title": "Navegar entre semanas",
@@ -406,6 +409,8 @@
       "moveDownAria": "Bajar",
       "weeklyOptionsTitle": "Opciones Weekly…",
       "weeklyOptionsAria": "Opciones Weekly: posponer, distribuir o transferir",
+      "editTaskTitle": "Editar tarea",
+      "editTaskAria": "Editar nombre, proyecto, horas o semana",
       "completeTitle": "Completar",
       "completeTask": "Completar tarea",
       "actualHours": "Horas reales",
@@ -1660,7 +1665,32 @@
         "description": "Esta acción eliminará al cliente y todos sus proyectos asociados. Esta acción no se puede deshacer."
       },
       "newProject": {
-        "deliverableBlockIntro": "Importe total del contrato y fechas de la fase. El sistema lo prorratea entre meses para mostrar el ingreso correspondiente en Rentabilidad y el avance en Seguimiento Operativo."
+        "title": "Nuevo proyecto",
+        "editTitle": "Editar proyecto",
+        "description": "Configura los detalles del proyecto y presupuesto.",
+        "nameRequired": "El nombre es obligatorio",
+        "clientRequired": "Debes seleccionar un cliente",
+        "budgetNonNegative": "Las horas asignadas no pueden ser negativas",
+        "minHoursNonNegative": "Las horas mínimas no pueden ser negativas",
+        "feeNonNegative": "El fee mensual no puede ser negativo",
+        "deliverableFeeInvalid": "Importe total del contrato no válido",
+        "deliverableDatesOrder": "La fecha fin debe ser posterior o igual al inicio",
+        "name": "Nombre del proyecto",
+        "namePlaceholder": "Ej: Mantenimiento WEB",
+        "client": "Cliente",
+        "budget": "Horas asignadas (presupuesto)",
+        "minHours": "Horas mínimas (fee)",
+        "monthlyFee": "Fee mensual {{currencyParens}}",
+        "monthlyFeeHint": "Importe total que paga el cliente por este proyecto al mes (no es precio por hora).",
+        "projectType": "Tipo de proyecto",
+        "projectTypeNone": "Sin tipo / mixto",
+        "projectTypeHelp": "«Entregable»: importe total y fechas de fase se configuran aquí; el ingreso por mes se prorratea en rentabilidad. Retainers suelen ser «Mensual».",
+        "deliverableBlockIntro": "Importe total del contrato y fechas de la fase. El sistema lo prorratea entre meses para mostrar el ingreso correspondiente en Rentabilidad y el avance en Seguimiento Operativo.",
+        "deliverableTotalFee": "Importe total del contrato {{currencyParens}}",
+        "deliverableStart": "Inicio fase",
+        "deliverableStartPh": "Elegir inicio",
+        "deliverableDue": "Fin previsto",
+        "deliverableDuePh": "Elegir fin"
       },
       "agencies": {
         "title": "Agencias",
@@ -2213,6 +2243,7 @@
       "below": "Por debajo",
       "monthProgress": "{{percent}}% del mes",
       "spent": "Invertido",
+      "mixedCurrenciesShort": "Varias monedas",
       "ctr": "CTR",
       "cpc": "CPC",
       "cpa": "CPA"
@@ -2234,7 +2265,8 @@
       "conv": "Conv",
       "breakdown": "Desglose por Cuenta ({{count}})",
       "active": "Activa",
-      "paused": "Pausada"
+      "paused": "Pausada",
+      "sharedBudgetTooltip": "Cartera compartida: {{total}} diarios en total entre varias campañas."
     },
     "pacing": {
       "spentPct": "{{percent}}% gastado",

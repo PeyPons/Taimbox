@@ -89,18 +89,35 @@ function monthBounds(now: Date): {
   };
 }
 
+function buildCampaignBudgetDedupeKey(
+  budgetId: string | null | undefined,
+  accountId: string | null | undefined,
+  dailyBudget: number,
+): string | null {
+  const account = accountId?.trim();
+  const id = budgetId?.trim();
+  if (id) {
+    return account ? `id:${account}:${id}` : `id:${id}`;
+  }
+  if (account && dailyBudget > 0) {
+    return `amt:${account}:${dailyBudget.toFixed(6)}`;
+  }
+  return null;
+}
+
 function addCampaignDailyBudget(
   sum: number,
   seenBudgetIds: Set<string>,
   dailyBudget: number,
   budgetId: string | null | undefined,
   status: string,
+  accountId?: string | null,
 ): number {
   if (status !== "ENABLED" || dailyBudget <= 0) return sum;
-  const id = budgetId?.trim();
-  if (id) {
-    if (seenBudgetIds.has(id)) return sum;
-    seenBudgetIds.add(id);
+  const key = buildCampaignBudgetDedupeKey(budgetId, accountId, dailyBudget);
+  if (key) {
+    if (seenBudgetIds.has(key)) return sum;
+    seenBudgetIds.add(key);
   }
   return sum + dailyBudget;
 }
@@ -242,6 +259,7 @@ function buildPlatformAlerts(
         Number(row.daily_budget) || 0,
         row.budget_id,
         row.status ?? "",
+        row.client_id,
       );
     }
 

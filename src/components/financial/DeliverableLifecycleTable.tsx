@@ -334,7 +334,7 @@ export function DeliverableLifecycleTable(props: DeliverableLifecycleTableProps)
                     </CardContent>
                 </Card>
             ) : (
-                <div className="rounded-lg border overflow-x-auto">
+                <div className="rounded-lg border max-w-full overflow-x-auto">
                     <table className="w-full text-xs text-left">
                         <thead className="bg-slate-50 border-b">
                             <tr className="text-slate-600">

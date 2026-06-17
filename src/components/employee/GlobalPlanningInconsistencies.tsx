@@ -1574,6 +1574,7 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
           allocation={coherenceEditTask}
           viewDate={viewDate}
           deadlines={deadlines}
+          allowEditPastWeeks
           onDismiss={() => setCoherenceEditTask(null)}
         />
       ) : null}

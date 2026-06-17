@@ -5,6 +5,7 @@ import { SensitiveText } from '@/components/privacy/SensitiveText';
 import { AllocationMonthNavigation } from '@/components/planner/allocation/AllocationMonthNavigation';
 import { AllocationToolbarControls } from '@/components/planner/allocation/AllocationToolbarControls';
 import { AllocationWeekStrip, WeekStripItemSummary } from '@/components/planner/allocation/AllocationWeekStrip';
+import type { PlannerSheetViewMode } from '@/components/planner/allocation/plannerSheetViewMode';
 
 type SortOption = 'budget_desc' | 'budget_asc' | 'my_hours_desc' | 'my_hours_asc' | 'name_asc' | 'name_desc';
 
@@ -18,7 +19,9 @@ interface AllocationSheetHeaderProps {
   employee: { id: string; name: string; avatarUrl?: string | null };
   monthLabel: string;
   isMobile: boolean;
-  effectiveShowAllWeeks: boolean;
+  viewMode: PlannerSheetViewMode;
+  isOwnEmployee?: boolean;
+  onViewModeChange: (mode: PlannerSheetViewMode) => void;
   weeks: WeekInfo[];
   weekSummaries: WeekStripItemSummary[];
   activeWeekIndex: number;
@@ -29,7 +32,6 @@ interface AllocationSheetHeaderProps {
   onAddTask?: () => void;
   searchTerm: string;
   onSearchTermChange: (value: string) => void;
-  onToggleShowAllWeeks: () => void;
   onOpenWeekly: () => void;
   sortButtonLabel: string;
   sortOptionLabel: string;
@@ -44,7 +46,9 @@ export function AllocationSheetHeader({
   employee,
   monthLabel,
   isMobile,
-  effectiveShowAllWeeks,
+  viewMode,
+  isOwnEmployee,
+  onViewModeChange,
   weeks,
   weekSummaries,
   activeWeekIndex,
@@ -55,7 +59,6 @@ export function AllocationSheetHeader({
   onAddTask,
   searchTerm,
   onSearchTermChange,
-  onToggleShowAllWeeks,
   onOpenWeekly,
   sortButtonLabel,
   sortOptionLabel,
@@ -107,8 +110,9 @@ export function AllocationSheetHeader({
             isMobile={isMobile}
             searchTerm={searchTerm}
             onSearchTermChange={onSearchTermChange}
-            effectiveShowAllWeeks={effectiveShowAllWeeks}
-            onToggleShowAllWeeks={onToggleShowAllWeeks}
+            viewMode={viewMode}
+            isOwnEmployee={isOwnEmployee}
+            onViewModeChange={onViewModeChange}
             onOpenWeekly={onOpenWeekly}
             sortButtonLabel={sortButtonLabel}
             sortOptionLabel={sortOptionLabel}
@@ -121,7 +125,7 @@ export function AllocationSheetHeader({
         </div>
       </div>
 
-      {weeks.length > 0 && (
+      {weeks.length > 0 && viewMode !== 'day' && (
         <AllocationWeekStrip
           weeks={weeks}
           weekSummaries={weekSummaries}
@@ -129,7 +133,7 @@ export function AllocationSheetHeader({
           currentWeekIndex={currentWeekIndex}
           onSelectWeek={onSelectWeek}
           isMobile={isMobile}
-          overviewMode={effectiveShowAllWeeks}
+          overviewMode={viewMode === 'month'}
           variant={weekStripVariant}
         />
       )}

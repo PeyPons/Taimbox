@@ -43,7 +43,7 @@ Deno.serve(async (req) => {
         const supabase = createClient(supabaseUrl, supabaseKey)
 
         // 1. Obtener agency_id del request (parsing seguro para evitar 503 por crash)
-        let reqData: { agency_id?: string }
+        let reqData: { agency_id?: string; sync_config?: boolean }
         try {
             const text = await req.text()
             reqData = text ? JSON.parse(text) : {}
@@ -53,7 +53,7 @@ Deno.serve(async (req) => {
                 { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
             )
         }
-        const { agency_id } = reqData
+        const { agency_id, sync_config = true } = reqData
 
         console.log(`[list-google-accounts] Request for agency: ${agency_id}`)
 
@@ -230,6 +230,23 @@ Deno.serve(async (req) => {
                 currencyCode: currencyCode || null,
             }
         }))
+
+        if (sync_config && accounts.length > 0) {
+            const upsertConfigs = accounts.map((acc) => ({
+                account_id: acc.id,
+                account_name: acc.descriptiveName || `Cuenta ${acc.id}`,
+                platform: 'google',
+                is_active: true,
+                agency_id,
+                currency: acc.currencyCode ? String(acc.currencyCode).toUpperCase() : null,
+            }))
+            const { error: upsertErr } = await supabase
+                .from('ad_accounts_config')
+                .upsert(upsertConfigs, { onConflict: 'account_id,agency_id,platform' })
+            if (upsertErr) {
+                console.warn('[list-google-accounts] upsert ad_accounts_config:', upsertErr.message)
+            }
+        }
 
         return new Response(
             JSON.stringify({ success: true, accounts }),

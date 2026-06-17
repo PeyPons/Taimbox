@@ -15,6 +15,8 @@ export interface CoherenceAllocationEditDialogProps {
   viewDate: Date;
   deadlines: Deadline[];
   onDismiss: () => void;
+  /** Operaciones / admin: true. Mi día del empleado: false (respeta bloqueo Weekly en semanas pasadas). */
+  allowEditPastWeeks?: boolean;
 }
 
 /**
@@ -27,6 +29,7 @@ export function CoherenceAllocationEditDialog({
   viewDate,
   deadlines,
   onDismiss,
+  allowEditPastWeeks = false,
 }: CoherenceAllocationEditDialogProps) {
   const employeeId = allocation.employeeId;
   const { hasPermission } = usePermissions();
@@ -77,7 +80,7 @@ export function CoherenceAllocationEditDialog({
     batchAddHint,
     batchPreviewContext,
   } = useAllocationActions(employeeId, weeks, canAssignToOthers, isWeeklyEnabled, {
-    allowEditPastWeeks: true,
+    allowEditPastWeeks,
     batchPreview: {
       allocations,
       viewDate,

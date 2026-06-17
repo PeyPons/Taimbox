@@ -7,7 +7,8 @@ import { useProjectAliasing } from '@/hooks/useProjectAliasing';
 import { TaskTimer } from '@/components/employee/TaskTimer';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, Clock, Sun, Calendar, ChevronUp, ChevronDown, Search, X, ArrowRight, Undo2, ListChecks } from 'lucide-react';
+import { CheckCircle2, Clock, Sun, Calendar, ChevronUp, ChevronDown, Search, X, ArrowRight, Undo2, ListChecks, Pencil } from 'lucide-react';
+import { CoherenceAllocationEditDialog } from '@/components/employee/CoherenceAllocationEditDialog';
 import { format, isSameWeek, startOfWeek, getDay, startOfDay, startOfMonth } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -66,6 +67,7 @@ export function MyDayView({
   const [completionData, setCompletionData] = useState({ actual: 0, computed: 0 });
   const [searchQuery, setSearchQuery] = useState('');
   const [noteSearchHits, setNoteSearchHits] = useState<Set<string>>(new Set());
+  const [editingTask, setEditingTask] = useState<Allocation | null>(null);
 
   const todayKey = format(new Date(), 'yyyy-MM-dd');
   const today = useMemo(() => startOfDay(new Date(`${todayKey}T12:00:00`)), [todayKey]);
@@ -329,6 +331,17 @@ export function MyDayView({
             )}
           </div>
           <div className="flex items-center gap-0.5 shrink-0">
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              className="h-7 w-7 p-0 rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+              title={t('employeeDashboard.myDay.editTaskTitle', 'Editar tarea')}
+              aria-label={t('employeeDashboard.myDay.editTaskAria', 'Editar tarea')}
+              onClick={() => setEditingTask(task)}
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
             <TaskNotesTrigger allocationId={task.id} noteCount={noteCounts[task.id] ?? 0} />
             {weeklyEnabled && onOpenWeeklyForAllocation && (
               <Button
@@ -546,6 +559,16 @@ export function MyDayView({
           </div>
         )}
       </div>
+
+      {editingTask ? (
+        <CoherenceAllocationEditDialog
+          key={editingTask.id}
+          allocation={editingTask}
+          viewDate={viewDate}
+          deadlines={[]}
+          onDismiss={() => setEditingTask(null)}
+        />
+      ) : null}
     </div>
   );
 }

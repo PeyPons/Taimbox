@@ -1,6 +1,7 @@
 import {
   AGENCY_CURRENCY_CODES,
   DEFAULT_AGENCY_CURRENCY,
+  normalizeIsoCurrencyCode,
   type AgencyCurrencyCode,
   isAgencyCurrencyCode,
 } from '@/constants/currencies';
@@ -11,12 +12,20 @@ export function resolveAgencyCurrency(settings: AgencySettings | undefined | nul
   return isAgencyCurrencyCode(raw) ? raw : DEFAULT_AGENCY_CURRENCY;
 }
 
-/** Moneda de una cuenta Ads (Meta/Google); cae a la de la agencia si la plataforma devuelve otra no soportada. */
+/** Moneda importada de Meta/Google; null si la plataforma no devolvió código válido. */
+export function resolvePlatformAdAccountCurrency(
+  accountCurrency: string | null | undefined,
+): string | null {
+  return normalizeIsoCurrencyCode(accountCurrency);
+}
+
+/** Moneda de cuenta Ads con fallback a la agencia (solo fuera de Monitor PPC). */
 export function resolveAdAccountCurrency(
   accountCurrency: string | null | undefined,
   agencySettings?: AgencySettings | null,
-): AgencyCurrencyCode {
-  if (isAgencyCurrencyCode(accountCurrency)) return accountCurrency;
+): string {
+  const platform = resolvePlatformAdAccountCurrency(accountCurrency);
+  if (platform) return platform;
   return resolveAgencyCurrency(agencySettings);
 }
 
@@ -30,20 +39,22 @@ export function localeForAppLanguage(language: string | undefined): string {
 
 export function formatMoneyAmount(
   amount: number,
-  currency: AgencyCurrencyCode = DEFAULT_AGENCY_CURRENCY,
+  currency: AgencyCurrencyCode | string = DEFAULT_AGENCY_CURRENCY,
   locale = 'es-ES',
 ): string {
   const safe = Number.isFinite(amount) ? amount : 0;
+  const code = normalizeIsoCurrencyCode(currency) ?? (isAgencyCurrencyCode(currency) ? currency : DEFAULT_AGENCY_CURRENCY);
   return new Intl.NumberFormat(locale, {
     style: 'currency',
-    currency,
+    currency: code,
     maximumFractionDigits: 2,
   }).format(safe);
 }
 
-export function getCurrencySymbol(currency: AgencyCurrencyCode, locale = 'es-ES'): string {
-  const parts = new Intl.NumberFormat(locale, { style: 'currency', currency }).formatToParts(0);
-  return parts.find((p) => p.type === 'currency')?.value?.trim() ?? currency;
+export function getCurrencySymbol(currency: AgencyCurrencyCode | string, locale = 'es-ES'): string {
+  const code = normalizeIsoCurrencyCode(currency) ?? (isAgencyCurrencyCode(currency) ? currency : DEFAULT_AGENCY_CURRENCY);
+  const parts = new Intl.NumberFormat(locale, { style: 'currency', currency: code }).formatToParts(0);
+  return parts.find((p) => p.type === 'currency')?.value?.trim() ?? code;
 }
 
 /** Sufijo para precio hora: "USD/h" o "€/h" según moneda. */

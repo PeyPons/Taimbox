@@ -64,3 +64,15 @@ export const AGENCY_CURRENCY_OPTIONS: { value: AgencyCurrencyCode; labelEs: stri
 export function isAgencyCurrencyCode(value: string | undefined | null): value is AgencyCurrencyCode {
   return !!value && (AGENCY_CURRENCY_CODES as readonly string[]).includes(value);
 }
+
+/** ISO 4217 de plataforma (Meta/Google); null si no es válido para Intl. */
+export function normalizeIsoCurrencyCode(raw: string | null | undefined): string | null {
+  const code = raw?.trim().toUpperCase();
+  if (!code || !/^[A-Z]{3}$/.test(code)) return null;
+  try {
+    new Intl.NumberFormat('en-US', { style: 'currency', currency: code }).format(0);
+    return code;
+  } catch {
+    return null;
+  }
+}

@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { WeeklyReportDialog } from '@/components/employee/WeeklyReportDialog';
+import { MyDayView } from '@/components/employee/MyDayView';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,6 +32,11 @@ import { AllocationProjectHeader } from '@/components/planner/allocation/Allocat
 import { AllocationTaskRow } from '@/components/planner/allocation/AllocationTaskRow';
 import { PlannerTaskContextMenu } from '@/components/planner/allocation/PlannerTaskContextMenu';
 import { AllocationSheetHeader } from '@/components/planner/allocation/AllocationSheetHeader';
+import {
+  persistPlannerSheetViewMode,
+  readPlannerSheetViewMode,
+  type PlannerSheetViewMode,
+} from '@/components/planner/allocation/plannerSheetViewMode';
 import type { WeekStripItemSummary } from '@/components/planner/allocation/allocationWeekMetrics';
 import { resolveDisplayStatus, weekCardSurfaceClass } from '@/components/planner/allocation/allocationWeekMetrics';
 import { AllocationMonthWeekCardHeader } from '@/components/planner/allocation/AllocationMonthWeekCardHeader';
@@ -221,7 +227,14 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
 
   const [openComboboxId, setOpenComboboxId] = useState<string | null>(null);
   const [editProjectOpen, setEditProjectOpen] = useState(false);
-  const [showAllWeeks, setShowAllWeeks] = useState(false);
+  const [viewMode, setViewMode] = useState<PlannerSheetViewMode>(() => readPlannerSheetViewMode());
+
+  const handleViewModeChange = useCallback((mode: PlannerSheetViewMode) => {
+    setViewMode(mode);
+    persistPlannerSheetViewMode(mode);
+  }, []);
+
+  const isOwnEmployee = currentUser?.id === employeeId;
 
   // Estado para el dialog de transferencia
   const [transferDialogOpen, setTransferDialogOpen] = useState(false);
@@ -229,10 +242,10 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
 
   const isMobile = useIsMobile();
   const isWideLayout = useIsWideLayout();
-  const effectiveShowAllWeeks = showAllWeeks;
-  const isMonthGridLayout = effectiveShowAllWeeks && isWideLayout && !isMobile;
-  const isMonthScrollLayout = effectiveShowAllWeeks && !isMonthGridLayout;
-  const showProjectInline = !isMobile && isWideLayout && !effectiveShowAllWeeks;
+  const isMonthView = viewMode === 'month';
+  const isMonthGridLayout = isMonthView && isWideLayout && !isMobile;
+  const isMonthScrollLayout = isMonthView && !isMonthGridLayout;
+  const showProjectInline = !isMobile && isWideLayout && viewMode === 'week';
   const [selectedWeekIndex, setSelectedWeekIndex] = useState<number | null>(null);
 
   // Preferencia de visualización: auto-expandir o colapsar proyectos
@@ -255,7 +268,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
     name_asc: t('planner.allocationSheet.sort.nameAsc', 'Nombre (A-Z)'),
     name_desc: t('planner.allocationSheet.sort.nameDesc', 'Nombre (Z-A)'),
   };
-  const sortButtonLabel = effectiveShowAllWeeks
+  const sortButtonLabel = isMonthView
     ? t('planner.allocationSheet.sort.optionsButton', 'Opciones')
     : t('planner.allocationSheet.sort.sortButton', 'Ordenar');
   const sortOptionLabel = sortOptionLabels[sortOption];
@@ -373,10 +386,10 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
 
   // Semanas a mostrar según el modo
   const visibleWeeks = useMemo(() => {
-    if (showAllWeeks) return weeks;
+    if (viewMode === 'month') return weeks;
     if (weeks.length === 0 || activeWeekIndex < 0 || activeWeekIndex >= weeks.length) return [];
     return [weeks[activeWeekIndex]];
-  }, [weeks, showAllWeeks, activeWeekIndex]);
+  }, [weeks, viewMode, activeWeekIndex]);
 
   const weekStripSummaries = useMemo((): WeekStripItemSummary[] => {
     if (weeks.length === 0) return [];
@@ -421,16 +434,18 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
   ]);
 
   const handleWeekNavSelect = useCallback((index: number) => {
-    if (showAllWeeks) {
+    if (viewMode === 'month') {
       scrollChildIntoHorizontalView(scrollContainerRef.current, `[data-week-index="${index}"]`);
       return;
     }
     setSelectedWeekIndex(index);
-  }, [showAllWeeks]);
+  }, [viewMode]);
 
-  const monthViewActiveWeekIndex = showAllWeeks ? -1 : activeWeekIndex;
+  const monthViewActiveWeekIndex = viewMode === 'month' ? -1 : activeWeekIndex;
 
-  const weekStripVariant = effectiveShowAllWeeks
+  const weekStripVariant = viewMode === 'day'
+    ? 'hidden'
+    : isMonthView
     ? isMonthScrollLayout
       ? 'compact'
       : 'hidden'
@@ -707,7 +722,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
         <SheetContent
           className={cn(
             'w-full sm:max-w-[95vw] overflow-x-hidden px-3 sm:px-6 bg-slate-50/95 dark:bg-slate-950/95 backdrop-blur-xl border-l shadow-2xl pt-10',
-            effectiveShowAllWeeks ? 'flex h-full flex-col overflow-hidden' : 'overflow-y-auto'
+            viewMode === 'month' || viewMode === 'day' ? 'flex h-full flex-col overflow-hidden' : 'overflow-y-auto'
           )}
           onInteractOutside={(e) => {
             // Prevenir cierre del Sheet cuando el tour está activo
@@ -727,7 +742,9 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
               employee={employee}
               monthLabel={monthLabel}
               isMobile={isMobile}
-              effectiveShowAllWeeks={effectiveShowAllWeeks}
+              viewMode={viewMode}
+              isOwnEmployee={isOwnEmployee}
+              onViewModeChange={handleViewModeChange}
               weeks={weeks}
               weekSummaries={weekStripSummaries}
               activeWeekIndex={monthViewActiveWeekIndex}
@@ -736,13 +753,12 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
               onNextMonth={handleNextMonth}
               onSelectWeek={handleWeekNavSelect}
               onAddTask={
-                !effectiveShowAllWeeks && weeks[activeWeekIndex]
+                viewMode === 'week' && weeks[activeWeekIndex]
                   ? () => startAdd(weeks[activeWeekIndex].weekStart)
                   : undefined
               }
               searchTerm={searchTerm}
               onSearchTermChange={setSearchTerm}
-              onToggleShowAllWeeks={() => setShowAllWeeks(!showAllWeeks)}
               onOpenWeekly={() => {
                 setWeeklyFocusAllocationId(null);
                 setWeeklyOpen(true);
@@ -757,8 +773,21 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
             />
           </TooltipProvider>
 
-          {isLoadingTasks ? (
-            <div className={cn('flex items-center justify-center', effectiveShowAllWeeks ? 'flex-1 min-h-0' : 'min-h-[400px]')}>
+          {viewMode === 'day' ? (
+            <div className="flex-1 min-h-0 overflow-y-auto pb-4">
+              <MyDayView
+                employeeId={employeeId}
+                viewDate={viewDate}
+                weeklyEnabled={isWeeklyEnabled}
+                onOpenPlanning={() => handleViewModeChange('week')}
+                onOpenWeeklyForAllocation={(allocationId) => {
+                  setWeeklyFocusAllocationId(allocationId);
+                  setWeeklyOpen(true);
+                }}
+              />
+            </div>
+          ) : isLoadingTasks ? (
+            <div className={cn('flex items-center justify-center', isMonthView ? 'flex-1 min-h-0' : 'min-h-[400px]')}>
               <div className="text-slate-400 flex flex-col items-center gap-2">
                 <div className="h-8 w-8 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
                 <span>{t('planner.allocationSheet.loading', 'Cargando tareas...')}</span>
@@ -770,8 +799,8 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
               <div
                 className={cn(
                   'relative group flex gap-4 min-w-0',
-                  effectiveShowAllWeeks && 'flex-1 min-h-0',
-                  isMonthGridLayout && (effectiveShowAllWeeks ? 'items-stretch' : 'items-start')
+                  isMonthView && 'flex-1 min-h-0',
+                  isMonthGridLayout && (isMonthView ? 'items-stretch' : 'items-start')
                 )}
               >
                 {isMonthScrollLayout && (
@@ -781,9 +810,9 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                   ref={scrollContainerRef}
                   className={cn(
                     'flex-1 min-w-0',
-                    effectiveShowAllWeeks ? 'pb-3 min-h-0' : 'pb-8',
+                    isMonthView ? 'pb-3 min-h-0' : 'pb-8',
                     isMonthGridLayout
-                      ? cn('grid gap-3 w-full', effectiveShowAllWeeks ? 'h-full min-h-0 items-stretch' : 'items-start')
+                      ? cn('grid gap-3 w-full', isMonthView ? 'h-full min-h-0 items-stretch' : 'items-start')
                       : isMonthScrollLayout
                         ? 'flex h-full min-h-0 overflow-x-auto gap-3 snap-x snap-mandatory px-1 no-scrollbar overscroll-x-contain items-stretch'
                         : 'flex min-w-0 overflow-x-hidden justify-center'
@@ -795,7 +824,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                   }
                 >
                   {visibleWeeks.map((week, idx) => {
-                      const index = showAllWeeks ? idx : activeWeekIndex;
+                      const index = isMonthView ? idx : activeWeekIndex;
                       // Usar el weekStartDate real para buscar allocations (las allocations se guardan con el lunes completo)
                       const weekStartDate = format(week.weekStart, 'yyyy-MM-dd');
                       const weekStr = weekStartDate; // Alias para usar como key en JSX
@@ -866,7 +895,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                       const sortedGroups = sortProjectGroups(grouped);
 
                       // VISTA TABULAR para semana individual
-                      if (!effectiveShowAllWeeks) {
+                      if (!isMonthView) {
                         const nextWeekNavStart =
                           activeWeekIndex < weeks.length - 1
                             ? weeks[activeWeekIndex + 1].weekStart
@@ -1004,6 +1033,17 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                     </div>
                                                   </div>
                                                 </div>
+                                                <div className="flex items-center gap-0.5 shrink-0">
+                                                  <TaskNotesTrigger
+                                                    allocationId={alloc.id}
+                                                    noteCount={noteCounts[alloc.id] ?? 0}
+                                                    badge
+                                                    className={cn(
+                                                      (noteCounts[alloc.id] ?? 0) === 0 &&
+                                                        'opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity',
+                                                      (noteCounts[alloc.id] ?? 0) > 0 && 'opacity-100'
+                                                    )}
+                                                  />
                                                 <PlannerTaskContextMenu
                                                   alloc={alloc}
                                                   transferReadOnly={transferReadOnlyMobile}
@@ -1033,6 +1073,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                   iconClassName="h-4 w-4"
                                                 />
                                               </div>
+                                            </div>
                                             </div>
                                           );
                                         })}
@@ -1430,7 +1471,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                             data-week-index={index}
                             className={cn(
                               'flex flex-col gap-2 p-3 rounded-xl border bg-white min-h-[280px] animate-pulse',
-                              effectiveShowAllWeeks && 'h-full min-h-0',
+                              isMonthView && 'h-full min-h-0',
                               isMonthScrollLayout
                                 ? MONTH_SCROLL_WEEK_COL_CLASS
                                 : 'min-w-0 w-full'
@@ -1459,7 +1500,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                           data-week-index={index}
                           className={cn(
                             'flex flex-col gap-2 p-2.5 sm:p-3 rounded-xl border min-h-[280px]',
-                            effectiveShowAllWeeks && 'h-full min-h-0',
+                            isMonthView && 'h-full min-h-0',
                             weekCardSurfaceClass(cardStatus),
                             isMonthScrollLayout &&
                               cn(MONTH_SCROLL_WEEK_COL_CLASS, 'shadow-sm'),
@@ -1536,7 +1577,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                           />
                                         </button>
                                       </CollapsibleTrigger>
-                                      {showAllWeeks && (
+                                      {isMonthView && (
                                         <Tooltip>
                                           <TooltipTrigger asChild>
                                             <Button
@@ -1580,7 +1621,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                             allocations={allocations}
                                             outgoingTransfers={outgoingTransfers}
                                             weeklyFeedback={weeklyFeedback}
-                                            showAllWeeks={showAllWeeks}
+                                            showAllWeeks={isMonthView}
                                             setTransferTask={setTransferTask}
                                             setTransferDialogOpen={setTransferDialogOpen}
                                             isWeeklyEnabled={isWeeklyEnabled}

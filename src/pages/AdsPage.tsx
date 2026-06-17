@@ -27,7 +27,8 @@ import {
 import { supabase } from '@/lib/supabase';
 import { cn } from '@/lib/utils';
 import { useAdsFormatMoney } from '@/hooks/useAdsFormatMoney';
-import { addCampaignDailyBudget } from '@/utils/adsBudgetUtils';
+import { useRefreshMissingAdCurrencies } from '@/hooks/useRefreshMissingAdCurrencies';
+import { addCampaignDailyBudget, countSharedBudgetCampaigns, getCampaignDisplayDailyBudget, isSharedPortfolioBudget } from '@/utils/adsBudgetUtils';
 import { toast } from '@/lib/notify';
 import { useAnonymizeAds } from '@/hooks/useAnonymizeAds';
 import { AnonymizedContent } from '@/components/ads/AnonymizedContent';
@@ -133,7 +134,7 @@ export default function AdsPage() {
   const [rawData, setRawData] = useState<CampaignData[]>([]);
   const [clientSettings, setClientSettings] = useState<Record<string, { budget: number; group_name: string; is_hidden: boolean; is_sales_account: boolean }>>({});
   const [registeredAccounts, setRegisteredAccounts] = useState<RegisteredAccount[]>([]);
-  const { formatMoney, currencySymbolForClient } = useAdsFormatMoney(registeredAccounts);
+  const { formatMoney, formatGlobalMoney, currencySymbolForClient } = useAdsFormatMoney(registeredAccounts);
   const [loading, setLoading] = useState(true);
   const { google: googleSync, meta: metaSync, refresh: refreshLastSync } = useAdsLastSync();
   const googleConnected = Boolean(currentAgency?.google_ads_refresh_token);
@@ -213,6 +214,14 @@ export default function AdsPage() {
   };
 
   useEffect(() => { fetchData(); }, []);
+
+  useRefreshMissingAdCurrencies(
+    currentAgency?.id,
+    'google',
+    registeredAccounts,
+    () => { void fetchData(); },
+    !loading,
+  );
 
   const [currentJobId, setCurrentJobId] = useState<string | null>(null);
 
@@ -472,6 +481,7 @@ export default function AdsPage() {
           Number(row.daily_budget) || 0,
           row.budget_id,
           row.status,
+          row.client_id,
         );
       }
 
@@ -585,6 +595,32 @@ export default function AdsPage() {
     return Array.from(unique.entries()).map(([id, name]) => ({ id, name }));
   }, [rawData]);
 
+  const renderCampaignDailyBudget = (
+    camp: CampaignData,
+    sharedCounts: Map<string, number>,
+    accountId: string,
+  ) => {
+    const displayDaily = getCampaignDisplayDailyBudget(camp, sharedCounts);
+    if (!displayDaily) return '-';
+    const isShared = isSharedPortfolioBudget(camp, sharedCounts);
+    const displayLabel = formatMoney(displayDaily, accountId);
+    if (!isShared) return displayLabel;
+    const portfolioTotal = formatMoney(Number(camp.daily_budget), accountId);
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="cursor-help underline decoration-dotted decoration-slate-300">{displayLabel}</span>
+        </TooltipTrigger>
+        <TooltipContent className="text-xs max-w-xs">
+          {t('ads.table.sharedBudgetTooltip', {
+            total: portfolioTotal,
+            defaultValue: 'Cartera compartida: {{total}} diarios en total entre varias campañas.',
+          })}
+        </TooltipContent>
+      </Tooltip>
+    );
+  };
+
   return (
     <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6 pb-20">
       {/* Header */}
@@ -628,8 +664,8 @@ export default function AdsPage() {
           <AdsStatCard
             icon={Target}
             label={t('ads.stats.investment', 'Inversión')}
-            value={formatMoney(globalStats.totalSpent)}
-            subValue={`${t('ads.stats.of', 'de')} ${formatMoney(globalStats.totalBudget)}`}
+            value={formatGlobalMoney(globalStats.totalSpent)}
+            subValue={`${t('ads.stats.of', 'de')} ${formatGlobalMoney(globalStats.totalBudget)}`}
             color="blue"
           />
           <AdsStatCard
@@ -643,21 +679,21 @@ export default function AdsPage() {
             icon={TrendingUp}
             label={t('ads.stats.conversions', 'Conversiones')}
             value={globalStats.totalConversions.toFixed(0)}
-            subValue={`CPA ${formatMoney(globalStats.globalCpa)}`}
+            subValue={`CPA ${formatGlobalMoney(globalStats.globalCpa)}`}
             color="emerald"
           />
           <AdsStatCard
             icon={Target}
             label={t('ads.stats.roas', 'ROAS')}
             value={`${globalStats.globalRoas.toFixed(2)}x`}
-            subValue={`CPC ${formatMoney(globalStats.globalCpc)}`}
+            subValue={`CPC ${formatGlobalMoney(globalStats.globalCpc)}`}
             color={globalStats.globalRoas >= 2 ? 'emerald' : globalStats.globalRoas >= 1 ? 'amber' : 'red'}
           />
           <AdsStatCard
             icon={ArrowDownRight}
             label={t('ads.stats.dailyRecommended', 'Diario recomendado')}
-            value={formatMoney(globalStats.totalRecommendedDaily)}
-            subValue={`${t('common.actual', 'Actual')}: ${formatMoney(globalStats.totalCurrentDaily)}`}
+            value={formatGlobalMoney(globalStats.totalRecommendedDaily)}
+            subValue={`${t('common.actual', 'Actual')}: ${formatGlobalMoney(globalStats.totalCurrentDaily)}`}
             color={globalStats.totalRecommendedDaily < globalStats.totalCurrentDaily ? 'amber' : 'emerald'}
           />
           <AdsStatCard
@@ -711,6 +747,7 @@ export default function AdsPage() {
             const statusConfig = getStatusConfig(client.status, t);
             const dailyDiff = client.currentDailyBudget - client.recommendedDaily;
             const isOverspending = dailyDiff > 0 && client.status !== 'ok';
+            const sharedBudgetCounts = countSharedBudgetCampaigns(client.campaigns);
 
             return (
               <AccordionItem
@@ -840,7 +877,7 @@ export default function AdsPage() {
                             )}
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className="text-slate-400">{currencySymbolForClient(client.client_id)}</span>
+                            <span className="text-slate-400">{currencySymbolForClient(client.client_id, client.realIdsList.map((r) => r.id))}</span>
                             <Input
                               key={`${client.client_id}-${client.budget}`}
                               type="number"
@@ -956,7 +993,10 @@ export default function AdsPage() {
                                 const roas = camp.cost > 0 ? (camp.conversions_value || 0) / camp.cost : 0;
                                 const campCtr = (camp.impressions || 0) > 0 ? ((camp.clicks || 0) / (camp.impressions || 1)) * 100 : 0;
                                 const campCpc = (camp.clicks || 0) > 0 ? camp.cost / (camp.clicks || 1) : 0;
-                                const isHighBudget = (camp.daily_budget || 0) > 0 && (camp.cost / (currentDay || 1)) > (camp.daily_budget || 0);
+                                const displayDaily =
+                                  getCampaignDisplayDailyBudget(camp, sharedBudgetCounts) ?? (Number(camp.daily_budget) || 0);
+                                const isHighBudget =
+                                  displayDaily > 0 && (camp.cost / (currentDay || 1)) > displayDaily;
                                 return (
                                   <tr key={idx} className="hover:bg-slate-50">
                                     <td className="px-3 py-2.5">
@@ -981,7 +1021,11 @@ export default function AdsPage() {
                                       </div>
                                     </td>
                                     <td className="px-2 py-2.5 text-right font-mono text-slate-500">
-                                      {camp.daily_budget ? formatMoney(camp.daily_budget, camp.original_client_id || camp.client_id || client.client_id) : '-'}
+                                      {renderCampaignDailyBudget(
+                                        camp,
+                                        sharedBudgetCounts,
+                                        camp.original_client_id || camp.client_id || client.client_id,
+                                      )}
                                     </td>
                                     <td className={cn("px-2 py-2.5 text-right font-medium", isHighBudget ? "text-amber-600" : "text-slate-900")}>
                                       {formatMoney(camp.cost, camp.original_client_id || camp.client_id || client.client_id)}
@@ -1044,6 +1088,7 @@ export default function AdsPage() {
                             <tbody className="divide-y divide-slate-100">
                               {client.realIdsList.map(sub => {
                                 const subCampaigns = client.campaigns.filter(c => c.original_client_id === sub.id || c.client_id === sub.id);
+                                const subSharedBudgetCounts = countSharedBudgetCampaigns(subCampaigns);
                                 const subSpent = subCampaigns.reduce((a, c) => a + c.cost, 0);
                                 const subClicks = subCampaigns.reduce((a, c) => a + (c.clicks || 0), 0);
                                 const subConv = subCampaigns.reduce((a, c) => a + (c.conversions || 0), 0);
@@ -1115,7 +1160,11 @@ export default function AdsPage() {
                                               <tbody>
                                                 {subCampaigns.sort((a, b) => b.cost - a.cost).map(camp => {
                                                   const campRoas = camp.cost > 0 ? (camp.conversions_value || 0) / camp.cost : 0;
-                                                  const isHighBudget = (camp.daily_budget || 0) > 0 && (camp.cost / (currentDay || 1)) > (camp.daily_budget || 0);
+                                                  const displayDaily =
+                                                    getCampaignDisplayDailyBudget(camp, subSharedBudgetCounts) ??
+                                                    (Number(camp.daily_budget) || 0);
+                                                  const isHighBudget =
+                                                    displayDaily > 0 && (camp.cost / (currentDay || 1)) > displayDaily;
 
                                                   return (
                                                     <tr key={camp.campaign_id} className="border-b last:border-0 hover:bg-slate-50">
@@ -1125,7 +1174,7 @@ export default function AdsPage() {
                                                         </AnonymizedContent>
                                                       </td>
                                                       <td className="px-2 py-2 text-right text-slate-500 font-mono">
-                                                        {camp.daily_budget ? formatMoney(camp.daily_budget, sub.id) : '-'}
+                                                        {renderCampaignDailyBudget(camp, subSharedBudgetCounts, sub.id)}
                                                       </td>
                                                       <td className={cn("px-2 py-2.5 text-right font-medium", isHighBudget ? "text-amber-600" : "text-slate-900")}>
                                                         {formatMoney(camp.cost, sub.id)}

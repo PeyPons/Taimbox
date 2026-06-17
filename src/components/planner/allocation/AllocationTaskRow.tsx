@@ -204,12 +204,13 @@ export function AllocationTaskRow({
                         )}
                     </div>
 
-                    <div className="flex items-center shrink-0 -mt-0.5">
+                    <div className="flex items-center shrink-0 -mt-0.5 overflow-visible">
                         <TaskNotesTrigger
                             allocationId={alloc.id}
                             noteCount={noteCount}
+                            badge
                             className={cn(
-                                isMonthCompact ? 'h-7 w-7' : isCardLayout ? 'h-8 w-8' : isMobile ? 'h-11 w-11 min-h-[44px] min-w-[44px]' : 'h-6 w-6',
+                                isMonthCompact ? 'h-7' : isCardLayout ? 'h-8' : isMobile ? 'h-11 min-h-[44px]' : 'h-6',
                                 noteCount === 0 && 'opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity',
                                 noteCount > 0 && 'opacity-100'
                             )}

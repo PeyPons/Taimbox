@@ -235,6 +235,7 @@ function buildPlatformAlerts(
         Number(row.daily_budget) || 0,
         row.budget_id,
         row.status ?? '',
+        row.client_id,
       );
     }
 

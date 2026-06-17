@@ -1072,7 +1072,7 @@ export default function FinancialHealthPage() {
     }, [dynamicCostFallbackActive, costMode, agencyTotalOverheadApplied, t]);
 
     return (
-        <div className="p-4 sm:p-6 md:p-8 max-w-[1600px] mx-auto space-y-6">
+        <div className="p-4 sm:p-6 md:p-8 max-w-[1600px] mx-auto space-y-6 min-w-0 w-full">
             {/* Cabecera con título y contexto */}
             <header className="space-y-3">
                 <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
@@ -1091,20 +1091,20 @@ export default function FinancialHealthPage() {
 
             {/* Barra de filtros y navegación */}
             <TooltipProvider delayDuration={300}>
-                <div className="flex flex-col sm:flex-row gap-3 p-4 rounded-xl bg-slate-50 border border-slate-200/80">
-                    <div className="relative flex-1 min-w-0 max-w-md">
+                <div className="flex flex-col gap-3 p-3 sm:p-4 rounded-xl bg-slate-50 border border-slate-200/80 min-w-0">
+                    <div className="relative w-full min-w-0">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" aria-hidden />
                         <Input
                             placeholder={t('financialHealth.search', 'Buscar proyecto o cliente...')}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="pl-9 h-10 bg-white border-slate-200"
+                            className="pl-9 h-10 bg-white border-slate-200 w-full"
                             aria-label={t('financialHealth.searchAria')}
                         />
                     </div>
-                    <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-                        <div className="flex items-center gap-2">
-                            <div className="flex items-center gap-0.5 rounded-lg border border-slate-200 bg-white p-0.5 shadow-sm">
+                    <div className="flex flex-col gap-2.5 min-w-0 w-full">
+                        <div className="flex flex-wrap items-center gap-2">
+                            <div className="flex items-center gap-0.5 rounded-lg border border-slate-200 bg-white p-0.5 shadow-sm shrink-0">
                                 <Button
                                     variant="ghost"
                                     size="icon"
@@ -1115,7 +1115,7 @@ export default function FinancialHealthPage() {
                                 >
                                     <ChevronRight className="h-4 w-4 rotate-180" />
                                 </Button>
-                                <Button variant="ghost" onClick={handleToday} className="h-9 px-3 text-sm font-medium text-slate-800 capitalize min-w-[100px]">
+                                <Button variant="ghost" onClick={handleToday} className="h-9 px-3 text-sm font-medium text-slate-800 capitalize min-w-[5.5rem] sm:min-w-[100px]">
                                     {format(currentMonth, 'MMM yyyy', { locale: dateLocale })}
                                 </Button>
                                 {minReportingMonth != null && (
@@ -1126,18 +1126,20 @@ export default function FinancialHealthPage() {
                                 </Button>
                             </div>
                             {isLoadingMonth && (
-                                <Loader2 className="h-4 w-4 animate-spin text-slate-400" aria-label={t('common.loading', 'Cargando')} />
+                                <Loader2 className="h-4 w-4 animate-spin text-slate-400 shrink-0" aria-label={t('common.loading', 'Cargando')} />
                             )}
                             {isViewingCurrentMonth ? (
-                                <Badge className="bg-indigo-500 hover:bg-indigo-600 text-white border-0 animate-pulse">
+                                <Badge className="bg-indigo-500 hover:bg-indigo-600 text-white border-0 animate-pulse shrink-0">
                                     {t('financialHealth.controls.currentMonth', 'Mes en curso')}
                                 </Badge>
                             ) : (
-                                <Badge variant="secondary" className="bg-slate-200 text-slate-600 border-0">
+                                <Badge variant="secondary" className="bg-slate-200 text-slate-600 border-0 shrink-0">
                                     {t('financialHealth.controls.closedMonth', 'Mes cerrado')}
                                 </Badge>
                             )}
-                            {canAccess('/agency') && (
+                        </div>
+                        {(canAccess('/agency')) && (
+                            <div className="flex flex-wrap items-center gap-2">
                                 <Button
                                     type="button"
                                     variant="outline"
@@ -1146,16 +1148,16 @@ export default function FinancialHealthPage() {
                                     onClick={() => setProfitSettingsOpen(true)}
                                 >
                                     <Settings2 className="h-4 w-4" />
-                                    {t('financialHealth.settings.openButton', 'Objetivo y gastos')}
+                                    <span className="hidden sm:inline">{t('financialHealth.settings.openButton', 'Objetivo y gastos')}</span>
+                                    <span className="sm:hidden">{t('financialHealth.settings.openButtonShort', 'Objetivo')}</span>
                                 </Button>
-                            )}
-                            {canAccess('/agency') && (
                                 <Button type="button" variant="ghost" size="sm" className="h-9 shrink-0 text-xs" asChild>
                                     <Link to="/exportacion-informes">{t('financialHealth.exportHubLink', 'Más exportaciones')}</Link>
                                 </Button>
-                            )}
-                        </div>
-                        <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2 py-1.5">
+                            </div>
+                        )}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full min-w-0">
+                        <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2 py-1.5 min-w-0">
                             <span className="text-xs font-medium text-slate-600 whitespace-nowrap">{t('financialHealth.filters.hours', 'Horas:')}</span>
                             <div className="flex rounded-md border border-slate-200 overflow-hidden">
                                 <button
@@ -1180,7 +1182,7 @@ export default function FinancialHealthPage() {
                                 </button>
                             </div>
                         </div>
-                        <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2 py-1.5">
+                        <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2 py-1.5 min-w-0">
                             <span className="text-xs font-medium text-slate-600 whitespace-nowrap">{t('financialHealth.filters.cost', 'Coste:')}</span>
                             <div className="flex rounded-md border border-slate-200 overflow-hidden">
                                 <Tooltip>
@@ -1221,6 +1223,7 @@ export default function FinancialHealthPage() {
                             <Button variant="ghost" size="icon" className="h-9 w-9 text-slate-500 hover:text-slate-700 shrink-0" onClick={() => setCostHelpOpen(true)} aria-label={t('financialHealth.costHelpAria')}>
                                 <Info className="h-4 w-4" />
                             </Button>
+                        </div>
                         </div>
                     </div>
                 </div>
@@ -1369,9 +1372,9 @@ export default function FinancialHealthPage() {
             </Dialog>
 
             <TooltipProvider delayDuration={300}>
-                <Tabs defaultValue="resumen" className="space-y-6">
+                <Tabs defaultValue="resumen" className="space-y-6 min-w-0">
                     <div className="space-y-1">
-                        <TabsList className="grid w-full max-w-2xl grid-cols-2 sm:grid-cols-4 h-auto sm:h-11 bg-slate-100 p-1 rounded-lg gap-1">
+                        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto sm:h-11 bg-slate-100 p-1 rounded-lg gap-1">
                             <TabsTrigger value="resumen" className="gap-1.5 text-xs sm:text-sm data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md">
                                 <LayoutDashboard className="h-4 w-4 shrink-0" />
                                 {t('financialHealth.tabs.summary')}
@@ -1391,7 +1394,7 @@ export default function FinancialHealthPage() {
                                 {t('financialHealth.tabs.employees')}
                             </TabsTrigger>
                         </TabsList>
-                        <p className="text-xs text-slate-500 px-0.5">
+                        <p className="text-xs text-slate-500 px-0.5 hidden sm:block">
                             {t(
                                 'financialHealth.tabs.subtitle',
                                 'Resumen · Proyectos (mes) · Entregables (ciclo de vida) · Empleados'
@@ -1401,10 +1404,10 @@ export default function FinancialHealthPage() {
 
                     <TabsContent value="resumen" className="space-y-8 mt-0">
                         {/* KPIs */}
-                        <section className="grid gap-4 sm:gap-6 md:grid-cols-2 xl:grid-cols-3" aria-label={t('financialHealth.kpis.sectionAria')}>
-                            <Card className="border-l-4 border-emerald-500 shadow-sm bg-white overflow-hidden">
-                                <CardHeader className="pb-2">
-                                    <CardTitle className="text-base font-semibold text-slate-800 flex items-center gap-2">
+                        <section className="grid gap-4 sm:gap-6 md:grid-cols-2 xl:grid-cols-3 min-w-0" aria-label={t('financialHealth.kpis.sectionAria')}>
+                            <Card className="border-l-4 border-emerald-500 shadow-sm bg-white overflow-hidden min-w-0">
+                                <CardHeader className="pb-2 min-w-0">
+                                    <CardTitle className="text-base font-semibold text-slate-800 flex items-center gap-2 min-w-0">
                                         <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600">
                                             <DollarSign className="h-4 w-4" />
                                         </span>
@@ -1455,9 +1458,9 @@ export default function FinancialHealthPage() {
                                 </CardContent>
                             </Card>
 
-                            <Card className={cn("border-l-4 shadow-sm bg-white overflow-hidden", marginIsPositive ? "border-emerald-500" : "border-red-500")}>
-                                <CardHeader className="pb-2">
-                                    <CardTitle className="text-base font-semibold text-slate-800 flex items-center gap-2">
+                            <Card className={cn("border-l-4 shadow-sm bg-white overflow-hidden min-w-0", marginIsPositive ? "border-emerald-500" : "border-red-500")}>
+                                <CardHeader className="pb-2 min-w-0">
+                                    <CardTitle className="text-base font-semibold text-slate-800 flex items-center gap-2 min-w-0">
                                         <span className={cn("flex h-8 w-8 items-center justify-center rounded-lg", marginIsPositive ? "bg-emerald-100 text-emerald-600" : "bg-red-100 text-red-600")}>
                                             {marginIsPositive ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
                                         </span>
@@ -1503,9 +1506,9 @@ export default function FinancialHealthPage() {
                                 </CardContent>
                             </Card>
 
-                            <Card className="border-l-4 border-indigo-500 shadow-sm bg-white overflow-hidden">
-                                <CardHeader className="pb-2">
-                                    <CardTitle className="text-base font-semibold text-slate-800 flex items-center gap-2">
+                            <Card className="border-l-4 border-indigo-500 shadow-sm bg-white overflow-hidden min-w-0">
+                                <CardHeader className="pb-2 min-w-0">
+                                    <CardTitle className="text-base font-semibold text-slate-800 flex items-center gap-2 min-w-0">
                                         <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600">
                                             <Landmark className="h-4 w-4" />
                                         </span>
@@ -1560,7 +1563,7 @@ export default function FinancialHealthPage() {
                             (commonExpensesAlloc.ok &&
                                 commonExpensesAlloc.unallocatedAmount > 0.009)) && (
                             <section aria-label={t('financialHealth.commonExpenses.title')}>
-                                <Card className="shadow-sm border border-slate-200 bg-white border-l-4 border-l-indigo-500 overflow-hidden">
+                                <Card className="shadow-sm border border-slate-200 bg-white border-l-4 border-l-indigo-500 overflow-hidden min-w-0">
                                     <CardHeader className="pb-2">
                                         <CardTitle className="text-base font-semibold text-slate-800 flex items-center gap-2">
                                             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
@@ -1647,7 +1650,7 @@ export default function FinancialHealthPage() {
 
                         {/* Radar de hemorragias */}
                         <section aria-label={t('financialHealth.bleedingRadar.ariaLabel')}>
-                            <Card className="shadow-sm border border-slate-200 bg-white overflow-hidden">
+                            <Card className="shadow-sm border border-slate-200 bg-white overflow-hidden min-w-0">
                                 <CardHeader className="pb-3">
                                     <CardTitle className="text-base font-semibold text-slate-800 flex items-center gap-2">
                                         <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-50 text-red-600">
@@ -1670,8 +1673,8 @@ export default function FinancialHealthPage() {
                                         </div>
                                     ) : (
                                         <>
-                                            <div className="overflow-x-auto">
-                                                <table className="w-full text-sm">
+                                            <div className="max-w-full min-w-0 overflow-x-auto overscroll-x-contain">
+                                                <table className="w-full text-xs sm:text-sm">
                                                     <thead className="text-xs text-slate-500 uppercase bg-slate-50/80">
                                                         <tr>
                                                             <th className="px-4 py-3 text-left font-medium rounded-tl-lg">{t('financialHealth.columns.clientProject')}</th>
@@ -1696,7 +1699,7 @@ export default function FinancialHealthPage() {
                                                             </th>
                                                             <th className="px-4 py-3 text-right font-medium">{hoursHeaderLabel} / Budget</th>
                                                             <th className="px-4 py-3 text-right font-medium">{t('financialHealth.columns.ehr')}</th>
-                                                            <th className="px-4 py-3 text-right font-medium whitespace-nowrap">
+                                                            <th className="px-2 py-2 sm:px-4 sm:py-3 text-right font-medium whitespace-nowrap hidden lg:table-cell">
                                                                 <Tooltip>
                                                                     <TooltipTrigger asChild>
                                                                         <span className="cursor-help underline decoration-dotted">{t('financialHealth.columns.payrollImputed')}</span>
@@ -1706,7 +1709,7 @@ export default function FinancialHealthPage() {
                                                                     </TooltipContent>
                                                                 </Tooltip>
                                                             </th>
-                                                            <th className="px-4 py-3 text-right font-medium whitespace-nowrap">
+                                                            <th className="px-2 py-2 sm:px-4 sm:py-3 text-right font-medium whitespace-nowrap hidden lg:table-cell">
                                                                 <Tooltip>
                                                                     <TooltipTrigger asChild>
                                                                         <span className="cursor-help underline decoration-dotted">{t('financialHealth.columns.commonOverhead')}</span>
@@ -1716,7 +1719,7 @@ export default function FinancialHealthPage() {
                                                                     </TooltipContent>
                                                                 </Tooltip>
                                                             </th>
-                                                            <th className="px-4 py-3 text-right font-medium">
+                                                            <th className="px-2 py-2 sm:px-4 sm:py-3 text-right font-medium hidden md:table-cell">
                                                                 <Tooltip>
                                                                     <TooltipTrigger asChild>
                                                                         <span className="cursor-help underline decoration-dotted">{t('financialHealth.columns.pace')}</span>
@@ -1763,7 +1766,7 @@ export default function FinancialHealthPage() {
                                                                         onClick={() => toggleProject(p.projectId)}
                                                                         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleProject(p.projectId); } }}
                                                                     >
-                                                                        <td className="px-4 py-3 align-top min-w-[12rem] sm:min-w-[20rem] lg:min-w-[24rem]">
+                                                                        <td className="px-4 py-3 align-top min-w-0 max-w-[14rem] sm:max-w-[18rem]">
                                                                             <div className="flex items-start gap-3">
                                                                                 <Avatar className="h-8 w-8 border shrink-0 mt-0.5">
                                                                                     <AvatarFallback
@@ -1830,13 +1833,13 @@ export default function FinancialHealthPage() {
                                                                                 )}
                                                                             </div>
                                                                         </td>
-                                                                        <td className="px-4 py-3 text-right align-middle font-mono text-xs tabular-nums text-slate-700" onClick={(e) => e.stopPropagation()}>
+                                                                        <td className="px-2 py-2 sm:px-4 sm:py-3 text-right align-middle font-mono text-xs tabular-nums text-slate-700 hidden lg:table-cell" onClick={(e) => e.stopPropagation()}>
                                                                             {formatMoney(cm.payrollCost)}
                                                                         </td>
-                                                                        <td className="px-4 py-3 text-right align-middle font-mono text-xs tabular-nums text-slate-600" onClick={(e) => e.stopPropagation()}>
+                                                                        <td className="px-2 py-2 sm:px-4 sm:py-3 text-right align-middle font-mono text-xs tabular-nums text-slate-600 hidden lg:table-cell" onClick={(e) => e.stopPropagation()}>
                                                                             {formatMoney(cm.overheadCost)}
                                                                         </td>
-                                                                        <td className="px-4 py-3 text-right align-middle">
+                                                                        <td className="px-2 py-2 sm:px-4 sm:py-3 text-right align-middle hidden md:table-cell">
                                                                             {(() => {
                                                                                 const pacing = projectPacingMap.get(p.projectId);
                                                                                 if (!pacing || p.budget <= 0) return <span className="text-slate-400 text-[11px]">–</span>;
@@ -1884,7 +1887,7 @@ export default function FinancialHealthPage() {
                                                                                     ) : (
                                                                                         <div className="flex flex-col lg:flex-row gap-4">
                                                                                             <div className="flex-1 min-w-0 rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm">
-                                                                                                <div className="overflow-x-auto">
+                                                                                                <div className="max-w-full min-w-0 overflow-x-auto overscroll-x-contain">
                                                                                                     <table className="w-full text-sm min-w-[320px]">
                                                                                                         <colgroup>
                                                                                                             <col className="min-w-[112px] w-[32%]" />
@@ -2010,11 +2013,11 @@ export default function FinancialHealthPage() {
                                                                                                 <dl className="space-y-3 text-sm">
                                                                                                     <div>
                                                                                                         <dt className="text-slate-500 text-xs">{t('financialHealth.expand.totalCost')}</dt>
-                                                                                                        <dd className="font-mono font-semibold text-slate-800">{attributionRows.reduce((s, r) => s + r.cost,formatMoney(0))}</dd>
+                                                                                                        <dd className="font-mono font-semibold text-slate-800">{formatMoney(attributionRows.reduce((s, r) => s + r.cost, 0))}</dd>
                                                                                                     </div>
                                                                                                     <div>
                                                                                                         <dt className="text-slate-500 text-xs">{t('financialHealth.expand.totalMargin')}</dt>
-                                                                                                        <dd className={cn("font-mono font-semibold", (() => { const totRev = attributionRows.reduce((s, r) => s + r.attributedRevenue, 0); const totMarg = attributionRows.reduce((s, r) => s + r.margin, 0); const pct = totRev > 0 ? (totMarg / totRev) * 100 : (totMarg < 0 ? -1 : 0); return getMarginSemaphore(pct).className; })())}>{attributionRows.reduce((s, r) => s + r.margin,formatMoney(0))}</dd>
+                                                                                                        <dd className={cn("font-mono font-semibold", (() => { const totRev = attributionRows.reduce((s, r) => s + r.attributedRevenue, 0); const totMarg = attributionRows.reduce((s, r) => s + r.margin, 0); const pct = totRev > 0 ? (totMarg / totRev) * 100 : (totMarg < 0 ? -1 : 0); return getMarginSemaphore(pct).className; })())}>{formatMoney(attributionRows.reduce((s, r) => s + r.margin, 0))}</dd>
                                                                                                     </div>
                                                                                                     <div>
                                                                                                         <dt className="text-slate-500 text-xs">% margen</dt>
@@ -2061,7 +2064,7 @@ export default function FinancialHealthPage() {
                         {/* Inversión interna */}
                         {internalWithActivity.length > 0 && (
                             <section aria-label={t('financialHealth.internalInvestment.ariaLabel')}>
-                                <Card className="shadow-sm border border-slate-200 bg-white border-l-4 border-l-slate-400 overflow-hidden">
+                                <Card className="shadow-sm border border-slate-200 bg-white border-l-4 border-l-slate-400 overflow-hidden min-w-0">
                                     <CardHeader className="pb-3">
                                         <CardTitle className="text-base font-semibold text-slate-800 flex items-center gap-2">
                                             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
@@ -2074,7 +2077,7 @@ export default function FinancialHealthPage() {
                                         </CardDescription>
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="overflow-x-auto">
+                                        <div className="max-w-full min-w-0 overflow-x-auto overscroll-x-contain">
                                             <table className="w-full text-sm">
                                                 <thead className="text-xs text-slate-500 uppercase bg-slate-50/80">
                                                     <tr>
@@ -2154,8 +2157,8 @@ export default function FinancialHealthPage() {
 
                         {/* Rentabilidad por departamento y por empleado */}
                         <section aria-label={t('financialHealth.departmentProfitability.sectionAria')}>
-                            <div className="grid gap-6 md:grid-cols-2">
-                                <Card className="shadow-sm border border-slate-200 bg-white overflow-hidden">
+                            <div className="grid gap-6 grid-cols-1 xl:grid-cols-2 min-w-0">
+                                <Card className="shadow-sm border border-slate-200 bg-white overflow-hidden min-w-0">
                                     <CardHeader className="pb-3">
                                         <CardTitle className="text-base font-semibold text-slate-800 flex items-center gap-2">
                                             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
@@ -2186,15 +2189,15 @@ export default function FinancialHealthPage() {
                                                 <p className="text-xs text-slate-500 mt-1">{t('financialHealth.departmentProfitability.emptyDesc')}</p>
                                             </div>
                                         ) : (
-                                            <div className="overflow-x-auto">
-                                                <table className="w-full text-sm min-w-[640px]">
+                                            <div className="max-w-full min-w-0 overflow-x-auto overscroll-x-contain">
+                                                <table className="w-full text-xs sm:text-sm">
                                                     <thead className="text-xs text-slate-500 uppercase bg-slate-50/80">
                                                         <tr>
                                                             <th className="px-3 py-2.5 text-left font-medium rounded-tl-lg">{t('financialHealth.columns.area')}</th>
                                                             <th className="px-3 py-2.5 text-right font-medium whitespace-nowrap">{hoursHeaderLabel}</th>
                                                             <th className="px-3 py-2.5 text-right font-medium whitespace-nowrap">{`Ingr. ${inCurrencyParens}`}</th>
-                                                            <th className="px-3 py-2.5 text-right font-medium whitespace-nowrap">{t('financialHealth.columns.payrollImputed')}</th>
-                                                            <th className="px-3 py-2.5 text-right font-medium whitespace-nowrap">{t('financialHealth.columns.commonOverhead')}</th>
+                                                            <th className="px-2 py-2 sm:px-3 sm:py-2.5 text-right font-medium whitespace-nowrap hidden md:table-cell">{t('financialHealth.columns.payrollImputed')}</th>
+                                                            <th className="px-2 py-2 sm:px-3 sm:py-2.5 text-right font-medium whitespace-nowrap hidden md:table-cell">{t('financialHealth.columns.commonOverhead')}</th>
                                                             <th className="px-3 py-2.5 text-right font-medium whitespace-nowrap">{t('financialHealth.columns.margin', currencyLabels)}</th>
                                                             <th className="px-3 py-2.5 text-right font-medium rounded-tr-lg whitespace-nowrap">EHR</th>
                                                         </tr>
@@ -2211,10 +2214,10 @@ export default function FinancialHealthPage() {
                                                                     <td className="px-3 py-2.5 text-right font-mono tabular-nums text-slate-800">
                                                                         {formatMoney(dept.revenue)}
                                                                     </td>
-                                                                    <td className="px-3 py-2.5 text-right font-mono tabular-nums text-slate-700">
+                                                                    <td className="px-2 py-2 sm:px-3 sm:py-2.5 text-right font-mono tabular-nums text-slate-700 hidden md:table-cell">
                                                                         {formatMoney(dept.payrollCost)}
                                                                     </td>
-                                                                    <td className="px-3 py-2.5 text-right font-mono tabular-nums text-slate-600">
+                                                                    <td className="px-2 py-2 sm:px-3 sm:py-2.5 text-right font-mono tabular-nums text-slate-600 hidden md:table-cell">
                                                                         {formatMoney(dept.overheadCost)}
                                                                     </td>
                                                                     <td className={cn("px-3 py-2.5 text-right font-mono tabular-nums font-semibold", semDept.className)}>
@@ -2241,7 +2244,7 @@ export default function FinancialHealthPage() {
                                 </Card>
 
                                 {/* Rentabilidad por empleado (lista completa) */}
-                                <Card className="shadow-sm border border-slate-200 bg-white overflow-hidden">
+                                <Card className="shadow-sm border border-slate-200 bg-white overflow-hidden min-w-0">
                                     <CardHeader className="pb-3">
                                         <CardTitle className="text-base font-semibold text-slate-800 flex items-center gap-2">
                                             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
@@ -2263,14 +2266,14 @@ export default function FinancialHealthPage() {
                                                 <p className="text-xs text-slate-500 mt-1">{t('financialHealth.employeeProfitability.emptyDesc')}</p>
                                             </div>
                                         ) : (
-                                            <div className="overflow-x-auto">
-                                                <table className="w-full text-sm">
+                                            <div className="max-w-full min-w-0 overflow-x-auto overscroll-x-contain">
+                                                <table className="w-full max-w-full text-xs sm:text-sm [table-layout:fixed]">
                                                     <thead className="text-xs text-slate-500 uppercase bg-slate-50/80">
                                                         <tr>
-                                                            <th className="px-4 py-3 text-left font-medium rounded-tl-lg min-w-[120px]">{t('financialHealth.columns.employee')}</th>
-                                                            <th className="px-4 py-3 text-right font-medium whitespace-nowrap min-w-[100px]">{hoursHeaderLabel}</th>
-                                                            <th className="px-4 py-3 text-right font-medium whitespace-nowrap min-w-[110px]">{`Ingr. atrib. ${inCurrencyParens}`}</th>
-                                                            <th className="px-4 py-3 text-right font-medium whitespace-nowrap min-w-[88px]">
+                                                            <th className="px-2 py-2 sm:px-4 sm:py-3 text-left font-medium rounded-tl-lg">{t('financialHealth.columns.employee')}</th>
+                                                            <th className="px-2 py-2 sm:px-4 sm:py-3 text-right font-medium whitespace-nowrap">{hoursHeaderLabel}</th>
+                                                            <th className="px-2 py-2 sm:px-4 sm:py-3 text-right font-medium whitespace-nowrap">{`Ingr. atrib. ${inCurrencyParens}`}</th>
+                                                            <th className="px-2 py-2 sm:px-4 sm:py-3 text-right font-medium whitespace-nowrap hidden lg:table-cell">
                                                                 <Tooltip>
                                                                     <TooltipTrigger asChild>
                                                                         <span className="cursor-help underline decoration-dotted">{t('financialHealth.columns.payrollImputed')}</span>
@@ -2280,7 +2283,7 @@ export default function FinancialHealthPage() {
                                                                     </TooltipContent>
                                                                 </Tooltip>
                                                             </th>
-                                                            <th className="px-4 py-3 text-right font-medium whitespace-nowrap min-w-[88px]">
+                                                            <th className="px-2 py-2 sm:px-4 sm:py-3 text-right font-medium whitespace-nowrap hidden lg:table-cell">
                                                                 <Tooltip>
                                                                     <TooltipTrigger asChild>
                                                                         <span className="cursor-help underline decoration-dotted">{t('financialHealth.columns.commonOverhead')}</span>
@@ -2290,7 +2293,7 @@ export default function FinancialHealthPage() {
                                                                     </TooltipContent>
                                                                 </Tooltip>
                                                             </th>
-                                                            <th className="px-4 py-3 text-right font-medium whitespace-nowrap min-w-[88px]">
+                                                            <th className="px-2 py-2 sm:px-4 sm:py-3 text-right font-medium whitespace-nowrap">
                                                                 <Tooltip>
                                                                     <TooltipTrigger asChild>
                                                                         <span className="cursor-help underline decoration-dotted">{t('financialHealth.columns.costTotal', currencyLabels)}</span>
@@ -2300,8 +2303,8 @@ export default function FinancialHealthPage() {
                                                                     </TooltipContent>
                                                                 </Tooltip>
                                                             </th>
-                                                            <th className="px-4 py-3 text-right font-medium whitespace-nowrap min-w-[70px]">{t('financialHealth.columns.costPerHour')}</th>
-                                                            <th className="px-4 py-3 text-right font-medium rounded-tr-lg whitespace-nowrap min-w-[90px]">{t('financialHealth.columns.margin', currencyLabels)}</th>
+                                                            <th className="px-2 py-2 sm:px-4 sm:py-3 text-right font-medium whitespace-nowrap hidden md:table-cell">{t('financialHealth.columns.costPerHour')}</th>
+                                                            <th className="px-2 py-2 sm:px-4 sm:py-3 text-right font-medium rounded-tr-lg whitespace-nowrap">{t('financialHealth.columns.margin', currencyLabels)}</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody className="divide-y divide-slate-100">
@@ -2365,17 +2368,17 @@ export default function FinancialHealthPage() {
                                                                         : null;
                                                                 return (
                                                                     <tr key={ep.employeeId} className={cn("transition-colors", idx % 2 === 1 ? "bg-slate-50/50" : "bg-white", "hover:bg-slate-100/70")}>
-                                                                        <td className="px-4 py-3 font-medium text-slate-900">{ep.employeeName}</td>
-                                                                        <td className="px-4 py-3 text-right font-mono tabular-nums text-slate-600">{h.toFixed(1)} h</td>
-                                                                        <td className="px-4 py-3 text-right font-mono tabular-nums text-slate-700">{formatMoney(attr)}</td>
-                                                                        <td className="px-4 py-3 text-right font-mono tabular-nums text-slate-700">
+                                                                        <td className="px-2 py-2 sm:px-4 sm:py-3 font-medium text-slate-900 max-w-[10rem] sm:max-w-none truncate" title={ep.employeeName}>{ep.employeeName}</td>
+                                                                        <td className="px-2 py-2 sm:px-4 sm:py-3 text-right font-mono tabular-nums text-slate-600 whitespace-nowrap">{h.toFixed(1)} h</td>
+                                                                        <td className="px-2 py-2 sm:px-4 sm:py-3 text-right font-mono tabular-nums text-slate-700 whitespace-nowrap">{formatMoney(attr)}</td>
+                                                                        <td className="px-2 py-2 sm:px-4 sm:py-3 text-right font-mono tabular-nums text-slate-700 hidden lg:table-cell whitespace-nowrap">
                                                                             {formatMoney(payrollShow)}
                                                                         </td>
-                                                                        <td className="px-4 py-3 text-right font-mono tabular-nums text-slate-600">
+                                                                        <td className="px-2 py-2 sm:px-4 sm:py-3 text-right font-mono tabular-nums text-slate-600 hidden lg:table-cell whitespace-nowrap">
                                                                             {formatMoney(overheadShow)}
                                                                         </td>
-                                                                        <td className="px-4 py-3 text-right font-mono tabular-nums text-slate-700">{formatMoney(cost)}</td>
-                                                                        <td className="px-4 py-3 text-right font-mono tabular-nums text-slate-600">
+                                                                        <td className="px-2 py-2 sm:px-4 sm:py-3 text-right font-mono tabular-nums text-slate-700 whitespace-nowrap">{formatMoney(cost)}</td>
+                                                                        <td className="px-2 py-2 sm:px-4 sm:py-3 text-right font-mono tabular-nums text-slate-600 hidden md:table-cell whitespace-nowrap">
                                                                             {costHelpText ? (
                                                                                 <Tooltip>
                                                                                     <TooltipTrigger asChild>
@@ -2387,7 +2390,7 @@ export default function FinancialHealthPage() {
                                                                                 </Tooltip>
                                                                             ) : (h > 0 ? `${formatPerHour(costPerHour, 2)}` : '–')}
                                                                         </td>
-                                                                        <td className={cn("px-4 py-3 text-right font-mono tabular-nums font-semibold", semaphore.className)}>
+                                                                        <td className={cn("px-2 py-2 sm:px-4 sm:py-3 text-right font-mono tabular-nums font-semibold whitespace-nowrap", semaphore.className)}>
                                                                             <span className="inline-flex items-center justify-end gap-1">
                                                                                 {semaphore.showAlert && <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden />}
                                                                                 {formatMoney(margin)}
@@ -2399,27 +2402,27 @@ export default function FinancialHealthPage() {
                                                     </tbody>
                                                     <tfoot className="bg-slate-100 border-t-2 border-slate-200">
                                                         <tr className="text-sm font-semibold text-slate-800">
-                                                            <td className="px-4 py-3">{t('financialHealth.expand.total')}</td>
-                                                            <td className="px-4 py-3 text-right font-mono tabular-nums">
+                                                            <td className="px-2 py-2 sm:px-4 sm:py-3">{t('financialHealth.expand.total')}</td>
+                                                            <td className="px-2 py-2 sm:px-4 sm:py-3 text-right font-mono tabular-nums whitespace-nowrap">
                                                                 {employeeProfitabilityFilteredBySearch.reduce((s, ep) => {
                                                                     const d = employeeDisplayTotalsWhenSearch?.get(ep.employeeId);
                                                                     return s + (d ? d.hours : (hoursMode === 'computed' ? ep.totalComputed : ep.totalActual));
                                                                 }, 0).toFixed(1)} h
                                                             </td>
-                                                            <td className="px-4 py-3 text-right font-mono tabular-nums">
-                                                                {(employeeDisplayTotalsWhenSearch
+                                                            <td className="px-2 py-2 sm:px-4 sm:py-3 text-right font-mono tabular-nums whitespace-nowrap">
+                                                                {formatMoney(employeeDisplayTotalsWhenSearch
                                                                     ? employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + (employeeDisplayTotalsWhenSearch.get(ep.employeeId)?.attr ?? ep.attributedRevenue), 0)
-                                                                    : employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + ep.attributedRevenue,formatMoney(0)
-                                                                ))}
+                                                                    : employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + ep.attributedRevenue, 0)
+                                                                )}
                                                             </td>
-                                                            <td className="px-4 py-3 text-right font-mono tabular-nums">
-                                                                {(employeeDisplayTotalsWhenSearch
+                                                            <td className="px-2 py-2 sm:px-4 sm:py-3 text-right font-mono tabular-nums hidden lg:table-cell whitespace-nowrap">
+                                                                {formatMoney(employeeDisplayTotalsWhenSearch
                                                                     ? employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + (employeeDisplayTotalsWhenSearch.get(ep.employeeId)?.payroll ?? ep.payrollAllocatedTotal), 0)
-                                                                    : employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + ep.payrollAllocatedTotal,formatMoney(0)
-                                                                ))}
+                                                                    : employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + ep.payrollAllocatedTotal, 0)
+                                                                )}
                                                             </td>
-                                                            <td className="px-4 py-3 text-right font-mono tabular-nums">
-                                                                {(employeeDisplayTotalsWhenSearch
+                                                            <td className="px-2 py-2 sm:px-4 sm:py-3 text-right font-mono tabular-nums hidden lg:table-cell whitespace-nowrap">
+                                                                {formatMoney(employeeDisplayTotalsWhenSearch
                                                                     ? employeeProfitabilityFilteredBySearch.reduce(
                                                                           (s, ep) =>
                                                                               s +
@@ -2427,16 +2430,16 @@ export default function FinancialHealthPage() {
                                                                                   ep.overheadCost + ep.overheadNotAttributed),
                                                                           0
                                                                       )
-                                                                    : employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + ep.overheadCost + ep.overheadNotAttributed,formatMoney(0)
-                                                                ))}
+                                                                    : employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + ep.overheadCost + ep.overheadNotAttributed, 0)
+                                                                )}
                                                             </td>
-                                                            <td className="px-4 py-3 text-right font-mono tabular-nums">
-                                                                {(employeeDisplayTotalsWhenSearch
+                                                            <td className="px-2 py-2 sm:px-4 sm:py-3 text-right font-mono tabular-nums whitespace-nowrap">
+                                                                {formatMoney(employeeDisplayTotalsWhenSearch
                                                                     ? employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + (employeeDisplayTotalsWhenSearch.get(ep.employeeId)?.cost ?? ep.cost), 0)
-                                                                    : employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + ep.cost,formatMoney(0)
-                                                                ))}
+                                                                    : employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + ep.cost, 0)
+                                                                )}
                                                             </td>
-                                                            <td className="px-4 py-3 text-right font-mono tabular-nums">
+                                                            <td className="px-2 py-2 sm:px-4 sm:py-3 text-right font-mono tabular-nums hidden md:table-cell whitespace-nowrap">
                                                                 {(() => {
                                                                     const totalH = employeeProfitabilityFilteredBySearch.reduce((s, ep) => {
                                                                         const d = employeeDisplayTotalsWhenSearch?.get(ep.employeeId);
@@ -2448,7 +2451,7 @@ export default function FinancialHealthPage() {
                                                                     return totalH > 0 ? `${formatPerHour((totalCost / totalH), 2)}` : '–';
                                                                 })()}
                                                             </td>
-                                                            <td className={cn("px-4 py-3 text-right font-mono tabular-nums", (() => {
+                                                            <td className={cn("px-2 py-2 sm:px-4 sm:py-3 text-right font-mono tabular-nums whitespace-nowrap", (() => {
                                                                 const totalAttr = employeeDisplayTotalsWhenSearch ? employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + (employeeDisplayTotalsWhenSearch.get(ep.employeeId)?.attr ?? ep.attributedRevenue), 0) : employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + ep.attributedRevenue, 0);
                                                                 const totalMargin = employeeDisplayTotalsWhenSearch ? employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + (employeeDisplayTotalsWhenSearch.get(ep.employeeId)?.margin ?? ep.margin), 0) : employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + ep.margin, 0);
                                                                 return getMarginSemaphore(totalAttr > 0 ? (totalMargin / totalAttr) * 100 : (totalMargin < 0 ? -1 : 0)).className;
@@ -2460,10 +2463,10 @@ export default function FinancialHealthPage() {
                                                                         const sem = getMarginSemaphore(totalAttr > 0 ? (totalMargin / totalAttr) * 100 : (totalMargin < 0 ? -1 : 0));
                                                                         return sem.showAlert && <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden />;
                                                                     })()}
-                                                                    {(employeeDisplayTotalsWhenSearch
+                                                                    {formatMoney(employeeDisplayTotalsWhenSearch
                                                                         ? employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + (employeeDisplayTotalsWhenSearch.get(ep.employeeId)?.margin ?? ep.margin), 0)
-                                                                        : employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + ep.margin,formatMoney(0)
-                                                                    ))}
+                                                                        : employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + ep.margin, 0)
+                                                                    )}
                                                                 </span>
                                                             </td>
                                                         </tr>
@@ -2478,7 +2481,7 @@ export default function FinancialHealthPage() {
                     </TabsContent>
 
                     <TabsContent value="proyectos" className="space-y-6 mt-0">
-                        <Card className="shadow-sm border border-slate-200 bg-white overflow-hidden">
+                        <Card className="shadow-sm border border-slate-200 bg-white overflow-hidden min-w-0">
                             <CardHeader className="pb-3">
                                 <CardTitle className="text-base font-semibold text-slate-800 flex items-center gap-2">
                                     <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
@@ -2500,7 +2503,7 @@ export default function FinancialHealthPage() {
                                         <p className="text-xs text-slate-500 mt-1 max-w-sm">{t('financialHealth.employeeProfitability.emptyBillableDesc')}</p>
                                     </div>
                                 ) : (
-                                    <div className="overflow-x-auto">
+                                    <div className="max-w-full min-w-0 overflow-x-auto overscroll-x-contain">
                                         <table className="w-full text-sm">
                                             <thead className="text-xs text-slate-500 uppercase bg-slate-50/80">
                                                 <tr>
@@ -2524,7 +2527,7 @@ export default function FinancialHealthPage() {
                                                     </th>
                                                     <th className="px-4 py-3 text-right font-medium">{hoursHeaderLabel} / Budget</th>
                                                     <th className="px-4 py-3 text-right font-medium">EHR</th>
-                                                    <th className="px-4 py-3 text-right font-medium whitespace-nowrap">
+                                                    <th className="px-2 py-2 sm:px-4 sm:py-3 text-right font-medium whitespace-nowrap hidden lg:table-cell">
                                                         <Tooltip>
                                                             <TooltipTrigger asChild>
                                                                 <span className="cursor-help underline decoration-dotted">{t('financialHealth.columns.payrollImputed')}</span>
@@ -2534,7 +2537,7 @@ export default function FinancialHealthPage() {
                                                             </TooltipContent>
                                                         </Tooltip>
                                                     </th>
-                                                    <th className="px-4 py-3 text-right font-medium whitespace-nowrap">
+                                                    <th className="px-2 py-2 sm:px-4 sm:py-3 text-right font-medium whitespace-nowrap hidden lg:table-cell">
                                                         <Tooltip>
                                                             <TooltipTrigger asChild>
                                                                 <span className="cursor-help underline decoration-dotted">{t('financialHealth.columns.commonOverhead')}</span>
@@ -2544,7 +2547,7 @@ export default function FinancialHealthPage() {
                                                             </TooltipContent>
                                                         </Tooltip>
                                                     </th>
-                                                    <th className="px-4 py-3 text-right font-medium">
+                                                    <th className="px-2 py-2 sm:px-4 sm:py-3 text-right font-medium hidden md:table-cell">
                                                         <Tooltip>
                                                             <TooltipTrigger asChild>
                                                                 <span className="cursor-help underline decoration-dotted">{t('financialHealth.columns.pace')}</span>
@@ -2581,7 +2584,7 @@ export default function FinancialHealthPage() {
                                                                 onClick={() => toggleProject(p.projectId)}
                                                                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleProject(p.projectId); } }}
                                                             >
-                                                                <td className="px-4 py-3 align-top min-w-[12rem] sm:min-w-[20rem] lg:min-w-[24rem]">
+                                                                <td className="px-4 py-3 align-top min-w-0 max-w-[14rem] sm:max-w-[18rem]">
                                                                     <div className="flex items-start gap-3">
                                                                         <Avatar className="h-8 w-8 border shrink-0 mt-0.5">
                                                                             <AvatarFallback className="bg-slate-900 text-white text-xs font-bold" style={client?.color ? { backgroundColor: client.color, color: 'white' } : undefined}>{clientInitials}</AvatarFallback>
@@ -2604,13 +2607,13 @@ export default function FinancialHealthPage() {
                                                                 </td>
                                                                 <td className="px-4 py-3 text-right font-mono text-[11px] tabular-nums text-slate-600">{(hoursMode === 'computed' ? p.computed : p.actual).toFixed(1)}h / {p.budget.toFixed(1)}h</td>
                                                                 <td className="px-4 py-3 text-right"><Badge variant="outline" className="text-[11px] font-semibold tabular-nums">{ehrLabel}</Badge></td>
-                                                                <td className="px-4 py-3 text-right font-mono tabular-nums text-slate-700" onClick={(e) => e.stopPropagation()}>
+                                                                <td className="px-2 py-2 sm:px-4 sm:py-3 text-right font-mono tabular-nums text-slate-700 hidden lg:table-cell" onClick={(e) => e.stopPropagation()}>
                                                                     {formatMoney(cm.payrollCost)}
                                                                 </td>
-                                                                <td className="px-4 py-3 text-right font-mono tabular-nums text-slate-600" onClick={(e) => e.stopPropagation()}>
+                                                                <td className="px-2 py-2 sm:px-4 sm:py-3 text-right font-mono tabular-nums text-slate-600 hidden lg:table-cell" onClick={(e) => e.stopPropagation()}>
                                                                     {formatMoney(cm.overheadCost)}
                                                                 </td>
-                                                                <td className="px-4 py-3 text-right">
+                                                                <td className="px-2 py-2 sm:px-4 sm:py-3 text-right hidden md:table-cell">
                                                                     {(() => {
                                                                         const pacing = projectPacingMap.get(p.projectId);
                                                                         if (!pacing || p.budget <= 0) return <span className="text-slate-400 text-[11px]">–</span>;
@@ -2650,7 +2653,7 @@ export default function FinancialHealthPage() {
                                                                         <div className="px-4 py-4">
                                                                             <div className="flex flex-col lg:flex-row gap-4">
                                                                                 <div className="flex-1 min-w-0 rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm">
-                                                                                    <div className="overflow-x-auto">
+                                                                                    <div className="max-w-full min-w-0 overflow-x-auto overscroll-x-contain">
                                                                                         <table className="w-full text-sm min-w-[320px]">
                                                                                             <colgroup>
                                                                                                 <col className="min-w-[112px] w-[32%]" />
@@ -2776,11 +2779,11 @@ export default function FinancialHealthPage() {
                                                                                     <dl className="space-y-3 text-sm">
                                                                                         <div>
                                                                                             <dt className="text-slate-500 text-xs">{t('financialHealth.expand.totalCost')}</dt>
-                                                                                            <dd className="font-mono font-semibold text-slate-800">{attributionRows.reduce((s, r) => s + r.cost,formatMoney(0))}</dd>
+                                                                                            <dd className="font-mono font-semibold text-slate-800">{formatMoney(attributionRows.reduce((s, r) => s + r.cost, 0))}</dd>
                                                                                         </div>
                                                                                         <div>
                                                                                             <dt className="text-slate-500 text-xs">{t('financialHealth.expand.totalMargin')}</dt>
-                                                                                            <dd className={cn("font-mono font-semibold", (() => { const totRev = attributionRows.reduce((s, r) => s + r.attributedRevenue, 0); const totMarg = attributionRows.reduce((s, r) => s + r.margin, 0); const pct = totRev > 0 ? (totMarg / totRev) * 100 : (totMarg < 0 ? -1 : 0); return getMarginSemaphore(pct).className; })())}>{attributionRows.reduce((s, r) => s + r.margin,formatMoney(0))}</dd>
+                                                                                            <dd className={cn("font-mono font-semibold", (() => { const totRev = attributionRows.reduce((s, r) => s + r.attributedRevenue, 0); const totMarg = attributionRows.reduce((s, r) => s + r.margin, 0); const pct = totRev > 0 ? (totMarg / totRev) * 100 : (totMarg < 0 ? -1 : 0); return getMarginSemaphore(pct).className; })())}>{formatMoney(attributionRows.reduce((s, r) => s + r.margin, 0))}</dd>
                                                                                         </div>
                                                                                         <div>
                                                                                             <dt className="text-slate-500 text-xs">% margen</dt>
@@ -2813,16 +2816,16 @@ export default function FinancialHealthPage() {
                                                         }, 0).toFixed(1)} h
                                                     </td>
                                                     <td className="px-4 py-3 text-right font-mono tabular-nums">
-                                                        {(employeeDisplayTotalsWhenSearch
+                                                        {formatMoney(employeeDisplayTotalsWhenSearch
                                                             ? employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + (employeeDisplayTotalsWhenSearch.get(ep.employeeId)?.attr ?? ep.attributedRevenue), 0)
-                                                            : employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + ep.attributedRevenue,formatMoney(0)
-                                                        ))}
+                                                            : employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + ep.attributedRevenue, 0)
+                                                        )}
                                                     </td>
                                                     <td className="px-4 py-3 text-right font-mono tabular-nums">
-                                                        {(employeeDisplayTotalsWhenSearch
+                                                        {formatMoney(employeeDisplayTotalsWhenSearch
                                                             ? employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + (employeeDisplayTotalsWhenSearch.get(ep.employeeId)?.cost ?? ep.cost), 0)
-                                                            : employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + ep.cost,formatMoney(0)
-                                                        ))}
+                                                            : employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + ep.cost, 0)
+                                                        )}
                                                     </td>
                                                     <td className="px-4 py-3 text-right font-mono tabular-nums">
                                                         {(() => {
@@ -2848,10 +2851,10 @@ export default function FinancialHealthPage() {
                                                                 const sem = getMarginSemaphore(ta > 0 ? (tm / ta) * 100 : (tm < 0 ? -1 : 0));
                                                                 return sem.showAlert && <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden />;
                                                             })()}
-                                                            {(employeeDisplayTotalsWhenSearch
+                                                            {formatMoney(employeeDisplayTotalsWhenSearch
                                                                 ? employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + (employeeDisplayTotalsWhenSearch.get(ep.employeeId)?.margin ?? ep.margin), 0)
-                                                                : employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + ep.margin,formatMoney(0)
-                                                            ))}
+                                                                : employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + ep.margin, 0)
+                                                            )}
                                                         </span>
                                                     </td>
                                                     <td className={cn("px-4 py-3 text-right font-mono tabular-nums", (() => {
@@ -2876,7 +2879,7 @@ export default function FinancialHealthPage() {
 
                         {/* Proyectos internos (fee 0) en esta pestaña para que la búsqueda los muestre */}
                         {internalWithActivity.length > 0 && (
-                            <Card className="shadow-sm border border-slate-200 bg-white border-l-4 border-l-slate-400 overflow-hidden">
+                            <Card className="shadow-sm border border-slate-200 bg-white border-l-4 border-l-slate-400 overflow-hidden min-w-0">
                                 <CardHeader className="pb-3">
                                     <CardTitle className="text-base font-semibold text-slate-800 flex items-center gap-2">
                                         <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
@@ -2889,7 +2892,7 @@ export default function FinancialHealthPage() {
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="overflow-x-auto">
+                                    <div className="max-w-full min-w-0 overflow-x-auto overscroll-x-contain">
                                         <table className="w-full text-sm">
                                             <thead className="text-xs text-slate-500 uppercase bg-slate-50/80">
                                                 <tr>
@@ -2989,7 +2992,7 @@ export default function FinancialHealthPage() {
                     </TabsContent>
 
                     <TabsContent value="empleados" className="space-y-6 mt-0">
-                        <Card className="shadow-sm border border-slate-200 bg-white overflow-hidden">
+                        <Card className="shadow-sm border border-slate-200 bg-white overflow-hidden min-w-0">
                             <CardHeader className="pb-3">
                                 <CardTitle className="text-base font-semibold text-slate-800 flex items-center gap-2">
                                     <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
@@ -3011,12 +3014,12 @@ export default function FinancialHealthPage() {
                                         <p className="text-xs text-slate-500 mt-1 max-w-sm">{t('financialHealth.employeeProfitability.emptyDesc')}</p>
                                     </div>
                                 ) : (
-                                    <div className="overflow-x-auto">
+                                    <div className="max-w-full min-w-0 overflow-x-auto overscroll-x-contain">
                                         <table className="w-full text-sm">
                                             <thead className="text-xs text-slate-500 uppercase bg-slate-50/80">
                                                 <tr>
-                                                    <th className="px-4 py-3 text-left font-medium rounded-tl-lg min-w-[120px]">{t('financialHealth.columns.employee')}</th>
-                                                    <th className="px-4 py-3 text-right font-medium whitespace-nowrap min-w-[100px]">
+                                                    <th className="px-2 py-2 sm:px-4 sm:py-3 text-left font-medium rounded-tl-lg">{t('financialHealth.columns.employee')}</th>
+                                                    <th className="px-2 py-2 sm:px-4 sm:py-3 text-right font-medium whitespace-nowrap hidden lg:table-cell">
                                                         <Tooltip>
                                                             <TooltipTrigger asChild>
                                                                 <span className="cursor-help underline decoration-dotted">{t('financialHealth.columns.payroll')}</span>
@@ -3026,9 +3029,9 @@ export default function FinancialHealthPage() {
                                                             </TooltipContent>
                                                         </Tooltip>
                                                     </th>
-                                                    <th className="px-4 py-3 text-right font-medium whitespace-nowrap min-w-[100px]">{hoursHeaderLabel}</th>
-                                                    <th className="px-4 py-3 text-right font-medium whitespace-nowrap min-w-[110px]">{t('financialHealth.columns.attributedRevenue')}</th>
-                                                    <th className="px-4 py-3 text-right font-medium whitespace-nowrap min-w-[80px]">
+                                                    <th className="px-2 py-2 sm:px-4 sm:py-3 text-right font-medium whitespace-nowrap">{hoursHeaderLabel}</th>
+                                                    <th className="px-2 py-2 sm:px-4 sm:py-3 text-right font-medium whitespace-nowrap">{t('financialHealth.columns.attributedRevenue')}</th>
+                                                    <th className="px-2 py-2 sm:px-4 sm:py-3 text-right font-medium whitespace-nowrap">
                                                         <Tooltip>
                                                             <TooltipTrigger asChild>
                                                                 <span className="cursor-help underline decoration-dotted">{costHeaderLabel}</span>
@@ -3040,10 +3043,10 @@ export default function FinancialHealthPage() {
                                                             </TooltipContent>
                                                         </Tooltip>
                                                     </th>
-                                                    <th className="px-4 py-3 text-right font-medium whitespace-nowrap min-w-[70px]">{t('financialHealth.columns.costPerHour')}</th>
-                                                    <th className="px-4 py-3 text-right font-medium whitespace-nowrap min-w-[90px]">{t('financialHealth.columns.margin', currencyLabels)}</th>
-                                                    <th className="px-4 py-3 text-right font-medium whitespace-nowrap min-w-[70px]">{t('financialHealth.columns.marginPercent')}</th>
-                                                    <th className="px-4 py-3 text-right font-medium rounded-tr-lg">{t('financialHealth.columns.action')}</th>
+                                                    <th className="px-2 py-2 sm:px-4 sm:py-3 text-right font-medium whitespace-nowrap hidden md:table-cell">{t('financialHealth.columns.costPerHour')}</th>
+                                                    <th className="px-2 py-2 sm:px-4 sm:py-3 text-right font-medium whitespace-nowrap">{t('financialHealth.columns.margin', currencyLabels)}</th>
+                                                    <th className="px-2 py-2 sm:px-4 sm:py-3 text-right font-medium whitespace-nowrap hidden lg:table-cell">{t('financialHealth.columns.marginPercent')}</th>
+                                                    <th className="px-2 py-2 sm:px-4 sm:py-3 text-right font-medium rounded-tr-lg">{t('financialHealth.columns.action')}</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-slate-100">
@@ -3115,18 +3118,18 @@ export default function FinancialHealthPage() {
                                                                 onClick={() => toggleProject(`emp-${ep.employeeId}`)}
                                                                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleProject(`emp-${ep.employeeId}`); } }}
                                                             >
-                                                                <td className="px-4 py-3">
-                                                                    <div className="flex items-center gap-3">
+                                                                <td className="px-2 py-2 sm:px-4 sm:py-3 max-w-[10rem] sm:max-w-none">
+                                                                    <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                                                                         <Avatar className="h-8 w-8 border shrink-0">
                                                                             <AvatarFallback className="bg-slate-100 text-slate-600 text-xs font-bold">{ep.employeeName.substring(0, 2).toUpperCase()}</AvatarFallback>
                                                                         </Avatar>
-                                                                        <span className="font-medium text-slate-900">{ep.employeeName}</span>
+                                                                        <span className="font-medium text-slate-900 truncate" title={ep.employeeName}>{ep.employeeName}</span>
                                                                     </div>
                                                                 </td>
-                                                                <td className="px-4 py-3 text-right font-mono tabular-nums text-slate-700">
+                                                                <td className="px-2 py-2 sm:px-4 sm:py-3 text-right font-mono tabular-nums text-slate-700 hidden lg:table-cell whitespace-nowrap">
                                                                     {formatMoney(ep.payrollMonthly)}
                                                                 </td>
-                                                                <td className="px-4 py-3 text-right font-mono tabular-nums text-slate-600" onClick={(e) => e.stopPropagation()}>
+                                                                <td className="px-2 py-2 sm:px-4 sm:py-3 text-right font-mono tabular-nums text-slate-600 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                                                                     <Tooltip>
                                                                         <TooltipTrigger asChild>
                                                                             <span className="cursor-help underline decoration-dotted decoration-slate-300">{displayHours.toFixed(1)} h</span>
@@ -3165,7 +3168,7 @@ export default function FinancialHealthPage() {
                                                                         </TooltipContent>
                                                                     </Tooltip>
                                                                 </td>
-                                                                <td className="px-4 py-3 text-right font-mono tabular-nums text-slate-600" onClick={(e) => e.stopPropagation()}>
+                                                                <td className="px-2 py-2 sm:px-4 sm:py-3 text-right font-mono tabular-nums text-slate-600 hidden md:table-cell whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                                                                     {costHelpTextTab ? (
                                                                         <Tooltip>
                                                                             <TooltipTrigger asChild>
@@ -3177,17 +3180,17 @@ export default function FinancialHealthPage() {
                                                                         </Tooltip>
                                                                     ) : (displayHours > 0 ? `${formatPerHour(costPerHour, 2)}` : '–')}
                                                                 </td>
-                                                                <td className={cn("px-4 py-3 text-right font-mono tabular-nums font-semibold", semaphoreEmp.className)}>
+                                                                <td className={cn("px-2 py-2 sm:px-4 sm:py-3 text-right font-mono tabular-nums font-semibold whitespace-nowrap", semaphoreEmp.className)}>
                                                                     <span className="inline-flex items-center justify-end gap-1">
                                                                         {semaphoreEmp.showAlert && <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden />}
                                                                         {formatMoney(displayMargin)}
                                                                     </span>
                                                                 </td>
-                                                                <td className={cn("px-4 py-3 text-right font-mono tabular-nums", semaphoreEmp.className)}>{displayAttr > 0 ? `${displayMarginPct.toFixed(1)}%` : '–'}</td>
-                                                                <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                                                                <td className={cn("px-2 py-2 sm:px-4 sm:py-3 text-right font-mono tabular-nums hidden lg:table-cell whitespace-nowrap", semaphoreEmp.className)}>{displayAttr > 0 ? `${displayMarginPct.toFixed(1)}%` : '–'}</td>
+                                                                <td className="px-2 py-2 sm:px-4 sm:py-3 text-right" onClick={(e) => e.stopPropagation()}>
                                                                     <Button size="sm" variant="ghost" className="h-8 text-xs gap-1 text-slate-600 hover:text-slate-900" onClick={(e) => { e.stopPropagation(); toggleProject(`emp-${ep.employeeId}`); }}>
                                                                         {isExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
-                                                                        {t('financialHealth.expand.breakdown')}
+                                                                        <span className="hidden sm:inline">{t('financialHealth.expand.breakdown')}</span>
                                                                     </Button>
                                                                 </td>
                                                             </tr>
@@ -3305,7 +3308,7 @@ export default function FinancialHealthPage() {
                                                                                         </dl>
                                                                                     </div>
                                                                                     <div className="flex-1 min-w-0 rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm">
-                                                                                        <div className="overflow-x-auto">
+                                                                                        <div className="max-w-full min-w-0 overflow-x-auto overscroll-x-contain">
                                                                                             <table className="w-full text-sm min-w-[520px]">
                                                                                                 <colgroup>
                                                                                                     <col className="min-w-[112px] w-[24%]" />
@@ -3474,8 +3477,8 @@ export default function FinancialHealthPage() {
                                                 <tr className="border-t-2 border-slate-200 bg-slate-100/90 font-semibold text-slate-800">
                                                     <td className="px-4 py-3">Total</td>
                                                     <td className="px-4 py-3 text-right font-mono tabular-nums text-slate-700">
-                                                        {employeeProfitabilityFilteredBySearch
-                                                            .reduce((s, ep) => s + ep.payrollMonthly,formatMoney(0))}
+                                                        {formatMoney(employeeProfitabilityFilteredBySearch
+                                                            .reduce((s, ep) => s + ep.payrollMonthly, 0))}
                                                     </td>
                                                     <td className="px-4 py-3 text-right font-mono tabular-nums text-slate-700">
                                                         {employeeDisplayTotalsWhenSearch
@@ -3483,14 +3486,14 @@ export default function FinancialHealthPage() {
                                                             : employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + (hoursMode === 'computed' ? ep.totalComputed : ep.totalActual), 0).toFixed(1)} h
                                                     </td>
                                                     <td className="px-4 py-3 text-right font-mono tabular-nums text-slate-700">
-                                                        {employeeDisplayTotalsWhenSearch
-                                                            ? employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + (employeeDisplayTotalsWhenSearch.get(ep.employeeId)?.attr ?? 0),formatMoney(0))
-                                                            : employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + ep.attributedRevenue,formatMoney(0))}
+                                                        {formatMoney(employeeDisplayTotalsWhenSearch
+                                                            ? employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + (employeeDisplayTotalsWhenSearch.get(ep.employeeId)?.attr ?? 0), 0)
+                                                            : employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + ep.attributedRevenue, 0))}
                                                     </td>
                                                     <td className="px-4 py-3 text-right font-mono tabular-nums text-slate-700">
-                                                        {employeeDisplayTotalsWhenSearch
-                                                            ? employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + (employeeDisplayTotalsWhenSearch.get(ep.employeeId)?.cost ?? 0),formatMoney(0))
-                                                            : employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + ep.cost,formatMoney(0))}
+                                                        {formatMoney(employeeDisplayTotalsWhenSearch
+                                                            ? employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + (employeeDisplayTotalsWhenSearch.get(ep.employeeId)?.cost ?? 0), 0)
+                                                            : employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + ep.cost, 0))}
                                                     </td>
                                                     <td className={cn("px-4 py-3 text-right font-mono tabular-nums", (() => {
                                                         const ta = employeeDisplayTotalsWhenSearch ? employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + (employeeDisplayTotalsWhenSearch.get(ep.employeeId)?.attr ?? ep.attributedRevenue), 0) : employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + ep.attributedRevenue, 0);
@@ -3504,9 +3507,9 @@ export default function FinancialHealthPage() {
                                                                 const sem = getMarginSemaphore(ta > 0 ? (tm / ta) * 100 : (tm < 0 ? -1 : 0));
                                                                 return sem.showAlert && <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden />;
                                                             })()}
-                                                            {employeeDisplayTotalsWhenSearch
-                                                                ? employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + (employeeDisplayTotalsWhenSearch.get(ep.employeeId)?.margin ?? ep.margin),formatMoney(0))
-                                                                : employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + ep.margin,formatMoney(0))}
+                                                            {formatMoney(employeeDisplayTotalsWhenSearch
+                                                                ? employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + (employeeDisplayTotalsWhenSearch.get(ep.employeeId)?.margin ?? ep.margin), 0)
+                                                                : employeeProfitabilityFilteredBySearch.reduce((s, ep) => s + ep.margin, 0))}
                                                         </span>
                                                     </td>
                                                     <td className={cn("px-4 py-3 text-right font-mono tabular-nums", (() => {

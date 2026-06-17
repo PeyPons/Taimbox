@@ -233,6 +233,9 @@
       "searchTooltip": "Filter by task or project name",
       "viewMonth": "Month",
       "viewWeek": "Week",
+      "viewDay": "Day",
+      "viewMyDayTooltip": "Today's focus and weekly backlog",
+      "viewDayTooltip": "Today's focus and weekly backlog",
       "viewMonthTooltip": "View: full month (all weeks)",
       "viewWeekTooltip": "View: current week",
       "weeklyForecastTitle": "Weekly forecast",
@@ -263,7 +266,7 @@
         },
         "view-toggle": {
           "title": "Switch view",
-          "description": "Toggle weekly view (one week) and monthly view (all weeks). In month view you can expand or collapse each project."
+          "description": "Switch between My day (today's focus and backlog), weekly view, and monthly view (all weeks). In month view you can expand or collapse each project."
         },
         "week-nav": {
           "title": "Navigate weeks",
@@ -406,6 +409,8 @@
       "moveDownAria": "Move down",
       "weeklyOptionsTitle": "Weekly options…",
       "weeklyOptionsAria": "Weekly options: postpone, distribute, or transfer",
+      "editTaskTitle": "Edit task",
+      "editTaskAria": "Edit name, project, hours, or week",
       "completeTitle": "Complete",
       "completeTask": "Complete task",
       "actualHours": "Actual hours",
@@ -1780,7 +1785,32 @@
         "description": "This action will delete the client and all associated projects. This action cannot be undone."
       },
       "newProject": {
-        "deliverableBlockIntro": "Total contract amount and phase dates. The system prorates it across months to display the matching revenue in Profitability and progress in Operations Radar."
+        "title": "New project",
+        "editTitle": "Edit project",
+        "description": "Configure project details and budget.",
+        "nameRequired": "Name is required",
+        "clientRequired": "You must select a client",
+        "budgetNonNegative": "Assigned hours cannot be negative",
+        "minHoursNonNegative": "Minimum hours cannot be negative",
+        "feeNonNegative": "Monthly fee cannot be negative",
+        "deliverableFeeInvalid": "Invalid total contract amount",
+        "deliverableDatesOrder": "End date must be on or after the start date",
+        "name": "Project name",
+        "namePlaceholder": "E.g. Website maintenance",
+        "client": "Client",
+        "budget": "Assigned hours (budget)",
+        "minHours": "Minimum hours (fee)",
+        "monthlyFee": "Monthly fee {{currencyParens}}",
+        "monthlyFeeHint": "Total amount the client pays per month for this project (not an hourly rate).",
+        "projectType": "Project type",
+        "projectTypeNone": "No type / mixed",
+        "projectTypeHelp": "«Deliverable»: total amount and phase dates are set here; monthly revenue is prorated in profitability. Retainers are usually «Monthly».",
+        "deliverableBlockIntro": "Total contract amount and phase dates. The system prorates it across months to display the matching revenue in Profitability and progress in Operations Radar.",
+        "deliverableTotalFee": "Total contract amount {{currencyParens}}",
+        "deliverableStart": "Phase start",
+        "deliverableStartPh": "Pick start date",
+        "deliverableDue": "Expected end",
+        "deliverableDuePh": "Pick end date"
       }
     }
   },
@@ -3370,6 +3400,7 @@
       "below": "Below",
       "monthProgress": "{{percent}}% of month",
       "spent": "Spent",
+      "mixedCurrenciesShort": "Multiple currencies",
       "ctr": "CTR",
       "cpc": "CPC",
       "cpa": "CPA"
@@ -3391,7 +3422,8 @@
       "conv": "Conv",
       "breakdown": "Account Breakdown ({{count}})",
       "active": "Active",
-      "paused": "Paused"
+      "paused": "Paused",
+      "sharedBudgetTooltip": "Shared budget: {{total}} daily in total across multiple campaigns."
     },
     "pacing": {
       "spentPct": "{{percent}}% spent",

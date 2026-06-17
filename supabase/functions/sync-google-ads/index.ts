@@ -175,10 +175,36 @@ Deno.serve(async (req) => {
 
         function parseBudgetId(raw: unknown): string {
             if (raw == null || raw === '') return '';
-            const s = String(raw);
+            const s = String(raw).trim();
             const fromResource = s.match(/campaignBudgets\/(\d+)/i);
             if (fromResource) return fromResource[1];
-            return s.replace(/\D/g, '') || s;
+            if (/^\d+$/.test(s)) return s;
+            const digitsOnly = s.replace(/\D/g, '');
+            return digitsOnly || s;
+        }
+
+        function extractCampaignBudgetRaw(row: Record<string, unknown>): string {
+            const campaignBudget = row.campaignBudget ?? row.campaign_budget;
+            const budgetObj =
+                campaignBudget && typeof campaignBudget === 'object'
+                    ? (campaignBudget as Record<string, unknown>)
+                    : null;
+            const campaign = row.campaign && typeof row.campaign === 'object'
+                ? (row.campaign as Record<string, unknown>)
+                : null;
+
+            const candidates: unknown[] = [
+                budgetObj?.resourceName,
+                budgetObj?.resource_name,
+                budgetObj?.id,
+                campaign?.campaignBudget,
+                campaign?.campaign_budget,
+            ];
+
+            for (const c of candidates) {
+                if (c != null && String(c).trim() !== '') return String(c);
+            }
+            return '';
         }
 
         async function upsertGoogleAccountConfig(
@@ -193,7 +219,7 @@ Deno.serve(async (req) => {
                 platform: 'google',
                 is_active: true,
                 agency_id: agencyId,
-                currency,
+                currency: currency ? String(currency).toUpperCase() : null,
             }, { onConflict: 'account_id,agency_id,platform' });
             if (error) console.warn(`upsert ad_accounts_config ${accountId}:`, error.message);
         }
@@ -250,7 +276,7 @@ Deno.serve(async (req) => {
                         if (!aggregator.has(key)) {
                             const budgetMicros = row.campaignBudget?.amountMicros ?? row.campaign_budget?.amount_micros ?? '0';
                             const dailyBudget = Number(budgetMicros) / 1000000;
-                            const budgetRaw = row.campaignBudget?.id ?? row.campaign_budget?.id ?? '';
+                            const budgetRaw = extractCampaignBudgetRaw(row);
                             aggregator.set(key, {
                                 client_id: customerId,
                                 campaign_id: campaignId,
@@ -353,6 +379,35 @@ Deno.serve(async (req) => {
             return null;
         }
 
+        async function refreshMissingAccountCurrencies(
+            accessToken: string,
+            developerToken: string,
+            loginCustomerId: string,
+            agencyId: string,
+        ) {
+            const { data: missing, error } = await supabase
+                .from('ad_accounts_config')
+                .select('account_id')
+                .eq('agency_id', agencyId)
+                .eq('platform', 'google')
+                .eq('is_active', true)
+                .or('currency.is.null,currency.eq.');
+
+            if (error || !missing?.length) return;
+
+            for (const row of missing) {
+                const details = await fetchCustomerDetails(accessToken, developerToken, row.account_id, loginCustomerId);
+                const raw = details?.currencyCode ?? details?.currency_code ?? null;
+                if (!raw) continue;
+                const { error: updErr } = await supabase
+                    .from('ad_accounts_config')
+                    .update({ currency: String(raw).toUpperCase() })
+                    .eq('agency_id', agencyId)
+                    .eq('platform', 'google')
+                    .eq('account_id', row.account_id);
+                if (updErr) console.warn(`refresh currency ${row.account_id}:`, updErr.message);
+            }
+        }
 
         // --- MAIN PROCESS AGENCY (SAAS MODEL) ---
         async function processAgency(agency: any) {
@@ -497,6 +552,8 @@ Deno.serve(async (req) => {
                         .not('client_id', 'in', syncedClientIds);
                     if (delErr) await log(`    ⚠️ Aviso limpieza cuentas antiguas: ${delErr.message}`);
                 }
+
+                await refreshMissingAccountCurrencies(accessToken, developerToken, loginCustomerId, agency.id);
 
             } catch (e: any) {
                 await log(`    ❌ Error Agencia ${agency.name}: ${e.message}`);

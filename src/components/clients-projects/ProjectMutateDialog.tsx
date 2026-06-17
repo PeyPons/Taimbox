@@ -371,7 +371,18 @@ export function ProjectMutateDialog({
                   name="monthlyFee"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t('clientsAndProjects.dialogs.newProject.monthlyFee', currencyLabels)}</FormLabel>
+                      <FormLabel>
+                        {t('clientsAndProjects.dialogs.newProject.monthlyFee', {
+                          defaultValue: 'Fee mensual {{currencyParens}}',
+                          ...currencyLabels,
+                        })}
+                      </FormLabel>
+                      <FormDescription>
+                        {t(
+                          'clientsAndProjects.dialogs.newProject.monthlyFeeHint',
+                          'Importe total que paga el cliente por este proyecto al mes (no es precio por hora).'
+                        )}
+                      </FormDescription>
                       <FormControl>
                         <Input type="number" placeholder="0" {...field} />
                       </FormControl>
@@ -424,7 +435,12 @@ export function ProjectMutateDialog({
                   name="deliverableContractFee"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t('clientsAndProjects.dialogs.newProject.deliverableTotalFee', currencyLabels)}</FormLabel>
+                      <FormLabel>
+                        {t('clientsAndProjects.dialogs.newProject.deliverableTotalFee', {
+                          defaultValue: 'Importe total del contrato {{currencyParens}}',
+                          ...currencyLabels,
+                        })}
+                      </FormLabel>
                       <FormControl>
                         <Input type="text" inputMode="decimal" placeholder="Ej: 12000" {...field} />
                       </FormControl>
