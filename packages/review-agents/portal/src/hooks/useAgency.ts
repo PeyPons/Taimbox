@@ -22,5 +22,5 @@ export function useAgency() {
     })();
   }, []);
 
-  return { agencyId, loading };
+  return { agencyId, loading, hasAgency: Boolean(agencyId) };
 }

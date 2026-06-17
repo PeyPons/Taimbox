@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, Navigate, Route, Routes, useNavigate } from 'react-router-dom';
+import { Link, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from './lib/supabase';
 import LoginPage from './pages/LoginPage';
@@ -8,16 +8,44 @@ import NewReviewPage from './pages/NewReviewPage';
 import JobPage from './pages/JobPage';
 import SkillsPage from './pages/SkillsPage';
 import SkillEditorPage from './pages/SkillEditorPage';
+import NotFoundPage from './pages/NotFoundPage';
+
+const ROUTE_TITLES: Record<string, string> = {
+  '/': 'Inicio',
+  '/new': 'Nueva revisión',
+  '/skills': 'Skills',
+  '/skills/new': 'Nueva skill',
+};
+
+function NavLink({ to, children }: { to: string; children: React.ReactNode }) {
+  const location = useLocation();
+  const active = location.pathname === to || (to !== '/' && location.pathname.startsWith(to));
+  return (
+    <Link to={to} className={active ? 'nav-link nav-link-active' : 'nav-link'}>
+      {children}
+    </Link>
+  );
+}
 
 function Shell({ session }: { session: Session }) {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.pathname.startsWith('/jobs/')) return;
+    const title =
+      ROUTE_TITLES[location.pathname] ??
+      (location.pathname.startsWith('/skills/') ? 'Editar skill' : undefined);
+    document.title = title ? `${title} — Review Agents` : 'Review Agents';
+  }, [location.pathname]);
+
   return (
     <div className="layout">
-      <nav className="nav">
+      <nav className="nav" aria-label="Principal">
         <strong>Review Agents</strong>
-        <Link to="/">Inicio</Link>
-        <Link to="/new">Nueva revisión</Link>
-        <Link to="/skills">Skills</Link>
+        <NavLink to="/">Inicio</NavLink>
+        <NavLink to="/new">Nueva revisión</NavLink>
+        <NavLink to="/skills">Skills</NavLink>
         <button
           type="button"
           className="btn secondary"
@@ -28,18 +56,19 @@ function Shell({ session }: { session: Session }) {
         >
           Salir
         </button>
-        <span style={{ marginLeft: 'auto', fontSize: '0.85rem', color: '#64748b' }}>
-          {session.user.email}
-        </span>
+        <span className="nav-email">{session.user.email}</span>
       </nav>
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/new" element={<NewReviewPage />} />
-        <Route path="/jobs/:id" element={<JobPage />} />
-        <Route path="/skills" element={<SkillsPage />} />
-        <Route path="/skills/new" element={<SkillEditorPage />} />
-        <Route path="/skills/:id" element={<SkillEditorPage />} />
-      </Routes>
+      <main>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/new" element={<NewReviewPage />} />
+          <Route path="/jobs/:id" element={<JobPage />} />
+          <Route path="/skills" element={<SkillsPage />} />
+          <Route path="/skills/new" element={<SkillEditorPage />} />
+          <Route path="/skills/:id" element={<SkillEditorPage />} />
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
+      </main>
     </div>
   );
 }

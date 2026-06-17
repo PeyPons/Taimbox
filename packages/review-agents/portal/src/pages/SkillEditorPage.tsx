@@ -2,11 +2,12 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { apiDelete, apiGet, apiPatch, apiPost } from '../lib/api';
 import { useAgency } from '../hooks/useAgency';
+import EmptyAgencyCard from '../components/EmptyAgencyCard';
 
 export default function SkillEditorPage() {
   const { id } = useParams();
   const isNew = !id || id === 'new';
-  const { agencyId } = useAgency();
+  const { agencyId, loading: agencyLoading, hasAgency } = useAgency();
   const navigate = useNavigate();
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
@@ -17,6 +18,10 @@ export default function SkillEditorPage() {
   const [roles, setRoles] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(!isNew);
+  const [saving, setSaving] = useState(false);
+  const [duplicating, setDuplicating] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [isTemplate, setIsTemplate] = useState(false);
 
   useEffect(() => {
@@ -79,6 +84,8 @@ export default function SkillEditorPage() {
       reviewChecklist: checklist,
       visibilityRoles: roles.split(',').map((r) => r.trim()).filter(Boolean),
     };
+    setSaving(true);
+    setError('');
     try {
       if (isNew) {
         await apiPost('/api/skills', { ...body, agencyId });
@@ -88,14 +95,19 @@ export default function SkillEditorPage() {
       navigate('/skills');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error');
+    } finally {
+      setSaving(false);
     }
   }
+
+  if (agencyLoading) return <p>Cargando agencia…</p>;
+  if (!hasAgency) return <EmptyAgencyCard />;
 
   if (loading) {
     return (
       <div>
         <h1>{isNew ? 'Nueva skill' : 'Editar skill'}</h1>
-        <p>Cargando…</p>
+        <p className="loading-hint">Cargando…</p>
       </div>
     );
   }
@@ -106,19 +118,29 @@ export default function SkillEditorPage() {
         <h1>Plantilla del sistema</h1>
         <div className="card">
           <p>Las plantillas globales no se editan. Duplícala para crear una copia editable en tu agencia.</p>
+          {error && <p className="error">{error}</p>}
           <button
             type="button"
             className="btn"
             style={{ marginTop: '1rem' }}
+            disabled={duplicating}
             onClick={async () => {
               if (!agencyId || !id) return;
-              const { skill } = await apiPost<{ skill: { id: string } }>(`/api/skills/${id}/duplicate`, {
-                agencyId,
-              });
-              navigate(`/skills/${skill.id}`, { replace: true });
+              setDuplicating(true);
+              setError('');
+              try {
+                const { skill } = await apiPost<{ skill: { id: string } }>(`/api/skills/${id}/duplicate`, {
+                  agencyId,
+                });
+                navigate(`/skills/${skill.id}`, { replace: true });
+              } catch (err) {
+                setError(err instanceof Error ? err.message : 'No se pudo duplicar');
+              } finally {
+                setDuplicating(false);
+              }
             }}
           >
-            Duplicar y editar
+            {duplicating ? 'Duplicando…' : 'Duplicar y editar'}
           </button>
         </div>
       </div>
@@ -131,19 +153,23 @@ export default function SkillEditorPage() {
       <form className="card" onSubmit={save}>
         <label>
           Nombre
-          <input value={name} onChange={(e) => setName(e.target.value)} required />
+          <input value={name} onChange={(e) => setName(e.target.value)} required disabled={saving} />
         </label>
         <label>
           Slug
-          <input value={slug} onChange={(e) => setSlug(e.target.value)} required disabled={!isNew} />
+          <input value={slug} onChange={(e) => setSlug(e.target.value)} required disabled={!isNew || saving} />
         </label>
         <label>
           Descripción
-          <input value={description} onChange={(e) => setDescription(e.target.value)} />
+          <input value={description} onChange={(e) => setDescription(e.target.value)} disabled={saving} />
         </label>
         <label>
           Tipo
-          <select value={skillType} onChange={(e) => setSkillType(e.target.value as typeof skillType)}>
+          <select
+            value={skillType}
+            onChange={(e) => setSkillType(e.target.value as typeof skillType)}
+            disabled={saving}
+          >
             <option value="document">Documento</option>
             <option value="url">URL</option>
             <option value="mixed">Mixto</option>
@@ -151,37 +177,70 @@ export default function SkillEditorPage() {
         </label>
         <label>
           Instrucciones (system prompt)
-          <textarea rows={8} value={systemPrompt} onChange={(e) => setSystemPrompt(e.target.value)} required />
+          <textarea
+            rows={8}
+            value={systemPrompt}
+            onChange={(e) => setSystemPrompt(e.target.value)}
+            required
+            disabled={saving}
+          />
         </label>
         <label>
           Checklist (JSON)
-          <textarea rows={6} value={checklistJson} onChange={(e) => setChecklistJson(e.target.value)} />
+          <textarea rows={6} value={checklistJson} onChange={(e) => setChecklistJson(e.target.value)} disabled={saving} />
         </label>
         <label>
           Roles visibles (separados por coma)
-          <input value={roles} onChange={(e) => setRoles(e.target.value)} placeholder="comercial, legal, Administrador" />
+          <input
+            value={roles}
+            onChange={(e) => setRoles(e.target.value)}
+            placeholder="comercial, legal, Administrador"
+            disabled={saving}
+          />
         </label>
         {error && <p className="error">{error}</p>}
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '1rem' }}>
-          <button type="submit" className="btn">
-            Guardar
+          <button type="submit" className="btn" disabled={saving}>
+            {saving ? 'Guardando…' : 'Guardar'}
           </button>
           {!isNew && id && (
-            <button
-              type="button"
-              className="btn danger"
-              onClick={async () => {
-                if (!window.confirm(`¿Eliminar la skill «${name}»?`)) return;
-                try {
-                  await apiDelete(`/api/skills/${id}`);
-                  navigate('/skills');
-                } catch (err) {
-                  setError(err instanceof Error ? err.message : 'No se pudo eliminar');
-                }
-              }}
-            >
-              Eliminar
-            </button>
+            <>
+              {!deleteConfirm ? (
+                <button type="button" className="btn danger" disabled={saving} onClick={() => setDeleteConfirm(true)}>
+                  Eliminar
+                </button>
+              ) : (
+                <div className="confirm-inline" style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    className="btn danger"
+                    disabled={deleting}
+                    onClick={async () => {
+                      setDeleting(true);
+                      setError('');
+                      try {
+                        await apiDelete(`/api/skills/${id}`);
+                        navigate('/skills');
+                      } catch (err) {
+                        setError(err instanceof Error ? err.message : 'No se pudo eliminar');
+                      } finally {
+                        setDeleting(false);
+                      }
+                    }}
+                  >
+                    {deleting ? 'Eliminando…' : 'Confirmar eliminación'}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn secondary"
+                    disabled={deleting}
+                    onClick={() => setDeleteConfirm(false)}
+                  >
+                    No
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       </form>

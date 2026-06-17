@@ -27,7 +27,11 @@ router.get('/', async (req, res) => {
   const { jwt } = res.locals.auth as AuthLocals;
   const agencyId = String(req.query.agencyId ?? '');
   const sb = supabaseForUser(jwt);
-  let q = sb.from('review_jobs').select('*').order('created_at', { ascending: false }).limit(50);
+  let q = sb
+    .from('review_jobs')
+    .select('*, skill:review_skills(name)')
+    .order('created_at', { ascending: false })
+    .limit(50);
   if (agencyId) q = q.eq('agency_id', agencyId);
   const { data, error } = await q;
   if (error) {
@@ -40,7 +44,11 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   const { jwt } = res.locals.auth as AuthLocals;
   const sb = supabaseForUser(jwt);
-  const { data, error } = await sb.from('review_jobs').select('*').eq('id', req.params.id).single();
+  const { data, error } = await sb
+    .from('review_jobs')
+    .select('*, skill:review_skills(name)')
+    .eq('id', req.params.id)
+    .single();
   if (error || !data) {
     res.status(404).json({ error: 'Not found' });
     return;

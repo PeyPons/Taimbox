@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { apiGet, apiPost } from '../lib/api';
 import { supabase } from '../lib/supabase';
 import { useAgency } from '../hooks/useAgency';
+import EmptyAgencyCard from '../components/EmptyAgencyCard';
 
 interface Skill {
   id: string;
@@ -11,9 +12,11 @@ interface Skill {
 }
 
 export default function NewReviewPage() {
-  const { agencyId } = useAgency();
+  const { agencyId, loading: agencyLoading, hasAgency } = useAgency();
   const navigate = useNavigate();
   const [skills, setSkills] = useState<Skill[]>([]);
+  const [skillsLoading, setSkillsLoading] = useState(true);
+  const [skillsError, setSkillsError] = useState('');
   const [skillId, setSkillId] = useState('');
   const [url, setUrl] = useState('');
   const [paste, setPaste] = useState('');
@@ -23,11 +26,19 @@ export default function NewReviewPage() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!agencyId) return;
-    apiGet<{ skills: Skill[] }>(`/api/skills?agencyId=${agencyId}`).then((r) => {
-      setSkills(r.skills);
-      if (r.skills[0]) setSkillId(r.skills[0].id);
-    });
+    if (!agencyId) {
+      setSkillsLoading(false);
+      return;
+    }
+    setSkillsLoading(true);
+    setSkillsError('');
+    apiGet<{ skills: Skill[] }>(`/api/skills?agencyId=${agencyId}`)
+      .then((r) => {
+        setSkills(r.skills);
+        if (r.skills[0]) setSkillId(r.skills[0].id);
+      })
+      .catch((err) => setSkillsError(err instanceof Error ? err.message : 'Error al cargar skills'))
+      .finally(() => setSkillsLoading(false));
   }, [agencyId]);
 
   async function onSubmit(e: React.FormEvent) {
@@ -76,6 +87,43 @@ export default function NewReviewPage() {
     } finally {
       setSubmitting(false);
     }
+  }
+
+  if (agencyLoading) return <p>Cargando agencia…</p>;
+  if (!hasAgency) return <EmptyAgencyCard />;
+
+  if (skillsLoading) return <p className="loading-hint">Cargando skills…</p>;
+
+  if (skillsError) {
+    return (
+      <div className="card">
+        <p className="error">{skillsError}</p>
+      </div>
+    );
+  }
+
+  if (skills.length === 0) {
+    return (
+      <div>
+        <h1>Nueva revisión</h1>
+        <div className="card">
+          <p style={{ color: '#64748b' }}>
+            Necesitas al menos una skill de revisión antes de empezar. Crea una nueva o duplica una plantilla
+            del sistema.
+          </p>
+          <Link to="/skills/new" className="btn" style={{ display: 'inline-block', textDecoration: 'none' }}>
+            Crear skill
+          </Link>
+          <Link
+            to="/skills"
+            className="btn secondary"
+            style={{ display: 'inline-block', textDecoration: 'none', marginLeft: '0.5rem' }}
+          >
+            Ver skills
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   return (

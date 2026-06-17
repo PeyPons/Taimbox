@@ -6,17 +6,23 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
-    const { error: err } = await supabase.auth.signInWithPassword({ email, password });
-    if (err) {
-      setError(err.message);
-      return;
+    setSubmitting(true);
+    try {
+      const { error: err } = await supabase.auth.signInWithPassword({ email, password });
+      if (err) {
+        setError(err.message);
+        return;
+      }
+      navigate('/');
+    } finally {
+      setSubmitting(false);
     }
-    navigate('/');
   }
 
   return (
@@ -26,15 +32,27 @@ export default function LoginPage() {
       <form className="card" onSubmit={onSubmit}>
         <label>
           Email
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            disabled={submitting}
+          />
         </label>
         <label>
           Contraseña
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            disabled={submitting}
+          />
         </label>
         {error && <p className="error">{error}</p>}
-        <button type="submit" className="btn" style={{ marginTop: '1rem' }}>
-          Entrar
+        <button type="submit" className="btn" disabled={submitting} style={{ marginTop: '1rem' }}>
+          {submitting ? 'Entrando…' : 'Entrar'}
         </button>
       </form>
     </div>
