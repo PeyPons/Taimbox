@@ -1,7 +1,9 @@
 import type { Allocation, Deadline, Employee, Project } from '@/types';
-import { isAllocationInEffectiveMonth } from '@/utils/dateUtils';
-import { getEffectiveCompletedHours } from '@/utils/hoursTracking';
 import { round2 } from '@/utils/numbers';
+import {
+  buildMonthAllocationsByProjectAndEmployee,
+  shouldIncludeProjectInOperationsTracking,
+} from '@/utils/operationsTrackingVisibility';
 
 export interface InconsistencyEmployeeItem {
   employeeId: string;
@@ -51,34 +53,11 @@ export function computeGlobalPlanningInconsistencies(params: {
     hoursTrackingPreference,
   } = params;
 
-  const monthAllocations = allocations.filter(
-    (a) =>
-      isAllocationInEffectiveMonth(a.weekStartDate, viewDate) &&
-      (!allowedEmployeeIds || allowedEmployeeIds.has(a.employeeId)),
-  );
-
-  const allocationsByProjectAndEmployee: Record<string, Record<string, { planned: number; computed: number }>> = {};
-
-  const effectivePreference =
-    hoursTrackingPreference === 'actual' || hoursTrackingPreference === 'computed'
-      ? hoursTrackingPreference
-      : undefined;
-
-  monthAllocations.forEach((a) => {
-    if (!allocationsByProjectAndEmployee[a.projectId]) {
-      allocationsByProjectAndEmployee[a.projectId] = {};
-    }
-    if (!allocationsByProjectAndEmployee[a.projectId][a.employeeId]) {
-      allocationsByProjectAndEmployee[a.projectId][a.employeeId] = { planned: 0, computed: 0 };
-    }
-    if (a.status === 'completed') {
-      allocationsByProjectAndEmployee[a.projectId][a.employeeId].computed += getEffectiveCompletedHours(
-        a,
-        effectivePreference,
-      );
-    } else {
-      allocationsByProjectAndEmployee[a.projectId][a.employeeId].planned += a.hoursAssigned || 0;
-    }
+  const allocationsByProjectAndEmployee = buildMonthAllocationsByProjectAndEmployee({
+    allocations,
+    viewDate,
+    allowedEmployeeIds,
+    hoursTrackingPreference,
   });
 
   const projectInconsistencies: Record<string, Inconsistency> = {};
@@ -145,6 +124,16 @@ export function computeGlobalPlanningInconsistencies(params: {
       deadline.budgetOverride !== undefined && deadline.budgetOverride !== null
         ? deadline.budgetOverride
         : project.budgetHours || 0;
+
+    if (
+      !shouldIncludeProjectInOperationsTracking(project, {
+        deadlineHours: totalDeadline,
+        plannedHours: totalPlanned,
+        computedHours: totalComputed,
+      })
+    ) {
+      return;
+    }
 
     projectInconsistencies[projectId] = {
       projectId,

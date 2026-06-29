@@ -48,6 +48,7 @@ export interface ProjectForCoherence {
   name: string;
   budgetHours: number;
   minimumHours: number;
+  status?: string;
 }
 
 export interface EmployeeForCoherence {
@@ -87,6 +88,16 @@ function getEffectiveCompletedHours(
     return alloc.hoursActual ?? 0;
   }
   return alloc.hoursComputed ?? 0;
+}
+
+function shouldIncludeProjectInOperationsTracking(
+  status: string | undefined,
+  deadlineHours: number,
+  plannedHours: number,
+  computedHours: number,
+): boolean {
+  if (status !== "completed") return true;
+  return deadlineHours + plannedHours + computedHours > 0;
 }
 
 export function computePlanningCoherenceInconsistencies(params: {
@@ -188,6 +199,17 @@ export function computePlanningCoherenceInconsistencies(params: {
       deadline.budgetOverride !== undefined && deadline.budgetOverride !== null
         ? Number(deadline.budgetOverride)
         : project.budgetHours || 0;
+
+    if (
+      !shouldIncludeProjectInOperationsTracking(
+        project.status,
+        totalDeadline,
+        totalPlanned,
+        totalComputed,
+      )
+    ) {
+      return;
+    }
 
     projectInconsistencies[projectId] = {
       projectId,

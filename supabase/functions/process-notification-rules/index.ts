@@ -673,6 +673,7 @@ serve(async (req) => {
         name: p.name,
         budgetHours: Number(p.budget_hours) || 0,
         minimumHours: Number(p.minimum_hours) || 0,
+        status: (p as { status?: string }).status,
       }));
 
       const inconsistencies = computePlanningCoherenceInconsistencies({
