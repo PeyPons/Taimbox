@@ -423,6 +423,7 @@ export default function AdsPage() {
     let totalProcessedCost = 0;
     let filteredOutCount = 0;
     rawData.forEach(row => {
+      if (row.campaign_id?.startsWith('__no_campaigns_')) return;
       // Filtrar por todos los días del mes actual (del 1 al último día del mes)
       // Filtrar por todos los días del mes actual (Robust Date check)
       // Aseguramos formato YYYY-MM-DD para comparación de texto
@@ -491,7 +492,7 @@ export default function AdsPage() {
         if (!entry.is_group && isIndividualManual) entry.budget = settings.budget;
       }
 
-      if (row.cost > 0) {
+      if (row.cost > 0 || row.status === 'ENABLED' || row.status === 'PAUSED') {
         entry.campaigns.push({
           ...row,
           original_client_name: finalName,
@@ -555,7 +556,11 @@ export default function AdsPage() {
 
     let filtered = report;
     if (!showHidden) filtered = filtered.filter(c => !c.isHidden);
-    if (!showZeroSpend) filtered = filtered.filter(c => c.spent > 0);
+    if (!showZeroSpend) {
+      filtered = filtered.filter(c =>
+        c.spent > 0 || c.campaigns.some(camp => camp.status === 'ENABLED' || camp.status === 'PAUSED')
+      );
+    }
     if (searchTerm) {
       const lower = searchTerm.toLowerCase();
       filtered = filtered.filter(c => c.client_name.toLowerCase().includes(lower) || c.campaigns.some(camp => camp.campaign_name.toLowerCase().includes(lower)));

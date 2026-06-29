@@ -109,29 +109,83 @@ Deno.serve(async (req) => {
             }
         }
 
-        async function fetchCampaigns(accessToken: string, accountId: string) {
-            const { start, end } = getDateRange();
-            // Insights a nivel campaña
-            const url = `https://graph.facebook.com/${API_VERSION}/${accountId}/insights?level=campaign&fields=campaign_id,campaign_name,spend,conversions,clicks,impressions,actions&time_range={'since':'${start}','until':'${end}'}&access_token=${accessToken}&limit=500`;
+        type MetaCampaignInsight = {
+            campaign_id: string;
+            campaign_name: string;
+            spend: string;
+            conversions?: number;
+            conversions_value?: number;
+            clicks?: string | number;
+            impressions?: string | number;
+            actions?: Array<{ action_type: string; value: string }>;
+            action_values?: Array<{ action_type: string; value: string }>;
+        };
 
-            try {
+        type MetaCampaignCatalogItem = {
+            id: string;
+            name: string;
+            status: string;
+            effective_status?: string;
+            daily_budget?: string;
+        };
+
+        async function fetchGraphPaginated<T>(initialUrl: string): Promise<T[]> {
+            const all: T[] = [];
+            let url: string | null = initialUrl;
+            while (url) {
                 const res = await fetch(url);
                 const json = await res.json();
                 if (json.error) throw new Error(json.error.message);
-                return json.data || [];
-            } catch (e: any) {
-                console.error(`Error insights ${accountId}:`, e.message);
+                all.push(...(json.data || []));
+                url = json.paging?.next ?? null;
+            }
+            return all;
+        }
+
+        async function fetchCampaignCatalog(accessToken: string, accountId: string): Promise<MetaCampaignCatalogItem[]> {
+            const url = `https://graph.facebook.com/${API_VERSION}/${accountId}/campaigns?fields=id,name,status,effective_status,daily_budget&limit=500&access_token=${accessToken}`;
+            try {
+                const campaigns = await fetchGraphPaginated<MetaCampaignCatalogItem>(url);
+                return campaigns.filter((c) => {
+                    const status = c.effective_status || c.status || '';
+                    return status === 'ACTIVE' || status === 'PAUSED';
+                });
+            } catch (e: unknown) {
+                const msg = e instanceof Error ? e.message : String(e);
+                console.error(`Error catalog ${accountId}:`, msg);
                 return [];
             }
         }
 
-        async function getCampaignStatus(accessToken: string, campaignId: string) {
-            const url = `https://graph.facebook.com/${API_VERSION}/${campaignId}?fields=status&access_token=${accessToken}`;
+        async function fetchCampaignInsights(accessToken: string, accountId: string): Promise<Map<string, MetaCampaignInsight>> {
+            const { start, end } = getDateRange();
+            const url = `https://graph.facebook.com/${API_VERSION}/${accountId}/insights?level=campaign&fields=campaign_id,campaign_name,spend,conversions,clicks,impressions,actions,action_values&time_range={'since':'${start}','until':'${end}'}&access_token=${accessToken}&limit=500`;
+
+            const insightsMap = new Map<string, MetaCampaignInsight>();
             try {
-                const res = await fetch(url);
-                const json = await res.json();
-                return json.status || 'UNKNOWN';
-            } catch (e) { return 'UNKNOWN'; }
+                const rows = await fetchGraphPaginated<MetaCampaignInsight>(url);
+                for (const row of rows) {
+                    if (row.campaign_id) insightsMap.set(String(row.campaign_id), row);
+                }
+            } catch (e: unknown) {
+                const msg = e instanceof Error ? e.message : String(e);
+                console.error(`Error insights ${accountId}:`, msg);
+            }
+            return insightsMap;
+        }
+
+        function parseMetaConversions(row: MetaCampaignInsight): { conv: number; val: number } {
+            let conv = 0;
+            let val = 0;
+            if (row.actions) {
+                const purchase = row.actions.find((a) => a.action_type === 'purchase' || a.action_type === 'omni_purchase');
+                if (purchase) conv = parseFloat(purchase.value);
+            }
+            if (row.action_values) {
+                const purchaseVal = row.action_values.find((a) => a.action_type === 'purchase' || a.action_type === 'omni_purchase');
+                if (purchaseVal) val = parseFloat(purchaseVal.value);
+            }
+            return { conv, val };
         }
 
         async function refreshMissingMetaCurrencies(accessToken: string, agencyId: string) {
@@ -225,65 +279,41 @@ Deno.serve(async (req) => {
 
                 for (const account of accountsToProcess) {
                     const id = account.account_id;
-                    const campaigns = await fetchCampaigns(accessToken, id);
+                    const catalog = await fetchCampaignCatalog(accessToken, id);
+                    const insights = await fetchCampaignInsights(accessToken, id);
 
-                    if (campaigns.length > 0) {
-                        // Procesar cada campaña para obtener status y preparar upsert
-                        const upsertData = [];
+                    if (catalog.length > 0) {
+                        const upsertData = catalog.map((camp) => {
+                            const row = insights.get(String(camp.id));
+                            const { conv, val } = row ? parseMetaConversions(row) : { conv: 0, val: 0 };
 
-                        for (const row of campaigns) {
-                            // Ignorar gasto 0
-                            if (parseFloat(row.spend || '0') === 0 && parseFloat(row.impressions || '0') === 0) continue;
-
-                            // Calcular conversiones y valor
-                            let conv = 0;
-                            let val = 0;
-                            if (row.actions) {
-                                // "purchase" or "omni_purchase" usually
-                                const purchase = row.actions.find((a: any) => a.action_type === 'purchase' || a.action_type === 'omni_purchase');
-                                if (purchase) conv = parseFloat(purchase.value);
-                            }
-                            if (row.action_values) {
-                                const purchaseVal = row.action_values.find((a: any) => a.action_type === 'purchase' || a.action_type === 'omni_purchase');
-                                if (purchaseVal) val = parseFloat(purchaseVal.value);
-                            }
-
-                            // Obtener status real (requiere llamada extra por campaña, costoso pero necesario si no viene en insights)
-                            // En insights level=campaign NO viene el status, hay que pedirlo o asumir activo si gasta
-                            // Para optimizar, asumimos ENABLED si tiene gasto hoy, o podríamos hacer fetch batch
-                            // Por simplicidad en versión 1, usamos 'ENABLED' si gasta, o fetch individual
-                            const status = await getCampaignStatus(accessToken, row.campaign_id);
-
-                            upsertData.push({
+                            return {
                                 client_id: id,
                                 client_name: account.account_name,
-                                campaign_id: row.campaign_id,
-                                campaign_name: row.campaign_name,
-                                status: status,
-                                date: start, // Guardamos todo en el día 1 del mes para simplificar, o row.date_start
-                                cost: row.spend,
+                                campaign_id: String(camp.id),
+                                campaign_name: camp.name || row?.campaign_name || `Campaña ${camp.id}`,
+                                status: camp.effective_status || camp.status || 'UNKNOWN',
+                                date: start,
+                                cost: row ? parseFloat(row.spend || '0') : 0,
                                 conversions: conv,
                                 conversions_value: val,
-                                impressions: row.impressions || 0,
-                                clicks: row.clicks || 0,
-                                agency_id: agency.id
-                            });
-                        }
+                                impressions: row ? parseInt(String(row.impressions || 0), 10) : 0,
+                                clicks: row ? parseInt(String(row.clicks || 0), 10) : 0,
+                                agency_id: agency.id,
+                            };
+                        });
 
-                        if (upsertData.length > 0) {
-                            // Clean Sync
-                            await supabase.from('meta_ads_campaigns')
-                                .delete()
-                                .eq('client_id', id)
-                                .gte('date', start)
-                                .lte('date', end);
+                        await supabase.from('meta_ads_campaigns')
+                            .delete()
+                            .eq('client_id', id)
+                            .gte('date', start)
+                            .lte('date', end);
 
-                            const { error } = await supabase.from('meta_ads_campaigns').upsert(upsertData, { onConflict: 'campaign_id, date' });
-                            if (error) await log(`    ❌ Error guardando ${account.account_name}: ${error.message}`);
-                            else await log(`    ✅ ${account.account_name}: ${upsertData.length} campañas procesadas.`);
-                        } else {
-                            await log(`    ℹ️ ${account.account_name}: 0 campañas con gasto este mes.`);
-                        }
+                        const { error } = await supabase.from('meta_ads_campaigns').upsert(upsertData, { onConflict: 'campaign_id, date' });
+                        if (error) await log(`    ❌ Error guardando ${account.account_name}: ${error.message}`);
+                        else await log(`    ✅ ${account.account_name}: ${upsertData.length} campañas (activas/pausadas).`);
+                    } else {
+                        await log(`    ℹ️ ${account.account_name}: 0 campañas activas o pausadas.`);
                     }
                 }
 
