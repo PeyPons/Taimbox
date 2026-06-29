@@ -81,3 +81,11 @@ export function parsePassword(value: unknown): string {
   }
   return value;
 }
+
+/** Contraseña opcional: si no se envía, genera una temporal (el invitado la define por email). */
+export function parseOptionalPassword(value: unknown): string {
+  if (value == null || value === "") {
+    return Math.random().toString(36).slice(-12) + "A1!";
+  }
+  return parsePassword(value);
+}
