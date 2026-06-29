@@ -139,7 +139,7 @@ export function useAdsBudgetNotifications(): void {
         alert.platform === 'google'
           ? t('ads.google', 'Google Ads')
           : t('ads.meta', 'Meta Ads');
-      const link = alert.platform === 'google' ? '/google-ads' : '/meta-ads';
+      const link = alert.platform === 'google' ? '/ads' : '/meta-ads';
       const accountLabel = alert.isGroup
         ? `${alert.displayName} (grupo)`
         : alert.displayName;

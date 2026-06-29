@@ -73,7 +73,7 @@ export default function SettingsPage() {
             )}
 
             {/* CONTACTAR SOPORTE */}
-            {canAccess('/settings') && (
+            {canAccess('/soporte') && (
                 <Link to="/soporte" className="block">
                     <Card className="border-slate-200 shadow-sm hover:border-primary/50 hover:shadow-md transition-all cursor-pointer group">
                         <CardHeader>
