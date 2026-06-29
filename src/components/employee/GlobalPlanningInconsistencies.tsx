@@ -98,6 +98,7 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
   const { projects, clients } = useAppProjects();
   const { currentAgency } = useAgency();
   const preference = currentAgency?.settings?.hoursTrackingPreference;
+  const showComputedHours = preference !== 'actual';
   const { selectedDepartmentId } = useDepartmentView();
   const { t } = useAppTranslation();
   const dateLocale = useDateLocale();
@@ -1276,16 +1277,23 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
                                   <Pencil className="h-3.5 w-3.5" />
                                 </Button>
                               )}
-                              <div className="flex min-w-[7.25rem] shrink-0 flex-col items-end justify-start gap-0.5 text-right tabular-nums">
+                              <div
+                                className={cn(
+                                  'flex shrink-0 flex-col items-end justify-start gap-0.5 text-right tabular-nums',
+                                  showComputedHours ? 'min-w-[7.25rem]' : 'min-w-[5rem]',
+                                )}
+                              >
                                 <span className="max-w-full whitespace-nowrap font-mono text-[10px] leading-tight text-slate-600">
                                   {t('operationsRadar.taskEstShort', 'Est')}: {task.hoursAssigned ?? 0}h
                                 </span>
                                 <span className="max-w-full whitespace-nowrap font-mono text-[10px] leading-tight text-blue-600">
                                   {t('operationsRadar.actualLabel', 'Real')}: {task.hoursActual ?? task.hoursAssigned ?? 0}h
                                 </span>
-                                <span className="max-w-full whitespace-nowrap font-mono text-[10px] leading-tight text-emerald-600">
-                                  {t('operationsRadar.computedLabel', 'Computado')}: {task.hoursComputed ?? task.hoursAssigned ?? 0}h
-                                </span>
+                                {showComputedHours && (
+                                  <span className="max-w-full whitespace-nowrap font-mono text-[10px] leading-tight text-emerald-600">
+                                    {t('operationsRadar.computedLabel', 'Computado')}: {task.hoursComputed ?? task.hoursAssigned ?? 0}h
+                                  </span>
+                                )}
                               </div>
                             </div>
                           );
@@ -1428,7 +1436,12 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
                                       <Pencil className="h-3.5 w-3.5" />
                                     </Button>
                                   )}
-                                  <div className="flex min-w-[7.25rem] shrink-0 flex-col items-end justify-start gap-0.5 text-right tabular-nums">
+                                  <div
+                                    className={cn(
+                                      'flex shrink-0 flex-col items-end justify-start gap-0.5 text-right tabular-nums',
+                                      showComputedHours ? 'min-w-[7.25rem]' : 'min-w-[5rem]',
+                                    )}
+                                  >
                                     {isClosed ? (
                                       <>
                                         <span className="max-w-full whitespace-nowrap font-mono text-[10px] leading-tight text-slate-600">
@@ -1437,9 +1450,11 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
                                         <span className="max-w-full whitespace-nowrap font-mono text-[10px] leading-tight text-blue-600">
                                           {t('operationsRadar.actualLabel', 'Real')}: {task.hoursActual ?? task.hoursAssigned ?? 0}h
                                         </span>
-                                        <span className="max-w-full whitespace-nowrap font-mono text-[10px] leading-tight text-emerald-600">
-                                          {t('operationsRadar.computedLabel', 'Computado')}: {task.hoursComputed ?? task.hoursAssigned ?? 0}h
-                                        </span>
+                                        {showComputedHours && (
+                                          <span className="max-w-full whitespace-nowrap font-mono text-[10px] leading-tight text-emerald-600">
+                                            {t('operationsRadar.computedLabel', 'Computado')}: {task.hoursComputed ?? task.hoursAssigned ?? 0}h
+                                          </span>
+                                        )}
                                       </>
                                     ) : (
                                       <>
