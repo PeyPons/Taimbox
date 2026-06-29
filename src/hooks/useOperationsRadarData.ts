@@ -1,9 +1,13 @@
 import { useMemo } from 'react';
-import type { Allocation, Employee, Project } from '@/types';
+import type { Allocation, Deadline, Employee, Project } from '@/types';
 import { employeeBelongsToDepartment } from '@/utils/departmentUtils';
 import { isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { deliverablePhaseOverlapsMonth, getDeliverablePhase } from '@/utils/deliverableLifecycle';
 import { PROJECT_TYPE_ENTREGABLE } from '@/config/projectTypePresets';
+import {
+  buildMonthAllocationsByProjectAndEmployee,
+  shouldIncludeProjectIdInOperationsTracking,
+} from '@/utils/operationsTrackingVisibility';
 
 export type RadarRiskLevel = 'critical' | 'high' | 'medium';
 export type RadarRiskType = 'overBudget' | 'lowProgress' | 'lowPace';
@@ -50,6 +54,8 @@ export function useOperationsRadarData(params: {
   employees: Employee[];
   allocations: Allocation[];
   projects: Project[];
+  deadlines: Pick<Deadline, 'projectId' | 'isHidden' | 'employeeHours'>[];
+  hoursTrackingPreference?: 'actual' | 'computed' | null;
 }) {
   const {
     projectMetrics,
@@ -61,12 +67,15 @@ export function useOperationsRadarData(params: {
     employees,
     allocations,
     projects,
+    deadlines,
+    hoursTrackingPreference,
   } = params;
 
   const atRiskProjectsRaw = useMemo(() => {
     const risks: Array<ProjectMetricItem & { riskLevel: RadarRiskLevel; riskReason: string; riskType: RadarRiskType }> = [];
 
     projectMetrics.forEach(p => {
+      if (!isProjectVisibleInOperations(p.projectId)) return;
       // Solo horas "reales" (hoursActual). El exceso por plan + computado vs presupuesto
       // se resuelve en OperationsRadarPage con effectiveUsage (coherente con la tarjeta de coherencia).
       const hoursOverBudget = p.actual - p.budget;
@@ -104,7 +113,7 @@ export function useOperationsRadarData(params: {
       const riskOrder: Record<string, number> = { critical: 0, high: 1, medium: 2 };
       return (riskOrder[a.riskLevel] || 2) - (riskOrder[b.riskLevel] || 2);
     });
-  }, [projectMetrics, isEndOfMonth, radarLowProgressExcludeKeywords]);
+  }, [projectMetrics, isEndOfMonth, radarLowProgressExcludeKeywords, isProjectVisibleInOperations]);
 
   const employeesForView = useMemo(() => {
     if (!selectedDepartmentId || !departments.length) return employees ?? [];
@@ -112,6 +121,32 @@ export function useOperationsRadarData(params: {
     if (!dept) return employees ?? [];
     return (employees ?? []).filter(e => employeeBelongsToDepartment(e.department, dept.id, dept.name));
   }, [employees, selectedDepartmentId, departments]);
+
+  const allowedEmployeeIds = useMemo(() => {
+    if (!selectedDepartmentId) return null;
+    return new Set(employeesForView.map(e => e.id));
+  }, [selectedDepartmentId, employeesForView]);
+
+  const allocationsByProjectAndEmployee = useMemo(
+    () =>
+      buildMonthAllocationsByProjectAndEmployee({
+        allocations,
+        viewDate,
+        allowedEmployeeIds,
+        hoursTrackingPreference,
+      }),
+    [allocations, viewDate, allowedEmployeeIds, hoursTrackingPreference],
+  );
+
+  const isProjectVisibleInOperations = useMemo(() => {
+    return (projectId: string) =>
+      shouldIncludeProjectIdInOperationsTracking({
+        projectId,
+        projects: projects ?? [],
+        deadlines,
+        allocationsByProjectAndEmployee,
+      });
+  }, [projects, deadlines, allocationsByProjectAndEmployee]);
 
   const projectIdsForDepartment = useMemo(() => {
     if (!selectedDepartmentId) return undefined as Set<string> | undefined;
@@ -153,7 +188,7 @@ export function useOperationsRadarData(params: {
       return merged;
     })();
 
-    const byDept = projectIdsForDeptView && selectedDept
+    const byDept = (projectIdsForDeptView && selectedDept
       ? projectMetrics.filter(p => {
           if (!projectIdsForDeptView.has(p.projectId)) return false;
           const project = projects?.find(proj => proj.id === p.projectId);
@@ -162,7 +197,8 @@ export function useOperationsRadarData(params: {
         })
       : projectIdsForDeptView
         ? projectMetrics.filter(p => projectIdsForDeptView.has(p.projectId))
-        : projectMetrics;
+        : projectMetrics
+    ).filter(p => isProjectVisibleInOperations(p.projectId));
 
     const riskMap = new Map(atRiskProjects.map(r => [r.projectId, r]));
     const rows: ProjectRowItem[] = byDept.map(p => {
@@ -189,7 +225,7 @@ export function useOperationsRadarData(params: {
       if (aOrder !== bOrder) return aOrder - bOrder;
       return (a.projectName || '').localeCompare(b.projectName || '');
     });
-  }, [projectMetrics, projectIdsForDepartment, atRiskProjects, selectedDepartmentId, departments, projects, viewDate]);
+  }, [projectMetrics, projectIdsForDepartment, atRiskProjects, selectedDepartmentId, departments, projects, viewDate, isProjectVisibleInOperations]);
 
   return {
     employeesForView,

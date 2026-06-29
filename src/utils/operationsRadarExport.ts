@@ -1,8 +1,12 @@
-import type { Allocation, Employee, Project } from '@/types';
+import type { Allocation, Deadline, Employee, Project } from '@/types';
 import { employeeBelongsToDepartment } from '@/utils/departmentUtils';
 import { isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { getEffectiveCompletedHours } from '@/utils/hoursTracking';
 import { round2 } from '@/utils/numbers';
+import {
+  buildMonthAllocationsByProjectAndEmployee,
+  shouldIncludeProjectIdInOperationsTracking,
+} from '@/utils/operationsTrackingVisibility';
 import type { ProjectMetrics } from '@/utils/projectMetricsCompute';
 import type {
   ProjectRowItem,
@@ -33,13 +37,15 @@ interface ProjectMetricItem {
 function computeAtRiskProjectsRaw(
   projectMetrics: ProjectMetricItem[],
   isEndOfMonth: boolean,
-  radarLowProgressExcludeKeywords: string[]
+  radarLowProgressExcludeKeywords: string[],
+  isProjectVisible: (projectId: string) => boolean,
 ): Array<ProjectMetricItem & { riskLevel: RadarRiskLevel; riskReason: string; riskType: RadarRiskType }> {
   const risks: Array<
     ProjectMetricItem & { riskLevel: RadarRiskLevel; riskReason: string; riskType: RadarRiskType }
   > = [];
 
   projectMetrics.forEach((p) => {
+    if (!isProjectVisible(p.projectId)) return;
     const hoursOverBudget = p.actual - p.budget;
     const completionRate = p.budget > 0 ? (p.actual / p.budget) * 100 : 0;
     const projectNameLower = p.projectName.toLowerCase();
@@ -112,7 +118,12 @@ function computeAllProjectsForView(
   atRiskProjects: Array<ProjectMetricItem & { riskLevel: RadarRiskLevel; riskType: RadarRiskType }>,
   selectedDepartmentId: string | null,
   departments: DepartmentOption[],
-  projects: Project[]
+  projects: Project[],
+  deadlines: Pick<Deadline, 'projectId' | 'isHidden' | 'employeeHours'>[],
+  allocations: Allocation[],
+  viewDate: Date,
+  allowedEmployeeIds: Set<string> | null,
+  hoursTrackingPreference?: 'actual' | 'computed' | null,
 ): ProjectRowItem[] {
   const selectedDept =
     selectedDepartmentId && departments.length
@@ -133,8 +144,24 @@ function computeAllProjectsForView(
         ? projectMetrics.filter((p) => projectIdsForDepartment.has(p.projectId))
         : projectMetrics;
 
+  const allocationsByProjectAndEmployee = buildMonthAllocationsByProjectAndEmployee({
+    allocations,
+    viewDate,
+    allowedEmployeeIds,
+    hoursTrackingPreference,
+  });
+
+  const visibleByDept = byDept.filter((p) =>
+    shouldIncludeProjectIdInOperationsTracking({
+      projectId: p.projectId,
+      projects: projects ?? [],
+      deadlines,
+      allocationsByProjectAndEmployee,
+    }),
+  );
+
   const riskMap = new Map(atRiskProjects.map((r) => [r.projectId, r]));
-  const rows: ProjectRowItem[] = byDept.map((p) => {
+  const rows: ProjectRowItem[] = visibleByDept.map((p) => {
     const risk = riskMap.get(p.projectId);
     const base: ProjectRowItem = {
       projectId: p.projectId,
@@ -241,6 +268,7 @@ export interface BuildOperationsRadarExportParams {
   employees: Employee[];
   allocations: Allocation[];
   projects: Project[];
+  deadlines: Pick<Deadline, 'projectId' | 'isHidden' | 'employeeHours'>[];
   hoursTrackingPreference?: 'actual' | 'computed' | null;
 }
 
@@ -262,6 +290,7 @@ export function buildOperationsRadarExportPayload(params: BuildOperationsRadarEx
     employees,
     allocations,
     projects,
+    deadlines,
     hoursTrackingPreference,
   } = params;
 
@@ -277,12 +306,28 @@ export function buildOperationsRadarExportPayload(params: BuildOperationsRadarEx
     isPacing: p.isPacing,
   }));
 
+  const employeesForView = computeEmployeesForView(employees, selectedDepartmentId, departments);
+  const allowedEmployeeIds = selectedDepartmentId ? new Set(employeesForView.map((e) => e.id)) : null;
+  const allocationsByProjectAndEmployee = buildMonthAllocationsByProjectAndEmployee({
+    allocations,
+    viewDate,
+    allowedEmployeeIds,
+    hoursTrackingPreference,
+  });
+  const isProjectVisible = (projectId: string) =>
+    shouldIncludeProjectIdInOperationsTracking({
+      projectId,
+      projects: projects ?? [],
+      deadlines,
+      allocationsByProjectAndEmployee,
+    });
+
   const atRiskProjectsRaw = computeAtRiskProjectsRaw(
     metricItems,
     isEndOfMonth,
-    radarLowProgressExcludeKeywords
+    radarLowProgressExcludeKeywords,
+    isProjectVisible,
   );
-  const employeesForView = computeEmployeesForView(employees, selectedDepartmentId, departments);
   const projectIdsForDepartment = computeProjectIdsForDepartment(
     allocations,
     employeesForView,
@@ -299,7 +344,12 @@ export function buildOperationsRadarExportPayload(params: BuildOperationsRadarEx
     atRiskProjects,
     selectedDepartmentId,
     departments,
-    projects
+    projects,
+    deadlines,
+    allocations,
+    viewDate,
+    allowedEmployeeIds,
+    hoursTrackingPreference,
   );
 
   const projectDetailsByProjectId = computeProjectDetailsByProjectId(
