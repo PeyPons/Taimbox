@@ -7,7 +7,7 @@ import {
   assertCanInviteToAgency,
   getBearerToken,
 } from "../_shared/auth-user-access.ts"
-import { parseEmail, parsePassword } from "../_shared/input-limits.ts"
+import { parseEmail, parseOptionalPassword } from "../_shared/input-limits.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -57,7 +57,7 @@ serve(async (req) => {
     })
 
     const cleanEmail = parseEmail(body.email)
-    const cleanPassword = parsePassword(body.password)
+    const cleanPassword = parseOptionalPassword(body.password)
     const name = typeof body.name === 'string' ? body.name.trim() : cleanEmail
 
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
