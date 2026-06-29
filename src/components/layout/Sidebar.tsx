@@ -192,12 +192,38 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
   })();
 
-  const isSuperior =
-    canAccess('/planner') ||
-    canAccess('/team') ||
+  const showTrackingGroup =
     canAccessNav('/operaciones') ||
     canAccessNav('/finanzas') ||
-    canAccess('/settings');
+    canAccessNav('/team-capacity') ||
+    canAccessNav('/weekly-forecast');
+
+  const showPlanningGroup =
+    canAccess('/planner') || (modules.deadlines && canAccess('/deadlines'));
+
+  const showTeamGroup =
+    canAccess('/team') ||
+    canAccessNav('/okrs') ||
+    (modules.timeTracker && canAccess('/team'));
+
+  const showPortfolioGroup = canAccess('/projects') || canAccess('/clients');
+
+  const showPpcGroup =
+    modules.ppc && planIncludesAds && (canAccessNav('/ads') || canAccessNav('/meta-ads'));
+
+  const showSettingsGroup =
+    canAccess('/agency') ||
+    hasPermission('can_access_agency_settings') ||
+    canAccessNav('/api-keys') ||
+    canAccess('/soporte');
+
+  const hasRoleNav =
+    showTrackingGroup ||
+    showPlanningGroup ||
+    showTeamGroup ||
+    showPortfolioGroup ||
+    showPpcGroup ||
+    showSettingsGroup;
 
   return (
     <>
@@ -259,24 +285,10 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             />
           )}
 
-          {/* Employee View: Simple & Focused */}
-          {!isSuperior && (
-            <>
-              {modules.deadlines && canAccess('/deadlines') && (
-                <NavLink to="/deadlines" icon={Calendar} active={location.pathname === '/deadlines'}>
-                  {t('sidebar.menu.deadlines', 'Deadlines')}
-                </NavLink>
-              )}
-            </>
-          )}
-
-          {/* Superior View: Grouped Command Center */}
-          {isSuperior && (
+          {hasRoleNav && (
             <div className="space-y-4">
               {/* SEGUIMIENTO */}
-              {(canAccessNav('/operaciones') ||
-                canAccessNav('/finanzas') ||
-                canAccessNav('/team-capacity')) && (
+              {showTrackingGroup && (
                 <NavGroup
                   label={t('sidebar.groups.tracking', 'Seguimiento')}
                   isActive={['/operaciones', '/finanzas', '/capacidad', '/weekly-forecast'].includes(location.pathname)}
@@ -305,7 +317,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               )}
 
               {/* PLANIFICACIÓN */}
-              {(canAccess('/planner') || (modules.deadlines && canAccess('/deadlines'))) && (
+              {showPlanningGroup && (
                 <NavGroup
                   label={t('sidebar.groups.planning', 'Planificación')}
                   isActive={location.pathname === '/planner' || location.pathname === '/deadlines'}
@@ -324,7 +336,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               )}
 
               {/* EQUIPO */}
-              {(canAccess('/team') || canAccessNav('/okrs') || (modules.timeTracker && canAccess('/team'))) && (
+              {showTeamGroup && (
                 <NavGroup
                   label={t('sidebar.groups.team', 'Equipo')}
                   isActive={['/team', '/okrs', '/tiempos'].includes(location.pathname)}
@@ -348,7 +360,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               )}
 
               {/* PROYECTOS */}
-              {(canAccess('/projects') || canAccess('/clients')) && (
+              {showPortfolioGroup && (
                 <NavGroup
                   label={t('sidebar.groups.portfolio', 'Cartera')}
                   isActive={['/clients', '/projects'].includes(location.pathname)}
@@ -364,7 +376,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               )}
 
               {/* PPC */}
-              {modules.ppc && planIncludesAds && (canAccessNav('/ads') || canAccessNav('/meta-ads')) && (
+              {showPpcGroup && (
                 <NavGroup
                   label={t('sidebar.groups.ppc', 'PPC & medios')}
                   isActive={['/ads', '/meta-ads'].includes(location.pathname)}
@@ -382,8 +394,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 </NavGroup>
               )}
 
-              {/* CONFIGURACIÓN: reducido (agencia, ajustes, API, soporte); miembros y crear agencia desde sus páginas) */}
-              {canAccess('/settings') && (
+              {/* CONFIGURACIÓN */}
+              {showSettingsGroup && (
                 <NavGroup
                   label={t('sidebar.groups.settings', 'Configuración')}
                   icon={Settings}
@@ -415,7 +427,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             </div>
           )}
 
-          {/* ADMINISTRACIÓN (solo platform admins; visible aunque no sea isSuperior) */}
+          {/* ADMINISTRACIÓN (solo platform admins) */}
           {isPlatformAdmin && (
             <div className="pt-2 mt-2 border-t border-slate-800">
               <NavLink to="/admin" icon={Shield} active={location.pathname.startsWith('/admin')} preserveAgency={false}>

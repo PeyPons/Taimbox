@@ -159,32 +159,35 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
       const isNewEmployee = !employeeToEdit;
       const hasPassword = (data.password || '').length >= 8;
       const emailValue = data.email?.trim() || '';
+      const needsAccessAccount = isNewEmployee || (!!employeeToEdit && !employeeToEdit.user_id);
 
-      // Para NUEVOS empleados, es OBLIGATORIO crear cuenta de acceso
-      if (isNewEmployee) {
+      if (needsAccessAccount) {
         if (!emailValue) {
-          toast.error("El email es obligatorio para crear un nuevo empleado");
-          form.setError('email', { message: 'El email es obligatorio' });
-          setIsProcessing(false);
-          return;
-        }
-        if (!hasPassword) {
-          toast.error(t('team.employeeDialog.passwordRequired'));
-          form.setError('password', { message: 'La contraseña debe tener al menos 8 caracteres' });
+          toast.error(isNewEmployee
+            ? "El email es obligatorio para crear un nuevo empleado"
+            : t('team.employeeDialog.toasts.emailRequiredForAccess'));
+          form.setError('email', { message: isNewEmployee ? 'El email es obligatorio' : t('team.employeeDialog.toasts.emailRequiredField') });
           setIsProcessing(false);
           return;
         }
 
-        // Crear usuario en Supabase Auth
+        const createUserBody: { email: string; name: string; agency_id: string | undefined; password?: string } = {
+          email: emailValue,
+          name: data.name,
+          agency_id: currentAgency?.id,
+        };
+        if (hasPassword) {
+          createUserBody.password = data.password;
+        }
+
         console.log('[EmployeeDialog] Creando usuario en Auth:', emailValue);
         const { data: authData, error } = await supabase.functions.invoke('create-user', {
-          body: { email: emailValue, password: data.password, name: data.name, agency_id: currentAgency?.id },
+          body: createUserBody,
         });
 
         if (error) {
           console.error('[EmployeeDialog] Error en create-user:', error);
 
-          // Intentar obtener más detalles del error
           let errorMessage = 'Error al crear cuenta de acceso';
           if (error.message) {
             errorMessage = error.message;
@@ -192,7 +195,6 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
             errorMessage = error.context.message || errorMessage;
           }
 
-          // Si el error viene de la función, intentar parsear el body
           if (error.context?.body) {
             try {
               const errorBody = typeof error.context.body === 'string'
@@ -201,7 +203,7 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
               if (errorBody.error) {
                 errorMessage = errorBody.error;
               }
-            } catch (e) {
+            } catch {
               // Ignorar error de parsing
             }
           }
@@ -215,10 +217,11 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
         }
 
         authUserId = authData.user.id;
-        authMessage = t('team.employeeDialog.toasts.employeeAndAccessCreated');
+        authMessage = isNewEmployee
+          ? t('team.employeeDialog.toasts.employeeAndAccessCreatedWithEmail')
+          : t('team.employeeDialog.toasts.accessAccountCreatedWithEmail');
         console.log('[EmployeeDialog] Usuario Auth creado:', authUserId);
       }
-      // Para empleados EXISTENTES, solo actualizar si hay nueva contraseña
       else if (hasPassword) {
         if (!emailValue) {
           toast.error(t('team.employeeDialog.toasts.emailRequiredForAccess'));
@@ -228,55 +231,11 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
         }
 
         if (employeeToEdit?.user_id) {
-          // Ya tiene cuenta de auth -> actualizar credenciales
           const { error } = await supabase.functions.invoke('update-user', {
             body: { userId: employeeToEdit.user_id, password: data.password, email: emailValue }
           });
           if (error) throw error;
           authMessage = t('team.employeeDialog.toasts.credentialsUpdated');
-        } else {
-          // Empleado existente SIN cuenta de auth -> crear nueva
-          console.log('[EmployeeDialog] Creando cuenta Auth para empleado existente:', emailValue);
-          // Renombrar 'data' a 'newAuthData' para evitar conflicto con el argumento 'data' de la función
-          const { data: newAuthData, error } = await supabase.functions.invoke('create-user', {
-            body: { email: emailValue, password: data.password, name: data.name, agency_id: currentAgency?.id },
-          });
-
-          if (error) {
-            console.error('[EmployeeDialog] Error en create-user:', error);
-
-            // Intentar obtener más detalles del error
-            let errorMessage = t('team.employeeDialog.toasts.createAccessError');
-            if (error.message) {
-              errorMessage = error.message;
-            } else if (error.context) {
-              errorMessage = error.context.message || errorMessage;
-            }
-
-            // Si el error viene de la función, intentar parsear el body
-            if (error.context?.body) {
-              try {
-                const errorBody = typeof error.context.body === 'string'
-                  ? JSON.parse(error.context.body)
-                  : error.context.body;
-                if (errorBody.error) {
-                  errorMessage = errorBody.error;
-                }
-              } catch (e) {
-                // Ignorar error de parsing
-              }
-            }
-
-            throw new Error(errorMessage);
-          }
-
-          if (!newAuthData?.user?.id) {
-            console.error('[EmployeeDialog] No se recibió user.id. Respuesta completa:', newAuthData);
-            throw new Error('No se pudo crear la cuenta de acceso. La función no devolvió un ID de usuario.');
-          }
-
-          authUserId = newAuthData.user.id;
-          authMessage = t('team.employeeDialog.toasts.accessAccountCreated');
         }
       }
 
@@ -340,6 +299,7 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
 
   const isEditing = !!employeeToEdit;
   const hasAccess = isEditing && !!employeeToEdit.user_id;
+  const showPasswordField = hasAccess;
 
   return (
     <>
@@ -392,11 +352,13 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
                       ) : (
                         <>
                           <Key className="w-4 h-4 text-amber-600" />
-                          <span className="text-sm font-semibold text-amber-800">Configurar acceso (obligatorio)</span>
+                          <span className="text-sm font-semibold text-amber-800">
+                            {isEditing ? t('team.employeeDialog.configureAccess') : t('team.employeeDialog.configureAccessRequired')}
+                          </span>
                         </>
                       )}
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className={`grid gap-4 ${showPasswordField ? 'grid-cols-2' : 'grid-cols-1'}`}>
                       <FormField
                         control={form.control}
                         name="email"
@@ -417,35 +379,33 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
                           </FormItem>
                         )}
                       />
-                      <FormField
-                        control={form.control}
-                        name="password"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>
-                              {hasAccess ? 'Nueva contraseña' : 'Contraseña'}
-                              {!isEditing && <span className="text-red-500">*</span>}
-                            </FormLabel>
-                            <FormControl>
-                              <Input
-                                type="password"
-                                placeholder={hasAccess ? "Dejar vacío para no cambiar" : "Mínimo 6 caracteres"}
-                                autoComplete="new-password"
-                                {...field}
-                                className={!isEditing && (field.value || '').length < 8 ? 'border-amber-300' : ''}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                      {showPasswordField && (
+                        <FormField
+                          control={form.control}
+                          name="password"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>{t('team.employeeDialog.newPassword')}</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="password"
+                                  placeholder={t('team.employeeDialog.passwordPlaceholderNoChange')}
+                                  autoComplete="new-password"
+                                  {...field}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      )}
                     </div>
                     <p className={`text-xs ${isEditing ? 'text-slate-500' : 'text-amber-700'}`}>
                       {hasAccess
-                        ? "Deja la contraseña vacía si no quieres cambiarla."
+                        ? t('team.employeeDialog.passwordHintNoChange')
                         : isEditing
-                          ? "Este empleado no puede acceder al sistema. Introduce email y contraseña para habilitarlo."
-                          : "El email y la contraseña son obligatorios para que el empleado pueda acceder al sistema."}
+                          ? t('team.employeeDialog.passwordHintEnableAccessEmail')
+                          : t('team.employeeDialog.passwordHintInviteEmail')}
                     </p>
                   </div>
 

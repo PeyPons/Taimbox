@@ -1,5 +1,5 @@
 /**
- * Construye la URL de /reset-password a partir del action_link de Supabase Auth (recovery).
+ * Construye la URL de /reset-password a partir del hashed_token de Supabase Auth.
  * Misma lógica que request-password-reset para no duplicar parsing.
  */
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2"
@@ -10,6 +10,32 @@ export function getSiteUrl(): string {
 
 export function recoveryRedirectUrl(siteUrl: string): string {
   return `${siteUrl.replace(/\/$/, "")}/reset-password`
+}
+
+function buildResetPasswordUrl(
+  siteUrl: string,
+  tokenHash: string,
+  type: string,
+): string {
+  return `${siteUrl.replace(/\/$/, "")}/reset-password?token_hash=${encodeURIComponent(tokenHash)}&type=${encodeURIComponent(type)}`
+}
+
+/**
+ * Extrae token_hash y type del action_link como fallback si hashed_token no viene en properties.
+ */
+function parseActionLink(actionLink: string): { tokenHash: string | null; type: string } {
+  try {
+    const url = new URL(actionLink)
+    const tokenHash =
+      url.searchParams.get("token_hash") ||
+      url.searchParams.get("token") ||
+      url.hash?.match(/token_hash=([^&]+)/)?.[1] ||
+      url.hash?.match(/access_token=([^&]+)/)?.[1]
+    const type = url.searchParams.get("type") || "recovery"
+    return { tokenHash, type }
+  } catch {
+    return { tokenHash: null, type: "recovery" }
+  }
 }
 
 /**
@@ -35,29 +61,20 @@ export async function generatePasswordRecoveryUrl(
     return { resetUrl: null, error: linkError instanceof Error ? linkError : new Error(String(linkError)) }
   }
 
+  const hashedToken = linkData?.properties?.hashed_token
+  const verificationType = linkData?.properties?.verification_type || "recovery"
+
+  if (hashedToken) {
+    return { resetUrl: buildResetPasswordUrl(siteUrl, hashedToken, verificationType), error: null }
+  }
+
   const actionLink = linkData?.properties?.action_link || ""
-  let resetUrl = recoveryRedirectUrl(siteUrl)
-
   if (actionLink) {
-    try {
-      const url = new URL(actionLink)
-      const tokenHash =
-        url.searchParams.get("token_hash") || url.hash?.match(/token_hash=([^&]+)/)?.[1]
-      const type = url.searchParams.get("type") || "recovery"
-
-      if (tokenHash) {
-        resetUrl = `${siteUrl.replace(/\/$/, "")}/reset-password?token_hash=${encodeURIComponent(tokenHash)}&type=${encodeURIComponent(type)}`
-      } else {
-        const token =
-          url.searchParams.get("token") || url.hash?.match(/access_token=([^&]+)/)?.[1]
-        if (token) {
-          resetUrl = `${siteUrl.replace(/\/$/, "")}/reset-password?token_hash=${encodeURIComponent(token)}&type=recovery`
-        }
-      }
-    } catch {
-      // mantener resetUrl base
+    const parsed = parseActionLink(actionLink)
+    if (parsed.tokenHash) {
+      return { resetUrl: buildResetPasswordUrl(siteUrl, parsed.tokenHash, parsed.type), error: null }
     }
   }
 
-  return { resetUrl, error: null }
+  return { resetUrl: recoveryRedirectUrl(siteUrl), error: null }
 }

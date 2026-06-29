@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
@@ -8,57 +8,45 @@ import { toast } from "@/lib/notify";
 import { KeyRound, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import { useAppTranslation } from "@/hooks/useAppTranslation";
 
-type PageState = 'verifying' | 'form' | 'success' | 'error';
+type PageState = 'form' | 'success' | 'error';
+type OtpType = 'recovery' | 'invite';
+
+function parseOtpType(value: string | null): OtpType | null {
+    if (value === 'recovery' || value === 'invite') return value;
+    return null;
+}
 
 export default function ResetPasswordPage() {
     const { t } = useAppTranslation();
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
-    const [pageState, setPageState] = useState<PageState>('verifying');
+    const [pageState, setPageState] = useState<PageState>('form');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
 
+    const tokenHash = useMemo(
+        () => searchParams.get('token_hash') || searchParams.get('token'),
+        [searchParams],
+    );
+    const otpType = useMemo(() => parseOtpType(searchParams.get('type')), [searchParams]);
+
     useEffect(() => {
-        const verifyToken = async () => {
-            // Supabase (y/o el parser del action_link) puede exponer el valor bajo `token_hash` o bajo `token`.
-            // La UI de este proyecto llama a `verifyOtp` con `token_hash`, así que normalizamos aquí.
-            const tokenHash = searchParams.get('token_hash') || searchParams.get('token');
-            const type = searchParams.get('type') as 'recovery' | undefined;
-
-            if (!tokenHash || type !== 'recovery') {
-                setErrorMessage(t('auth.resetPassword.invalidLink'));
-                setPageState('error');
-                return;
-            }
-
-            try {
-                const { error } = await supabase.auth.verifyOtp({
-                    token_hash: tokenHash,
-                    type: 'recovery',
-                });
-
-                if (error) {
-                    console.error('Error verificando token:', error);
-                    setErrorMessage(t('auth.resetPassword.linkUsed'));
-                    setPageState('error');
-                    return;
-                }
-
-                setPageState('form');
-            } catch (err) {
-                console.error('Error inesperado:', err);
-                setErrorMessage(t('auth.resetPassword.verifyError'));
-                setPageState('error');
-            }
-        };
-
-        verifyToken();
-    }, [searchParams, t]);
+        if (!tokenHash || !otpType) {
+            setErrorMessage(t('auth.resetPassword.invalidLink'));
+            setPageState('error');
+        }
+    }, [tokenHash, otpType, t]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (!tokenHash || !otpType) {
+            setErrorMessage(t('auth.resetPassword.invalidLink'));
+            setPageState('error');
+            return;
+        }
 
         if (newPassword.length < 8) {
             toast.error(t('auth.resetPassword.passwordMinLength'));
@@ -73,6 +61,18 @@ export default function ResetPasswordPage() {
         setIsSubmitting(true);
 
         try {
+            const { error: verifyError } = await supabase.auth.verifyOtp({
+                token_hash: tokenHash,
+                type: otpType,
+            });
+
+            if (verifyError) {
+                console.error('Error verificando token:', verifyError);
+                setErrorMessage(t('auth.resetPassword.linkUsed'));
+                setPageState('error');
+                return;
+            }
+
             const { error } = await supabase.auth.updateUser({
                 password: newPassword,
             });
@@ -85,12 +85,10 @@ export default function ResetPasswordPage() {
 
             setPageState('success');
 
-            // Cerrar la sesión para que el usuario inicie sesión con la nueva contraseña
             await supabase.auth.signOut();
 
             toast.success(t('auth.resetPassword.successToast'));
 
-            // Redirigir al login después de 3 segundos
             setTimeout(() => {
                 navigate('/login', { replace: true });
             }, 3000);
@@ -112,27 +110,17 @@ export default function ResetPasswordPage() {
                         </div>
                     </div>
                     <CardTitle className="text-2xl text-center font-bold text-slate-900">
-                        {pageState === 'verifying' && t('auth.resetPassword.verifyingTitle')}
                         {pageState === 'form' && t('auth.resetPassword.formTitle')}
                         {pageState === 'success' && t('auth.resetPassword.successTitle')}
                         {pageState === 'error' && t('auth.resetPassword.errorTitle')}
                     </CardTitle>
                     <CardDescription className="text-center text-slate-500">
-                        {pageState === 'verifying' && t('auth.resetPassword.verifyingDesc')}
                         {pageState === 'form' && t('auth.resetPassword.formDesc')}
                         {pageState === 'success' && t('auth.resetPassword.successDesc')}
                         {pageState === 'error' && errorMessage}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    {/* Verificando */}
-                    {pageState === 'verifying' && (
-                        <div className="flex justify-center py-8">
-                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                        </div>
-                    )}
-
-                    {/* Formulario */}
                     {pageState === 'form' && (
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div className="space-y-2">
@@ -146,7 +134,7 @@ export default function ResetPasswordPage() {
                                     onChange={(e) => setNewPassword(e.target.value)}
                                     className="bg-slate-50 border-slate-200 focus:border-indigo-500"
                                     required
-                                    minLength={6}
+                                    minLength={8}
                                     autoFocus
                                 />
                             </div>
@@ -161,7 +149,7 @@ export default function ResetPasswordPage() {
                                     onChange={(e) => setConfirmPassword(e.target.value)}
                                     className="bg-slate-50 border-slate-200 focus:border-indigo-500"
                                     required
-                                    minLength={6}
+                                    minLength={8}
                                 />
                             </div>
                             <Button
@@ -181,7 +169,6 @@ export default function ResetPasswordPage() {
                         </form>
                     )}
 
-                    {/* Éxito */}
                     {pageState === 'success' && (
                         <div className="flex flex-col items-center gap-4 py-6">
                             <div className="h-16 w-16 rounded-full bg-green-100 flex items-center justify-center">
@@ -200,7 +187,6 @@ export default function ResetPasswordPage() {
                         </div>
                     )}
 
-                    {/* Error */}
                     {pageState === 'error' && (
                         <div className="flex flex-col items-center gap-4 py-6">
                             <div className="h-16 w-16 rounded-full bg-red-100 flex items-center justify-center">

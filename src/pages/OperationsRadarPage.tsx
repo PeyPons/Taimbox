@@ -115,6 +115,8 @@ export default function OperationsRadarPage() {
         employees,
         allocations,
         projects,
+        deadlines,
+        hoursTrackingPreference: currentAgency?.settings?.hoursTrackingPreference ?? null,
     });
 
     const [statusFilter, setStatusFilter] = useState<OperationsRadarStatusFilter>('all');

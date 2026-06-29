@@ -959,6 +959,7 @@ export default function DataExportHubPage() {
                   employees: employees ?? [],
                   allocations: allocations ?? [],
                   projects,
+                  deadlines: dl,
                   hoursTrackingPreference: currentAgency?.settings?.hoursTrackingPreference ?? null,
                 });
               },
