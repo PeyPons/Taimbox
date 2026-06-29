@@ -253,7 +253,14 @@ export default function MetaAdsPage() {
         const entry = stats.get(groupKey)!;
         entry.spent += Number(row.cost || 0); entry.total_conversions_val += Number(row.conversions_value || 0);
         if (!entry.realIds.includes(finalId)) { entry.realIds.push(finalId); entry.realIdsNames.push({ id: finalId, name: finalName }); if (!entry.is_group && isIndividualManual) entry.budget = settings.budget; }
-        if (Number(row.cost) > 0 || Number(row.impressions) > 0) { entry.campaigns.push({ ...row, original_client_name: finalName, original_client_id: finalId, cost: Number(row.cost), conversions_value: Number(row.conversions_value), conversions: Number(row.conversions), clicks: Number(row.clicks), impressions: Number(row.impressions) }); }
+        if (
+          Number(row.cost) > 0
+          || Number(row.impressions) > 0
+          || row.status === 'ACTIVE'
+          || row.status === 'PAUSED'
+        ) {
+          entry.campaigns.push({ ...row, original_client_name: finalName, original_client_id: finalId, cost: Number(row.cost), conversions_value: Number(row.conversions_value), conversions: Number(row.conversions), clicks: Number(row.clicks), impressions: Number(row.impressions) });
+        }
       }
     });
 
@@ -276,7 +283,11 @@ export default function MetaAdsPage() {
     });
     let filtered = report;
     if (!showHidden) filtered = filtered.filter(c => !c.isHidden);
-    if (!showZeroSpend) filtered = filtered.filter(c => c.spent > 0);
+    if (!showZeroSpend) {
+      filtered = filtered.filter(c =>
+        c.spent > 0 || c.campaigns.some(camp => camp.status === 'ACTIVE' || camp.status === 'PAUSED')
+      );
+    }
     if (searchTerm) { const lower = searchTerm.toLowerCase(); filtered = filtered.filter(c => c.client_name.toLowerCase().includes(lower) || c.campaigns.some(camp => camp.campaign_name.toLowerCase().includes(lower))); }
     return filtered.sort((a, b) => b.spent - a.spent);
   }, [rawData, clientSettings, registeredAccounts, searchTerm, showHidden, showZeroSpend, segmentationRules, now, currentDay, daysInMonth, daysRemaining]);

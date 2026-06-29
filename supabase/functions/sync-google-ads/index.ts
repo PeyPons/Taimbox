@@ -225,13 +225,111 @@ Deno.serve(async (req) => {
         }
 
         // --- FETCH CAMPAIGNS ---
-        async function fetchCampaigns(accessToken, customerId, clientSecret, clientId, developerToken, refreshToken, mccId) {
-            const dateRange = getDateRange();
+        type GoogleCampaignRow = {
+            client_id: string;
+            campaign_id: string;
+            campaign_name: string;
+            status: string;
+            date: string;
+            cost: number;
+            daily_budget: number;
+            budget_id: string;
+            conversions_value: number;
+            conversions: number;
+            clicks: number;
+            impressions: number;
+        };
+
+        async function runGoogleAdsQuery(
+            accessToken: string,
+            customerId: string,
+            developerToken: string,
+            mccId: string,
+            query: string,
+        ): Promise<any[]> {
+            const url = `https://googleads.googleapis.com/${API_VERSION}/customers/${customerId}/googleAds:searchStream`;
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'developer-token': developerToken,
+                    'Content-Type': 'application/json',
+                    'login-customer-id': mccId,
+                },
+                body: JSON.stringify({ query }),
+            });
+
+            const results: any[] = [];
+            if (!response.ok) return results;
+
+            const data = await response.json();
+            const processBatch = (batch: any) => {
+                if (!batch?.results) return;
+                batch.results.forEach((row: any) => results.push(row));
+            };
+            if (Array.isArray(data)) data.forEach(processBatch);
+            else if (data && typeof data === 'object') processBatch(data);
+            return results;
+        }
+
+        async function fetchCampaignCatalog(
+            accessToken: string,
+            customerId: string,
+            developerToken: string,
+            mccId: string,
+            dateRange: { firstDay: string },
+        ): Promise<Map<string, GoogleCampaignRow>> {
             const query = `
-                SELECT 
-                  campaign.id, 
-                  campaign.name, 
-                  campaign.status, 
+                SELECT
+                  campaign.id,
+                  campaign.name,
+                  campaign.status,
+                  campaign_budget.id,
+                  campaign_budget.amount_micros
+                FROM campaign
+                WHERE campaign.status IN ('ENABLED', 'PAUSED')`;
+
+            const rows = await runGoogleAdsQuery(accessToken, customerId, developerToken, mccId, query);
+            const catalog = new Map<string, GoogleCampaignRow>();
+
+            for (const row of rows) {
+                const campaignId = String(row.campaign?.id ?? '');
+                if (!campaignId) continue;
+
+                const budgetMicros = row.campaignBudget?.amountMicros ?? row.campaign_budget?.amount_micros ?? '0';
+                const budgetRaw = extractCampaignBudgetRaw(row);
+
+                catalog.set(campaignId, {
+                    client_id: customerId,
+                    campaign_id: campaignId,
+                    campaign_name: row.campaign?.name ?? '',
+                    status: row.campaign?.status ?? '',
+                    date: dateRange.firstDay,
+                    cost: 0,
+                    daily_budget: Number(budgetMicros) / 1000000,
+                    budget_id: parseBudgetId(budgetRaw),
+                    conversions_value: 0,
+                    conversions: 0,
+                    clicks: 0,
+                    impressions: 0,
+                });
+            }
+
+            return catalog;
+        }
+
+        async function fetchCampaignMetrics(
+            accessToken: string,
+            customerId: string,
+            developerToken: string,
+            mccId: string,
+            dateRange: { firstDay: string; today: string },
+        ): Promise<Map<string, Omit<GoogleCampaignRow, 'daily_budget' | 'budget_id' | 'campaign_name' | 'status'>>> {
+            const query = `
+                SELECT
+                  campaign.id,
+                  campaign.name,
+                  campaign.status,
                   campaign_budget.id,
                   campaign_budget.amount_micros,
                   metrics.cost_micros,
@@ -240,74 +338,75 @@ Deno.serve(async (req) => {
                   metrics.clicks,
                   metrics.impressions,
                   segments.date
-                FROM campaign 
-                WHERE 
+                FROM campaign
+                WHERE
                   segments.date BETWEEN '${dateRange.firstDay}' AND '${dateRange.today}'`;
 
-            const url = `https://googleads.googleapis.com/${API_VERSION}/customers/${customerId}/googleAds:searchStream`;
+            const rows = await runGoogleAdsQuery(accessToken, customerId, developerToken, mccId, query);
+            const metrics = new Map<string, GoogleCampaignRow>();
 
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${accessToken}`,
-                    'developer-token': developerToken,
-                    'Content-Type': 'application/json',
-                    'login-customer-id': mccId
-                },
-                body: JSON.stringify({ query }),
-            });
+            for (const row of rows) {
+                const rawCostMicros = row.metrics?.costMicros ?? row.metrics?.cost_micros ?? 0;
+                const costDollars = Number(rawCostMicros) / 1000000;
+                const campaignId = String(row.campaign?.id ?? '');
+                if (!campaignId) continue;
 
-            const aggregator = new Map();
-
-            if (response.ok) {
-                const data = await response.json();
-                const processBatch = (batch: any) => {
-                    if (!batch?.results) return;
-                    batch.results.forEach((row: any) => {
-                        const rawCostMicros = row.metrics?.costMicros ?? row.metrics?.cost_micros ?? 0;
-                        const costDollars = Number(rawCostMicros) / 1000000;
-                        const campaignId = String(row.campaign?.id ?? row.campaign?.id ?? '');
-                        const campaignName = row.campaign?.name ?? '';
-                        const campaignStatus = row.campaign?.status ?? '';
-
-                        const key = campaignId;
-                        if (!key) return;
-
-                        if (!aggregator.has(key)) {
-                            const budgetMicros = row.campaignBudget?.amountMicros ?? row.campaign_budget?.amount_micros ?? '0';
-                            const dailyBudget = Number(budgetMicros) / 1000000;
-                            const budgetRaw = extractCampaignBudgetRaw(row);
-                            aggregator.set(key, {
-                                client_id: customerId,
-                                campaign_id: campaignId,
-                                campaign_name: campaignName,
-                                status: campaignStatus,
-                                date: dateRange.firstDay,
-                                cost: 0,
-                                daily_budget: dailyBudget,
-                                budget_id: parseBudgetId(budgetRaw),
-                                conversions_value: 0,
-                                conversions: 0,
-                                clicks: 0,
-                                impressions: 0
-                            });
-                        }
-                        const entry = aggregator.get(key);
-                        entry.cost += costDollars;
-                        entry.conversions_value += parseFloat(String(row.metrics?.conversionsValue ?? row.metrics?.conversions_value ?? 0));
-                        entry.conversions += parseFloat(String(row.metrics?.conversions ?? 0));
-                        entry.clicks += parseInt(String(row.metrics?.clicks ?? 0), 10);
-                        entry.impressions += parseInt(String(row.metrics?.impressions ?? 0), 10);
+                if (!metrics.has(campaignId)) {
+                    metrics.set(campaignId, {
+                        client_id: customerId,
+                        campaign_id: campaignId,
+                        campaign_name: row.campaign?.name ?? '',
+                        status: row.campaign?.status ?? '',
+                        date: dateRange.firstDay,
+                        cost: 0,
+                        daily_budget: 0,
+                        budget_id: '',
+                        conversions_value: 0,
+                        conversions: 0,
+                        clicks: 0,
+                        impressions: 0,
                     });
-                };
-                if (Array.isArray(data)) data.forEach(processBatch);
-                else if (data && typeof data === 'object') processBatch(data);
-            } else {
-                const errorText = await response.text();
-                // await log(`⚠️ Aviso cuenta ${customerId}: ${response.status} - ${errorText.substring(0, 100)}...`);
+                }
+
+                const entry = metrics.get(campaignId)!;
+                entry.cost += costDollars;
+                entry.conversions_value += parseFloat(String(row.metrics?.conversionsValue ?? row.metrics?.conversions_value ?? 0));
+                entry.conversions += parseFloat(String(row.metrics?.conversions ?? 0));
+                entry.clicks += parseInt(String(row.metrics?.clicks ?? 0), 10);
+                entry.impressions += parseInt(String(row.metrics?.impressions ?? 0), 10);
             }
 
-            return Array.from(aggregator.values());
+            return metrics;
+        }
+
+        async function fetchCampaigns(accessToken, customerId, clientSecret, clientId, developerToken, refreshToken, mccId) {
+            const dateRange = getDateRange();
+            const catalog = await fetchCampaignCatalog(accessToken, customerId, developerToken, mccId, dateRange);
+            const metrics = await fetchCampaignMetrics(accessToken, customerId, developerToken, mccId, dateRange);
+
+            const merged = new Map<string, GoogleCampaignRow>(catalog);
+
+            for (const [campaignId, metricRow] of metrics) {
+                const existing = merged.get(campaignId);
+                if (existing) {
+                    existing.cost = metricRow.cost;
+                    existing.conversions_value = metricRow.conversions_value;
+                    existing.conversions = metricRow.conversions;
+                    existing.clicks = metricRow.clicks;
+                    existing.impressions = metricRow.impressions;
+                    if (metricRow.campaign_name) existing.campaign_name = metricRow.campaign_name;
+                    if (metricRow.status) existing.status = metricRow.status;
+                } else {
+                    const budgetMicros = 0;
+                    merged.set(campaignId, {
+                        ...metricRow,
+                        daily_budget: budgetMicros,
+                        budget_id: '',
+                    });
+                }
+            }
+
+            return Array.from(merged.values());
         }
 
         // --- REFRESH TOKEN ---
