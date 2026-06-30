@@ -1220,6 +1220,8 @@
     "noProjectsFound": "No se encontraron proyectos.",
     "noEmployeesFound": "No se encontraron empleados.",
     "weeklyOnlyToggle": "Solo cierre semanal",
+    "weeklyOnlyEmptyHint": "Hay actividad en el mes, pero ninguna raíz con cierre semanal. Desactiva «Solo cierre semanal» para ver todo el historial.",
+    "logsTruncatedHint": "Se ha alcanzado el límite de eventos cargados para este mes. Puede que falten tareas antiguas en el historial; prueba a filtrar por proyecto o empleado.",
     "redistributeCardTitle": "Redistribución de horas",
     "redistributeCardDesc": "Selecciona un proyecto y redistribuye horas entre compañeros",
     "projectLabel": "Proyecto",

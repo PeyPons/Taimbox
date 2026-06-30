@@ -34,8 +34,10 @@ import {
     Plus, Pencil, Trash2, Clock, RefreshCw, ChevronDown, ChevronRight,
     Activity, FolderOpen, User, ArrowRight, GitBranch, CheckCircle2, CornerDownRight, Check, Search, CalendarSync
 } from 'lucide-react';
-import { format, formatDistanceToNow, parseISO, startOfMonth } from 'date-fns';
+import { format, formatDistanceToNow, parseISO, startOfMonth, addMonths } from 'date-fns';
 import { filterEmployeesForOperationalMonthDate } from '@/utils/employeeAssignmentVisibility';
+import { resolveProjectsForDepartmentView } from '@/utils/departmentViewFilters';
+import { isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { useDateLocale } from '@/hooks/useDateLocale';
 import { cn } from '@/lib/utils';
 
@@ -88,6 +90,28 @@ interface ActivityLogSectionProps {
     maxItems?: number;
 }
 
+const ALLOCATION_LOG_CHUNK = 80;
+
+function chunkArray<T>(items: T[], size: number): T[][] {
+    const chunks: T[][] = [];
+    for (let i = 0; i < items.length; i += size) {
+        chunks.push(items.slice(i, i + size));
+    }
+    return chunks;
+}
+
+function mergeAuditLogsById(...lists: AuditLog[][]): AuditLog[] {
+    const byId = new Map<string, AuditLog>();
+    for (const list of lists) {
+        for (const row of list) {
+            byId.set(row.id, row);
+        }
+    }
+    return Array.from(byId.values()).sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+    );
+}
+
 function isStructuredLineageChild(
     childId: string,
     parentId: string,
@@ -132,7 +156,7 @@ function nodeMatchesSearchQuery(
     return node.children.some(c => nodeMatchesSearchQuery(c, q, formatProjectName, allocations));
 }
 
-export function ActivityLogSection({ currentMonth, maxItems = 200 }: ActivityLogSectionProps) {
+export function ActivityLogSection({ currentMonth, maxItems = 1000 }: ActivityLogSectionProps) {
     const { employees, projects, clients, allocations } = useApp();
     const { currentAgency } = useAgency();
     const { selectedDepartmentId } = useDepartmentView();
@@ -143,11 +167,33 @@ export function ActivityLogSection({ currentMonth, maxItems = 200 }: ActivityLog
         if (!dept) return employees ?? [];
         return (employees ?? []).filter(e => employeeBelongsToDepartment(e.department, dept.id, dept.name));
     }, [employees, selectedDepartmentId, departments]);
-    const filteredProjectsForView = useMemo(() => {
-        if (!selectedDepartmentId || !(projects ?? []).length) return projects ?? [];
-        return (projects ?? []).filter(p => p.responsibleDepartmentId === selectedDepartmentId);
-    }, [projects, selectedDepartmentId]);
+    const viewMonth = currentMonth ?? startOfMonth(new Date());
+    const filteredProjectsForView = useMemo(
+        () =>
+            resolveProjectsForDepartmentView(
+                projects ?? [],
+                selectedDepartmentId,
+                employeesForView,
+                allocations ?? [],
+                viewMonth,
+            ),
+        [projects, selectedDepartmentId, employeesForView, allocations, viewMonth],
+    );
+    const monthAllocationIds = useMemo(() => {
+        if (!currentMonth) return [] as string[];
+        const ids = new Set<string>();
+        for (const alloc of allocations ?? []) {
+            if (!isAllocationInEffectiveMonth(alloc.weekStartDate, currentMonth)) continue;
+            ids.add(alloc.id);
+            if (alloc.parentAllocationId) ids.add(alloc.parentAllocationId);
+            if (alloc.distributionSourceAllocationId) ids.add(alloc.distributionSourceAllocationId);
+            if (alloc.transferredFromAllocationId) ids.add(alloc.transferredFromAllocationId);
+        }
+        return Array.from(ids);
+    }, [allocations, currentMonth]);
+
     const [logs, setLogs] = useState<AuditLog[]>([]);
+    const [logsTruncated, setLogsTruncated] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [filterEmployee, setFilterEmployee] = useState<string>('all');
@@ -198,35 +244,63 @@ export function ActivityLogSection({ currentMonth, maxItems = 200 }: ActivityLog
             if (!currentAgency?.id) return;
             setIsLoading(true);
             setError(null);
+            setLogsTruncated(false);
 
             try {
-                let query = supabase
-                    .from('audit_logs')
-                    .select('*')
-                    .eq('agency_id', currentAgency.id)
-                    .eq('resource', 'ALLOCATION')
-                    .order('created_at', { ascending: false })
-                    .limit(maxItems);
-
+                let monthLogs: AuditLog[] = [];
                 if (currentMonth) {
-                    const monthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
-                    const monthEnd = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
-                    query = query
+                    const monthStart = startOfMonth(currentMonth);
+                    const monthEndExclusive = startOfMonth(addMonths(currentMonth, 1));
+                    const { data, error: fetchError } = await supabase
+                        .from('audit_logs')
+                        .select('*')
+                        .eq('agency_id', currentAgency.id)
+                        .eq('resource', 'ALLOCATION')
                         .gte('created_at', monthStart.toISOString())
-                        .lte('created_at', monthEnd.toISOString());
+                        .lt('created_at', monthEndExclusive.toISOString())
+                        .order('created_at', { ascending: false })
+                        .limit(maxItems);
+                    if (fetchError) throw fetchError;
+                    monthLogs = (data || []) as AuditLog[];
+                    if (monthLogs.length >= maxItems) setLogsTruncated(true);
+                } else {
+                    const { data, error: fetchError } = await supabase
+                        .from('audit_logs')
+                        .select('*')
+                        .eq('agency_id', currentAgency.id)
+                        .eq('resource', 'ALLOCATION')
+                        .order('created_at', { ascending: false })
+                        .limit(maxItems);
+                    if (fetchError) throw fetchError;
+                    monthLogs = (data || []) as AuditLog[];
+                    if (monthLogs.length >= maxItems) setLogsTruncated(true);
                 }
 
-                const { data, error: fetchError } = await query;
-                if (fetchError) throw fetchError;
-                setLogs(data || []);
-            } catch (err: any) {
+                let lineageLogs: AuditLog[] = [];
+                if (currentMonth && monthAllocationIds.length > 0) {
+                    for (const chunk of chunkArray(monthAllocationIds, ALLOCATION_LOG_CHUNK)) {
+                        const { data, error: lineageError } = await supabase
+                            .from('audit_logs')
+                            .select('*')
+                            .eq('agency_id', currentAgency.id)
+                            .eq('resource', 'ALLOCATION')
+                            .in('resource_id', chunk)
+                            .order('created_at', { ascending: false })
+                            .limit(400);
+                        if (lineageError) throw lineageError;
+                        if (data) lineageLogs.push(...(data as AuditLog[]));
+                    }
+                }
+
+                setLogs(mergeAuditLogsById(monthLogs, lineageLogs));
+            } catch {
                 setError(t('activityLog.loadError'));
             } finally {
                 setIsLoading(false);
             }
         }
-        fetchLogs();
-    }, [currentAgency?.id, currentMonth, maxItems, t]);
+        void fetchLogs();
+    }, [currentAgency?.id, currentMonth, maxItems, monthAllocationIds, t]);
 
     // --- Recursive Tree Building ---
     const rootNodes = useMemo(() => {
@@ -1020,6 +1094,11 @@ export function ActivityLogSection({ currentMonth, maxItems = 200 }: ActivityLog
                                 {t('weeklyForecast.weeklyOnlyToggle', 'Solo cierre semanal')}
                             </Button>
                         </div>
+                        {logsTruncated && (
+                            <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                                {t('weeklyForecast.logsTruncatedHint')}
+                            </p>
+                        )}
                     </div>
                 </div>
             </CardHeader>
@@ -1032,6 +1111,11 @@ export function ActivityLogSection({ currentMonth, maxItems = 200 }: ActivityLog
                     <div className="text-center py-6 text-slate-500 text-sm">
                         <Clock className="h-6 w-6 mx-auto mb-1.5 opacity-50" />
                         <p>{t('activityLog.noChanges')}</p>
+                        {filterWeeklyOnly && rootNodes.length > 0 && (
+                            <p className="text-xs text-slate-400 mt-2 max-w-sm mx-auto">
+                                {t('weeklyForecast.weeklyOnlyEmptyHint')}
+                            </p>
+                        )}
                     </div>
                 ) : (
                     <ScrollArea className="h-[500px] pr-2">
