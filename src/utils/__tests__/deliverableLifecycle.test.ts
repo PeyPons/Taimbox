@@ -126,7 +126,7 @@ describe('computeDeliverableLifecycle', () => {
             costMode: 'standard',
             today: new Date('2026-01-16'),
         });
-        expect(['on-track', 'at-risk']).toContain(r.status);
+        expect(r.status).toBe('on-track');
         if (r.finance.revenueAccrued > 0 && r.finance.marginPct != null) {
             const expectedPct = (1 - r.finance.costToDate / r.finance.revenueAccrued) * 100;
             expect(Math.abs(r.finance.marginPct - expectedPct)).toBeLessThan(1);
@@ -152,7 +152,7 @@ describe('computeDeliverableLifecycle', () => {
         expect(r.status).toBe('over-budget');
     });
 
-    it('6. proyección overshoot → over-budget', () => {
+    it('6. proyección elevada sin superar techo → on-track (ritmo no es veredicto)', () => {
         const r = computeDeliverableLifecycle({
             project: baseProject({
                 budgetHours: 100,
@@ -174,7 +174,80 @@ describe('computeDeliverableLifecycle', () => {
         });
         expect(r.pacing.daysElapsed).toBeGreaterThan(0);
         expect(r.pacing.projectedAtDueDate).toBeGreaterThan(100 * 1.1 - 0.01);
-        expect(r.status).toBe('over-budget');
+        expect(r.hours.computed).toBeLessThanOrEqual(100);
+        expect(r.status).toBe('on-track');
+    });
+
+    it('6b. Oasis-like: mitad de fase, 62% techo → on-track', () => {
+        const r = computeDeliverableLifecycle({
+            project: baseProject({
+                budgetHours: 30,
+                deliverableStartDate: '2026-05-20',
+                deliverableDueDate: '2026-08-11',
+            }),
+            allocations: [
+                alloc({
+                    hoursComputed: 18.53,
+                    hoursActual: 18.53,
+                    hoursAssigned: 18.53,
+                    weekStartDate: '2026-06-23',
+                }),
+            ],
+            employees: [employee()],
+            hoursPreference: 'computed',
+            costMode: 'standard',
+            today: new Date('2026-06-30'),
+        });
+        expect(r.pacing.daysRemaining).toBeGreaterThan(30);
+        expect(r.status).toBe('on-track');
+    });
+
+    it('6c. >90% techo con >15% plazo restante → at-risk', () => {
+        const r = computeDeliverableLifecycle({
+            project: baseProject({
+                budgetHours: 100,
+                deliverableStartDate: '2026-01-01',
+                deliverableDueDate: '2026-06-30',
+            }),
+            allocations: [
+                alloc({
+                    hoursComputed: 92,
+                    hoursActual: 92,
+                    hoursAssigned: 92,
+                    weekStartDate: '2026-01-06',
+                }),
+            ],
+            employees: [employee()],
+            hoursPreference: 'computed',
+            costMode: 'standard',
+            today: new Date('2026-02-15'),
+        });
+        expect(r.hours.computed).toBeLessThanOrEqual(100);
+        expect(r.status).toBe('at-risk');
+    });
+
+    it('6d. <14 días y >95% techo → at-risk', () => {
+        const r = computeDeliverableLifecycle({
+            project: baseProject({
+                budgetHours: 100,
+                deliverableStartDate: '2026-01-01',
+                deliverableDueDate: '2026-01-31',
+            }),
+            allocations: [
+                alloc({
+                    hoursComputed: 96,
+                    hoursActual: 96,
+                    hoursAssigned: 96,
+                    weekStartDate: '2026-01-06',
+                }),
+            ],
+            employees: [employee()],
+            hoursPreference: 'computed',
+            costMode: 'standard',
+            today: new Date('2026-01-25'),
+        });
+        expect(r.pacing.daysRemaining).toBeLessThanOrEqual(14);
+        expect(r.status).toBe('at-risk');
     });
 
     it('7. pre-start → revenueAccrued 0', () => {

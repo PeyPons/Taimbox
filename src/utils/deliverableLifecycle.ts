@@ -191,18 +191,32 @@ function resolveLifecycleStatus(args: {
     const d0 = startOfDay(phase.due);
     if (t0 < s0) return 'pre-start';
     if (t0 > d0) return 'completed';
+
     const budget = hours.budget;
     if (budget <= 0) {
         if (hours.computed > 0) return 'over-budget';
         return 'on-track';
     }
-    if (hours.computed > budget || pacing.projectedAtDueDate > budget * 1.1) {
+
+    // Exceso real: horas consumidas por encima del techo de la fase.
+    if (hours.computed > budget) {
         return 'over-budget';
     }
-    // At-risk: sobreconsumo >10 % del techo (no penaliza ir por debajo del ritmo esperado)
-    if (pacing.deltaHours > budget * 0.1 || pacing.projectedAtDueDate > budget * 1.05) {
+
+    const totalDays = phase.totalDays;
+    const pctTimeRemaining = totalDays > 0 ? pacing.daysRemaining / totalDays : 0;
+    const pctBudgetConsumed = hours.computed / budget;
+
+    // En riesgo conservador: poco margen de horas con mucho plazo, o plazo muy corto casi al techo.
+    const nearCeilingWithTimeLeft =
+        pctBudgetConsumed > 0.9 && pctTimeRemaining > 0.15;
+    const urgentDeadlineNearCeiling =
+        pacing.daysRemaining <= 14 && pctBudgetConsumed > 0.95;
+
+    if (nearCeilingWithTimeLeft || urgentDeadlineNearCeiling) {
         return 'at-risk';
     }
+
     return 'on-track';
 }
 

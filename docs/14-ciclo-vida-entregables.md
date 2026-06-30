@@ -14,7 +14,7 @@
 - **Coste**: modo estándar (`getRowCost` / coste hora operativo) o dinámico (nómina prorrateada por horas del empleado **en esta fase**, no en el mes).
 - **Ingreso devengado**: `contractFee × (daysElapsed / totalDays)` con días de **calendario** en la fase (alineado con `getEffectiveMonthlyFee`).
 - **Margen**: `revenueAccrued − costToDate`; si no hay importe de contrato resuelto, margen en `null` (UI muestra «—»).
-- **Estados**: `pre-start`, `on-track`, `at-risk` (sobreconsumo o proyección elevada), `over-budget`, `completed`, `no-phase`.
+- **Estados**: `pre-start`, `on-track`, `at-risk` (poco margen de horas con plazo largo, o plazo corto casi al techo), `over-budget` (horas reales > techo), `completed`, `no-phase`. El ritmo lineal tiempo↔horas (`deltaHours`, `projectedAtDueDate`) se calcula como **información**; ya no dispara rojo/ámbar por proyección.
 
 ## Días naturales vs días laborables
 
@@ -25,9 +25,9 @@ Es una **asimetría intencional** ya presente en el sistema; este módulo no la 
 
 ## Mes mensual «en regla» vs vida «over-budget»
 
-El radar y la coherencia del mes usan el **presupuesto/riesgo del mes**. Un entregable puede ir **en regla en el mes visible** (prorrateo mensual) y a la vez **over-budget en vida** si el consumo acumulado en la fase supera el techo global o la proyección a fin de fase supera el umbral.
+El radar y la coherencia del mes usan el **presupuesto/riesgo del mes**. Un entregable puede ir **en regla en el mes visible** (prorrateo mensual) y a la vez **over-budget en vida** si el consumo acumulado en la fase supera el techo global de horas.
 
-*Ejemplo:* fase de 6 meses, `budgetHours = 120`. En el mes 4, el prorrateo mensual deja margen aparente en el KPI del mes, pero ya se llevan 100 h consumidas en la fase y la proyección lineal supera 120 h → la vista de vida marca riesgo aunque el bucket mensual siga «en regla».
+*Ejemplo:* fase de 6 meses, `budgetHours = 120`. En el mes 4 el prorrateo mensual deja margen aparente en el KPI del mes, pero ya se llevan 125 h consumidas en la fase → la vista de vida marca **exceso horas** aunque el bucket mensual siga «en regla».
 
 ## Seguimiento operativo
 

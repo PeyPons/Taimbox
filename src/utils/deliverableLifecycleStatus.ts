@@ -15,7 +15,7 @@ export function getLifecycleStatusClasses(status: DeliverableLifecycleStatus): {
         case 'at-risk':
             return { dot: 'bg-amber-500', text: 'text-amber-700', label: 'En riesgo' };
         case 'over-budget':
-            return { dot: 'bg-red-500', text: 'text-red-700', label: 'Pasado' };
+            return { dot: 'bg-red-500', text: 'text-red-700', label: 'Exceso horas' };
         case 'completed':
             return { dot: 'bg-blue-500', text: 'text-blue-700', label: 'Cerrado' };
         default:

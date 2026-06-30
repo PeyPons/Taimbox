@@ -41,7 +41,8 @@ function compactContent(data: DeliverableLifecycle): { dot: string; text: string
         return { dot: cls.dot, text: `${hours.computed} / ${b} h · +${over} h` };
     }
     if (status === 'at-risk') {
-        return { dot: cls.dot, text: `${hours.computed} / ${b} h · proy. ${roundDisplay(pacing.projectedAtDueDate)} h` };
+        const pct = b > 0 ? Math.round((hours.computed / b) * 100) : 0;
+        return { dot: cls.dot, text: `${hours.computed} / ${b} h · ${pct}% · margen bajo` };
     }
     const pct = b > 0 ? Math.round((hours.computed / b) * 100) : 0;
     return { dot: cls.dot, text: `${hours.computed} / ${b} h · ${pct}%` };
