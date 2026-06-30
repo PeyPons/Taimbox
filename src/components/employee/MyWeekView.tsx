@@ -1,80 +1,38 @@
-import { useMemo, useState, memo, useEffect } from 'react';
+import { useMemo, useState, memo, useEffect, useCallback } from 'react';
 import { useAppOrDemo } from '@/hooks/useAppOrDemo';
 import { useAgency } from '@/contexts/AgencyContext';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { format } from 'date-fns';
 import { AppTrans, useAppTranslation } from '@/hooks/useAppTranslation';
 import { useDateLocale } from '@/hooks/useDateLocale';
 import {
-  Sparkles, Target,
-  CheckCircle2, Clock, Filter, Check, ChevronDown, Search
+  Sparkles,
+  CheckCircle2, Clock, Filter, Check, ChevronDown, Search, Pencil, ListTodo, ChevronRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
-import { Deadline } from '@/types';
+import { Allocation, Deadline, AgencySettings } from '@/types';
 import { fetchDeadlinesForMonth } from '@/utils/deadlineUtils';
 import { getEffectiveCompletedHours, getPlanningDeltaHours } from '@/utils/hoursTracking';
-import { isAllocationInEffectiveMonth } from '@/utils/dateUtils';
+import { formatTaskWeekCalendarSpan, isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { SensitiveText } from '@/components/privacy/SensitiveText';
+import { CoherenceAllocationEditDialog } from '@/components/employee/CoherenceAllocationEditDialog';
 
 interface MyWeekViewProps {
   employeeId: string;
   viewDate: Date;
 }
 
+type TaskStatusFilter = 'all' | 'pending' | 'completed';
+
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
-
-const clampPct = (n: number) => Math.max(0, Math.min(100, n));
-
-type UtilTone = 'muted' | 'ok' | 'warn' | 'over';
-
-function utilizationTone(planned: number, spent: number): UtilTone {
-  if (planned <= 0) return spent > 0 ? 'ok' : 'muted';
-  const ratio = spent / planned;
-  if (ratio > 1) return 'over';
-  if (ratio >= 0.85) return 'warn';
-  if (spent <= 0) return 'muted';
-  return 'ok';
-}
-
-function projectConsumptionTone(pctUsed: number): UtilTone {
-  if (pctUsed > 100) return 'over';
-  if (pctUsed >= 85) return 'warn';
-  return 'ok';
-}
-
-function utilizationPercentage(planned: number, spent: number): number {
-  if (planned <= 0) return spent > 0 ? 100 : 0;
-  return round2((spent / planned) * 100);
-}
-
-const MEMBER_TONE_BADGE: Record<UtilTone, string> = {
-  muted: 'bg-slate-100 text-slate-600 border-slate-200',
-  ok: 'bg-emerald-50 text-emerald-800 border-emerald-200',
-  warn: 'bg-amber-50 text-amber-900 border-amber-200',
-  over: 'bg-red-50 text-red-800 border-red-200'
-};
-
-const MEMBER_TONE_BAR: Record<UtilTone, string> = {
-  muted: 'bg-slate-200',
-  ok: 'bg-emerald-600',
-  warn: 'bg-amber-500',
-  over: 'bg-red-600'
-};
-
-const PROJECT_BADGE: Record<UtilTone, string> = {
-  muted: 'bg-slate-50 text-slate-600 border-slate-200',
-  ok: 'bg-emerald-50 text-emerald-800 border-emerald-200',
-  warn: 'bg-amber-50 text-amber-900 border-amber-200',
-  over: 'bg-red-50 text-red-800 border-red-200'
-};
 
 export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyWeekViewProps) {
   const { t } = useAppTranslation();
@@ -86,9 +44,13 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
   const [projectsSearchQuery, setProjectsSearchQuery] = useState('');
   const [filterTeammate, setFilterTeammate] = useState<string>('all');
   const [openFilterTeammate, setOpenFilterTeammate] = useState(false);
+  const [taskStatusFilter, setTaskStatusFilter] = useState<TaskStatusFilter>('all');
+  const [expandedProjectIds, setExpandedProjectIds] = useState<Set<string>>(() => new Set());
+  const [editingTask, setEditingTask] = useState<Allocation | null>(null);
   const [deadlines, setDeadlines] = useState<Deadline[]>([]);
 
   const preference = currentAgency?.settings?.hoursTrackingPreference;
+  const showComputedHours = preference !== 'actual';
   const monthKey = format(viewDate, 'yyyy-MM');
 
   useEffect(() => {
@@ -105,7 +67,6 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
   }, [monthKey, currentAgency?.id]);
 
   const monthLabel = format(viewDate, 'MMMM yyyy', { locale: dateLocale });
-  const myEmployee = employees.find(e => e.id === employeeId);
 
   // Allocations del mes para este empleado
   const monthlyAllocations = allocations.filter(a =>
@@ -113,6 +74,31 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
     isAllocationInEffectiveMonth(a.weekStartDate, viewDate) &&
     !(a.isLocked && round2(Number(a.hoursAssigned)) === 0)
   );
+
+  const tasksByProjectId = useMemo(() => {
+    const map = new Map<string, Allocation[]>();
+    monthlyAllocations.forEach((alloc) => {
+      const list = map.get(alloc.projectId) ?? [];
+      list.push(alloc);
+      map.set(alloc.projectId, list);
+    });
+    return map;
+  }, [monthlyAllocations]);
+
+  const filterTasksByStatus = useCallback((tasks: Allocation[]) => {
+    if (taskStatusFilter === 'pending') return tasks.filter(a => a.status !== 'completed');
+    if (taskStatusFilter === 'completed') return tasks.filter(a => a.status === 'completed');
+    return tasks;
+  }, [taskStatusFilter]);
+
+  const toggleProjectExpanded = useCallback((projectId: string) => {
+    setExpandedProjectIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(projectId)) next.delete(projectId);
+      else next.add(projectId);
+      return next;
+    });
+  }, []);
 
   // Métricas globales del mes
   const monthlyStats = useMemo(() => {
@@ -310,17 +296,23 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
     return Array.from(set).map(id => employees.find(e => e.id === id)).filter(Boolean);
   }, [projectGroups, employees]);
 
-  // Filtrar proyectos (texto libre como en Control de planificación + filtro por compañero)
+  // Filtrar proyectos (texto libre + compañero + estado de tareas)
   const filteredProjects = useMemo(() => {
     const q = projectsSearchQuery.trim().toLowerCase();
     return projectGroups.filter(g => {
       if (filterTeammate !== 'all' && !g.teammates.some(t => t.id === filterTeammate)) return false;
+
+      const projectTasks = tasksByProjectId.get(g.projectId) ?? [];
+      const visibleTasks = filterTasksByStatus(projectTasks);
+      if (taskStatusFilter !== 'all' && visibleTasks.length === 0) return false;
+
       if (!q) return true;
       const projectLabel = formatProjectName(g.projectName).toLowerCase();
       const clientLabel = g.clientName.toLowerCase();
-      return projectLabel.includes(q) || clientLabel.includes(q);
+      const taskMatch = projectTasks.some(t => (t.taskName ?? '').toLowerCase().includes(q));
+      return projectLabel.includes(q) || clientLabel.includes(q) || taskMatch;
     });
-  }, [projectGroups, projectsSearchQuery, filterTeammate, formatProjectName]);
+  }, [projectGroups, projectsSearchQuery, filterTeammate, formatProjectName, tasksByProjectId, filterTasksByStatus, taskStatusFilter]);
 
   return (
     <TooltipProvider>
@@ -333,7 +325,7 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
                 {monthLabel}
               </h2>
               <p className="text-sm text-muted-foreground flex items-center gap-1">
-                <Target className="h-3.5 w-3.5" /> {t('employeeDashboard.myWeek.performanceSubtitle')}
+                <ListTodo className="h-3.5 w-3.5" /> {t('employeeDashboard.myWeek.tasksSubtitle')}
               </p>
             </div>
 
@@ -448,11 +440,30 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
                   </Popover>
                 )}
               </div>
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide mr-1">
+                  {t('employeeDashboard.myWeek.taskStatusFilterLabel')}
+                </span>
+                {(['all', 'pending', 'completed'] as const).map((status) => (
+                  <Button
+                    key={status}
+                    type="button"
+                    variant={taskStatusFilter === status ? 'default' : 'outline'}
+                    size="sm"
+                    className="h-8 text-xs"
+                    onClick={() => setTaskStatusFilter(status)}
+                  >
+                    {status === 'all' && t('employeeDashboard.myWeek.taskStatusAll')}
+                    {status === 'pending' && t('employeeDashboard.myWeek.taskStatusPending')}
+                    {status === 'completed' && t('employeeDashboard.myWeek.taskStatusCompleted')}
+                  </Button>
+                ))}
+              </div>
             </div>
           )}
         </div>
 
-        {/* Grid de proyectos - altura uniforme */}
+        {/* Listado por proyecto */}
         {filteredProjects.length === 0 ? (
           <Card className="border-dashed">
             <CardContent className="py-12 text-center">
@@ -465,336 +476,243 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 min-w-0 items-start">
-            {filteredProjects.map(group => {
+          <div className="space-y-2 min-w-0">
+            {filteredProjects.map((group) => {
+              const allProjectTasks = tasksByProjectId.get(group.projectId) ?? [];
+              const visibleTasks = filterTasksByStatus(allProjectTasks).sort((a, b) => {
+                const weekCmp = a.weekStartDate.localeCompare(b.weekStartDate);
+                if (weekCmp !== 0) return weekCmp;
+                return (a.taskName ?? '').localeCompare(b.taskName ?? '');
+              });
+              const pendingCount = allProjectTasks.filter(a => a.status !== 'completed').length;
+              const isExpanded = expandedProjectIds.has(group.projectId);
+              const mySpent = preference === 'actual' ? group.myReal : group.myComputed;
               const balance = group.myPlanDeltaSum;
               const isPositive = balance >= 0;
-              const mySpent = preference === 'actual' ? group.myReal : group.myComputed;
-              const hasProjectBudget = group.projectBudget > 0;
-              const consumptionTone = hasProjectBudget
-                ? projectConsumptionTone(group.projectPercentageUsed)
-                : null;
-              const headerBadgeTone: UtilTone = hasProjectBudget
-                ? consumptionTone!
-                : group.myImpactPercentage >= 50
-                  ? 'ok'
-                  : group.myImpactPercentage >= 25
-                    ? 'warn'
-                    : 'muted';
-              const planMilestonePct = group.projectBudget > 0
-                ? clampPct((group.projectTotalAssigned / group.projectBudget) * 100)
-                : 0;
-              const consumptionFillPct = group.projectBudget > 0
-                ? clampPct((group.projectTotalComputedAll / group.projectBudget) * 100)
-                : 0;
-
-              const headerMembers: { id: string; name: string; avatarUrl?: string; isMe?: boolean }[] = [
-                {
-                  id: employeeId,
-                  name: myEmployee?.name || t('employeeDashboard.common.you'),
-                  avatarUrl: myEmployee?.avatarUrl,
-                  isMe: true
-                },
-                ...group.teammates.map(tm => ({ id: tm.id, name: tm.name, avatarUrl: tm.avatarUrl }))
-              ];
 
               return (
-                <Card
+                <Collapsible
                   key={group.projectId}
-                  className={cn(
-                    'flex flex-col min-w-0 transition-all hover:shadow-md rounded-xl border overflow-hidden',
-                    !hasProjectBudget && 'border-slate-200',
-                    hasProjectBudget && consumptionTone === 'ok' && 'border-emerald-200/90',
-                    hasProjectBudget && consumptionTone === 'warn' && 'border-amber-200/90',
-                    hasProjectBudget && consumptionTone === 'over' && 'border-red-200/90',
-                    hasProjectBudget && consumptionTone === 'muted' && 'border-slate-200'
-                  )}
+                  open={isExpanded}
+                  onOpenChange={() => toggleProjectExpanded(group.projectId)}
+                  className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm"
                 >
-                  <CardHeader className="pb-2 pt-4 px-4 space-y-3 min-w-0">
-                    <div className="flex items-start justify-between gap-3 min-w-0">
-                      <div className="min-w-0 flex-1">
-                        <CardTitle className="text-sm font-bold text-slate-900 truncate leading-tight" title={group.projectName}>
-                          <SensitiveText kind="project" id={group.projectId}>{formatProjectName(group.projectName)}</SensitiveText>
-                        </CardTitle>
-                        <p className="text-xs text-muted-foreground truncate mt-1">
-                          <SensitiveText kind="account" id={group.clientId}>{group.clientName}</SensitiveText>
-                        </p>
-                      </div>
-
-                      <div className="flex flex-col items-end gap-2 shrink-0">
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Badge variant="outline" className={cn('shrink-0 font-semibold tabular-nums', PROJECT_BADGE[headerBadgeTone])}>
-                              {group.projectBudget > 0
-                                ? `${round2(group.projectPercentageUsed)}%`
-                                : `${group.myImpactPercentage}%`}
-                            </Badge>
-                          </TooltipTrigger>
-                          <TooltipContent side="left" className="max-w-[220px]">
-                            {group.projectBudget > 0 ? (
-                              <>
-                                <p className="font-semibold mb-1">{t('employeeDashboard.myWeek.consumptionTooltipTitle')}</p>
-                                <p className="text-xs text-muted-foreground">
-                                  {t('employeeDashboard.myWeek.consumptionTooltipBody', {
-                                    computed: group.projectTotalComputedAll,
-                                    budget: group.projectBudget,
-                                  })}
-                                </p>
-                              </>
-                            ) : (
-                              <>
-                                <p className="font-semibold mb-1">{t('employeeDashboard.myWeek.contributionTooltipTitle')}</p>
-                                <p className="text-xs text-muted-foreground">
-                                  {t('employeeDashboard.myWeek.contributionTooltipBody', {
-                                    percent: group.myImpactPercentage,
-                                  })}
-                                </p>
-                              </>
-                            )}
-                          </TooltipContent>
-                        </Tooltip>
-
-                        <div className="flex -space-x-2">
-                          {headerMembers.slice(0, 5).map((m) => (
-                            <Tooltip key={m.id}>
-                              <TooltipTrigger asChild>
-                                <Avatar className={cn('h-7 w-7 border-2 border-white shadow-sm', m.isMe && 'ring-2 ring-emerald-200')}>
-                                  <AvatarImage src={m.avatarUrl} />
-                                  <AvatarFallback
-                                    className={cn(
-                                      'text-[10px] font-semibold',
-                                      m.isMe ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'
-                                    )}
-                                  >
-                                    {m.isMe ? t('employeeDashboard.common.youShort') : m.name.substring(0, 2).toUpperCase()}
-                                  </AvatarFallback>
-                                </Avatar>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                {m.isMe ? (
-                                  <span className="font-medium">{t('employeeDashboard.common.you')}</span>
-                                ) : (
-                                  <SensitiveText kind="employee" id={m.id} className="font-medium">
-                                    {m.name}
-                                  </SensitiveText>
-                                )}
-                              </TooltipContent>
-                            </Tooltip>
-                          ))}
-                          {headerMembers.length > 5 && (
-                            <div className="h-7 w-7 rounded-full bg-slate-200 border-2 border-white flex items-center justify-center text-[10px] font-semibold text-slate-600 z-0">
-                              +{headerMembers.length - 5}
-                            </div>
-                          )}
-                        </div>
-                      </div>
+                  <CollapsibleTrigger className="flex w-full items-start gap-3 px-4 py-3.5 text-left hover:bg-slate-50/80 transition-colors">
+                    <ChevronRight
+                      className={cn(
+                        'h-4 w-4 mt-0.5 shrink-0 text-slate-400 transition-transform duration-200',
+                        isExpanded && 'rotate-90'
+                      )}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-bold text-slate-900 truncate leading-tight">
+                        <SensitiveText kind="project" id={group.projectId}>
+                          {formatProjectName(group.projectName)}
+                        </SensitiveText>
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate mt-0.5">
+                        <SensitiveText kind="account" id={group.clientId}>{group.clientName}</SensitiveText>
+                      </p>
+                      <p className="text-[11px] text-slate-500 mt-1.5 tabular-nums">
+                        {t('employeeDashboard.myWeek.projectTaskSummary', {
+                          tasks: visibleTasks.length,
+                          pending: pendingCount,
+                          estimated: group.myEstimated,
+                          spent: mySpent,
+                        })}
+                      </p>
                     </div>
-
-                    {group.projectBudget > 0 && (
-                      <div className="space-y-2 pt-1 border-t border-slate-100">
-                        <div className="flex items-center justify-between gap-2 min-w-0">
-                          <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide truncate min-w-0">
-                            {t('employeeDashboard.myWeek.consumptionTitle')}
-                          </span>
-                          <span className="text-xs font-bold text-slate-800 tabular-nums shrink-0 text-right">
-                            {group.projectTotalComputedAll}h / {group.projectBudget}h
-                          </span>
-                        </div>
-                        <div className="space-y-1.5 min-w-0">
-                          <div className="relative min-w-0">
-                            <div className="h-2.5 rounded-full bg-slate-100 overflow-hidden">
-                              <div
-                                className={cn(
-                                  'h-full rounded-full transition-all',
-                                  MEMBER_TONE_BAR[projectConsumptionTone(group.projectPercentageUsed)]
-                                )}
-                                style={{ width: `${consumptionFillPct}%` }}
-                              />
-                            </div>
-                            {planMilestonePct > 0 && (
-                              <div
-                                className="pointer-events-none absolute left-0 right-0 top-0 h-2.5"
-                                aria-hidden
-                              >
-                                <div
-                                  className="absolute top-0 h-full w-px bg-slate-500/70 -translate-x-1/2"
-                                  style={{ left: `${planMilestonePct}%` }}
-                                />
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex items-baseline justify-between gap-3 text-[10px] text-slate-500 min-w-0">
-                            <span className="tabular-nums shrink-0">0h</span>
-                            <span className="tabular-nums shrink-0 text-right">
-                              {round2(group.projectBudget)}h
-                            </span>
-                          </div>
-                          <p
-                            className="text-[10px] text-center font-medium text-slate-600 leading-snug px-0.5 min-w-0 break-words"
-                            title={
-                              group.projectTotalAssigned > 0
-                                ? t('employeeDashboard.myWeek.planAssignedMonth', { hours: group.projectTotalAssigned })
-                                : undefined
-                            }
-                          >
-                            {group.projectTotalAssigned > 0
-                              ? t('employeeDashboard.myWeek.planAssignedMonth', { hours: group.projectTotalAssigned })
-                              : '—'}
-                          </p>
-                        </div>
-                        {group.hoursMissing > 0 && (
-                          <p className="text-[10px] text-amber-700 font-medium leading-snug">
-                            {t('employeeDashboard.myWeek.hoursMissing', { hours: group.hoursMissing })}
-                          </p>
-                        )}
-                      </div>
-                    )}
-                  </CardHeader>
-
-                  <CardContent className="px-4 pb-4 pt-0 space-y-3 min-w-0">
-                    {(group.teammates.length > 0 || group.myEstimated > 0) && (
-                      <div className="space-y-2 min-w-0">
-                        <div className="flex items-center justify-between gap-2 min-w-0">
-                          <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">
-                            {t('employeeDashboard.myWeek.teamSection')}
-                          </div>
-                          <div className="text-[10px] text-slate-400 truncate">
-                            {preference === 'actual'
-                              ? t('employeeDashboard.myWeek.realOverPlan')
-                              : t('employeeDashboard.myWeek.computedOverPlan')}
-                          </div>
-                        </div>
-                        <div className="space-y-3 min-w-0">
-                          {group.myEstimated > 0 && (() => {
-                            const tone = utilizationTone(group.myEstimated, mySpent);
-                            const pct = utilizationPercentage(group.myEstimated, mySpent);
-                            const barW = group.myEstimated > 0
-                              ? clampPct((mySpent / group.myEstimated) * 100)
-                              : 0;
-                            return (
-                              <div key="me" className="space-y-1 min-w-0">
-                                <div className="flex items-center gap-2 min-w-0">
-                                  <Avatar className="h-6 w-6 border border-emerald-200 shrink-0">
-                                    <AvatarImage src={myEmployee?.avatarUrl} />
-                                    <AvatarFallback className="text-[9px] bg-emerald-100 text-emerald-800 font-semibold">
-                                      {t('employeeDashboard.common.youShort')}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                  <span className="text-xs font-medium text-slate-800 truncate min-w-0 flex-1">
-                                    {t('employeeDashboard.common.you')}
-                                  </span>
-                                  <div className="flex items-center gap-1.5 shrink-0 min-w-0">
-                                    <span className="text-[11px] font-medium text-slate-600 tabular-nums whitespace-nowrap text-right">
-                                      {mySpent} / {group.myEstimated}h
-                                    </span>
-                                    <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0 h-5 font-semibold tabular-nums shrink-0', MEMBER_TONE_BADGE[tone])}>
-                                      {pct}%
-                                    </Badge>
-                                  </div>
-                                </div>
-                                <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden ml-8 min-w-0">
-                                  <div
-                                    className={cn('h-full rounded-full', MEMBER_TONE_BAR[tone])}
-                                    style={{ width: `${barW}%` }}
-                                  />
-                                </div>
-                              </div>
-                            );
-                          })()}
-                          {group.teammates.map((tm) => {
-                            const tone = utilizationTone(tm.hoursPlanned, tm.hoursComputed);
-                            const pct = utilizationPercentage(tm.hoursPlanned, tm.hoursComputed);
-                            const barW = tm.hoursPlanned > 0
-                              ? clampPct((tm.hoursComputed / tm.hoursPlanned) * 100)
-                              : 0;
-                            return (
-                              <div key={tm.id} className="space-y-1 min-w-0">
-                                <div className="flex items-center gap-2 min-w-0">
-                                  <Avatar className="h-6 w-6 border border-slate-200 shrink-0">
-                                    <AvatarImage src={tm.avatarUrl} />
-                                    <AvatarFallback className="text-[9px] bg-slate-100 text-slate-700 font-medium">
-                                      {tm.name.substring(0, 2).toUpperCase()}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                  <span className="text-xs font-medium text-slate-800 truncate min-w-0 flex-1">
-                                    <SensitiveText kind="employee" id={tm.id}>{tm.name.split(' ')[0]}</SensitiveText>
-                                  </span>
-                                  <div className="flex items-center gap-1.5 shrink-0 min-w-0">
-                                    <span className="text-[11px] font-medium text-slate-600 tabular-nums whitespace-nowrap text-right">
-                                      {tm.hoursComputed} / {tm.hoursPlanned}h
-                                    </span>
-                                    <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0 h-5 font-semibold tabular-nums shrink-0', MEMBER_TONE_BADGE[tone])}>
-                                      {pct}%
-                                    </Badge>
-                                  </div>
-                                </div>
-                                <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden ml-8 min-w-0">
-                                  <div
-                                    className={cn('h-full rounded-full', MEMBER_TONE_BAR[tone])}
-                                    style={{ width: `${barW}%` }}
-                                  />
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-100 min-w-0">
-                      <div className="rounded-lg bg-slate-100/90 px-1.5 sm:px-2 py-2 text-center min-w-0">
-                        <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide truncate">{t('employeeDashboard.hours.estimated')}</p>
-                        <p className="text-sm font-bold text-slate-900 tabular-nums mt-0.5 truncate">{group.myEstimated}h</p>
-                      </div>
-                      <div className="rounded-lg bg-slate-100/90 px-1.5 sm:px-2 py-2 text-center min-w-0">
-                        <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide truncate">
-                          {preference === 'actual' ? t('employeeDashboard.hours.real') : t('employeeDashboard.hours.computedCol')}
-                        </p>
-                        <p className="text-sm font-bold text-emerald-700 tabular-nums mt-0.5 truncate">
-                          {preference === 'actual' ? group.myReal : group.myComputed}h
-                        </p>
-                      </div>
-                      <div
-                        className={cn(
-                          'rounded-lg px-1.5 sm:px-2 py-2 text-center border min-w-0',
-                          balance === 0 && 'bg-slate-100/90 border-slate-200',
-                          balance > 0 && 'bg-emerald-50 border-emerald-200',
-                          balance < 0 && 'bg-red-50 border-red-200'
-                        )}
-                      >
-                        <p
-                          className={cn(
-                            'text-[10px] font-semibold uppercase tracking-wide',
-                            balance === 0 && 'text-slate-500',
-                            balance > 0 && 'text-emerald-800',
-                            balance < 0 && 'text-red-800'
-                          )}
-                        >
-                          {t('employeeDashboard.hours.balance')}
-                        </p>
-                        {group.myCompletedTasks === 0 ? (
-                          <p className="text-xs font-semibold text-slate-500 mt-1">—</p>
-                        ) : balance === 0 ? (
-                          <p className="text-sm font-bold text-slate-600 tabular-nums mt-0.5 truncate">0h</p>
+                    <div className="shrink-0 flex flex-col items-end gap-1.5">
+                      <Badge variant="outline" className="text-[10px] font-semibold tabular-nums">
+                        {group.myCompletedTasks}/{group.myTasks} {t('employeeDashboard.myWeek.tasksShort')}
+                      </Badge>
+                      <span className="text-xs font-bold text-slate-700 tabular-nums">{group.myEstimated}h</span>
+                    </div>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <div className="px-4 pb-3 border-t border-slate-100">
+                      <div className="pt-3 space-y-1.5">
+                        {visibleTasks.length > 0 ? (
+                          visibleTasks.map((task) => (
+                            <EmployeeMonthTaskRow
+                              key={task.id}
+                              task={task}
+                              dateLocale={dateLocale}
+                              showComputedHours={showComputedHours}
+                              preference={preference}
+                              onEdit={() => setEditingTask(task)}
+                              t={t}
+                            />
+                          ))
                         ) : (
-                          <p
-                            className={cn(
-                              'text-sm font-bold tabular-nums mt-0.5 truncate',
-                              isPositive ? 'text-emerald-800' : 'text-red-800'
-                            )}
-                          >
-                            {isPositive ? '+' : ''}{balance}h
+                          <p className="text-sm text-slate-500 text-center py-4 border border-dashed rounded-md bg-slate-50">
+                            {t('employeeDashboard.myWeek.noTasksForFilter')}
                           </p>
                         )}
                       </div>
+
+                      <Collapsible className="mt-3">
+                        <CollapsibleTrigger className="flex w-full items-center gap-2 text-xs font-medium text-slate-500 hover:text-slate-700 py-2">
+                          <ChevronRight className="h-3.5 w-3.5 shrink-0 transition-transform [[data-state=open]_&]:rotate-90" />
+                          {t('employeeDashboard.myWeek.projectSummaryToggle')}
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="pt-1 pb-1 space-y-3">
+                          {group.projectBudget > 0 && (
+                            <div className="rounded-lg bg-slate-50 border border-slate-100 px-3 py-2 text-xs text-slate-600">
+                              <span className="font-semibold">{t('employeeDashboard.myWeek.consumptionTitle')}: </span>
+                              <span className="tabular-nums font-medium text-slate-800">
+                                {group.projectTotalComputedAll}h / {group.projectBudget}h
+                              </span>
+                              {group.hoursMissing > 0 && (
+                                <p className="text-[10px] text-amber-700 font-medium mt-1">
+                                  {t('employeeDashboard.myWeek.hoursMissing', { hours: group.hoursMissing })}
+                                </p>
+                              )}
+                            </div>
+                          )}
+                          <div className="grid grid-cols-3 gap-2 min-w-0">
+                            <div className="rounded-lg bg-slate-100/90 px-2 py-2 text-center min-w-0">
+                              <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide truncate">
+                                {t('employeeDashboard.hours.estimated')}
+                              </p>
+                              <p className="text-sm font-bold text-slate-900 tabular-nums mt-0.5">{group.myEstimated}h</p>
+                            </div>
+                            <div className="rounded-lg bg-slate-100/90 px-2 py-2 text-center min-w-0">
+                              <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide truncate">
+                                {preference === 'actual' ? t('employeeDashboard.hours.real') : t('employeeDashboard.hours.computedCol')}
+                              </p>
+                              <p className="text-sm font-bold text-emerald-700 tabular-nums mt-0.5">
+                                {preference === 'actual' ? group.myReal : group.myComputed}h
+                              </p>
+                            </div>
+                            <div
+                              className={cn(
+                                'rounded-lg px-2 py-2 text-center border min-w-0',
+                                balance === 0 && 'bg-slate-100/90 border-slate-200',
+                                balance > 0 && 'bg-emerald-50 border-emerald-200',
+                                balance < 0 && 'bg-red-50 border-red-200'
+                              )}
+                            >
+                              <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">
+                                {t('employeeDashboard.hours.balance')}
+                              </p>
+                              {group.myCompletedTasks === 0 ? (
+                                <p className="text-xs font-semibold text-slate-500 mt-1">—</p>
+                              ) : (
+                                <p
+                                  className={cn(
+                                    'text-sm font-bold tabular-nums mt-0.5',
+                                    balance === 0 && 'text-slate-600',
+                                    balance > 0 && 'text-emerald-800',
+                                    balance < 0 && 'text-red-800'
+                                  )}
+                                >
+                                  {balance === 0 ? '0h' : `${isPositive ? '+' : ''}${balance}h`}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
                     </div>
-                  </CardContent>
-                </Card>
+                  </CollapsibleContent>
+                </Collapsible>
               );
             })}
           </div>
+        )}
+
+        {editingTask && (
+          <CoherenceAllocationEditDialog
+            allocation={editingTask}
+            viewDate={viewDate}
+            deadlines={deadlines}
+            onDismiss={() => setEditingTask(null)}
+          />
         )}
       </div>
     </TooltipProvider>
   );
 });
+
+interface EmployeeMonthTaskRowProps {
+  task: Allocation;
+  dateLocale: ReturnType<typeof useDateLocale>;
+  showComputedHours: boolean;
+  preference?: AgencySettings['hoursTrackingPreference'];
+  onEdit: () => void;
+  t: ReturnType<typeof useAppTranslation>['t'];
+}
+
+function EmployeeMonthTaskRow({ task, dateLocale, showComputedHours, preference, onEdit, t }: EmployeeMonthTaskRowProps) {
+  const weekSpan = formatTaskWeekCalendarSpan(task.weekStartDate, dateLocale);
+  const isCompleted = task.status === 'completed';
+
+  return (
+    <div
+      className={cn(
+        'flex w-full min-w-0 items-start gap-2 border py-2 pl-2 pr-2 rounded-md text-xs',
+        isCompleted ? 'bg-slate-50/80 border-slate-200' : 'bg-white border-slate-200'
+      )}
+    >
+      <div className="flex min-w-0 flex-1 items-start gap-2 overflow-hidden">
+        <div
+          className={cn(
+            'mt-1 h-2 w-2 shrink-0 rounded-full',
+            isCompleted ? 'bg-emerald-500' : 'bg-blue-400'
+          )}
+          aria-hidden
+        />
+        <div className="min-w-0 flex-1 overflow-hidden">
+          <p className="line-clamp-2 min-w-0 break-words font-medium text-slate-800 sm:line-clamp-3">
+            <SensitiveText kind="task" id={task.id}>
+              {task.taskName || t('employeeDashboard.myDay.unnamedTask')}
+            </SensitiveText>
+          </p>
+          <p className="mt-0.5 min-w-0 truncate text-[10px] text-slate-500" title={weekSpan}>
+            {weekSpan}
+          </p>
+        </div>
+      </div>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8 shrink-0 text-slate-500 hover:text-slate-800"
+        onClick={onEdit}
+        aria-label={t('operationsRadar.coherenceTasksEditAria', 'Editar tarea')}
+      >
+        <Pencil className="h-3.5 w-3.5" />
+      </Button>
+      {isCompleted ? (
+        <div
+          className={cn(
+            'flex shrink-0 flex-col items-end justify-start gap-0.5 text-right tabular-nums',
+            showComputedHours ? 'min-w-[7.25rem]' : 'min-w-[5rem]'
+          )}
+        >
+          <span className="max-w-full whitespace-nowrap font-mono text-[10px] leading-tight text-slate-600">
+            {t('operationsRadar.taskEstShort', 'Est')}: {task.hoursAssigned ?? 0}h
+          </span>
+          <span className="max-w-full whitespace-nowrap font-mono text-[10px] leading-tight text-blue-600">
+            {t('operationsRadar.actualLabel', 'Real')}: {task.hoursActual ?? task.hoursAssigned ?? 0}h
+          </span>
+          {showComputedHours && (
+            <span className="max-w-full whitespace-nowrap font-mono text-[10px] leading-tight text-emerald-600">
+              {t('operationsRadar.computedLabel', 'Computado')}: {getEffectiveCompletedHours(task, preference)}h
+            </span>
+          )}
+        </div>
+      ) : (
+        <div className="flex min-w-[3.5rem] shrink-0 flex-col items-end justify-start gap-0.5 pl-1 text-right tabular-nums">
+          <span className="whitespace-nowrap font-mono text-sm font-bold leading-tight text-slate-800">
+            {task.hoursAssigned ?? 0}h
+          </span>
+          <span className="whitespace-nowrap text-[10px] leading-tight text-slate-400">
+            {t('operationsRadar.estimated', 'estimadas')}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}

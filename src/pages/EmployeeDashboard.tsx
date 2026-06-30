@@ -533,8 +533,8 @@ export default function EmployeeDashboard() {
     {
       value: 'projects',
       icon: ListPlus,
-      label: t('team.dashboard.tabProjects', 'Mis proyectos'),
-      shortLabel: t('team.dashboard.tabProjectsShort', 'Proyectos'),
+      label: t('team.dashboard.tabProjects', 'Mis tareas del mes'),
+      shortLabel: t('team.dashboard.tabProjectsShort', 'Tareas'),
       activeClass: 'data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 data-[state=active]:border-indigo-200/80',
       iconClass: 'text-indigo-500',
     },

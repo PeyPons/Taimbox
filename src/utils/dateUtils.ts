@@ -317,3 +317,15 @@ export function getWorkingDaysElapsedInMonth(month: Date): number {
   const days = eachDayOfInterval({ start, end: endCap });
   return days.filter(d => !isWeekend(d)).length;
 }
+
+const WEEK_START_MONDAY = { weekStartsOn: 1 as const };
+
+/** Rango calendario de la semana de la tarea (lun–dom), p. ej. "7–13 abr" o "31 mar – 6 abr". */
+export function formatTaskWeekCalendarSpan(weekStartIso: string, locale: Locale): string {
+  const start = parseISO(weekStartIso);
+  const end = endOfWeek(start, WEEK_START_MONDAY);
+  if (isSameMonth(start, end)) {
+    return `${format(start, 'd', { locale })}–${format(end, 'd MMM', { locale })}`;
+  }
+  return `${format(start, 'd MMM', { locale })} – ${format(end, 'd MMM', { locale })}`;
+}
