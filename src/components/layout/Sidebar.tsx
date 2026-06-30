@@ -269,10 +269,11 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         {/* Navigation */}
         <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto custom-scrollbar">
 
-          <div className="mb-6">
+          <div className="mb-4 space-y-3">
             <NavLink to="/dashboard" icon={Home} active={location.pathname === '/dashboard'}>
               {t('sidebar.menu.mySpace', 'Mi espacio')}
             </NavLink>
+            <DepartmentViewSelector />
           </div>
 
           {isTimeTrackerEnabled && (
@@ -488,7 +489,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   {currentUser.first_name || currentUser.name}
                 </SensitiveText>
               </span>
-              <DepartmentViewSelector inline />
               <button
                 onClick={handleLogout}
                 className="p-1 text-slate-500 hover:text-red-400 hover:bg-red-950/30 rounded shrink-0"
@@ -513,7 +513,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   </span>
                 ) : null}
               </span>
-              <DepartmentViewSelector inline />
               <button
                 onClick={handleLogout}
                 className="p-1 text-slate-500 hover:text-red-400 hover:bg-red-950/30 rounded shrink-0"

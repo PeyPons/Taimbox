@@ -91,6 +91,38 @@ interface ActivityLogSectionProps {
 }
 
 const ALLOCATION_LOG_CHUNK = 80;
+const AUDIT_LOG_PAGE_SIZE = 1000;
+/** Tope de seguridad para evitar cargas infinitas en meses con actividad extrema. */
+const AUDIT_LOG_MAX_TOTAL = 10000;
+
+async function fetchAuditLogsPaginated(
+    fetchPage: (from: number, to: number) => Promise<{ data: AuditLog[] | null; error: unknown }>,
+    onProgress?: (loaded: number) => void,
+): Promise<{ logs: AuditLog[]; hitCap: boolean }> {
+    const all: AuditLog[] = [];
+    let offset = 0;
+    let hitCap = false;
+
+    while (offset < AUDIT_LOG_MAX_TOTAL) {
+        const to = Math.min(offset + AUDIT_LOG_PAGE_SIZE - 1, AUDIT_LOG_MAX_TOTAL - 1);
+        const { data, error } = await fetchPage(offset, to);
+        if (error) throw error;
+
+        const batch = data ?? [];
+        all.push(...batch);
+        onProgress?.(all.length);
+
+        if (batch.length < AUDIT_LOG_PAGE_SIZE) break;
+
+        offset += AUDIT_LOG_PAGE_SIZE;
+        if (all.length >= AUDIT_LOG_MAX_TOTAL) {
+            hitCap = true;
+            break;
+        }
+    }
+
+    return { logs: all, hitCap };
+}
 
 function chunkArray<T>(items: T[], size: number): T[][] {
     const chunks: T[][] = [];
@@ -156,7 +188,7 @@ function nodeMatchesSearchQuery(
     return node.children.some(c => nodeMatchesSearchQuery(c, q, formatProjectName, allocations));
 }
 
-export function ActivityLogSection({ currentMonth, maxItems = 1000 }: ActivityLogSectionProps) {
+export function ActivityLogSection({ currentMonth, maxItems }: ActivityLogSectionProps) {
     const { employees, projects, clients, allocations } = useApp();
     const { currentAgency } = useAgency();
     const { selectedDepartmentId } = useDepartmentView();
@@ -194,6 +226,7 @@ export function ActivityLogSection({ currentMonth, maxItems = 1000 }: ActivityLo
 
     const [logs, setLogs] = useState<AuditLog[]>([]);
     const [logsTruncated, setLogsTruncated] = useState(false);
+    const [loadedLogCount, setLoadedLogCount] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [filterEmployee, setFilterEmployee] = useState<string>('all');
@@ -245,36 +278,61 @@ export function ActivityLogSection({ currentMonth, maxItems = 1000 }: ActivityLo
             setIsLoading(true);
             setError(null);
             setLogsTruncated(false);
+            setLoadedLogCount(0);
 
             try {
                 let monthLogs: AuditLog[] = [];
-                if (currentMonth) {
-                    const monthStart = startOfMonth(currentMonth);
-                    const monthEndExclusive = startOfMonth(addMonths(currentMonth, 1));
-                    const { data, error: fetchError } = await supabase
+                let hitCap = false;
+                const onProgress = (loaded: number) => setLoadedLogCount(loaded);
+
+                const fetchAllocationLogs = async (from: number, to: number) => {
+                    let query = supabase
                         .from('audit_logs')
                         .select('*')
                         .eq('agency_id', currentAgency.id)
                         .eq('resource', 'ALLOCATION')
-                        .gte('created_at', monthStart.toISOString())
-                        .lt('created_at', monthEndExclusive.toISOString())
+                        .order('created_at', { ascending: false });
+
+                    if (currentMonth) {
+                        const monthStart = startOfMonth(currentMonth);
+                        const monthEndExclusive = startOfMonth(addMonths(currentMonth, 1));
+                        query = query
+                            .gte('created_at', monthStart.toISOString())
+                            .lt('created_at', monthEndExclusive.toISOString());
+                    }
+
+                    const { data, error } = await query.range(from, to);
+                    return { data: (data || []) as AuditLog[], error };
+                };
+
+                if (maxItems != null) {
+                    let query = supabase
+                        .from('audit_logs')
+                        .select('*')
+                        .eq('agency_id', currentAgency.id)
+                        .eq('resource', 'ALLOCATION')
                         .order('created_at', { ascending: false })
                         .limit(maxItems);
+
+                    if (currentMonth) {
+                        const monthStart = startOfMonth(currentMonth);
+                        const monthEndExclusive = startOfMonth(addMonths(currentMonth, 1));
+                        query = query
+                            .gte('created_at', monthStart.toISOString())
+                            .lt('created_at', monthEndExclusive.toISOString());
+                    }
+
+                    const { data, error: fetchError } = await query;
                     if (fetchError) throw fetchError;
                     monthLogs = (data || []) as AuditLog[];
                     if (monthLogs.length >= maxItems) setLogsTruncated(true);
                 } else {
-                    const { data, error: fetchError } = await supabase
-                        .from('audit_logs')
-                        .select('*')
-                        .eq('agency_id', currentAgency.id)
-                        .eq('resource', 'ALLOCATION')
-                        .order('created_at', { ascending: false })
-                        .limit(maxItems);
-                    if (fetchError) throw fetchError;
-                    monthLogs = (data || []) as AuditLog[];
-                    if (monthLogs.length >= maxItems) setLogsTruncated(true);
+                    const result = await fetchAuditLogsPaginated(fetchAllocationLogs, onProgress);
+                    monthLogs = result.logs;
+                    hitCap = result.hitCap;
                 }
+
+                if (hitCap) setLogsTruncated(true);
 
                 let lineageLogs: AuditLog[] = [];
                 if (currentMonth && monthAllocationIds.length > 0) {
@@ -1096,7 +1154,9 @@ export function ActivityLogSection({ currentMonth, maxItems = 1000 }: ActivityLo
                         </div>
                         {logsTruncated && (
                             <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-                                {t('weeklyForecast.logsTruncatedHint')}
+                                {t('weeklyForecast.logsTruncatedHint', {
+                                    max: AUDIT_LOG_MAX_TOTAL,
+                                })}
                             </p>
                         )}
                     </div>
@@ -1104,8 +1164,13 @@ export function ActivityLogSection({ currentMonth, maxItems = 1000 }: ActivityLo
             </CardHeader>
             <CardContent>
                 {isLoading ? (
-                    <div className="flex items-center justify-center py-6">
+                    <div className="flex flex-col items-center justify-center py-6 gap-2">
                         <RefreshCw className="h-5 w-5 animate-spin text-slate-400" />
+                        {loadedLogCount > 0 && (
+                            <p className="text-xs text-slate-500">
+                                {t('weeklyForecast.logsLoadingProgress', { count: loadedLogCount })}
+                            </p>
+                        )}
                     </div>
                 ) : projectGroups.length === 0 ? (
                     <div className="text-center py-6 text-slate-500 text-sm">
