@@ -304,8 +304,8 @@ export default function DataExportHubPage() {
 
       const monthAllocations = inc.planning ? allocationsForMonth(allocations ?? [], monthDate) : [];
       const allocationNotesForMonth =
-        inc.planning && monthAllocations.length > 0
-          ? await fetchAllocationNotesForIds(monthAllocations.map(a => a.id))
+        inc.planning && monthAllocations.length > 0 && currentAgency?.id
+          ? await fetchAllocationNotesForIds(monthAllocations.map(a => a.id), currentAgency.id)
           : [];
 
       let coherencePayload: {

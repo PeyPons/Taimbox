@@ -1,4 +1,5 @@
 import { useEffect, useMemo } from 'react';
+import { format, startOfMonth } from 'date-fns';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAgency } from '@/contexts/AgencyContext';
@@ -9,6 +10,7 @@ import {
   copyAllocationNotes,
   createAllocationNote,
   fetchAllocationNoteCounts,
+  fetchAllocationNoteCountsForEmployeeMonth,
   fetchAllocationNotes,
   softDeleteAllocationNote,
 } from '@/services/allocationNotesService';
@@ -21,7 +23,16 @@ export const allocationNotesQueryKeys = {
   byAllocation: (allocationId: string) => ['allocation-notes', 'allocation', allocationId] as const,
   counts: (agencyId: string | undefined, idsKey: string) =>
     ['allocation-notes', 'counts', agencyId ?? '', idsKey] as const,
+  countsEmployeeMonth: (agencyId: string | undefined, employeeId: string, monthKey: string) =>
+    ['allocation-notes', 'counts-employee-month', agencyId ?? '', employeeId, monthKey] as const,
 };
+
+function invalidateAllNoteCountQueries(queryClient: ReturnType<typeof useQueryClient>) {
+  return Promise.all([
+    queryClient.invalidateQueries({ queryKey: ['allocation-notes', 'counts'] }),
+    queryClient.invalidateQueries({ queryKey: ['allocation-notes', 'counts-employee-month'] }),
+  ]);
+}
 
 export function useAllocationNotes(allocationId: string | undefined, enabled = true) {
   return useQuery({
@@ -32,20 +43,37 @@ export function useAllocationNotes(allocationId: string | undefined, enabled = t
   });
 }
 
+/** Conteos para un conjunto explícito de allocations (Mi día visible, diálogo de edición, etc.). */
 export function useAllocationNoteCounts(allocationIds: string[]) {
   const { currentAgency } = useAgency();
   const agencyId = currentAgency?.id;
 
   const idsKey = useMemo(() => [...allocationIds].sort().join(','), [allocationIds]);
-  const ids = useMemo(
-    () => (idsKey ? idsKey.split(',') : []),
-    [idsKey],
-  );
+  const ids = useMemo(() => (idsKey ? idsKey.split(',') : []), [idsKey]);
 
   return useQuery({
     queryKey: allocationNotesQueryKeys.counts(agencyId, idsKey),
-    queryFn: () => fetchAllocationNoteCounts(ids, agencyId),
+    queryFn: () => fetchAllocationNoteCounts(ids, agencyId!),
     enabled: ids.length > 0 && Boolean(agencyId),
+    staleTime: STALE_MS,
+    retry: false,
+  });
+}
+
+/** Conteos del planificador: empleado + mes efectivo vía RPC (sin pasar cientos de UUIDs). */
+export function useAllocationNoteCountsForEmployeeMonth(
+  employeeId: string | undefined,
+  viewMonth: Date | undefined,
+  enabled = true,
+) {
+  const { currentAgency } = useAgency();
+  const agencyId = currentAgency?.id;
+  const monthKey = viewMonth ? format(startOfMonth(viewMonth), 'yyyy-MM') : '';
+
+  return useQuery({
+    queryKey: allocationNotesQueryKeys.countsEmployeeMonth(agencyId, employeeId ?? '', monthKey),
+    queryFn: () => fetchAllocationNoteCountsForEmployeeMonth(agencyId!, employeeId!, viewMonth!),
+    enabled: Boolean(agencyId && employeeId && viewMonth && enabled),
     staleTime: STALE_MS,
     retry: false,
   });
@@ -60,7 +88,7 @@ export function useAllocationNotesMutations(allocationId: string) {
     await queryClient.invalidateQueries({
       queryKey: allocationNotesQueryKeys.byAllocation(allocationId),
     });
-    await queryClient.invalidateQueries({ queryKey: ['allocation-notes', 'counts'] });
+    await invalidateAllNoteCountQueries(queryClient);
   };
 
   const addMutation = useMutation({
@@ -131,7 +159,7 @@ export function useAllocationNotesRealtime() {
               queryKey: allocationNotesQueryKeys.byAllocation(allocationId),
             });
           }
-          void queryClient.invalidateQueries({ queryKey: ['allocation-notes', 'counts'] });
+          void invalidateAllNoteCountQueries(queryClient);
         }
       )
       .subscribe();
