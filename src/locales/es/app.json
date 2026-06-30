@@ -431,6 +431,7 @@
     "myWeek": {
       "performanceSubtitle": "Rendimiento por proyecto",
       "tasksSubtitle": "Tus tareas del mes, agrupadas por proyecto",
+      "searchPlaceholder": "Buscar proyecto, cliente o tarea…",
       "taskStatusFilterLabel": "Estado",
       "taskStatusAll": "Todas",
       "taskStatusPending": "Pendientes",

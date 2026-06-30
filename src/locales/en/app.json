@@ -431,6 +431,7 @@
     "myWeek": {
       "performanceSubtitle": "Performance by project",
       "tasksSubtitle": "Your tasks this month, grouped by project",
+      "searchPlaceholder": "Search project, client or task…",
       "taskStatusFilterLabel": "Status",
       "taskStatusAll": "All",
       "taskStatusPending": "Pending",

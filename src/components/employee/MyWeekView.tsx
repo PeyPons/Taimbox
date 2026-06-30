@@ -6,15 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { format } from 'date-fns';
 import { AppTrans, useAppTranslation } from '@/hooks/useAppTranslation';
 import { useDateLocale } from '@/hooks/useDateLocale';
 import {
   Sparkles,
-  CheckCircle2, Clock, Filter, Check, ChevronDown, Search, Pencil, ListTodo, ChevronRight
+  CheckCircle2, Clock, Search, Pencil, ListTodo, ChevronRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
@@ -37,13 +35,11 @@ const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyWeekViewProps) {
   const { t } = useAppTranslation();
   const dateLocale = useDateLocale();
-  const { allocations, projects, clients, employees, getEmployeeMonthlyLoad } = useAppOrDemo();
+  const { allocations, projects, clients, getEmployeeMonthlyLoad } = useAppOrDemo();
   const { currentAgency } = useAgency();
   const { formatName: formatProjectName } = useProjectAliasing();
 
   const [projectsSearchQuery, setProjectsSearchQuery] = useState('');
-  const [filterTeammate, setFilterTeammate] = useState<string>('all');
-  const [openFilterTeammate, setOpenFilterTeammate] = useState(false);
   const [taskStatusFilter, setTaskStatusFilter] = useState<TaskStatusFilter>('all');
   const [expandedProjectIds, setExpandedProjectIds] = useState<Set<string>>(() => new Set());
   const [editingTask, setEditingTask] = useState<Allocation | null>(null);
@@ -146,15 +142,6 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
       projectTotalPlanned: number; // Horas planificadas totales (no completadas)
       projectTotalComputedAll: number; // Horas computadas totales
       projectPercentageUsed: number; // % usado del presupuesto
-      // Compañeros con detalle (Plan y Comp)
-      teammates: {
-        id: string;
-        name: string;
-        avatarUrl?: string;
-        hoursPlanned: number; // Horas planificadas
-        hoursComputed: number; // Horas computadas
-        impactPercentage: number;
-      }[];
       myImpactPercentage: number;
       hoursMissing: number; // Horas faltantes por asignar (si aplica)
       /** Suma de getPlanningDeltaHours en tareas completadas (misma semántica que el planificador). */
@@ -189,7 +176,6 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
           projectTotalPlanned: 0,
           projectTotalComputedAll: 0,
           projectPercentageUsed: 0,
-          teammates: [],
           myImpactPercentage: 0,
           hoursMissing: 0,
           myPlanDeltaSum: 0
@@ -250,32 +236,6 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
       if (projectTotal > 0) {
         groups[projId].myImpactPercentage = round2((groups[projId].myComputed / projectTotal) * 100);
       }
-
-      // Compañeros con sus horas Plan y Comp
-      const teammateData: Record<string, { planned: number; computed: number }> = {};
-      allProjectAllocations
-        .filter(a => a.employeeId !== employeeId)
-        .forEach(a => {
-          if (!teammateData[a.employeeId]) {
-            teammateData[a.employeeId] = { planned: 0, computed: 0 };
-          }
-          teammateData[a.employeeId].planned += a.hoursAssigned;
-          if (a.status === 'completed') {
-            teammateData[a.employeeId].computed += getEffectiveCompletedHours(a, preference);
-          }
-        });
-
-      groups[projId].teammates = Object.entries(teammateData).map(([empId, data]) => {
-        const emp = employees.find(e => e.id === empId);
-        return {
-          id: empId,
-          name: emp?.name || t('employeeDashboard.common.unknown'),
-          avatarUrl: emp?.avatarUrl,
-          hoursPlanned: round2(data.planned),
-          hoursComputed: round2(data.computed),
-          impactPercentage: projectTotal > 0 ? round2((data.computed / projectTotal) * 100) : 0
-        };
-      }).sort((a, b) => b.hoursComputed - a.hoursComputed);
     });
 
     return Object.values(groups)
@@ -287,21 +247,12 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
         myPlanDeltaSum: round2(g.myPlanDeltaSum)
       }))
       .sort((a, b) => b.myComputed - a.myComputed);
-  }, [monthlyAllocations, allocations, projects, clients, employees, employeeId, viewDate, preference, deadlines]);
+  }, [monthlyAllocations, allocations, projects, clients, employeeId, viewDate, preference, deadlines, t]);
 
-  // Lista de todos los compañeros únicos para filtro
-  const allTeammates = useMemo(() => {
-    const set = new Set<string>();
-    projectGroups.forEach(g => g.teammates.forEach(t => set.add(t.id)));
-    return Array.from(set).map(id => employees.find(e => e.id === id)).filter(Boolean);
-  }, [projectGroups, employees]);
-
-  // Filtrar proyectos (texto libre + compañero + estado de tareas)
+  // Filtrar proyectos (texto libre + estado de tareas)
   const filteredProjects = useMemo(() => {
     const q = projectsSearchQuery.trim().toLowerCase();
     return projectGroups.filter(g => {
-      if (filterTeammate !== 'all' && !g.teammates.some(t => t.id === filterTeammate)) return false;
-
       const projectTasks = tasksByProjectId.get(g.projectId) ?? [];
       const visibleTasks = filterTasksByStatus(projectTasks);
       if (taskStatusFilter !== 'all' && visibleTasks.length === 0) return false;
@@ -312,7 +263,7 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
       const taskMatch = projectTasks.some(t => (t.taskName ?? '').toLowerCase().includes(q));
       return projectLabel.includes(q) || clientLabel.includes(q) || taskMatch;
     });
-  }, [projectGroups, projectsSearchQuery, filterTeammate, formatProjectName, tasksByProjectId, filterTasksByStatus, taskStatusFilter]);
+  }, [projectGroups, projectsSearchQuery, formatProjectName, tasksByProjectId, filterTasksByStatus, taskStatusFilter]);
 
   return (
     <TooltipProvider>
@@ -366,11 +317,7 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
           {/* Búsqueda y filtros (mismo patrón que Control de planificación / coherencia global) */}
           {projectGroups.length > 0 && (
             <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3 sm:p-4 space-y-3">
-              <div className="flex items-center gap-2">
-                <Filter className="h-4 w-4 text-slate-400 shrink-0" />
-                <span className="text-xs text-slate-600">{t('employeeDashboard.common.filtersAndSearch')}</span>
-              </div>
-              {(projectsSearchQuery.trim() || filterTeammate !== 'all') && (
+              {projectsSearchQuery.trim() && (
                 <p className="text-xs text-slate-500">
                   <AppTrans
                     i18nKey="employeeDashboard.common.showingProjectsFiltered"
@@ -379,85 +326,33 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
                   />
                 </p>
               )}
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="relative min-w-[200px] flex-1 sm:flex-initial sm:min-w-[220px] max-w-full">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:flex-wrap">
+                <div className="relative min-w-0 flex-1 sm:min-w-[240px] sm:max-w-md">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                   <Input
-                    placeholder={t('employeeDashboard.common.searchByProjectOrClient')}
+                    placeholder={t('employeeDashboard.myWeek.searchPlaceholder')}
                     value={projectsSearchQuery}
                     onChange={(e) => setProjectsSearchQuery(e.target.value)}
                     className="pl-9 h-10 w-full bg-white border-slate-200 shadow-sm"
                     aria-label={t('employeeDashboard.common.searchInProjectsAria')}
                   />
                 </div>
-                {allTeammates.length > 0 && (
-                  <Popover open={openFilterTeammate} onOpenChange={setOpenFilterTeammate}>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" className="min-w-[220px] h-10 text-sm justify-between font-normal w-full sm:w-auto">
-                        <span className="truncate">
-                          {filterTeammate === 'all'
-                            ? t('employeeDashboard.common.allTeammates')
-                            : (
-                                <SensitiveText kind="employee" id={filterTeammate}>
-                                  {allTeammates.find(e => e?.id === filterTeammate)?.name ?? t('employeeDashboard.common.team')}
-                                </SensitiveText>
-                              )}
-                        </span>
-                        <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="min-w-[300px] p-0" align="start">
-                      <Command>
-                        <CommandInput placeholder={t('employeeDashboard.common.searchTeammate')} />
-                        <CommandList className="max-h-[320px]">
-                          <CommandEmpty>{t('employeeDashboard.common.noTeammatesFound')}</CommandEmpty>
-                          <CommandGroup>
-                            <CommandItem
-                              value={t('employeeDashboard.common.allTeammates')}
-                              className="py-2.5"
-                              onSelect={() => { setFilterTeammate('all'); setOpenFilterTeammate(false); }}
-                            >
-                              <Check className={cn('mr-2 h-4 w-4 shrink-0', filterTeammate === 'all' ? 'opacity-100' : 'opacity-0')} />
-                              {t('employeeDashboard.common.allTeammates')}
-                            </CommandItem>
-                            {allTeammates.map(emp => emp && (
-                              <CommandItem
-                                key={emp.id}
-                                value={emp.name || emp.id}
-                                className="py-2.5"
-                                onSelect={() => { setFilterTeammate(emp.id); setOpenFilterTeammate(false); }}
-                              >
-                                <Check className={cn('mr-2 h-4 w-4 shrink-0', filterTeammate === emp.id ? 'opacity-100' : 'opacity-0')} />
-                                <span className="truncate">
-                                  <SensitiveText kind="employee" id={emp.id}>{emp.name}</SensitiveText>
-                                </span>
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                )}
-              </div>
-              <div className="flex flex-wrap items-center gap-2 pt-1">
-                <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide mr-1">
-                  {t('employeeDashboard.myWeek.taskStatusFilterLabel')}
-                </span>
-                {(['all', 'pending', 'completed'] as const).map((status) => (
-                  <Button
-                    key={status}
-                    type="button"
-                    variant={taskStatusFilter === status ? 'default' : 'outline'}
-                    size="sm"
-                    className="h-8 text-xs"
-                    onClick={() => setTaskStatusFilter(status)}
-                  >
-                    {status === 'all' && t('employeeDashboard.myWeek.taskStatusAll')}
-                    {status === 'pending' && t('employeeDashboard.myWeek.taskStatusPending')}
-                    {status === 'completed' && t('employeeDashboard.myWeek.taskStatusCompleted')}
-                  </Button>
-                ))}
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {(['all', 'pending', 'completed'] as const).map((status) => (
+                    <Button
+                      key={status}
+                      type="button"
+                      variant={taskStatusFilter === status ? 'default' : 'outline'}
+                      size="sm"
+                      className="h-9 text-xs px-3"
+                      onClick={() => setTaskStatusFilter(status)}
+                    >
+                      {status === 'all' && t('employeeDashboard.myWeek.taskStatusAll')}
+                      {status === 'pending' && t('employeeDashboard.myWeek.taskStatusPending')}
+                      {status === 'completed' && t('employeeDashboard.myWeek.taskStatusCompleted')}
+                    </Button>
+                  ))}
+                </div>
               </div>
             </div>
           )}
@@ -531,7 +426,7 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
                   </CollapsibleTrigger>
                   <CollapsibleContent>
                     <div className="px-4 pb-3 border-t border-slate-100">
-                      <div className="pt-3 space-y-1.5">
+                      <div className="pt-3 space-y-1">
                         {visibleTasks.length > 0 ? (
                           visibleTasks.map((task) => (
                             <EmployeeMonthTaskRow
@@ -647,72 +542,54 @@ interface EmployeeMonthTaskRowProps {
 function EmployeeMonthTaskRow({ task, dateLocale, showComputedHours, preference, onEdit, t }: EmployeeMonthTaskRowProps) {
   const weekSpan = formatTaskWeekCalendarSpan(task.weekStartDate, dateLocale);
   const isCompleted = task.status === 'completed';
+  const estHours = task.hoursAssigned ?? 0;
+  const realHours = task.hoursActual ?? estHours;
+  const compHours = getEffectiveCompletedHours(task, preference);
+
+  const hoursMeta = isCompleted
+    ? [
+        `${t('operationsRadar.taskEstShort', 'Est')} ${estHours}h`,
+        `${t('operationsRadar.actualLabel', 'Real')} ${realHours}h`,
+        ...(showComputedHours ? [`${t('operationsRadar.computedLabel', 'Comp')} ${compHours}h`] : []),
+      ].join(' · ')
+    : `${estHours}h · ${t('operationsRadar.estimated', 'estimadas')}`;
 
   return (
     <div
       className={cn(
-        'flex w-full min-w-0 items-start gap-2 border py-2 pl-2 pr-2 rounded-md text-xs',
-        isCompleted ? 'bg-slate-50/80 border-slate-200' : 'bg-white border-slate-200'
+        'group flex items-center gap-2.5 rounded-lg border px-3 py-2.5 transition-colors',
+        isCompleted ? 'bg-slate-50/90 border-slate-200/90' : 'bg-white border-slate-200 hover:border-slate-300'
       )}
     >
-      <div className="flex min-w-0 flex-1 items-start gap-2 overflow-hidden">
-        <div
-          className={cn(
-            'mt-1 h-2 w-2 shrink-0 rounded-full',
-            isCompleted ? 'bg-emerald-500' : 'bg-blue-400'
-          )}
-          aria-hidden
-        />
-        <div className="min-w-0 flex-1 overflow-hidden">
-          <p className="line-clamp-2 min-w-0 break-words font-medium text-slate-800 sm:line-clamp-3">
-            <SensitiveText kind="task" id={task.id}>
-              {task.taskName || t('employeeDashboard.myDay.unnamedTask')}
-            </SensitiveText>
-          </p>
-          <p className="mt-0.5 min-w-0 truncate text-[10px] text-slate-500" title={weekSpan}>
-            {weekSpan}
-          </p>
+      <div
+        className={cn(
+          'h-2 w-2 shrink-0 rounded-full',
+          isCompleted ? 'bg-emerald-500' : 'bg-blue-500'
+        )}
+        aria-hidden
+      />
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-medium leading-snug text-slate-800 line-clamp-2">
+          <SensitiveText kind="task" id={task.id}>
+            {task.taskName || t('employeeDashboard.myDay.unnamedTask')}
+          </SensitiveText>
+        </p>
+        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] leading-tight">
+          <span className="shrink-0 font-semibold tabular-nums text-slate-800">{hoursMeta}</span>
+          <span className="text-slate-300" aria-hidden>·</span>
+          <span className="text-slate-500">{weekSpan}</span>
         </div>
       </div>
       <Button
         type="button"
         variant="ghost"
         size="icon"
-        className="h-8 w-8 shrink-0 text-slate-500 hover:text-slate-800"
+        className="h-7 w-7 shrink-0 text-slate-400 opacity-70 transition-opacity hover:text-slate-800 group-hover:opacity-100"
         onClick={onEdit}
         aria-label={t('operationsRadar.coherenceTasksEditAria', 'Editar tarea')}
       >
         <Pencil className="h-3.5 w-3.5" />
       </Button>
-      {isCompleted ? (
-        <div
-          className={cn(
-            'flex shrink-0 flex-col items-end justify-start gap-0.5 text-right tabular-nums',
-            showComputedHours ? 'min-w-[7.25rem]' : 'min-w-[5rem]'
-          )}
-        >
-          <span className="max-w-full whitespace-nowrap font-mono text-[10px] leading-tight text-slate-600">
-            {t('operationsRadar.taskEstShort', 'Est')}: {task.hoursAssigned ?? 0}h
-          </span>
-          <span className="max-w-full whitespace-nowrap font-mono text-[10px] leading-tight text-blue-600">
-            {t('operationsRadar.actualLabel', 'Real')}: {task.hoursActual ?? task.hoursAssigned ?? 0}h
-          </span>
-          {showComputedHours && (
-            <span className="max-w-full whitespace-nowrap font-mono text-[10px] leading-tight text-emerald-600">
-              {t('operationsRadar.computedLabel', 'Computado')}: {getEffectiveCompletedHours(task, preference)}h
-            </span>
-          )}
-        </div>
-      ) : (
-        <div className="flex min-w-[3.5rem] shrink-0 flex-col items-end justify-start gap-0.5 pl-1 text-right tabular-nums">
-          <span className="whitespace-nowrap font-mono text-sm font-bold leading-tight text-slate-800">
-            {task.hoursAssigned ?? 0}h
-          </span>
-          <span className="whitespace-nowrap text-[10px] leading-tight text-slate-400">
-            {t('operationsRadar.estimated', 'estimadas')}
-          </span>
-        </div>
-      )}
     </div>
   );
 }
