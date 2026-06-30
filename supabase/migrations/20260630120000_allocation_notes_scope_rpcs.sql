@@ -37,9 +37,9 @@ AS $$
   SELECT n.allocation_id, COUNT(*)::bigint AS note_count
   FROM public.allocation_notes n
   INNER JOIN public.allocations a ON a.id = n.allocation_id
+  INNER JOIN public.employees e ON e.id = a.employee_id AND e.agency_id = p_agency_id
   WHERE n.agency_id = p_agency_id
     AND n.deleted_at IS NULL
-    AND a.agency_id = p_agency_id
     AND a.employee_id = p_employee_id
     AND date_trunc('month', a.week_start_date)::date = date_trunc('month', p_month)::date
   GROUP BY n.allocation_id;
