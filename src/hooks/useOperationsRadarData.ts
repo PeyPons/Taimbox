@@ -71,6 +71,39 @@ export function useOperationsRadarData(params: {
     hoursTrackingPreference,
   } = params;
 
+  const employeesForView = useMemo(() => {
+    if (!selectedDepartmentId || !departments.length) return employees ?? [];
+    const dept = departments.find(d => d.id === selectedDepartmentId || d.name === selectedDepartmentId);
+    if (!dept) return employees ?? [];
+    return (employees ?? []).filter(e => employeeBelongsToDepartment(e.department, dept.id, dept.name));
+  }, [employees, selectedDepartmentId, departments]);
+
+  const allowedEmployeeIds = useMemo(() => {
+    if (!selectedDepartmentId) return null;
+    return new Set(employeesForView.map(e => e.id));
+  }, [selectedDepartmentId, employeesForView]);
+
+  const allocationsByProjectAndEmployee = useMemo(
+    () =>
+      buildMonthAllocationsByProjectAndEmployee({
+        allocations,
+        viewDate,
+        allowedEmployeeIds,
+        hoursTrackingPreference,
+      }),
+    [allocations, viewDate, allowedEmployeeIds, hoursTrackingPreference],
+  );
+
+  const isProjectVisibleInOperations = useMemo(() => {
+    return (projectId: string) =>
+      shouldIncludeProjectIdInOperationsTracking({
+        projectId,
+        projects: projects ?? [],
+        deadlines,
+        allocationsByProjectAndEmployee,
+      });
+  }, [projects, deadlines, allocationsByProjectAndEmployee]);
+
   const atRiskProjectsRaw = useMemo(() => {
     const risks: Array<ProjectMetricItem & { riskLevel: RadarRiskLevel; riskReason: string; riskType: RadarRiskType }> = [];
 
@@ -114,39 +147,6 @@ export function useOperationsRadarData(params: {
       return (riskOrder[a.riskLevel] || 2) - (riskOrder[b.riskLevel] || 2);
     });
   }, [projectMetrics, isEndOfMonth, radarLowProgressExcludeKeywords, isProjectVisibleInOperations]);
-
-  const employeesForView = useMemo(() => {
-    if (!selectedDepartmentId || !departments.length) return employees ?? [];
-    const dept = departments.find(d => d.id === selectedDepartmentId || d.name === selectedDepartmentId);
-    if (!dept) return employees ?? [];
-    return (employees ?? []).filter(e => employeeBelongsToDepartment(e.department, dept.id, dept.name));
-  }, [employees, selectedDepartmentId, departments]);
-
-  const allowedEmployeeIds = useMemo(() => {
-    if (!selectedDepartmentId) return null;
-    return new Set(employeesForView.map(e => e.id));
-  }, [selectedDepartmentId, employeesForView]);
-
-  const allocationsByProjectAndEmployee = useMemo(
-    () =>
-      buildMonthAllocationsByProjectAndEmployee({
-        allocations,
-        viewDate,
-        allowedEmployeeIds,
-        hoursTrackingPreference,
-      }),
-    [allocations, viewDate, allowedEmployeeIds, hoursTrackingPreference],
-  );
-
-  const isProjectVisibleInOperations = useMemo(() => {
-    return (projectId: string) =>
-      shouldIncludeProjectIdInOperationsTracking({
-        projectId,
-        projects: projects ?? [],
-        deadlines,
-        allocationsByProjectAndEmployee,
-      });
-  }, [projects, deadlines, allocationsByProjectAndEmployee]);
 
   const projectIdsForDepartment = useMemo(() => {
     if (!selectedDepartmentId) return undefined as Set<string> | undefined;
