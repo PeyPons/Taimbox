@@ -116,8 +116,8 @@ export default function EmployeeDashboard() {
   const [openComboboxId, setOpenComboboxId] = useState<string | null>(null);
   const [showWeeklyDialog, setShowWeeklyDialog] = useState(false);
   const [weeklyFocusAllocationId, setWeeklyFocusAllocationId] = useState<string | null>(null);
-  // Default to "coherence" (Control de planificación) to match the workflow
-  const [activeTab, setActiveTab] = useState('coherence');
+  // Default to month tasks — primary employee workflow
+  const [activeTab, setActiveTab] = useState('projects');
   const [deadlines, setDeadlines] = useState<Deadline[]>([]);
   const [dialogDeadlines, setDialogDeadlines] = useState<Deadline[]>([]);
   const [showConfirmClose, setShowConfirmClose] = useState(false);
