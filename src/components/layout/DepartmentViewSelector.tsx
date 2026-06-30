@@ -41,7 +41,6 @@ export function DepartmentViewSelector({ inline }: DepartmentViewSelectorProps) 
           <Button
             variant="ghost"
             size="sm"
-            title={t('layout.departmentSelector.byDepartment', 'Vista por departamento')}
             className={cn(
               "justify-between text-left h-auto hover:bg-slate-800 hover:text-white text-slate-300",
               inline ? "py-1 px-1.5 text-[11px] w-auto min-w-0" : "w-full py-1.5 px-2 text-xs"
