@@ -6,6 +6,7 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { usePlatformAdmin } from "@/hooks/usePlatformAdmin";
 import { ROUTE_PERMISSIONS } from "@/types/permissions";
 import { ONBOARDING_WIZARD_ALLOWED_KEY } from "@/utils/onboardingDefaults";
+import { resolveWeeklyEnabled } from "@/utils/agencyUtils";
 import { PageLoader } from "@/components/layout/PageLoader";
 
 export const ProtectedRoute = () => {
@@ -69,6 +70,15 @@ export const ProtectedRoute = () => {
   if (matchingRoute && !canAccess(matchingRoute)) {
     console.warn(`[ProtectedRoute] User lacks access for ${pathname} (route ${matchingRoute})`);
     return <Navigate to="/dashboard" replace />;
+  }
+
+  if (
+    (pathname === '/weekly-forecast' || pathname.startsWith('/weekly-forecast/')) &&
+    !resolveWeeklyEnabled(currentAgency?.settings)
+  ) {
+    const redirect = canAccess('/agency') ? '/agency?tab=modules' : '/dashboard';
+    console.warn('[ProtectedRoute] Weekly module disabled for agency');
+    return <Navigate to={redirect} replace />;
   }
 
   if (

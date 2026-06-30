@@ -532,7 +532,11 @@ export default function OnboardingWizard() {
   const [modGoals, setModGoals] = useState(() => s?.modules?.professionalGoals ?? false);
   const [modDeadlines, setModDeadlines] = useState(() => s?.modules?.deadlines ?? true);
   const [modTracker, setModTracker] = useState(() => s?.modules?.timeTracker ?? true);
-  const [modWeekly, setModWeekly] = useState(() => s?.modules?.weeklyFeedback ?? false);
+  const [modWeekly, setModWeekly] = useState(() => {
+    const stored = s?.modules?.weeklyFeedback;
+    if (stored === true || stored === false) return stored;
+    return moduleAllowed(planId, 'weeklyFeedback');
+  });
   const [timeTrackerMaxHours, setTimeTrackerMaxHours] = useState(() => s?.timeTrackerMaxHours ?? 12);
 
   const [enabledIntegrations, setEnabledIntegrations] = useState<AgencySettings['enabledIntegrations']>(

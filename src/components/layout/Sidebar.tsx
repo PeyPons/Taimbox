@@ -41,6 +41,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { useActiveTimerForSidebar } from '@/hooks/useActiveTimerForSidebar';
+import { useWeeklyForecastAccess } from '@/hooks/useWeeklyForecastAccess';
 import { SidebarTimerPanel } from '@/components/layout/SidebarTimerPanel';
 import { buildAgencyAwarePath, useSupportAgencyView } from '@/hooks/useSupportAgencyView';
 import { SensitiveText } from '@/components/privacy/SensitiveText';
@@ -192,11 +193,13 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
   })();
 
+  const canAccessWeeklyForecast = useWeeklyForecastAccess();
+
   const showTrackingGroup =
     canAccessNav('/operaciones') ||
     canAccessNav('/finanzas') ||
     canAccessNav('/team-capacity') ||
-    canAccessNav('/weekly-forecast');
+    canAccessWeeklyForecast;
 
   const showPlanningGroup =
     canAccess('/planner') || (modules.deadlines && canAccess('/deadlines'));
@@ -308,7 +311,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                       {t('sidebar.menu.teamCapacity', 'Capacidad de Equipo')}
                     </NavLink>
                   )}
-                  {canAccessNav('/weekly-forecast') && (
+                  {canAccessWeeklyForecast && (
                     <NavLink to="/weekly-forecast" icon={FileText} active={location.pathname === '/weekly-forecast'}>
                       {t('sidebar.menu.weeklyForecast', 'Weekly Forecast')}
                     </NavLink>

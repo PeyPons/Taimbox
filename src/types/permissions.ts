@@ -33,6 +33,7 @@ export const ROUTE_PERMISSIONS: Record<string, keyof UserPermissions> = {
   '/clients': 'can_access_clients',
   '/team': 'can_access_team',
   '/team-capacity': 'can_access_team_capacity',
+  '/capacidad': 'can_access_team_capacity',
   '/reports': 'can_access_reports',
   '/operaciones': 'can_access_operations_radar',
   '/finanzas': 'can_access_financial_health',
