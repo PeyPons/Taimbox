@@ -81,7 +81,8 @@ export function MyDayView({
     }
   }, [ensureMonthLoaded, viewDate]);
 
-  const scopedAllocationIds = useMemo(
+  /** Pool acotado para búsqueda en notas (misma semana / backlog, sin filtro de texto). */
+  const candidateAllocationIds = useMemo(
     () =>
       (allocations || [])
         .filter(
@@ -94,22 +95,21 @@ export function MyDayView({
         .map(a => a.id),
     [allocations, employeeId, completedToday, today]
   );
-  const { data: noteCounts = {} } = useAllocationNoteCounts(scopedAllocationIds);
 
   useEffect(() => {
     const q = searchQuery.trim();
-    if (!q) {
+    if (!q || !currentAgency?.id) {
       setNoteSearchHits(new Set());
       return;
     }
     let cancelled = false;
-    void searchAllocationIdsByNoteBody(scopedAllocationIds, q, currentAgency?.id).then(hits => {
+    void searchAllocationIdsByNoteBody(candidateAllocationIds, q, currentAgency.id).then(hits => {
       if (!cancelled) setNoteSearchHits(hits);
     });
     return () => {
       cancelled = true;
     };
-  }, [searchQuery, scopedAllocationIds, currentAgency?.id]);
+  }, [searchQuery, candidateAllocationIds, currentAgency?.id]);
 
   const dailyCapacity = useMemo(() => {
     if (currentUser?.workSchedule) {
@@ -154,6 +154,12 @@ export function MyDayView({
     const sorted = [...backlog].sort(sortByUserPriority);
     return { focusTasks: focus, backlogTasks: backlog, sortedBacklog: sorted };
   }, [allocations, employeeId, today, todayStr, completedToday, searchQuery, projects, formatProjectName, noteSearchHits]);
+
+  const visibleAllocationIds = useMemo(
+    () => [...focusTasks, ...sortedBacklog].map(task => task.id),
+    [focusTasks, sortedBacklog]
+  );
+  const { data: noteCounts = {} } = useAllocationNoteCounts(visibleAllocationIds);
 
   const handleTimeLogged = useCallback(() => {
     void loadDataForMonth(today);

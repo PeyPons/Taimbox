@@ -25,7 +25,7 @@ import { PlannerTour } from './PlannerTour';
 import { ProjectImpactSummary } from './ProjectImpactSummary';
 import { useAllocationSheet, ProjectBudgetStatus } from '@/hooks/useAllocationSheet';
 import { useAllocationActions } from '@/hooks/useAllocationActions';
-import { useAllocationNoteCounts } from '@/hooks/useAllocationNotes';
+import { useAllocationNoteCountsForEmployeeMonth } from '@/hooks/useAllocationNotes';
 import { TaskNotesTrigger } from '@/components/planner/allocation/TaskNotesTrigger';
 import { AllocationProjectHeader } from '@/components/planner/allocation/AllocationProjectHeader';
 import { AllocationTaskRow } from '@/components/planner/allocation/AllocationTaskRow';
@@ -329,14 +329,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
     [toggleTaskCompletion, refreshTimeEntrySums]
   );
 
-  const employeeAllocationIds = useMemo(
-    () =>
-      allocations
-        .filter(a => a.employeeId === employeeId && isAllocationInEffectiveMonth(a.weekStartDate, viewDate))
-        .map(a => a.id),
-    [allocations, employeeId, viewDate]
-  );
-  const { data: noteCounts = {} } = useAllocationNoteCounts(employeeAllocationIds);
+  const { data: noteCounts = {} } = useAllocationNoteCountsForEmployeeMonth(employeeId, viewDate, open);
 
   const { getWeekExceedStatus } = useTasksImpact({
     newTasks,

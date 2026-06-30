@@ -1,19 +1,9 @@
+import { format, startOfMonth } from 'date-fns';
 import { supabase } from '@/lib/supabase';
 import type { AllocationNote, AllocationNoteSource } from '@/types';
 
 const NOTES_LIMIT = 50;
-/** PostgREST/nginx rechazan URLs con `in.(…)` muy largas (502 → el navegador muestra CORS). */
-const ALLOCATION_IDS_IN_BATCH_SIZE = 50;
 export const ALLOCATION_NOTE_MAX_LENGTH = 10_000;
-
-function chunkAllocationIds(ids: string[]): string[][] {
-  const unique = [...new Set(ids)];
-  const chunks: string[][] = [];
-  for (let i = 0; i < unique.length; i += ALLOCATION_IDS_IN_BATCH_SIZE) {
-    chunks.push(unique.slice(i, i + ALLOCATION_IDS_IN_BATCH_SIZE));
-  }
-  return chunks;
-}
 
 interface SupabaseAllocationNoteRow {
   id: string;
@@ -25,6 +15,24 @@ interface SupabaseAllocationNoteRow {
   created_at: string;
   deleted_at: string | null;
   author?: { id: string; name: string; avatar_url: string | null } | null;
+}
+
+interface AllocationNoteCountRow {
+  allocation_id: string;
+  note_count: number;
+}
+
+interface AllocationNoteListRpcRow {
+  id: string;
+  allocation_id: string;
+  agency_id: string;
+  author_employee_id: string | null;
+  body: string;
+  source: AllocationNoteSource;
+  created_at: string;
+  deleted_at: string | null;
+  author_name: string | null;
+  author_avatar_url: string | null;
 }
 
 function mapNote(row: SupabaseAllocationNoteRow): AllocationNote {
@@ -40,6 +48,29 @@ function mapNote(row: SupabaseAllocationNoteRow): AllocationNote {
     authorName: row.author?.name,
     authorAvatarUrl: row.author?.avatar_url ?? null,
   };
+}
+
+function mapNoteFromRpcRow(row: AllocationNoteListRpcRow): AllocationNote {
+  return {
+    id: row.id,
+    allocationId: row.allocation_id,
+    agencyId: row.agency_id,
+    authorEmployeeId: row.author_employee_id,
+    body: row.body,
+    source: row.source,
+    createdAt: row.created_at,
+    deletedAt: row.deleted_at,
+    authorName: row.author_name ?? undefined,
+    authorAvatarUrl: row.author_avatar_url ?? null,
+  };
+}
+
+function rowsToCountMap(rows: AllocationNoteCountRow[] | null): Record<string, number> {
+  const counts: Record<string, number> = {};
+  for (const row of rows ?? []) {
+    counts[row.allocation_id] = Number(row.note_count) || 0;
+  }
+  return counts;
 }
 
 export async function fetchAllocationNotes(allocationId: string): Promise<AllocationNote[]> {
@@ -71,74 +102,55 @@ export async function fetchAllocationNotes(allocationId: string): Promise<Alloca
   return (data ?? []).map(row => mapNote(row as SupabaseAllocationNoteRow));
 }
 
+/** Conteos para un conjunto explícito de allocations (p. ej. tareas visibles en Mi día). */
 export async function fetchAllocationNoteCounts(
   allocationIds: string[],
-  agencyId?: string,
+  agencyId: string,
 ): Promise<Record<string, number>> {
-  if (allocationIds.length === 0) return {};
+  if (allocationIds.length === 0 || !agencyId) return {};
 
-  const counts: Record<string, number> = {};
-  for (const id of allocationIds) counts[id] = 0;
+  const uniqueIds = [...new Set(allocationIds)];
+  const { data, error } = await supabase.rpc('count_allocation_notes_for_ids', {
+    p_agency_id: agencyId,
+    p_allocation_ids: uniqueIds,
+  });
 
-  for (const chunk of chunkAllocationIds(allocationIds)) {
-    let query = supabase
-      .from('allocation_notes')
-      .select('allocation_id')
-      .in('allocation_id', chunk)
-      .is('deleted_at', null);
-
-    if (agencyId) {
-      query = query.eq('agency_id', agencyId);
-    }
-
-    const { data, error } = await query;
-    if (error) throw error;
-
-    for (const row of data ?? []) {
-      const key = row.allocation_id as string;
-      counts[key] = (counts[key] ?? 0) + 1;
-    }
-  }
-
-  return counts;
+  if (error) throw error;
+  return rowsToCountMap((data ?? []) as AllocationNoteCountRow[]);
 }
 
-export async function fetchAllocationNotesForIds(allocationIds: string[]): Promise<AllocationNote[]> {
-  if (allocationIds.length === 0) return [];
+/** Conteos del planificador: empleado + mes efectivo (week_start_date en ese mes). */
+export async function fetchAllocationNoteCountsForEmployeeMonth(
+  agencyId: string,
+  employeeId: string,
+  viewMonth: Date,
+): Promise<Record<string, number>> {
+  if (!agencyId || !employeeId) return {};
 
-  const notes: AllocationNote[] = [];
+  const { data, error } = await supabase.rpc('count_allocation_notes_for_employee_month', {
+    p_agency_id: agencyId,
+    p_employee_id: employeeId,
+    p_month: format(startOfMonth(viewMonth), 'yyyy-MM-dd'),
+  });
 
-  for (const chunk of chunkAllocationIds(allocationIds)) {
-    const { data, error } = await supabase
-      .from('allocation_notes')
-      .select(
-        `
-      id,
-      allocation_id,
-      agency_id,
-      author_employee_id,
-      body,
-      source,
-      created_at,
-      deleted_at,
-      author:employees!allocation_notes_author_employee_id_fkey (
-        id,
-        name,
-        avatar_url
-      )
-    `
-      )
-      .in('allocation_id', chunk)
-      .is('deleted_at', null)
-      .order('created_at', { ascending: true });
+  if (error) throw error;
+  return rowsToCountMap((data ?? []) as AllocationNoteCountRow[]);
+}
 
-    if (error) throw error;
-    notes.push(...(data ?? []).map(row => mapNote(row as SupabaseAllocationNoteRow)));
-  }
+export async function fetchAllocationNotesForIds(
+  allocationIds: string[],
+  agencyId: string,
+): Promise<AllocationNote[]> {
+  if (allocationIds.length === 0 || !agencyId) return [];
 
-  return notes.sort(
-    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
-  );
+  const uniqueIds = [...new Set(allocationIds)];
+  const { data, error } = await supabase.rpc('list_allocation_notes_for_ids', {
+    p_agency_id: agencyId,
+    p_allocation_ids: uniqueIds,
+  });
+
+  if (error) throw error;
+  return ((data ?? []) as AllocationNoteListRpcRow[]).map(mapNoteFromRpcRow);
 }
 
 export async function createAllocationNote(params: {
@@ -206,36 +218,22 @@ export async function copyAllocationNotes(fromAllocationId: string, toAllocation
   return typeof data === 'number' ? data : 0;
 }
 
-/** Búsqueda ligera: allocation_ids que tienen notas cuyo body coincide (ilike). */
+/** Búsqueda en notas dentro de un conjunto acotado de allocations (Mi día, etc.). */
 export async function searchAllocationIdsByNoteBody(
   allocationIds: string[],
   needle: string,
-  agencyId?: string,
+  agencyId: string,
 ): Promise<Set<string>> {
-  const q = needle.trim().toLowerCase();
-  if (!q || allocationIds.length === 0) return new Set();
+  const q = needle.trim();
+  if (!q || allocationIds.length === 0 || !agencyId) return new Set();
 
-  const hits = new Set<string>();
+  const uniqueIds = [...new Set(allocationIds)];
+  const { data, error } = await supabase.rpc('search_allocation_ids_by_note_body', {
+    p_agency_id: agencyId,
+    p_allocation_ids: uniqueIds,
+    p_query: q,
+  });
 
-  for (const chunk of chunkAllocationIds(allocationIds)) {
-    let query = supabase
-      .from('allocation_notes')
-      .select('allocation_id, body')
-      .in('allocation_id', chunk)
-      .is('deleted_at', null);
-
-    if (agencyId) {
-      query = query.eq('agency_id', agencyId);
-    }
-
-    const { data, error } = await query;
-    if (error) throw error;
-
-    for (const row of data ?? []) {
-      const body = String(row.body ?? '').toLowerCase();
-      if (body.includes(q)) hits.add(row.allocation_id as string);
-    }
-  }
-
-  return hits;
+  if (error) throw error;
+  return new Set((data ?? []) as string[]);
 }
