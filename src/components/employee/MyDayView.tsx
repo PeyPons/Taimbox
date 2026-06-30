@@ -103,13 +103,13 @@ export function MyDayView({
       return;
     }
     let cancelled = false;
-    void searchAllocationIdsByNoteBody(scopedAllocationIds, q).then(hits => {
+    void searchAllocationIdsByNoteBody(scopedAllocationIds, q, currentAgency?.id).then(hits => {
       if (!cancelled) setNoteSearchHits(hits);
     });
     return () => {
       cancelled = true;
     };
-  }, [searchQuery, scopedAllocationIds]);
+  }, [searchQuery, scopedAllocationIds, currentAgency?.id]);
 
   const dailyCapacity = useMemo(() => {
     if (currentUser?.workSchedule) {

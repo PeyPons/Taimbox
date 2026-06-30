@@ -19,8 +19,8 @@ const STALE_MS = 60 * 1000;
 export const allocationNotesQueryKeys = {
   all: ['allocation-notes'] as const,
   byAllocation: (allocationId: string) => ['allocation-notes', 'allocation', allocationId] as const,
-  counts: (allocationIds: string[]) =>
-    ['allocation-notes', 'counts', ...[...allocationIds].sort()] as const,
+  counts: (agencyId: string | undefined, idsKey: string) =>
+    ['allocation-notes', 'counts', agencyId ?? '', idsKey] as const,
 };
 
 export function useAllocationNotes(allocationId: string | undefined, enabled = true) {
@@ -33,13 +33,21 @@ export function useAllocationNotes(allocationId: string | undefined, enabled = t
 }
 
 export function useAllocationNoteCounts(allocationIds: string[]) {
-  const stableKey = useMemo(() => [...allocationIds].sort().join(','), [allocationIds]);
+  const { currentAgency } = useAgency();
+  const agencyId = currentAgency?.id;
+
+  const idsKey = useMemo(() => [...allocationIds].sort().join(','), [allocationIds]);
+  const ids = useMemo(
+    () => (idsKey ? idsKey.split(',') : []),
+    [idsKey],
+  );
 
   return useQuery({
-    queryKey: allocationNotesQueryKeys.counts(stableKey ? stableKey.split(',') : []),
-    queryFn: () => fetchAllocationNoteCounts(stableKey ? stableKey.split(',') : []),
-    enabled: allocationIds.length > 0,
+    queryKey: allocationNotesQueryKeys.counts(agencyId, idsKey),
+    queryFn: () => fetchAllocationNoteCounts(ids, agencyId),
+    enabled: ids.length > 0 && Boolean(agencyId),
     staleTime: STALE_MS,
+    retry: false,
   });
 }
 

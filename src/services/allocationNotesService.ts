@@ -2,7 +2,18 @@ import { supabase } from '@/lib/supabase';
 import type { AllocationNote, AllocationNoteSource } from '@/types';
 
 const NOTES_LIMIT = 50;
+/** PostgREST/nginx rechazan URLs con `in.(…)` muy largas (502 → el navegador muestra CORS). */
+const ALLOCATION_IDS_IN_BATCH_SIZE = 50;
 export const ALLOCATION_NOTE_MAX_LENGTH = 10_000;
+
+function chunkAllocationIds(ids: string[]): string[][] {
+  const unique = [...new Set(ids)];
+  const chunks: string[][] = [];
+  for (let i = 0; i < unique.length; i += ALLOCATION_IDS_IN_BATCH_SIZE) {
+    chunks.push(unique.slice(i, i + ALLOCATION_IDS_IN_BATCH_SIZE));
+  }
+  return chunks;
+}
 
 interface SupabaseAllocationNoteRow {
   id: string;
@@ -61,34 +72,47 @@ export async function fetchAllocationNotes(allocationId: string): Promise<Alloca
 }
 
 export async function fetchAllocationNoteCounts(
-  allocationIds: string[]
+  allocationIds: string[],
+  agencyId?: string,
 ): Promise<Record<string, number>> {
   if (allocationIds.length === 0) return {};
 
-  const { data, error } = await supabase
-    .from('allocation_notes')
-    .select('allocation_id')
-    .in('allocation_id', allocationIds)
-    .is('deleted_at', null);
-
-  if (error) throw error;
-
   const counts: Record<string, number> = {};
   for (const id of allocationIds) counts[id] = 0;
-  for (const row of data ?? []) {
-    const key = row.allocation_id as string;
-    counts[key] = (counts[key] ?? 0) + 1;
+
+  for (const chunk of chunkAllocationIds(allocationIds)) {
+    let query = supabase
+      .from('allocation_notes')
+      .select('allocation_id')
+      .in('allocation_id', chunk)
+      .is('deleted_at', null);
+
+    if (agencyId) {
+      query = query.eq('agency_id', agencyId);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    for (const row of data ?? []) {
+      const key = row.allocation_id as string;
+      counts[key] = (counts[key] ?? 0) + 1;
+    }
   }
+
   return counts;
 }
 
 export async function fetchAllocationNotesForIds(allocationIds: string[]): Promise<AllocationNote[]> {
   if (allocationIds.length === 0) return [];
 
-  const { data, error } = await supabase
-    .from('allocation_notes')
-    .select(
-      `
+  const notes: AllocationNote[] = [];
+
+  for (const chunk of chunkAllocationIds(allocationIds)) {
+    const { data, error } = await supabase
+      .from('allocation_notes')
+      .select(
+        `
       id,
       allocation_id,
       agency_id,
@@ -103,13 +127,18 @@ export async function fetchAllocationNotesForIds(allocationIds: string[]): Promi
         avatar_url
       )
     `
-    )
-    .in('allocation_id', allocationIds)
-    .is('deleted_at', null)
-    .order('created_at', { ascending: true });
+      )
+      .in('allocation_id', chunk)
+      .is('deleted_at', null)
+      .order('created_at', { ascending: true });
 
-  if (error) throw error;
-  return (data ?? []).map(row => mapNote(row as SupabaseAllocationNoteRow));
+    if (error) throw error;
+    notes.push(...(data ?? []).map(row => mapNote(row as SupabaseAllocationNoteRow)));
+  }
+
+  return notes.sort(
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+  );
 }
 
 export async function createAllocationNote(params: {
@@ -180,23 +209,33 @@ export async function copyAllocationNotes(fromAllocationId: string, toAllocation
 /** Búsqueda ligera: allocation_ids que tienen notas cuyo body coincide (ilike). */
 export async function searchAllocationIdsByNoteBody(
   allocationIds: string[],
-  needle: string
+  needle: string,
+  agencyId?: string,
 ): Promise<Set<string>> {
   const q = needle.trim().toLowerCase();
   if (!q || allocationIds.length === 0) return new Set();
 
-  const { data, error } = await supabase
-    .from('allocation_notes')
-    .select('allocation_id, body')
-    .in('allocation_id', allocationIds)
-    .is('deleted_at', null);
-
-  if (error) throw error;
-
   const hits = new Set<string>();
-  for (const row of data ?? []) {
-    const body = String(row.body ?? '').toLowerCase();
-    if (body.includes(q)) hits.add(row.allocation_id as string);
+
+  for (const chunk of chunkAllocationIds(allocationIds)) {
+    let query = supabase
+      .from('allocation_notes')
+      .select('allocation_id, body')
+      .in('allocation_id', chunk)
+      .is('deleted_at', null);
+
+    if (agencyId) {
+      query = query.eq('agency_id', agencyId);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    for (const row of data ?? []) {
+      const body = String(row.body ?? '').toLowerCase();
+      if (body.includes(q)) hits.add(row.allocation_id as string);
+    }
   }
+
   return hits;
 }
