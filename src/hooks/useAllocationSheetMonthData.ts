@@ -25,6 +25,8 @@ export function useAllocationSheetMonthData(params: UseAllocationSheetMonthDataP
   const [isLoadingTasks, setIsLoadingTasks] = useState(true);
   const [deadlines, setDeadlines] = useState<Deadline[]>([]);
   const loadedMonthsRef = useRef<Set<string>>(new Set());
+  /** Meses confirmados sin allocations (evita recargar en bucle meses vacíos). */
+  const emptyMonthsLoadedRef = useRef<Set<string>>(new Set());
   const prevAgencyIdRef = useRef<string | undefined>(currentAgencyId);
 
   const monthKey = useMemo(() => format(startOfMonth(viewDate), 'yyyy-MM'), [viewDate]);
@@ -32,6 +34,7 @@ export function useAllocationSheetMonthData(params: UseAllocationSheetMonthDataP
   useEffect(() => {
     if (prevAgencyIdRef.current !== currentAgencyId) {
       loadedMonthsRef.current.clear();
+      emptyMonthsLoadedRef.current.clear();
       prevAgencyIdRef.current = currentAgencyId;
     }
   }, [currentAgencyId]);
@@ -41,25 +44,29 @@ export function useAllocationSheetMonthData(params: UseAllocationSheetMonthDataP
 
     const hasRows = monthHasAllocationRows(viewDate, allocations);
 
-    if (loadedMonthsRef.current.has(monthKey) && hasRows) {
-      setIsLoadingTasks(false);
-      return;
-    }
-
-    if (loadedMonthsRef.current.has(monthKey) && !hasRows) {
-      loadedMonthsRef.current.delete(monthKey);
-    }
-
     if (hasRows) {
       loadedMonthsRef.current.add(monthKey);
+      emptyMonthsLoadedRef.current.delete(monthKey);
       setIsLoadingTasks(false);
       return;
+    }
+
+    if (loadedMonthsRef.current.has(monthKey) && emptyMonthsLoadedRef.current.has(monthKey)) {
+      setIsLoadingTasks(false);
+      return;
+    }
+
+    if (loadedMonthsRef.current.has(monthKey) && !emptyMonthsLoadedRef.current.has(monthKey)) {
+      loadedMonthsRef.current.delete(monthKey);
     }
 
     setIsLoadingTasks(true);
     loadDataForMonth(viewDate)
       .then((ok) => {
-        if (ok) loadedMonthsRef.current.add(monthKey);
+        if (ok) {
+          loadedMonthsRef.current.add(monthKey);
+          emptyMonthsLoadedRef.current.add(monthKey);
+        }
       })
       .finally(() => {
         setIsLoadingTasks(false);
