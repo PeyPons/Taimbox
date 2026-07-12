@@ -1,91 +1,114 @@
 ---
 name: redaccion-blog-articulos
 description: >-
-  Redacta y revisa artículos de blog en español con tono humano, capas visuales en
-  HTML/React (tablas, infografías, iconos en títulos) y criterio SEO editorial sin
-  copy para máquinas. Incluye cuándo usar componentes dinámicos solo si aportan
-  valor. Usar al escribir o revisar posts del blog, guías largas, TOC, JSON-LD,
-  infografías en `src/components/landing/blog/`, o cuando el usuario pida voz
-  natural frente a jerga SEO/inglés innecesario.
+  Crear, revisar, traducir, migrar o publicar artículos del CMS de Taimbox con
+  profundidad editorial, evidencia, bloques visuales útiles, negrita moderada,
+  paridad ES/EN y verificación técnica. Usar al tocar blog_posts, bloques JSONB,
+  metadata, JSON-LD, TOC, CTA, visualRef, scripts de migración del blog o el
+  renderer público.
 ---
 
-# Redacción de artículos de blog (Taimbox y similares)
+# Redacción y revisión del blog de Taimbox
 
-## Objetivo
+## Resultado esperado
 
-El lector es una **persona**, no un crawler. El texto debe sonar a conversación informada, no a plantilla rellenada con palabras clave, ni a manual de consultoría con “palancas” y “accionable” en cada párrafo.
+Entregar artículos que resuelvan una intención concreta, tengan la misma utilidad en ES y EN y funcionen en la página renderizada. Metadata, volumen total o ausencia de errores técnicos no bastan si los H2 siguen vacíos o la página parece un esquema expandido.
+
+## Flujo obligatorio
+
+1. **Leer la fuente real.** Consultar `docs/15-cms-blog.md`, `src/lib/blog/blockSchema.ts` y el estado actual de `blog_posts`. No asumir que `blog.json` o una migración legacy coincide con producción.
+2. **Guardar un antes.** Exportar los posts afectados con IDs, `updated_at`, metadata, bloques ES/EN y JSON-LD. No guardar credenciales.
+3. **Auditar antes de reescribir.** Separar:
+   - integridad: schema, IDs, anclas, enlaces, Markdown residual y JSON-LD;
+   - profundidad: qué promete y qué entrega cada H2;
+   - traducción: significado, estructura, CTA y rutas localizadas;
+   - presentación: ancho de lectura, jerarquía, contraste y ritmo de bloques.
+4. **Diseñar la mejora por sección.** Conservar lo útil. Añadir prosa, tabla, lista, callout, ejemplo o visual solo si resuelve una carencia identificada.
+5. **Redactar ES y EN en paralelo.** Traducir la intención y el nivel de detalle, no palabra por palabra. Justificar cualquier diferencia estructural.
+6. **Validar el borrador.** Ejecutar `npm run audit:blog -- <export-o-dry-run.json> --strict` y corregir errores/avisos relevantes.
+7. **Escribir con control de concurrencia.** En cambios por API/SQL, usar transacción y guard de `updated_at`; abortar si el artículo cambió desde el export.
+8. **Leer de vuelta.** Comparar la API pública con el objeto preparado, revisar enlaces y renderizar al menos una ruta ES y su EN en escritorio y móvil.
+9. **Entregar trazabilidad.** Guardar inventario antes/después y resumir qué cambió por artículo. Distinguir contenido ya publicado de cambios de frontend pendientes de deploy.
+
+## Prueba de profundidad por H2
+
+Un H2 debe cumplir lo que promete. Marcar para revisión cualquier H2 que tenga solo un párrafo genérico y ninguna de estas capas:
+
+- explicación suficiente para entender la idea y tomar una decisión;
+- ejemplo trabajado o contraste entre dos casos;
+- tabla, lista, checklist, protocolo o callout con función real;
+- subsecciones H3 que desarrollen el tema;
+- visual que reduzca complejidad y tenga explicación textual.
+
+Un H2 padre puede tener una introducción corta si organiza H3 sustanciales. No inflar conclusiones ni añadir bloques decorativos para superar una métrica.
+
+Preferir títulos descriptivos. Evitar fórmulas como “lo que nadie te cuenta”, “las causas reales que muchos no ven”, “la verdad incómoda” o “guía definitiva” salvo que el texto demuestre literalmente esa promesa.
+
+## Evidencia, cifras y ejemplos
+
+- No presentar porcentajes, tiempos, costes o bandas como universales sin fuente verificable y contexto equivalente.
+- En temas técnicos, legales, médicos o de investigación, preferir fuente primaria u organismo responsable. Enlazar la afirmación cerca del dato.
+- Si una cifra es una configuración de plantilla, ejemplo interno o alerta operativa, etiquetarla como tal; no llamarla benchmark sectorial.
+- Un cálculo ilustrativo debe mostrar entradas, fórmula y resultado. No convertir el resultado del ejemplo en recomendación general.
+- No inventar testimonios ni escenas que parezcan observaciones reales. Los ejemplos hipotéticos deben ser plausibles y quedar identificados como ejemplos.
+- No diagnosticar salud, intención o rendimiento individual desde métricas de carga.
+
+## Uso de negrita
+
+La negrita debe ayudar a escanear una decisión, no colorear el artículo.
+
+- En un párrafo o callout normal, usar como máximo un fragmento breve en `<strong>`; admitir un segundo solo si separa dos conceptos realmente distintos.
+- No poner frases completas, varias líneas ni más de aproximadamente el 30 % de las palabras del bloque en negrita.
+- No encadenar `</strong> <strong>` ni usar negrita en cada oración.
+- En listas, no empezar todos los ítems con una etiqueta en negrita por sistema. Usarla solo donde el lector necesite distinguir categorías; si todos los ítems tienen etiqueta, considerar una tabla o H3.
+- No añadir `<strong>` dentro de tablas: la tabla y su primera columna ya aportan jerarquía visual.
+- No usar negrita para simular un encabezado. Crear un bloque `heading`, `callout` o una lista estructurada.
+- Fórmulas, advertencias críticas y una etiqueta breve de callout son usos válidos.
+
+El auditor marca densidad, fragmentos repetidos y negrita extendida; revisar el contexto antes de aceptar una excepción.
 
 ## Voz y tono
 
-- **Español natural**: frases completas, ritmo variado. Evitar listas de etiquetas (“paso opcional”, “bloque muy buscado”, “orientativo” repetido sin necesidad).
-- **Inglés solo con sentido**: si un término se usa en el día a día del lector (p. ej. en agencias), puede aparecer **una vez** en contexto (“en inglés lo llaman…”). No llenar el párrafo de anglicismos intercambiables por castellano.
-- **Sustituir jerga de máquina**:
-  - “Workload vs recursos” → ideas en castellano: “quién hace qué” y “con qué medios”.
-  - “Palancas” → “cosas concretas que puedes hacer”, “qué cambiar primero”.
-  - Riesgos genéricos (“rotación”) → consecuencias humanas creíbles cuando encaje el tono del sitio.
-- **Inyectar Cicatrices de Realidad**: > "Cada sección debe incluir al menos una 'cicatriz': un escenario real, mundano y específico que solo alguien que trabaja en una agencia reconocería. No hables de 'empleados estresados'; habla de 'tu diseñadora senior que deja de enviar GIFs por Slack y empieza a responder con un frío recibido'. Sustituye las abstracciones por consecuencias sensoriales: el silencio en un canal de equipo, las entregas a las 11 de la noche de un domingo o el 'cinismo' en una reunión de feedback."
-- **Pasar la Prueba del Café (Peer-to-Peer)**: > "El tono no es de consultor, es de colega experto. Escribe como si estuvieras contándole esto a otro Director de Operaciones en un café. Si una frase suena a presentación de PowerPoint o a manual de recursos humanos, bórrala. Prohibido el 'Efecto Espejo': no resumas lo que acabas de decir con frases tipo 'En conclusión...' o 'Como hemos visto...'. Confía en la inteligencia del lector y pasa directamente al siguiente punto de dolor."
-- **Romper la Simetría y la Tibieza**: > "Evita las listas perfectas de 5 o 10 puntos si no son necesarias; la realidad es desordenada. Si una idea es la más importante, dale un párrafo de una sola frase corta para que impacte. Sé intelectualmente honesto y provocador: si un proceso es una pérdida de tiempo o si el 'presencialismo digital' es una toxicidad fomentada por el propio director, dilo sin rodeos. No busques el consenso, busca la verdad operativa."
-- **Énfasis (`strong`)**: con mesura; no tres negritas seguidas en cada línea.
-- **Enlaces internos**: anclajes descriptivos (“el hilo sobre X lo desarrollamos en…”), no “lee también” ni mandatos vacíos.
-- **CTA / producto**: útiles y editoriales (“explorar sin compromiso”), sin venta dura ni repetición de marca en cada sección.
+- Escribir con claridad y conocimiento operativo, sin jerga de consultoría ni frases de SEO.
+- Usar ejemplos concretos sin fingir experiencia personal ni dramatizar.
+- Tomar postura cuando la evidencia lo permite; expresar incertidumbre cuando no.
+- Evitar introducciones que repiten el H2 y conclusiones que resumen sin aportar una decisión.
+- Enlaces internos con ancla descriptiva; CTA útil, localizado y relacionado con la intención del artículo.
 
-## Presentación visual (HTML / React)
+## Bloques y ritmo visual
 
-Los bloques que **organizan** y **rompen** la densidad mejoran la lectura:
+- Prosa para explicar; lista para pasos/señales; tabla para comparar; callout para una regla o advertencia; visual para relaciones difíciles de explicar linealmente.
+- No repetir en una tabla lo mismo que dice el párrafo anterior.
+- Conservar una columna de prosa legible; permitir más ancho a tablas y visuales.
+- Moderar H2 largos y comprobar saltos de línea reales.
+- No esconder información necesaria en hover o animación.
+- En móvil, tablas deben convertirse en tarjetas o seguir siendo comprensibles sin desplazamiento horizontal excesivo.
 
-- **Tablas** para mapas rápidos (columnas con títulos claros para humanos, no solo para SEO).
-- **Listas** con `<ul>`/`<ol>` cuando hay pasos o señales; párrafos cortos entre bloques densos.
-- **Secciones** con `<section id="...">`, `scroll-mt-24` si el header es fijo.
-- **H2 con icono (patrón único del blog)**: igual que en `KpisAgenciasMarketingArticle` y `PlantillaPlanificacionRecursosArticle` — el `<h2>` lleva `flex items-center gap-3`, primero el icono Lucide (`h-8 w-8 … shrink-0`), **después** el texto del título (que puede ser de varias líneas). Así el icono queda **centrado en vertical** respecto al bloque de texto. No usar `items-start` ni `mt-0.5` en el icono para “bajarlo”: rompe la alineación cuando el título hace salto de línea.
-- **Numeración de secciones (guías largas)**: en artículos tipo guía, numerar los **H2 principales** en orden (`1.`, `2.`, …) y repetir el mismo orden en las **etiquetas del TOC** (`blogPosts` / `TOC_ITEMS`). Los **subpasos** van en **H3** (`Paso 1:`, apartados dentro de un bloque, etc.). El bloque **FAQ** al final puede usar H2 sin número (`Preguntas frecuentes`) para no competir con la numeración del cuerpo; mantener el mismo criterio en todos los posts largos.
-- **Espacio entre párrafos**: si dos `<p>` seguidos son bloques distintos (idea nueva), añadir margen explícito (`mb-6` al primero u otro patrón coherente con el artículo) para que no se peguen visualmente.
-- **Gráficos / visualizaciones**: rodea el bloque con al menos un **párrafo cicatriz** que conecte la forma visual con una consecuencia humana (p. ej. “ese desplome rojo es el coste de perder a tu mejor creativo…”). No dejes que el lector “lea solo el dibujo”: ancla el trazo a una escena reconocible. Si el gráfico tiene datos o avisos importantes, **no los escondas solo en hover**: repítelos en texto o en un callout siempre visible.
-  - Si el gráfico usa animación tipo “GIF” (evolución en el tiempo), el mensaje debe seguir siendo entendible **sin interacciones**: avisos/callouts siempre visibles.
-  - Si hay controles `pause/play`, al reanudar el gráfico debe **continuar desde donde se pausó** (no reiniciar desde el principio).
+## Traducción ES/EN
 
-## Elementos dinámicos o “especiales”
+- Mantener la misma promesa, ejemplos, cautelas, enlaces y CTA en ambos idiomas.
+- Revisar microcopy: botones, encabezados de tabla, etiquetas, unidades y textos de visuales.
+- No aceptar paridad solo porque el número de bloques coincide. Leer al menos los títulos, CTA y bloques añadidos en EN.
+- Usar rutas localizadas cuando existan y conservar `path_es`/`path_en`, canonical y hreflang.
 
-- **No es obligatorio** que cada post tenga animaciones, demos o componentes interactivos.
-- **Añadir** un componente visual o dinámico (p. ej. infografía por pasos, diagrama animado leve, `RevealOnScroll`) solo cuando:
-  - aclara algo que en texto sería larguísimo o confuso, o
-  - el lector gana **comprensión real** (no decoración).
-- Si se duda: **texto + tabla + ilustración estática** suele bastar; reservar lo dinámico para guías donde el flujo lo merezca.
+## QA técnica mínima
 
-## Fecha de publicación (no inventar)
+- Metadata ES/EN completa y específica.
+- `BlogBlocksSchema` válido; IDs únicos y `anchorId` en `^[a-z0-9-]+$`.
+- TOC y anclas coherentes.
+- Sin `href="#"`, `**` residual, palabras pegadas ni mezcla de idiomas.
+- FAQ visible y `FAQPage` sincronizados; `Article.dateModified` actualizado cuando corresponda.
+- Tiempo de lectura recalculado desde contenido renderizable.
+- Enlaces internos/externos comprobados y visual IDs existentes.
+- API pública idéntica al contenido preparado después de escribir.
+- Render en escritorio y móvil; comprobar también HTML inicial/metadata cuando el cambio dependa del frontend.
 
-- La **`date` en `blogPosts.ts`** y el **`datePublished`** del JSON-LD (y el fallback `post?.date ?? '…'` en la página) deben ser la **fecha real del día en que se publica** el artículo (calendario actual al hacer el cambio).
-- **No** pongas fechas futuras “por redondear” ni fechas supuestas: si hoy es 26, el post de hoy es `YYYY-MM-26`, no mañana.
-- Al publicar o revisar, confirma el día (sistema o pregunta explícita) y mantén **una sola fuente de verdad**: `blogPosts.ts` + mismos valores en schema.
+## Scripts legacy
 
-## Implementación en este repo (recordatorio)
+`scripts/migrate-blog-content.mjs` y parches antiguos se generaron desde traducciones legacy. No usarlos como fuente de verdad ni aplicarlos sobre producción sin export actual, diff completo, auditoría estricta y aprobación explícita. Si el CMS ya contiene una versión corregida, una migración regenerada puede reintroducir contenido pobre.
 
-Para artículos nuevos o cambios grandes, alinear con [`docs/01-arquitectura.md`](../../../docs/01-arquitectura.md) (base del blog y SEO público): `blogPosts.ts`, `App.tsx`, `public/sitemap.xml`, página en `src/pages/blog/`, componente en `src/components/landing/blog/`, Helmet + JSON-LD (`Article`, y si aplica `HowTo`, `FAQPage`, `SoftwareApplication`), FAQs alineadas con el copy visible.
+## Referencias
 
-Tras editar contenido o schema, mantener **coherencia** entre H3 del artículo, FAQ en página y preguntas del JSON-LD.
-
-## Checklist rápida de revisión
-
-- [ ] ¿Suena a persona o a “artículo optimizado”?
-- [ ] ¿Los párrafos largos están partidos donde cambia la idea?
-- [ ] ¿Hay margen visual entre bloques que deben separarse?
-- [ ] ¿Tablas y listas tienen encabezados/ítems legibles sin abuso de negritas?
-- [ ] ¿Los ids de sección y la TOC siguen coincidiendo?
-- [ ] ¿H2 numerados y TOC en el mismo orden? ¿Iconos con `items-center`?
-- [ ] ¿El JSON-LD refleja el título visible de cada FAQ?
-- [ ] ¿`date` / `datePublished` coinciden con el **día real de publicación** (sin fechas inventadas ni futuras)?
-- [ ] ¿Si hay gráfico o visual fuerte, hay **cicatriz** alrededor (o callout visible) y no dependemos solo del hover para lo importante?
-- [ ] ¿Si hay animación con `pause/play`, el `play` retoma el mismo estado (no empieza de 0)?
-- [ ] ¿Hay 'cicatrices'? (¿Aparecen situaciones específicas de la 'trinchera' de una agencia?).
-- [ ] ¿He evitado la jerga de relleno? (¿He eliminado frases como 'cabe destacar' o 'es vital mencionar'?). 
-- [ ] ¿He 'mojado la camiseta'? (¿He tomado una postura clara sobre un problema incómodo del sector?).
-- [ ] ¿Suena a conversación entre pares? (¿Evita sonar como un profesor o un robot optimizando SEO?).
-
-Ejemplo del cambio que esto genera:
-
-- Antes (IA estándar): "El burnout reduce la productividad de los equipos creativos y genera rotación".
-- Después (Con tu skill actualizada): "El burnout no llega con un aviso; llega cuando tu mejor creativo empieza a entregar diseños en 'gris' porque ya no tiene energía para pelear el briefing. Es ese silencio incómodo en Slack el que te está avisando de que tu margen se va a desplomar antes de que termine el trimestre".
-
-## Referencia
-
-Convenciones técnicas y lista de componentes del blog: [docs/01-arquitectura.md](../../../docs/01-arquitectura.md) (§ 1.2 y «Base de artículos del blog»).
+- CMS y bloques: [docs/15-cms-blog.md](../../../docs/15-cms-blog.md)
+- Schema: [src/lib/blog/blockSchema.ts](../../../src/lib/blog/blockSchema.ts)
+- Renderer: [src/components/landing/blog/BlockRenderer.tsx](../../../src/components/landing/blog/BlockRenderer.tsx)

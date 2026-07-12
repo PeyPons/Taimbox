@@ -83,17 +83,59 @@ Rutas:
 - `/admin/blog/new` y `/admin/blog/edit/:id` → [`AdminBlogEditorPage`](../src/pages/admin/AdminBlogEditorPage.tsx): formulario con tabs ES/EN, sección de identidad/rutas, traducciones+SEO, bloques editados como JSON con validación Zod en vivo, JSON-LD opcional y **previsualización lateral** que usa el mismo `BlockRenderer`. Los `visualRef` con `mode='fullPage'` no se prerrenderizan en el panel (advertencia visible).
 - Entrada nueva en [`AdminLayout`](../src/components/layout/AdminLayout.tsx) con icono `Newspaper`.
 
+## Auditoría editorial antes de publicar
+
+El schema válido no garantiza profundidad, traducción ni buena composición. Antes de publicar una creación, migración o reescritura, auditar un export de `blog_posts` o el JSON de dry run:
+
+```bash
+npm run audit:blog -- path/al/export.json
+npm run audit:blog -- path/al/dry-run.json --strict
+
+# Inventario completo de posts publicados con variables VITE_SUPABASE_* del entorno
+npm run audit:blog -- --live
+```
+
+[`scripts/audit-blog-content.mjs`](../scripts/audit-blog-content.mjs) acepta un array de posts, `{ posts: [] }` o `{ updates: [{ patch }] }`. Comprueba:
+
+- metadata ES/EN, paridad de bloques, IDs duplicados y formato de `anchorId`;
+- `href="#"`, Markdown residual, uniones de palabras y mezclas de idioma conocidas;
+- H2 con desarrollo insuficiente y sin tabla, lista, callout, visual o subsecciones;
+- CTA ingleses con microcopy español;
+- titulares grandilocuentes conocidos;
+- abuso de `<strong>`: varios fragmentos en el mismo bloque, densidad superior al 30 %, negritas adyacentes, tablas con negrita y listas donde casi todos los ítems la usan.
+
+Los avisos requieren criterio editorial; `--strict` los convierte en fallo para el export o dry run de los artículos afectados. La auditoría `--live` completa sirve también para inventariar y reducir deuda editorial existente sin ocultarla. La operativa completa está en [`.cursor/skills/redaccion-blog-articulos/SKILL.md`](../.cursor/skills/redaccion-blog-articulos/SKILL.md).
+
+### Criterio de negrita
+
+- En prosa y callouts, un fragmento breve por bloque como regla general.
+- No usar negrita para simular encabezados ni marcar cada frase.
+- Evitarla dentro de tablas: el componente ya resalta la primera columna.
+- Si casi todos los ítems de una lista necesitan una etiqueta en negrita, valorar una tabla o H3.
+- Fórmulas, advertencias críticas y una etiqueta corta de callout son excepciones válidas.
+
+### Verificación posterior
+
+Después de escribir en Supabase, leer de vuelta desde la API pública y comparar bloques ES/EN, metadata y JSON-LD con el objeto preparado. Verificar enlaces y renderizar como mínimo una ruta ES y su EN en escritorio y móvil. Un cambio de contenido puede estar vivo mientras un ajuste del renderer sigue pendiente de merge/deploy; informarlo por separado.
+
 ## Sitemap
 
 [`scripts/generate-blog-sitemap.mjs`](../scripts/generate-blog-sitemap.mjs) (script `npm run sitemap:blog`) consulta Supabase y reemplaza solo el contenido entre marcadores `<!-- BLOG-AUTO-START-ES --> ... <!-- BLOG-AUTO-END-ES -->` y su equivalente EN dentro de [`public/sitemap.xml`](../public/sitemap.xml). Las URLs no-blog se mantienen tal cual.
 
 Recordatorio: ejecutar `npm run sitemap:blog` antes de cada despliegue tras cambios de slugs/altas/bajas; idealmente en el pipeline de release.
 
-## Decomposición de los 8 posts legacy
+## Decomposición de los posts legacy
 
-[`scripts/migrate-blog-content.mjs`](../scripts/migrate-blog-content.mjs) (`npm run migrate:blog-content`) lee [`src/locales/{es,en}/blog.json`](../src/locales/es/blog.json) y emite [`supabase/migrations/20260507120000_blog_posts_decompose.sql`](../supabase/migrations/20260507120000_blog_posts_decompose.sql) con `UPDATE blog_posts SET blocks_es=…, blocks_en=…, json_ld_es=…, json_ld_en=…` por slug. Reemplaza el bloque `visualRef` único de cada post por bloques granulares editables (`paragraph`, `heading`, `callout`, `list`, `table`, `faq`, `toc`, `cta`, `relatedPost`, más `visualRef inline` para gráficos custom como `ParkinsonLawVisual`, `OcupacionVsRentabilidadChart`, `CargaTrabajoFrameworkVisual`, `SenalesCargaAlertaVisual`, `ScopeProtocoloInfographic`).
+[`scripts/migrate-blog-content.mjs`](../scripts/migrate-blog-content.mjs) lee [`src/locales/{es,en}/blog.json`](../src/locales/es/blog.json) y genera SQL con bloques granulares. Es una herramienta **legacy**, no la fuente de verdad del CMS actual: volver a ejecutarla puede sobrescribir correcciones editoriales hechas directamente en Supabase.
 
-- El UPDATE es **idempotente**: re-correr el script regenera el SQL desde el `blog.json` actual; aplicarlo múltiples veces produce el mismo estado.
+El script está bloqueado por defecto. Solo regenerar tras exportar el estado live, revisar el diff completo y pasar la auditoría estricta:
+
+```bash
+ALLOW_LEGACY_BLOG_MIGRATION=1 npm run migrate:blog-content
+npm run audit:blog -- path/al/resultado.json --strict
+```
+
+- El UPDATE es idempotente respecto a `blog.json`, pero **no** respecto a las ediciones actuales del CMS: puede restaurar contenido antiguo aunque técnicamente produzca siempre el mismo SQL.
 - Cada post produce 30–105 bloques (`que-es-timeboxing` → 63, `plantilla-planificacion-recursos-agencia` → 104, `capacidad-calendario-vs-capacidad-productiva-equipo` → 31, etc.).
 - El JSON-LD se autogenera con `@graph` Article + FAQPage opcional + SoftwareApplication opcional.
 - Tras aplicar este UPDATE, los `BlockRenderer` granulares toman el render del cuerpo, así que los `*Article.tsx` legacy y las traducciones de `blog.json` quedan **desreferenciados** (puedes retirarlos en una limpieza posterior). El `*Page.tsx` legacy ya no se monta vía `visualRef fullPage`.
@@ -105,8 +147,8 @@ Aplicar:
 # 1. Aplicar la migración inicial (crea tabla + seed con visualRef)
 supabase db push   # 20260506120000_blog_posts.sql
 
-# 2. (opcional) Regenerar SQL si has cambiado blog.json
-npm run migrate:blog-content
+# 2. (solo con export/diff/aprobación) Regenerar SQL legacy
+ALLOW_LEGACY_BLOG_MIGRATION=1 npm run migrate:blog-content
 
 # 3. Aplicar la decomposición a bloques granulares
 supabase db push   # 20260507120000_blog_posts_decompose.sql

@@ -10,6 +10,16 @@ import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { randomUUID } from "node:crypto";
 
+if (process.env.ALLOW_LEGACY_BLOG_MIGRATION !== "1") {
+  console.error([
+    "[migrate:blog-content] Bloqueado por seguridad.",
+    "El CMS en Supabase es la fuente de verdad y las traducciones legacy pueden reintroducir contenido obsoleto.",
+    "Exporta los posts actuales, revisa el diff y ejecuta audit:blog --strict antes de continuar.",
+    "Solo tras aprobación explícita: ALLOW_LEGACY_BLOG_MIGRATION=1 npm run migrate:blog-content",
+  ].join("\n"));
+  process.exit(1);
+}
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const ROOT = resolve(__dirname, "..");
