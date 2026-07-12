@@ -83,13 +83,14 @@ function renderBlock(block: BlogBlock, allBlocks: BlogBlock[]) {
 
 function blockWrapperClass(block: BlogBlock): string | undefined {
   if (block.type === "visualRef") return "py-1 sm:py-2";
-  return undefined;
+  if (block.type === "table") return undefined;
+  return "w-full max-w-3xl mx-auto";
 }
 
 function renderBlockGroup(group: ReturnType<typeof groupBlocksForLayout>[number], allBlocks: BlogBlock[]) {
   if (group.kind === "prose") {
     return (
-      <div className="space-y-3 sm:space-y-3.5 text-indigo-100/90">
+      <div className="w-full max-w-3xl mx-auto space-y-3 sm:space-y-3.5 text-indigo-100/90">
         {group.blocks.map((block) => (
           <ParagraphBlock key={block.id} block={block} />
         ))}
@@ -99,7 +100,7 @@ function renderBlockGroup(group: ReturnType<typeof groupBlocksForLayout>[number]
 
   if (group.kind === "subsection") {
     return (
-      <div className="space-y-2.5 sm:space-y-3">
+      <div className="w-full max-w-3xl mx-auto space-y-2.5 sm:space-y-3">
         <HeadingBlock block={group.heading} />
         {group.blocks.length > 0 && (
           <div className="space-y-3 sm:space-y-3.5 sm:border-l-2 sm:border-indigo-400/20 sm:pl-5">

@@ -31,7 +31,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
 };
 
 const SIZE_BY_LEVEL: Record<HeadingBlockType["level"], string> = {
-  2: "text-lg sm:text-3xl md:text-[2rem]",
+  2: "text-xl sm:text-2xl md:text-3xl",
   3: "text-base sm:text-xl md:text-2xl",
   4: "text-base sm:text-lg",
 };
@@ -64,7 +64,7 @@ export function HeadingBlock({ block, sectionLead = false }: HeadingBlockProps) 
     return (
       <Tag
         id={block.anchorId}
-        className={`${SIZE_BY_LEVEL[block.level]} font-bold text-white scroll-mt-24 ${marginByLevel} grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 sm:gap-x-4 items-center`}
+        className={`${SIZE_BY_LEVEL[block.level]} font-bold text-white scroll-mt-24 ${marginByLevel} ${sectionLead ? "w-full max-w-3xl mx-auto" : ""} grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 sm:gap-x-4 items-center`}
       >
         <Icon
           className={`${ICON_SIZE_BY_LEVEL[block.level]} text-indigo-300`}
@@ -78,7 +78,7 @@ export function HeadingBlock({ block, sectionLead = false }: HeadingBlockProps) 
   return (
     <Tag
       id={block.anchorId}
-      className={`${SIZE_BY_LEVEL[block.level]} font-bold text-white leading-snug sm:leading-tight scroll-mt-24 ${marginByLevel} ${
+      className={`${SIZE_BY_LEVEL[block.level]} font-bold text-white leading-snug sm:leading-tight scroll-mt-24 ${marginByLevel} ${sectionLead ? "w-full max-w-3xl mx-auto" : ""} ${
         Icon ? "flex items-center gap-3 sm:gap-4" : ""
       }`}
     >
