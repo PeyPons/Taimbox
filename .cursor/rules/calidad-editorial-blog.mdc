@@ -1,0 +1,18 @@
+---
+description: >-
+  Calidad editorial y técnica del blog CMS: profundidad por H2, evidencia,
+  negrita moderada, paridad ES/EN, bloques visuales útiles y verificación tras
+  publicar. Aplicar al tocar contenido, migraciones, renderer o docs del blog.
+globs: .cursor/skills/redaccion-blog-articulos/**,src/components/landing/blog/**,src/pages/BlogArticleDynamicPage.tsx,src/lib/blog/**,src/locales/*/blog.json,scripts/*blog*,docs/15-cms-blog.md
+alwaysApply: false
+---
+
+# Calidad editorial del blog
+
+1. Leer y seguir [redaccion-blog-articulos](../skills/redaccion-blog-articulos/SKILL.md).
+2. No dar por terminado un post solo por tener metadata, traducción y bloques válidos: revisar lo que desarrolla cada H2 y la página renderizada.
+3. No inventar benchmarks, testimonios ni “cicatrices” que parezcan hechos. Etiquetar ejemplos y enlazar fuentes verificables.
+4. Usar `<strong>` con mesura: un fragmento breve por bloque narrativo como regla general, sin negrita sistemática en listas ni tablas.
+5. Antes de publicar, ejecutar `npm run audit:blog -- <export-o-dry-run.json> --strict`.
+6. Para cambios live, guardar export previo, usar guard de `updated_at` y comparar la API pública con el objeto preparado.
+7. Verificar ES y EN, escritorio y móvil. Informar por separado qué está publicado y qué requiere merge/deploy.
