@@ -1,11 +1,11 @@
 import { useEffect, useRef } from 'react';
-import { invokeEdgeFunctionWithRetry } from '@/lib/invokeEdgeFunction';
+import { syncAdAccountCurrenciesFromPlatform } from '@/utils/adAccountCurrencySync';
 
 type AdAccountRow = { currency?: string | null };
 
 /**
- * Si hay cuentas sin moneda en ad_accounts_config, pide a Meta/Google el código ISO
- * y vuelve a cargar datos (una vez por montaje).
+ * Importa moneda ISO desde Meta/Google cuando falta en ad_accounts_config
+ * (p. ej. cuentas antiguas o registro manual sin sync). Reintenta si cambia el listado.
  */
 export function useRefreshMissingAdCurrencies(
   agencyId: string | undefined,
@@ -14,21 +14,21 @@ export function useRefreshMissingAdCurrencies(
   onRefreshed: () => void,
   enabled = true,
 ) {
-  const attempted = useRef(false);
+  const lastAttemptKey = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!enabled || !agencyId || attempted.current || accounts.length === 0) return;
-    const missing = accounts.some((a) => !a.currency?.trim());
-    if (!missing) return;
+    if (!enabled || !agencyId) return;
 
-    attempted.current = true;
-    const fn = platform === 'google' ? 'list-google-accounts' : 'list-meta-accounts';
-    void invokeEdgeFunctionWithRetry(
-      fn,
-      { agency_id: agencyId, sync_config: true },
-      { retries: 1, baseDelayMs: 800 },
-    )
+    const missingCount = accounts.filter((a) => !a.currency?.trim()).length;
+    const needsSync = accounts.length === 0 || missingCount > 0;
+    if (!needsSync) return;
+
+    const attemptKey = `${agencyId}:${platform}:${accounts.length}:${missingCount}`;
+    if (lastAttemptKey.current === attemptKey) return;
+    lastAttemptKey.current = attemptKey;
+
+    void syncAdAccountCurrenciesFromPlatform(agencyId, platform)
       .then(() => onRefreshed())
-      .catch((e) => console.warn(`[${fn}] refresh currencies:`, e));
+      .catch((e) => console.warn(`[${platform}] refresh currencies:`, e));
   }, [agencyId, platform, accounts, onRefreshed, enabled]);
 }

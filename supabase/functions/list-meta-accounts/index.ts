@@ -1,7 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import {
     AgencyAccessError,
-    assertAgencyPermission,
+    assertAgencyPermissionAny,
     getBearerToken,
 } from '../_shared/agency-access.ts'
 
@@ -51,13 +51,13 @@ Deno.serve(async (req) => {
 
         if (!agency_id) throw new Error('Falta el agency_id')
 
-        await assertAgencyPermission({
+        await assertAgencyPermissionAny({
             supabaseUrl,
             supabaseAnonKey,
             supabaseServiceKey: supabaseKey,
             token: bearer,
             agencyId: agency_id,
-            permission: 'can_access_agency_settings',
+            permissions: ['can_access_meta_ads', 'can_access_agency_settings'],
         })
 
         const { data: agency, error: agencyError } = await supabase
@@ -104,7 +104,7 @@ Deno.serve(async (req) => {
                 platform: 'meta',
                 is_active: true,
                 agency_id,
-                currency: acc.currency ?? null,
+                currency: acc.currency ? String(acc.currency).toUpperCase() : null,
             }))
             const { error: upsertErr } = await supabase
                 .from('ad_accounts_config')

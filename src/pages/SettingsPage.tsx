@@ -11,6 +11,7 @@ import { PlusCircle, ShieldCheck, Building2, ArrowRight, MessageCircle } from 'l
 import { usePermissions } from '@/hooks/usePermissions';
 import { useAgency } from '@/contexts/AgencyContext';
 import { useAppTranslation } from '@/hooks/useAppTranslation';
+import { normalizeMetaAccountId, syncAdAccountCurrenciesFromPlatform } from '@/utils/adAccountCurrencySync';
 
 export default function SettingsPage() {
     const { t } = useAppTranslation();
@@ -24,10 +25,10 @@ export default function SettingsPage() {
         if (!currentAgency?.id) return toast.error(t('settings.adAccounts.errorNoAgency', 'No hay agencia seleccionada.'));
 
         setLoading(true);
-        // Insertamos en la nueva tabla de configuración (solo Meta, Google se añade automáticamente)
+        const normalizedAccountId = normalizeMetaAccountId(accountId);
         const { error } = await supabase.from('ad_accounts_config').insert({
             platform: 'meta',
-            account_id: accountId,
+            account_id: normalizedAccountId,
             is_active: true,
             agency_id: currentAgency.id
         });
@@ -41,6 +42,11 @@ export default function SettingsPage() {
                 toast.error(errorMessage);
             }
         } else {
+            try {
+                await syncAdAccountCurrenciesFromPlatform(currentAgency.id, 'meta');
+            } catch (e) {
+                console.warn('sync meta currencies tras alta manual:', e);
+            }
             toast.success(t('settings.adAccounts.saveSuccess', 'Cuenta de Meta Ads añadida. Sincroniza ahora para ver datos.'));
             setAccountId('');
         }

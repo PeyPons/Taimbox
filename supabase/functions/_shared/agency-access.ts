@@ -106,6 +106,42 @@ export async function assertAgencyPermission(params: {
   }
 }
 
+/** Exige al menos uno de los permisos indicados (p. ej. Ads + settings para listar cuentas). */
+export async function assertAgencyPermissionAny(params: {
+  supabaseUrl: string;
+  supabaseAnonKey: string;
+  supabaseServiceKey: string;
+  token: string;
+  agencyId: string;
+  permissions: AgencyPermissionKey[];
+}): Promise<void> {
+  const { supabaseUrl, supabaseAnonKey, supabaseServiceKey, token, agencyId, permissions } = params;
+  if (permissions.length === 0) {
+    throw new AgencyAccessError(403, "Sin permiso para esta acción.");
+  }
+  let lastError: AgencyAccessError | null = null;
+  for (const permission of permissions) {
+    try {
+      await assertAgencyPermission({
+        supabaseUrl,
+        supabaseAnonKey,
+        supabaseServiceKey,
+        token,
+        agencyId,
+        permission,
+      });
+      return;
+    } catch (e) {
+      if (e instanceof AgencyAccessError && e.status === 403) {
+        lastError = e;
+        continue;
+      }
+      throw e;
+    }
+  }
+  throw lastError ?? new AgencyAccessError(403, "Sin permiso para esta acción.");
+}
+
 export async function assertPlatformAdmin(params: {
   supabaseUrl: string;
   supabaseAnonKey: string;
