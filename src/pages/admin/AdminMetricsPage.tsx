@@ -59,29 +59,29 @@ export default function AdminMetricsPage() {
 
   const cards = [
     {
-      title: t("admin.metrics.cards.agencies.title"),
+      title: t("admin.metrics.cardAgencies"),
       icon: Building2,
       items: [
-        { label: t("admin.metrics.cards.agencies.total"), value: metrics.total_agencies },
-        { label: t("admin.metrics.cards.agencies.active"), value: metrics.active_agencies },
-        { label: t("admin.metrics.cards.agencies.suspended"), value: metrics.suspended_agencies },
+        { label: t("admin.metrics.total"), value: metrics.total_agencies },
+        { label: t("admin.metrics.activeAgencies"), value: metrics.active_agencies },
+        { label: t("admin.metrics.suspendedAgencies"), value: metrics.suspended_agencies },
       ],
     },
     {
-      title: t("admin.metrics.cards.users.title"),
+      title: t("admin.metrics.cardUsers"),
       icon: Users,
       items: [
-        { label: t("admin.metrics.cards.users.employees"), value: metrics.total_employees },
-        { label: t("admin.metrics.cards.users.withAgency"), value: metrics.total_users_with_agency },
+        { label: t("admin.metrics.employeesTotal"), value: metrics.total_employees },
+        { label: t("admin.metrics.usersWithAgency"), value: metrics.total_users_with_agency },
       ],
     },
     {
-      title: t("admin.metrics.cards.support.title"),
+      title: t("admin.metrics.cardSupport"),
       icon: MessageSquare,
       items: [
-        { label: t("admin.metrics.cards.support.open"), value: metrics.support_tickets_open },
-        { label: t("admin.metrics.cards.support.inProgress"), value: metrics.support_tickets_in_progress },
-        { label: t("admin.metrics.cards.support.closed"), value: metrics.support_tickets_closed },
+        { label: t("admin.metrics.ticketsOpen"), value: metrics.support_tickets_open },
+        { label: t("admin.metrics.ticketsInProgress"), value: metrics.support_tickets_in_progress },
+        { label: t("admin.metrics.ticketsClosed"), value: metrics.support_tickets_closed },
       ],
     },
   ];
