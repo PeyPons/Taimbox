@@ -11,6 +11,7 @@ export interface BlogCmsSeed {
   date?: string;
   reading_minutes?: number;
   related_slug?: string | null;
+  related_slug_en?: string | null;
   title_es: string;
   title_en: string;
   description_es: string;
@@ -33,6 +34,7 @@ export interface BlogSeedFormPatch {
   date: string;
   readingMinutes: number;
   relatedSlug: string;
+  relatedSlugEn: string;
   titleEs: string;
   titleEn: string;
   descriptionEs: string;
@@ -149,6 +151,7 @@ export function seedToFormPatch(seed: BlogCmsSeed): BlogSeedFormPatch {
     date: seed.date ?? new Date().toISOString().slice(0, 10),
     readingMinutes: seed.reading_minutes ?? 5,
     relatedSlug: seed.related_slug ?? "",
+    relatedSlugEn: seed.related_slug_en ?? "",
     titleEs: seed.title_es,
     titleEn: seed.title_en,
     descriptionEs: seed.description_es,
@@ -172,6 +175,7 @@ export function formToCmsSeed(form: {
   date: string;
   readingMinutes: number;
   relatedSlug: string;
+  relatedSlugEn: string;
   titleEs: string;
   titleEn: string;
   descriptionEs: string;
@@ -193,6 +197,7 @@ export function formToCmsSeed(form: {
     date: form.date,
     reading_minutes: form.readingMinutes,
     related_slug: form.relatedSlug.trim() || null,
+    related_slug_en: form.relatedSlugEn.trim() || null,
     title_es: form.titleEs.trim(),
     title_en: form.titleEn.trim(),
     description_es: form.descriptionEs.trim(),

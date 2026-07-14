@@ -4175,6 +4175,8 @@
       "previewHint": "Preview uses the same BlockRenderer as the public site. fullPage visualRefs are not pre-rendered here.",
       "readingMinutes": "Reading min.",
       "relatedSlug": "Related slug (optional)",
+      "relatedSlugEn": "Related slug EN (optional)",
+      "relatedSlugEnHint": "Internal slug of the related article in English. If empty, the Spanish related slug is used.",
       "relatedSlugField": "Related slug",
       "saved": "Changes saved",
       "searchPlaceholder": "Search by slug or title.",
