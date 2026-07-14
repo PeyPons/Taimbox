@@ -3848,7 +3848,9 @@
       "selectColleagueWeek": "\"{{taskName}}\": select teammate and week",
       "writeExplanation": "\"{{taskName}}\": write an explanation",
       "cancelReason": "\"{{taskName}}\": state the reason for cancellation",
-      "chooseColleague": "Choose teammate"
+      "chooseColleague": "Choose teammate",
+      "tasksPendingSetup": "{{count}} task(s) still need an action",
+      "tasksPendingValidation": "{{count}} task(s) have incomplete or invalid data"
     },
     "mutations": {
       "selectTargetWeek": "Select a target week",
@@ -3912,7 +3914,10 @@
       "person": "Person",
       "weekLabel": "Week *",
       "overCapShort": "Over cap.",
-      "selectFromList": "Select a task from the list"
+      "selectFromList": "Select a task from the list",
+      "otherTabPendingCurrent": "{{count}} task(s) on the Current week tab still need an action. Switch tabs or configure them to close.",
+      "otherTabPendingPast": "{{count}} task(s) on the Require close tab still need an action. Switch tabs or configure them to close.",
+      "postponeNeedsRemainder": "This week's hours must be less than the estimate ({{assigned}}h) to move the rest to another week. Enter 0 if you made no progress."
     },
     "footer": {
       "configured": "{{resolved}}/{{total}} configured",

@@ -3834,7 +3834,9 @@
       "selectColleagueWeek": "\"{{taskName}}\": selecciona compañero y semana",
       "writeExplanation": "\"{{taskName}}\": escribe una explicación",
       "cancelReason": "\"{{taskName}}\": indica el motivo de la anulación",
-      "chooseColleague": "Elige compañero"
+      "chooseColleague": "Elige compañero",
+      "tasksPendingSetup": "Faltan {{count}} tarea(s) por configurar",
+      "tasksPendingValidation": "{{count}} tarea(s) con datos incompletos o inválidos"
     },
     "mutations": {
       "selectTargetWeek": "Selecciona una semana destino",
@@ -3898,7 +3900,10 @@
       "person": "Persona",
       "weekLabel": "Semana *",
       "overCapShort": "Sobre cap.",
-      "selectFromList": "Selecciona una tarea de la lista"
+      "selectFromList": "Selecciona una tarea de la lista",
+      "otherTabPendingCurrent": "Hay {{count}} tarea(s) en «Semana actual» sin configurar. Cambia de pestaña o confírmalas para cerrar.",
+      "otherTabPendingPast": "Hay {{count}} tarea(s) en «Requieren cierre» sin configurar. Cambia de pestaña o confírmalas para cerrar.",
+      "postponeNeedsRemainder": "Las horas de esta semana deben ser menores que el estimado ({{assigned}}h) para pasar el resto a otra semana. Pon 0 si no avanzaste."
     },
     "footer": {
       "configured": "{{resolved}}/{{total}} configuradas",
