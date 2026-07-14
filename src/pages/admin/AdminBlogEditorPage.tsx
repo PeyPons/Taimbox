@@ -48,6 +48,7 @@ interface FormState {
   date: string;
   readingMinutes: number;
   relatedSlug: string;
+  relatedSlugEn: string;
   titleEs: string;
   titleEn: string;
   descriptionEs: string;
@@ -94,6 +95,7 @@ function recordToFormState(
       date: new Date().toISOString().slice(0, 10),
       readingMinutes: 5,
       relatedSlug: "",
+      relatedSlugEn: "",
       titleEs: "",
       titleEn: "",
       descriptionEs: "",
@@ -116,6 +118,7 @@ function recordToFormState(
     date: record.date,
     readingMinutes: record.readingMinutes,
     relatedSlug: record.relatedSlug ?? "",
+    relatedSlugEn: record.relatedSlugEn ?? "",
     titleEs: record.titleEs,
     titleEn: record.titleEn,
     descriptionEs: record.descriptionEs,
@@ -270,6 +273,7 @@ export default function AdminBlogEditorPage() {
       date: form.date,
       readingMinutes: form.readingMinutes,
       relatedSlug: form.relatedSlug,
+      relatedSlugEn: form.relatedSlugEn,
       titleEs: form.titleEs,
       titleEn: form.titleEn,
       descriptionEs: form.descriptionEs,
@@ -347,6 +351,7 @@ export default function AdminBlogEditorPage() {
       date: form.date,
       readingMinutes: Math.min(239, Math.max(1, form.readingMinutes || 1)),
       relatedSlug: form.relatedSlug.trim() || null,
+      relatedSlugEn: form.relatedSlugEn.trim() || null,
       blocksEs: blocksEsResult as BlogBlock[],
       blocksEn: blocksEnResult as BlogBlock[],
       jsonLdEs: jsonLdEs.ok ? (jsonLdEs.value ?? null) : null,
@@ -512,17 +517,6 @@ export default function AdminBlogEditorPage() {
                   />
                 </div>
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="bp-relatedSlug">
-                  {t("admin.blog.relatedSlug")}
-                </Label>
-                <Input
-                  id="bp-relatedSlug"
-                  value={form.relatedSlug}
-                  onChange={(e) => setForm({ ...form, relatedSlug: e.target.value })}
-                  placeholder="que-es-timeboxing"
-                />
-              </div>
             </CardContent>
           </Card>
 
@@ -571,6 +565,31 @@ export default function AdminBlogEditorPage() {
                           })
                         }
                       />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>
+                        {lng === "es"
+                          ? t("admin.blog.relatedSlug")
+                          : t("admin.blog.relatedSlugEn")}
+                      </Label>
+                      <Input
+                        className="font-mono text-sm"
+                        value={lng === "es" ? form.relatedSlug : form.relatedSlugEn}
+                        onChange={(e) =>
+                          setForm({
+                            ...form,
+                            ...(lng === "es"
+                              ? { relatedSlug: e.target.value }
+                              : { relatedSlugEn: e.target.value }),
+                          })
+                        }
+                        placeholder="que-es-timeboxing"
+                      />
+                      {lng === "en" && (
+                        <p className="text-xs text-slate-500">
+                          {t("admin.blog.relatedSlugEnHint")}
+                        </p>
+                      )}
                     </div>
                     <div className="grid gap-2">
                       <Label>

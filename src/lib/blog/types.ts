@@ -22,6 +22,7 @@ export interface BlogPostRow {
   date: string;
   reading_minutes: number;
   related_slug: string | null;
+  related_slug_en: string | null;
   schema_version: number;
   blocks_es: unknown;
   blocks_en: unknown;
@@ -50,6 +51,7 @@ export interface BlogPostRecord {
   date: string;
   readingMinutes: number;
   relatedSlug: string | null;
+  relatedSlugEn: string | null;
   schemaVersion: number;
   blocksEs: BlogBlock[];
   blocksEn: BlogBlock[];
@@ -74,6 +76,7 @@ export interface BlogPostSummary {
   date: string;
   readingMinutes: number;
   relatedSlug: string | null;
+  relatedSlugEn: string | null;
   publishedAt: string | null;
   updatedAt: string;
 }
@@ -115,4 +118,14 @@ export function getLocaleSummaryFields(post: BlogPostSummary, lng: string) {
     description: en ? post.descriptionEn : post.descriptionEs,
     path: en ? post.pathEn : post.pathEs,
   };
+}
+
+/** Slug interno del artículo relacionado según idioma de la vista. */
+export function resolveRelatedSlugForLocale(
+  post: Pick<BlogPostRecord | BlogPostSummary, 'relatedSlug' | 'relatedSlugEn'>,
+  lng: string,
+): string | null {
+  const en = lng.startsWith('en');
+  const slug = en ? (post.relatedSlugEn?.trim() || post.relatedSlug?.trim()) : post.relatedSlug?.trim();
+  return slug || null;
 }

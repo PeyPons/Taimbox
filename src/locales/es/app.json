@@ -4161,6 +4161,8 @@
       "previewHint": "La previsualización usa el mismo BlockRenderer que la web pública. Los visualRef de tipo fullPage no se pre-renderizan aquí.",
       "readingMinutes": "Min. lectura",
       "relatedSlug": "Slug relacionado (opcional)",
+      "relatedSlugEn": "Slug relacionado EN (opcional)",
+      "relatedSlugEnHint": "Slug interno del artículo relacionado en inglés. Si está vacío, se usa el slug relacionado en español.",
       "relatedSlugField": "Slug relacionado",
       "saved": "Cambios guardados",
       "searchPlaceholder": "Buscar por slug o título…",

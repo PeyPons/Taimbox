@@ -1,14 +1,16 @@
 import { Suspense } from "react";
 import { useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { usePostByPath } from "@/hooks/useBlogPosts";
-import { getLocaleFields } from "@/lib/blog/types";
+import { usePostByPath, useRelatedSummary } from "@/hooks/useBlogPosts";
+import { blogLocaleFromPathname } from "@/lib/blog/localeFromPath";
+import { getLocaleFields, getLocaleSummaryFields, resolveRelatedSlugForLocale } from "@/lib/blog/types";
 import { getVisualEntry } from "@/lib/blog/visualRegistry";
 import { LandingHeader } from "@/components/landing/LandingHeader";
 import { LandingFooter } from "@/components/landing/LandingFooter";
 import { BlogBreadcrumb } from "@/components/landing/blog/BlogBreadcrumb";
 import { BlockRenderer } from "@/components/landing/blog/BlockRenderer";
 import { BlogReadingTime } from "@/components/landing/blog/BlogReadingTime";
+import { BlogRelatedPost } from "@/components/landing/blog/BlogRelatedPost";
 import { SeoTags } from "@/seo/SeoTags";
 import { absoluteUrl } from "@/lib/publicSiteUrl";
 import type { BlogPostRecord, BlogPostLocaleFields } from "@/lib/blog/types";
@@ -53,6 +55,28 @@ function NotFoundFallback() {
   );
 }
 
+function BlogArticleRelatedPost({
+  post,
+  lang,
+}: {
+  post: BlogPostRecord;
+  lang: "es" | "en";
+}) {
+  const relatedSlug = resolveRelatedSlugForLocale(post, lang);
+  const { data: related } = useRelatedSummary(relatedSlug);
+  if (!related) return null;
+  const loc = getLocaleSummaryFields(related, lang);
+  return (
+    <div className="max-w-xl mx-auto mt-12">
+      <BlogRelatedPost
+        title={loc.title}
+        description={loc.description}
+        href={loc.path}
+      />
+    </div>
+  );
+}
+
 function buildDefaultArticleJsonLd(
   post: BlogPostRecord,
   loc: BlogPostLocaleFields,
@@ -74,13 +98,13 @@ function buildDefaultArticleJsonLd(
 
 export default function BlogArticleDynamicPage() {
   const { pathname } = useLocation();
-  const { i18n } = useTranslation();
   const { data: post, isLoading, isError } = usePostByPath(pathname);
 
   if (isLoading) return <Loader />;
   if (isError || !post) return <NotFoundFallback />;
 
-  const loc = getLocaleFields(post, i18n.language);
+  const lang = blogLocaleFromPathname(pathname);
+  const loc = getLocaleFields(post, lang);
 
   // Delegacion total a un componente fullPage cuando el post es un unico visualRef.
   if (loc.blocks.length === 1 && loc.blocks[0].type === "visualRef") {
@@ -96,7 +120,6 @@ export default function BlogArticleDynamicPage() {
   }
 
   // Render estandar con header/footer/breadcrumb/SEO + BlockRenderer.
-  const lang: "es" | "en" = i18n.language.startsWith("en") ? "en" : "es";
   const articleJsonLd = loc.jsonLd ?? buildDefaultArticleJsonLd(post, loc, lang);
 
   return (
@@ -142,6 +165,7 @@ export default function BlogArticleDynamicPage() {
             </p>
           </header>
           <BlockRenderer blocks={loc.blocks} />
+          <BlogArticleRelatedPost post={post} lang={lang} />
         </article>
 
         <LandingFooter />

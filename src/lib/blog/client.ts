@@ -13,7 +13,7 @@ const SUMMARY_COLUMNS = [
   "path_es", "path_en",
   "title_es", "title_en",
   "description_es", "description_en",
-  "date", "reading_minutes", "related_slug",
+  "date", "reading_minutes", "related_slug", "related_slug_en",
   "published_at", "updated_at",
 ].join(",");
 
@@ -25,7 +25,7 @@ const FULL_COLUMNS = [
   "description_es", "description_en",
   "meta_title_es", "meta_title_en",
   "meta_description_es", "meta_description_en",
-  "date", "reading_minutes", "related_slug",
+  "date", "reading_minutes", "related_slug", "related_slug_en",
   "schema_version", "blocks_es", "blocks_en",
   "json_ld_es", "json_ld_en",
   "published_at", "created_at", "updated_at",
@@ -49,6 +49,7 @@ function rowToRecord(row: BlogPostRow): BlogPostRecord {
     date: row.date,
     readingMinutes: row.reading_minutes,
     relatedSlug: row.related_slug,
+    relatedSlugEn: row.related_slug_en,
     schemaVersion: row.schema_version,
     blocksEs: safeParseBlocks(row.blocks_es),
     blocksEn: safeParseBlocks(row.blocks_en),
@@ -63,7 +64,7 @@ function rowToRecord(row: BlogPostRow): BlogPostRecord {
 function rowToSummary(row: Partial<BlogPostRow> & Pick<BlogPostRow,
   | "id" | "slug" | "status" | "path_es" | "path_en"
   | "title_es" | "title_en" | "description_es" | "description_en"
-  | "date" | "reading_minutes" | "related_slug"
+  | "date" | "reading_minutes" | "related_slug" | "related_slug_en"
   | "published_at" | "updated_at"
 >): BlogPostSummary {
   return {
@@ -79,6 +80,7 @@ function rowToSummary(row: Partial<BlogPostRow> & Pick<BlogPostRow,
     date: row.date,
     readingMinutes: row.reading_minutes,
     relatedSlug: row.related_slug,
+    relatedSlugEn: row.related_slug_en,
     publishedAt: row.published_at,
     updatedAt: row.updated_at,
   };
@@ -193,6 +195,7 @@ export interface UpsertBlogPostInput {
   date: string;
   readingMinutes: number;
   relatedSlug?: string | null;
+  relatedSlugEn?: string | null;
   blocksEs: unknown;
   blocksEn: unknown;
   jsonLdEs?: Record<string, unknown> | Record<string, unknown>[] | null;
@@ -216,6 +219,7 @@ function inputToRow(input: UpsertBlogPostInput) {
     date: input.date,
     reading_minutes: input.readingMinutes,
     related_slug: input.relatedSlug ?? null,
+    related_slug_en: input.relatedSlugEn ?? null,
     schema_version: BLOCK_SCHEMA_VERSION,
     blocks_es: input.blocksEs,
     blocks_en: input.blocksEn,
