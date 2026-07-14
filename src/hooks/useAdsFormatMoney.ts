@@ -1,11 +1,9 @@
 import { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useAgency } from '@/contexts/AgencyContext';
 import {
   formatMoneyAmount,
   getCurrencySymbol,
   localeForAppLanguage,
-  resolveAgencyCurrency,
   resolvePlatformAdAccountCurrency,
 } from '@/utils/currencyUtils';
 
@@ -62,13 +60,7 @@ export function hasMixedCurrenciesForAccountIds(
  * no la moneda elegida en configuración general de la agencia.
  */
 export function useAdsFormatMoney(accounts: AdAccountCurrencySource[]) {
-  const { currentAgency } = useAgency();
   const { i18n, t } = useTranslation('app');
-
-  const agencyCurrency = useMemo(
-    () => resolveAgencyCurrency(currentAgency?.settings),
-    [currentAgency?.settings],
-  );
 
   const locale = useMemo(() => localeForAppLanguage(i18n.language), [i18n.language]);
 
@@ -154,6 +146,5 @@ export function useAdsFormatMoney(accounts: AdAccountCurrencySource[]) {
     primaryCurrency,
     hasMixedCurrencies,
     mixedCurrenciesLabel,
-    agencyCurrency,
   };
 }

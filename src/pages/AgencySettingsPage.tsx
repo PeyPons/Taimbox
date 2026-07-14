@@ -30,6 +30,7 @@ import { DEFAULT_FILTERS } from '@/hooks/useProjectFilters';
 import { UserPermissions, DEFAULT_PERMISSIONS } from '@/types/permissions';
 import { normalizeRolesForSave } from '@/utils/agencySettingsPermissions';
 import { sanitizeIntegrationsForSave } from '@/utils/agencyUtils';
+import { normalizeMetaAccountId, syncAdAccountCurrenciesFromPlatform } from '@/utils/adAccountCurrencySync';
 import { CurrencySelect } from '@/components/agency/CurrencySelect';
 import { resolveAgencyCurrency } from '@/utils/currencyUtils';
 import type { AgencyCurrencyCode } from '@/constants/currencies';
@@ -516,14 +517,15 @@ export default function AgencySettingsPage() {
 
   const handleAddAccount = async () => {
     if (!newAccountId) return toast.error(t('agency.toasts.accountIdRequired'));
+    if (!currentAgency?.id) return;
 
     setIsAddingAccount(true);
-    // Insertamos en la tabla de configuración
+    const accountId = normalizeMetaAccountId(newAccountId);
     const { error } = await supabase.from('ad_accounts_config').insert({
       platform: 'meta',
-      account_id: newAccountId,
+      account_id: accountId,
       is_active: true,
-      agency_id: currentAgency?.id
+      agency_id: currentAgency.id,
     });
 
     if (error) {
@@ -534,6 +536,11 @@ export default function AgencySettingsPage() {
         toast.error(error.message || t('agency.toasts.accountSaveError'));
       }
     } else {
+      try {
+        await syncAdAccountCurrenciesFromPlatform(currentAgency.id, 'meta');
+      } catch (e) {
+        console.warn('sync meta currencies tras alta manual:', e);
+      }
       toast.success(t('agency.toasts.accountAdded'));
       setNewAccountId('');
       fetchConnectedAccounts();
@@ -2018,6 +2025,11 @@ export default function AgencySettingsPage() {
                                   return;
                                 }
                                 await supabase.from('google_ads_campaigns').delete().eq('agency_id', currentAgency.id!);
+                                try {
+                                  await syncAdAccountCurrenciesFromPlatform(currentAgency.id!, 'google');
+                                } catch (e) {
+                                  console.warn('sync google currencies tras selección:', e);
+                                }
                                 await refreshAgency();
                                 toast.success(t('agency.integrations.googleAds.updateSuccess', 'Cuenta de Google Ads actualizada. Sincroniza de nuevo para cargar los datos.'));
                               }}

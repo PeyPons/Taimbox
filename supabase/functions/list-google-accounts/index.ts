@@ -1,7 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import {
     AgencyAccessError,
-    assertAgencyPermission,
+    assertAgencyPermissionAny,
     getBearerToken,
 } from '../_shared/agency-access.ts'
 
@@ -59,13 +59,13 @@ Deno.serve(async (req) => {
 
         if (!agency_id) throw new Error('Falta el agency_id')
 
-        await assertAgencyPermission({
+        await assertAgencyPermissionAny({
             supabaseUrl,
             supabaseAnonKey,
             supabaseServiceKey: supabaseKey,
             token: bearer,
             agencyId: agency_id,
-            permission: 'can_access_agency_settings',
+            permissions: ['can_access_google_ads', 'can_access_agency_settings'],
         })
 
         // 2. Obtener refresh token de la agencia
