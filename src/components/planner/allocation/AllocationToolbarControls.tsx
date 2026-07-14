@@ -17,7 +17,8 @@ interface AllocationToolbarControlsProps {
   onViewModeChange: (mode: PlannerSheetViewMode) => void;
   /** Etiqueta «Mi día» frente a «Día» al ver la propia ficha. */
   isOwnEmployee?: boolean;
-  onOpenWeekly: () => void;
+  isWeeklyEnabled?: boolean;
+  onOpenWeekly?: () => void;
   sortButtonLabel: string;
   sortOptionLabel: string;
   autoExpand: boolean;
@@ -41,6 +42,7 @@ export function AllocationToolbarControls({
   viewMode,
   onViewModeChange,
   isOwnEmployee = false,
+  isWeeklyEnabled = false,
   onOpenWeekly,
   sortButtonLabel,
   sortOptionLabel,
@@ -141,24 +143,26 @@ export function AllocationToolbarControls({
           </TooltipContent>
         </Tooltip>
 
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              className={cn('h-7 px-2 text-slate-500 hover:text-indigo-600', isMobile && 'h-11 min-h-[44px] px-3')}
-              onClick={onOpenWeekly}
-            >
-              <TrendingUp className="h-3.5 w-3.5" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom" className="max-w-[220px]">
-            <p className="font-medium">{t('planner.allocationToolbar.weeklyForecastTitle', 'Previsión semanal')}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {t('planner.allocationToolbar.weeklyForecastDesc', 'Resumen de cierre de semana y tareas pendientes de revisar.')}
-            </p>
-          </TooltipContent>
-        </Tooltip>
+        {isWeeklyEnabled && onOpenWeekly && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className={cn('h-7 px-2 text-slate-500 hover:text-indigo-600', isMobile && 'h-11 min-h-[44px] px-3')}
+                onClick={onOpenWeekly}
+              >
+                <TrendingUp className="h-3.5 w-3.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="max-w-[220px]">
+              <p className="font-medium">{t('planner.allocationToolbar.weeklyForecastTitle', 'Previsión semanal')}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {t('planner.allocationToolbar.weeklyForecastDesc', 'Resumen de cierre de semana y tareas pendientes de revisar.')}
+              </p>
+            </TooltipContent>
+          </Tooltip>
+        )}
       </div>
 
       {viewMode !== 'day' && (
