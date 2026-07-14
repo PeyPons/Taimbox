@@ -137,6 +137,7 @@ export const PLAN_MODULES: Record<PlanId, { weeklyFeedback?: boolean; profession
 /** Rutas Team+ (pro, business, scale, enterprise). Free solo planificador/deadlines básicos. */
 export const ROUTES_REQUIRE_PRO: string[] = [
   '/weekly-forecast',
+  '/actividad',
   '/okrs',
   '/operaciones',
   '/finanzas',

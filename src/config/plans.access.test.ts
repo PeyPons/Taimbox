@@ -7,12 +7,14 @@ describe('canAccessRoute', () => {
     expect(canAccessRoute('starter', '/okrs')).toBe(false);
     expect(canAccessRoute('starter', '/finanzas')).toBe(false);
     expect(canAccessRoute('starter', '/exportacion-informes')).toBe(false);
+    expect(canAccessRoute('starter', '/actividad')).toBe(false);
   });
 
   it('permite rutas Team+ en pro', () => {
     expect(canAccessRoute('pro', '/okrs')).toBe(true);
     expect(canAccessRoute('pro', '/finanzas')).toBe(true);
     expect(canAccessRoute('pro', '/weekly-forecast')).toBe(true);
+    expect(canAccessRoute('pro', '/actividad')).toBe(true);
   });
 
   it('bloquea Ads/API en Team', () => {

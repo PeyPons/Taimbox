@@ -1202,6 +1202,11 @@
       "stoppedDescription": "El tiempo se ha guardado correctamente."
     }
   },
+  "activityPage": {
+    "title": "Registro de actividad",
+    "subtitle": "Historial de cambios en las tareas del equipo: quién hizo qué y cuándo",
+    "monthCurrent": "Mes actual"
+  },
   "weeklyForecast": {
     "title": "Previsión mensual",
     "subtitle": "Historial de cambios en tareas y redistribución de carga entre compañeros",
@@ -2137,6 +2142,7 @@
       "profitability": "Rentabilidad",
       "teamCapacity": "Capacidad de Equipo",
       "weeklyForecast": "Weekly Forecast",
+      "activityLog": "Actividad",
       "planner": "Planificador",
       "members": "Miembros",
       "times": "Tiempos",

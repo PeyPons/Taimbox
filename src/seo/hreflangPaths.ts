@@ -29,6 +29,7 @@ const PROTECTED_PATH_PREFIXES = [
   "/okrs",
   "/reports",
   "/weekly-forecast",
+  "/actividad",
   "/settings",
   "/agency",
   "/exportacion-informes",

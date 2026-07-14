@@ -1202,6 +1202,11 @@
       "stoppedDescription": "Time has been saved successfully."
     }
   },
+  "activityPage": {
+    "title": "Activity log",
+    "subtitle": "Change history for your team's tasks: who did what and when",
+    "monthCurrent": "Current month"
+  },
   "weeklyForecast": {
     "title": "Monthly forecast",
     "subtitle": "Task change history and workload redistribution across teammates",
@@ -3019,6 +3024,7 @@
       "profitability": "Profitability",
       "teamCapacity": "Team Capacity",
       "weeklyForecast": "Weekly Forecast",
+      "activityLog": "Activity",
       "planner": "Planner",
       "members": "Members",
       "times": "Times",
