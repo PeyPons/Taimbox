@@ -68,6 +68,7 @@ import {
 import { toast } from '@/lib/notify';
 import { usePermissions } from '@/hooks/usePermissions';
 import {
+    filterEmployeeProfitabilityRowsForDisplay,
     getRowCost,
     getStandardHourlyCost,
     getStandardMonthlyCapacity,
@@ -835,7 +836,7 @@ export default function FinancialHealthPage() {
     );
 
     const employeeProfitabilityList = useMemo((): EmployeeProfitability[] => {
-        return employeeMetricsForView.map(em => {
+        const rows = employeeMetricsForView.map(em => {
             const emp = employees.find(e => e.id === em.employeeId);
             const totalHEmployeeInMode = hoursMode === 'computed' ? em.totalComputed : em.totalActual;
             const totalHGlobal = employeeHoursGlobalById.get(em.employeeId) ?? totalHEmployeeInMode;
@@ -944,6 +945,7 @@ export default function FinancialHealthPage() {
                 byProject
             };
         });
+        return filterEmployeeProfitabilityRowsForDisplay(rows, employees ?? [], hoursMode);
     }, [employeeMetricsForView, employees, projectTotalHoursFromBreakdown, projectByIdForAttr, hoursMode, effectiveCostMode, projectIdsWithActivity, employeeHoursGlobalById, overheadByEmployee]);
 
     const agencyTotalOverheadApplied = commonExpensesAlloc.ok ? commonExpensesAlloc.totalOverheadApplied : 0;
