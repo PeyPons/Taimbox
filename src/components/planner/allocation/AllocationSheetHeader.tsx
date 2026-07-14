@@ -21,6 +21,7 @@ interface AllocationSheetHeaderProps {
   isMobile: boolean;
   viewMode: PlannerSheetViewMode;
   isOwnEmployee?: boolean;
+  isWeeklyEnabled?: boolean;
   onViewModeChange: (mode: PlannerSheetViewMode) => void;
   weeks: WeekInfo[];
   weekSummaries: WeekStripItemSummary[];
@@ -32,7 +33,7 @@ interface AllocationSheetHeaderProps {
   onAddTask?: () => void;
   searchTerm: string;
   onSearchTermChange: (value: string) => void;
-  onOpenWeekly: () => void;
+  onOpenWeekly?: () => void;
   sortButtonLabel: string;
   sortOptionLabel: string;
   autoExpand: boolean;
@@ -48,6 +49,7 @@ export function AllocationSheetHeader({
   isMobile,
   viewMode,
   isOwnEmployee,
+  isWeeklyEnabled = false,
   onViewModeChange,
   weeks,
   weekSummaries,
@@ -112,6 +114,7 @@ export function AllocationSheetHeader({
             onSearchTermChange={onSearchTermChange}
             viewMode={viewMode}
             isOwnEmployee={isOwnEmployee}
+            isWeeklyEnabled={isWeeklyEnabled}
             onViewModeChange={onViewModeChange}
             onOpenWeekly={onOpenWeekly}
             sortButtonLabel={sortButtonLabel}

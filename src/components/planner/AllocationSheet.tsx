@@ -751,10 +751,15 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
               }
               searchTerm={searchTerm}
               onSearchTermChange={setSearchTerm}
-              onOpenWeekly={() => {
-                setWeeklyFocusAllocationId(null);
-                setWeeklyOpen(true);
-              }}
+              isWeeklyEnabled={isWeeklyEnabled}
+              onOpenWeekly={
+                isWeeklyEnabled
+                  ? () => {
+                      setWeeklyFocusAllocationId(null);
+                      setWeeklyOpen(true);
+                    }
+                  : undefined
+              }
               sortButtonLabel={sortButtonLabel}
               sortOptionLabel={sortOptionLabel}
               autoExpand={autoExpand}
@@ -1807,16 +1812,18 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
       {/* Tour interactivo del planificador */}
       {open && <PlannerTour onVisibilityChange={setIsTourActive} />}
 
-      <WeeklyReportDialog
-        open={weeklyOpen}
-        onOpenChange={(o) => {
-          setWeeklyOpen(o);
-          if (!o) setWeeklyFocusAllocationId(null);
-        }}
-        employeeId={employeeId}
-        viewDate={viewDate}
-        focusAllocationId={weeklyFocusAllocationId}
-      />
+      {isWeeklyEnabled && (
+        <WeeklyReportDialog
+          open={weeklyOpen}
+          onOpenChange={(o) => {
+            setWeeklyOpen(o);
+            if (!o) setWeeklyFocusAllocationId(null);
+          }}
+          employeeId={employeeId}
+          viewDate={viewDate}
+          focusAllocationId={weeklyFocusAllocationId}
+        />
+      )}
 
       {/* Dialog de Transferencia de Tareas */}
       {transferTask && (
