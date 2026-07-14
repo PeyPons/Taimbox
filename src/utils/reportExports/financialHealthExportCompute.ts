@@ -9,7 +9,7 @@ import {
 } from '@/utils/commonExpensesAllocation';
 import { computeProjectMetricsForMonth, type ProjectMetricsDeadline } from '@/utils/projectMetricsCompute';
 import type { BuildRentabilityDiagnosticParams, RentabilityEmployeeProfitabilityRow } from '@/utils/reportExports/rentabilityDiagnostic';
-import { getRowCost, getStandardHourlyCost, getStandardMonthlyCapacity, overheadShareForRow } from '@/utils/profitabilityCost';
+import { getRowCost, getStandardHourlyCost, getStandardMonthlyCapacity, overheadShareForRow, filterEmployeeProfitabilityRowsForDisplay } from '@/utils/profitabilityCost';
 
 export interface FinancialHealthExportComputeInput {
   currentMonth: Date;
@@ -296,7 +296,8 @@ export function computeBuildRentabilityDiagnosticParams(
 
   const projectIdsWithActivity = new Set(projectMetricsBillableWithActivity.map((p) => p.projectId));
 
-  const employeeProfitabilityList: RentabilityEmployeeProfitabilityRow[] = employeeMetricsForView.map((em) => {
+  const employeeProfitabilityList: RentabilityEmployeeProfitabilityRow[] = filterEmployeeProfitabilityRowsForDisplay(
+    employeeMetricsForView.map((em) => {
     const emp = employees.find((e) => e.id === em.employeeId);
     const totalHEmployeeInMode = hoursMode === 'computed' ? em.totalComputed : em.totalActual;
     const totalHGlobal = employeeHoursGlobalById.get(em.employeeId) ?? totalHEmployeeInMode;
@@ -402,7 +403,10 @@ export function computeBuildRentabilityDiagnosticParams(
       marginPercent: marginPercentRow,
       byProject,
     };
-  });
+  }),
+    employees,
+    hoursMode
+  );
 
   const departmentNameForView = (() => {
     if (!selectedDepartmentId) return null;

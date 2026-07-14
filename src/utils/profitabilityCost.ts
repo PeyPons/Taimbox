@@ -49,3 +49,16 @@ export function overheadShareForRow(
   const oh = overheadByEmployee.get(employeeId) ?? 0;
   return oh * (hoursDisplay / totalHoursGlobalForEmployee);
 }
+
+/** Listados de rentabilidad por empleado: solo activos con horas > 0 en el modo actual. */
+export function filterEmployeeProfitabilityRowsForDisplay<
+  T extends { employeeId: string; totalComputed: number; totalActual: number },
+>(rows: T[], employees: Employee[], hoursMode: 'actual' | 'computed'): T[] {
+  const employeeById = new Map(employees.map((e) => [e.id, e]));
+  return rows.filter((row) => {
+    const emp = employeeById.get(row.employeeId);
+    if (!emp?.isActive) return false;
+    const hours = hoursMode === 'computed' ? row.totalComputed : row.totalActual;
+    return hours > 0;
+  });
+}

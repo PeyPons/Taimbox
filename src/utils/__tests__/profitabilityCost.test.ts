@@ -1,6 +1,7 @@
 import type { Employee } from '@/types';
 import {
   DEFAULT_MONTHLY_HOURS,
+  filterEmployeeProfitabilityRowsForDisplay,
   getRowCost,
   getStandardHourlyCost,
   getStandardMonthlyCapacity,
@@ -48,5 +49,26 @@ describe('profitabilityCost', () => {
     const map = new Map<string, number>([['e1', 100]]);
     expect(overheadShareForRow('e1', 30, 100, map)).toBe(30);
     expect(overheadShareForRow('e1', 30, 0, map)).toBe(0);
+  });
+
+  it('filterEmployeeProfitabilityRowsForDisplay excluye inactivos y 0 horas', () => {
+    const employees = [
+      baseEmp({ id: 'active-hours', isActive: true }),
+      baseEmp({ id: 'active-zero', isActive: true }),
+      baseEmp({ id: 'inactive-hours', isActive: false }),
+      baseEmp({ id: 'inactive-zero', isActive: false }),
+    ];
+    const rows = [
+      { employeeId: 'active-hours', totalComputed: 12, totalActual: 10 },
+      { employeeId: 'active-zero', totalComputed: 0, totalActual: 0 },
+      { employeeId: 'inactive-hours', totalComputed: 8, totalActual: 6 },
+      { employeeId: 'inactive-zero', totalComputed: 0, totalActual: 0 },
+    ];
+    expect(filterEmployeeProfitabilityRowsForDisplay(rows, employees, 'computed').map((r) => r.employeeId)).toEqual([
+      'active-hours',
+    ]);
+    expect(filterEmployeeProfitabilityRowsForDisplay(rows, employees, 'actual').map((r) => r.employeeId)).toEqual([
+      'active-hours',
+    ]);
   });
 });
