@@ -62,32 +62,39 @@ function getOutcomeForAction(
 
 function isWeeklyActionDisabledForTask(
   action: WeeklyActionId,
-  task: Pick<Allocation, 'hoursAssigned' | 'hoursActual'>
+  task: Pick<Allocation, 'hoursAssigned' | 'hoursActual' | 'weekStartDate'>,
+  getSlots?: (taskWeekStart: string) => readonly unknown[],
 ): boolean {
   const pending = getTaskPendingHours(task);
-  if (action === 'postpone') return !canPostponeTaskInWeekly(task);
+  if (action === 'postpone') {
+    if (!canPostponeTaskInWeekly(task)) return true;
+    if (getSlots && getSlots(task.weekStartDate).length === 0) return true;
+    return false;
+  }
   if (action === 'distribute' || action === 'moveToEmployee') return pending <= 0;
   return false;
 }
 
 function isWeeklyOutcomeDisabled(
   outcomeId: WeeklyOutcomeId,
-  task: Pick<Allocation, 'hoursAssigned' | 'hoursActual'>,
-  weeklyOutcomeGroups: ReturnType<typeof useWeeklyReportI18n>['weeklyOutcomeGroups']
+  task: Pick<Allocation, 'hoursAssigned' | 'hoursActual' | 'weekStartDate'>,
+  weeklyOutcomeGroups: ReturnType<typeof useWeeklyReportI18n>['weeklyOutcomeGroups'],
+  getSlots?: (taskWeekStart: string) => readonly unknown[],
 ): boolean {
   const group = weeklyOutcomeGroups.find((g) => g.id === outcomeId);
   if (!group) return true;
-  return group.actions.every((action) => isWeeklyActionDisabledForTask(action, task));
+  return group.actions.every((action) => isWeeklyActionDisabledForTask(action, task, getSlots));
 }
 
 function getEnabledActionsForOutcome(
   outcomeId: WeeklyOutcomeId,
-  task: Pick<Allocation, 'hoursAssigned' | 'hoursActual'>,
-  weeklyOutcomeGroups: ReturnType<typeof useWeeklyReportI18n>['weeklyOutcomeGroups']
+  task: Pick<Allocation, 'hoursAssigned' | 'hoursActual' | 'weekStartDate'>,
+  weeklyOutcomeGroups: ReturnType<typeof useWeeklyReportI18n>['weeklyOutcomeGroups'],
+  getSlots?: (taskWeekStart: string) => readonly unknown[],
 ): WeeklyActionId[] {
   const group = weeklyOutcomeGroups.find((g) => g.id === outcomeId);
   if (!group) return [];
-  return group.actions.filter((action) => !isWeeklyActionDisabledForTask(action, task));
+  return group.actions.filter((action) => !isWeeklyActionDisabledForTask(action, task, getSlots));
 }
 
 function roundTaskHours(num: number) {
@@ -369,10 +376,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
     });
   }, [open, filteredTasks, focusAllocationId]);
 
-  // ── Derived state ──
-  const resolvedCount = allTasks.filter(t => taskActions[t.id]).length;
-  const progress = allTasks.length > 0 ? (resolvedCount / allTasks.length) * 100 : 0;
-
+  // ── Derived state (sidebar groups; progress counts after getTaskStatus) ──
   const sidebarGroups: Array<{ id: string; label: string; tasks: typeof allTasks }> = [];
   const assignedIds = new Set<string>();
   for (const filter of activeFilters) {
@@ -430,11 +434,51 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
     return 'configured';
   };
 
+  const configuredCount = allTasks.filter((t) => getTaskStatus(t.id) === 'configured').length;
+  const progress = allTasks.length > 0 ? (configuredCount / allTasks.length) * 100 : 0;
+
+  const otherTabUnconfiguredCount = useMemo(() => {
+    if (singleTaskFromPlanner) return 0;
+    const pool = weeklyTab === 'past' ? currentTasks : pastTasks;
+    return pool.filter((t) => getTaskStatus(t.id) !== 'configured').length;
+  }, [
+    singleTaskFromPlanner,
+    weeklyTab,
+    currentTasks,
+    pastTasks,
+    allTasks,
+    taskActions,
+    taskComments,
+    distributionTasks,
+    keepTaskHours,
+    rolloverHours,
+    rolloverTargetWeek,
+    moveToEmployee,
+    moveToWeek,
+  ]);
+
   // ── Validation (extracted from footer) ──
-  let canSubmit = allTasks.length > 0 && resolvedCount === allTasks.length;
+  let canSubmit = allTasks.length > 0 && configuredCount === allTasks.length;
   const validationErrors: string[] = [];
-  if (allTasks.length > 0 && resolvedCount < allTasks.length) {
-    validationErrors.push(`Faltan ${allTasks.length - resolvedCount} tarea(s) por configurar`);
+  if (allTasks.length > 0 && configuredCount < allTasks.length) {
+    const pendingSetup = allTasks.length - allTasks.filter((t) => taskActions[t.id]).length;
+    const pendingValidation = allTasks.filter((t) => taskActions[t.id] && getTaskStatus(t.id) !== 'configured').length;
+    if (pendingSetup > 0) {
+      validationErrors.push(
+        t('weeklyReport.validation.tasksPendingSetup', {
+          count: pendingSetup,
+          defaultValue: `Faltan ${pendingSetup} tarea(s) por configurar`,
+        }),
+      );
+    }
+    if (pendingValidation > 0) {
+      validationErrors.push(
+        t('weeklyReport.validation.tasksPendingValidation', {
+          count: pendingValidation,
+          defaultValue: `${pendingValidation} tarea(s) con datos incompletos o inválidos`,
+        }),
+      );
+    }
   }
   const capacityWarnings: string[] = [];
   for (const task of allTasks) {
@@ -611,9 +655,14 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
   };
 
   const handleOutcomeSelect = (task: typeof allTasks[0], outcomeId: WeeklyOutcomeId) => {
-    if (isWeeklyOutcomeDisabled(outcomeId, task, weeklyOutcomeGroups)) return;
+    if (isWeeklyOutcomeDisabled(outcomeId, task, weeklyOutcomeGroups, getSlotsForTaskWeek)) return;
     setTaskOutcomes((prev) => ({ ...prev, [task.id]: outcomeId }));
-    const enabled = getEnabledActionsForOutcome(outcomeId, task, weeklyOutcomeGroups);
+    const enabled = getEnabledActionsForOutcome(outcomeId, task, weeklyOutcomeGroups, getSlotsForTaskWeek);
+    // «Sigo después» → preseleccionar posponer (caso más habitual; evita dejar la tarea sin acción concreta).
+    if (outcomeId === 'continue' && enabled.includes('postpone')) {
+      handleActionChange(task, 'postpone');
+      return;
+    }
     if (enabled.length === 1) {
       handleActionChange(task, enabled[0]);
       return;
@@ -838,7 +887,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
     ? taskOutcomes[selectedTask.id] ?? getOutcomeForAction(selectedAction, weeklyOutcomeGroups)
     : null;
   const selectedSubActions = selectedTask && selectedOutcome
-    ? getEnabledActionsForOutcome(selectedOutcome, selectedTask, weeklyOutcomeGroups)
+    ? getEnabledActionsForOutcome(selectedOutcome, selectedTask, weeklyOutcomeGroups, getSlotsForTaskWeek)
     : [];
   const showSubActionPicker = selectedSubActions.length > 1;
   const selectedOutcomeGroup = selectedOutcome
@@ -863,7 +912,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
             <DialogDescription className="text-xs text-muted-foreground sm:text-sm">
               {singleTaskFromPlanner
                 ? t('weeklyReport.header.descPlanner')
-                : t('weeklyReport.header.descProgress', { resolved: resolvedCount, total: allTasks.length })}
+                : t('weeklyReport.header.descProgress', { resolved: configuredCount, total: allTasks.length })}
             </DialogDescription>
           </DialogHeader>
           {!singleTaskFromPlanner && (
@@ -871,7 +920,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
             <div
               className={cn(
                 "h-full rounded-full transition-all duration-500 ease-out",
-                resolvedCount === allTasks.length && allTasks.length > 0 ? "bg-green-500" : "bg-primary"
+                configuredCount === allTasks.length && allTasks.length > 0 ? "bg-green-500" : "bg-primary"
               )}
               style={{ width: `${progress}%` }}
             />
@@ -894,7 +943,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
             className="flex min-h-0 flex-1 flex-col"
           >
             {!singleTaskFromPlanner && (
-              <div className="shrink-0 border-b px-6 pb-3 pt-2">
+              <div className="shrink-0 border-b px-6 pb-3 pt-2 space-y-2">
                 <TabsList className="grid h-auto w-full max-w-lg grid-cols-2 gap-1 p-1">
                   <TabsTrigger
                     value="past"
@@ -914,6 +963,21 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
                     <span className="font-mono text-[11px] text-muted-foreground">({currentTasks.length})</span>
                   </TabsTrigger>
                 </TabsList>
+                {otherTabUnconfiguredCount > 0 && (
+                  <p className="text-xs text-amber-800 dark:text-amber-200 rounded-md border border-amber-200/80 bg-amber-50/90 px-2.5 py-2">
+                    {weeklyTab === 'past'
+                      ? t('weeklyReport.ui.otherTabPendingCurrent', {
+                          count: otherTabUnconfiguredCount,
+                          defaultValue:
+                            'Hay {{count}} tarea(s) en «Semana actual» sin configurar. Cambia de pestaña o confírmalas para cerrar.',
+                        })
+                      : t('weeklyReport.ui.otherTabPendingPast', {
+                          count: otherTabUnconfiguredCount,
+                          defaultValue:
+                            'Hay {{count}} tarea(s) en «Requieren cierre» sin configurar. Cambia de pestaña o confírmalas para cerrar.',
+                        })}
+                  </p>
+                )}
               </div>
             )}
 
@@ -1094,7 +1158,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
                         </Label>
                         <div className="grid grid-cols-2 gap-1.5">
                           {weeklyOutcomeGroups.map(({ id, label, hint }) => {
-                            const disabled = isWeeklyOutcomeDisabled(id, selectedTask, weeklyOutcomeGroups);
+                            const disabled = isWeeklyOutcomeDisabled(id, selectedTask, weeklyOutcomeGroups, getSlotsForTaskWeek);
                             const isSelected = selectedOutcome === id;
                             return (
                               <button
@@ -1117,7 +1181,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
                           })}
                         </div>
 
-                        {isWeeklyOutcomeDisabled('handoff', selectedTask, weeklyOutcomeGroups) && canPostponeTaskInWeekly(selectedTask) && (
+                        {isWeeklyOutcomeDisabled('handoff', selectedTask, weeklyOutcomeGroups, getSlotsForTaskWeek) && canPostponeTaskInWeekly(selectedTask) && (
                           <p className="text-[11px] text-muted-foreground">
                             {t('weeklyReport.ui.handoffHint')}
                           </p>
@@ -1246,8 +1310,21 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
                             };
                             const rSlots = weekSlotsFor(selectedTask.weekStartDate);
                             const pendNext = Math.max(0, round2(selectedTask.hoursAssigned - parseHours(hours.actual)));
+                            const postponeBlocked = pendNext <= 0;
                             return (
                               <div className="space-y-3">
+                                {postponeBlocked && (
+                                  <p className="flex items-start gap-1.5 rounded-md border border-destructive/30 bg-destructive/5 px-2 py-1.5 text-[11px] leading-snug text-destructive">
+                                    <AlertCircle className="mt-0.5 h-3 w-3 shrink-0" aria-hidden />
+                                    <span>
+                                      {t('weeklyReport.ui.postponeNeedsRemainder', {
+                                        assigned: selectedTask.hoursAssigned.toFixed(2),
+                                        defaultValue:
+                                          'Las horas de esta semana deben ser menores que el estimado ({{assigned}}h) para pasar el resto a otra semana. Pon 0 si no avanzaste.',
+                                      })}
+                                    </span>
+                                  </p>
+                                )}
                                 <div className="grid grid-cols-2 gap-3">
                                   <div className="space-y-1">
                                     <Label className="text-xs font-medium">{t('weeklyReport.ui.thisWeekHours')}</Label>
@@ -1414,10 +1491,17 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
             })()}
 
             {/* ── FOOTER ── */}
-            <DialogFooter className="shrink-0 items-center border-t px-4 py-3 sm:justify-between sm:px-5">
-              <p className="hidden text-xs text-muted-foreground sm:block">
-                {t('weeklyReport.footer.configured', { resolved: resolvedCount, total: allTasks.length })}
-              </p>
+            <DialogFooter className="shrink-0 flex-col items-stretch gap-2 border-t px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+              <div className="hidden min-w-0 flex-1 sm:block">
+                <p className="text-xs text-muted-foreground">
+                  {t('weeklyReport.footer.configured', { resolved: configuredCount, total: allTasks.length })}
+                </p>
+                {!canSubmit && validationErrors.length > 0 && (
+                  <p className="mt-1 text-xs text-amber-800 dark:text-amber-200" role="status">
+                    {validationErrors[0]}
+                  </p>
+                )}
+              </div>
               <div className="flex w-full gap-2 sm:w-auto">
                 <Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={() => onOpenChange(false)}>
                   {t('weeklyReport.footer.cancel')}
