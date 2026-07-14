@@ -10,10 +10,62 @@ import { supabase } from '@/lib/supabase';
 export type AuditAction = 'CREATE' | 'UPDATE' | 'DELETE';
 export type AuditResource = 'ALLOCATION' | 'ALLOCATION_NOTE' | 'PROJECT' | 'EMPLOYEE' | 'CLIENT' | 'ABSENCE' | 'TEAM_EVENT';
 
+export type AuditChangedFields = Record<string, { old: unknown; new: unknown }>;
+
 interface AuditDetails {
+    /** Snapshot completo (formato legado y CREATE/DELETE). */
     previousValue?: Record<string, unknown>;
     newValue?: Record<string, unknown>;
+    /** Formato compacto de UPDATE: solo campos que cambiaron. */
+    changed?: AuditChangedFields;
+    /** Mini-snapshot (valores nuevos) con el contexto que necesita la UI del historial. */
+    context?: Record<string, unknown>;
     description?: string;
+}
+
+/**
+ * Campos de Allocation que se persisten en los snapshots de CREATE/DELETE.
+ * Poda duplicados snake_case y campos internos que la UI del historial no usa.
+ */
+const ALLOCATION_SNAPSHOT_FIELDS: readonly string[] = [
+    'employeeId', 'projectId', 'weekStartDate',
+    'hoursAssigned', 'hoursActual', 'hoursComputed',
+    'status', 'taskName', 'description', 'dependencyId',
+    'transferredFromAllocationId', 'distributionSourceAllocationId', 'parentAllocationId',
+    'originalTransferredTaskName', 'transferSourceEmployeeId',
+    'userPriority', 'isLocked', 'focusDate',
+];
+
+/**
+ * Subconjunto mínimo que acompaña a los diffs de UPDATE para que el historial
+ * pueda renderizar (empleado, proyecto, tarea, semana, horas, linaje) sin
+ * necesitar el objeto completo.
+ */
+const ALLOCATION_CONTEXT_FIELDS: readonly string[] = [
+    'employeeId', 'projectId', 'weekStartDate',
+    'hoursAssigned', 'hoursActual', 'status', 'taskName',
+    'transferredFromAllocationId', 'distributionSourceAllocationId', 'parentAllocationId',
+    'transferSourceEmployeeId',
+];
+
+function pruneToFields(
+    value: Record<string, unknown>,
+    fields: readonly string[]
+): Record<string, unknown> {
+    const out: Record<string, unknown> = {};
+    for (const field of fields) {
+        if (value[field] !== undefined) out[field] = value[field];
+    }
+    return out;
+}
+
+/** Para ALLOCATION reduce el payload a los campos que usa el historial; el resto de recursos ya envían payloads mínimos. */
+function pruneSnapshot(
+    resource: AuditResource,
+    value: Record<string, unknown>,
+    fields: readonly string[]
+): Record<string, unknown> {
+    return resource === 'ALLOCATION' ? pruneToFields(value, fields) : value;
 }
 
 /**
@@ -44,18 +96,14 @@ export async function logAudit(
             return;
         }
 
-        // Insert audit log entry
+        // Insert audit log entry (user y fecha ya van en user_id/created_at; no duplicar en el jsonb)
         const { error: insertError } = await supabase.from('audit_logs').insert({
             user_id: user.id,
             agency_id: agencyId,
             action,
             resource,
             resource_id: resourceId,
-            details: {
-                ...details,
-                timestamp: new Date().toISOString(),
-                userEmail: user.email
-            }
+            details
         });
 
         if (insertError) {
@@ -75,8 +123,8 @@ export async function logAudit(
 export function createDiff(
     previousValue: Record<string, unknown>,
     newValue: Record<string, unknown>
-): { changed: Record<string, { old: unknown; new: unknown }> } {
-    const changed: Record<string, { old: unknown; new: unknown }> = {};
+): { changed: AuditChangedFields } {
+    const changed: AuditChangedFields = {};
 
     const allKeys = new Set([...Object.keys(previousValue), ...Object.keys(newValue)]);
 
@@ -103,13 +151,18 @@ export async function logCreate(
     newValue: Record<string, unknown>
 ): Promise<void> {
     return logAudit(agencyId, 'CREATE', resource, resourceId, {
-        newValue,
+        // Snapshot completo (podado): necesario para trazar linaje de tareas padre ya borradas
+        newValue: pruneSnapshot(resource, newValue, ALLOCATION_SNAPSHOT_FIELDS),
         description: `Created ${resource.toLowerCase()}`
     });
 }
 
 /**
  * Log an UPDATE action with diff
+ *
+ * Guarda solo los campos que cambiaron (`changed`) más un mini-snapshot de
+ * contexto, en lugar de duplicar el objeto completo en previous/new.
+ * Si no hay cambios efectivos, no inserta nada.
  */
 export async function logUpdate(
     agencyId: string,
@@ -118,12 +171,17 @@ export async function logUpdate(
     previousValue: Record<string, unknown>,
     newValue: Record<string, unknown>
 ): Promise<void> {
-    const diff = createDiff(previousValue, newValue);
+    const diff = createDiff(
+        pruneSnapshot(resource, previousValue, ALLOCATION_SNAPSHOT_FIELDS),
+        pruneSnapshot(resource, newValue, ALLOCATION_SNAPSHOT_FIELDS)
+    );
+    const changedKeys = Object.keys(diff.changed);
+    if (changedKeys.length === 0) return; // No-op: no ensuciar audit_logs
 
     return logAudit(agencyId, 'UPDATE', resource, resourceId, {
-        previousValue,
-        newValue,
-        description: `Updated ${resource.toLowerCase()}: ${Object.keys(diff.changed).join(', ')}`
+        changed: diff.changed,
+        context: pruneSnapshot(resource, newValue, ALLOCATION_CONTEXT_FIELDS),
+        description: `Updated ${resource.toLowerCase()}: ${changedKeys.join(', ')}`
     });
 }
 
@@ -137,7 +195,9 @@ export async function logDelete(
     previousValue?: Record<string, unknown>
 ): Promise<void> {
     return logAudit(agencyId, 'DELETE', resource, resourceId, {
-        previousValue,
+        previousValue: previousValue
+            ? pruneSnapshot(resource, previousValue, ALLOCATION_SNAPSHOT_FIELDS)
+            : undefined,
         description: `Deleted ${resource.toLowerCase()}`
     });
 }

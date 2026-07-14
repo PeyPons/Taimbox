@@ -43,15 +43,44 @@ import { cn } from '@/lib/utils';
 
 // --- Types ---
 
+interface AuditLogDetails {
+    /** Formato legado y CREATE/DELETE: snapshots completos. */
+    previousValue?: Record<string, unknown>;
+    newValue?: Record<string, unknown>;
+    /** Formato compacto de UPDATE: solo campos cambiados + mini-snapshot de contexto. */
+    changed?: Record<string, { old?: unknown; new?: unknown }>;
+    context?: Record<string, unknown>;
+}
+
 interface AuditLog {
     id: string;
     action: 'CREATE' | 'UPDATE' | 'DELETE';
     resource_id: string;
-    details: {
-        previousValue?: Record<string, unknown>;
-        newValue?: Record<string, unknown>;
-    };
+    details: AuditLogDetails;
     created_at: string;
+}
+
+/**
+ * Normaliza un log a pares old/new equivalentes al formato legado.
+ * Con el formato compacto reconstruye ambos a partir de `context` + `changed`,
+ * de modo que solo difieren en los campos que realmente cambiaron.
+ */
+function resolveLogValues(details: AuditLogDetails | null | undefined): {
+    oldVal?: Record<string, unknown>;
+    newVal?: Record<string, unknown>;
+} {
+    if (!details) return {};
+    if (details.changed) {
+        const base = details.context ?? {};
+        const oldVal: Record<string, unknown> = { ...base };
+        const newVal: Record<string, unknown> = { ...base };
+        for (const [key, change] of Object.entries(details.changed)) {
+            oldVal[key] = change?.old;
+            newVal[key] = change?.new;
+        }
+        return { oldVal, newVal };
+    }
+    return { oldVal: details.previousValue, newVal: details.newValue };
 }
 
 interface Modification {
@@ -422,7 +451,8 @@ export function ActivityLogSection({ currentMonth, maxItems }: ActivityLogSectio
 
         logs.forEach(log => {
             const taskId = log.resource_id;
-            const data = log.details?.newValue || log.details?.previousValue;
+            const { oldVal, newVal } = resolveLogValues(log.details);
+            const data = newVal || oldVal;
             if (!data) return;
 
             const projectId = String(data.projectId || '');
@@ -505,8 +535,6 @@ export function ActivityLogSection({ currentMonth, maxItems }: ActivityLogSectio
                     name: getEmployeeName(employeeId),
                 });
             } else if (log.action === 'UPDATE') {
-                const oldVal = log.details?.previousValue;
-                const newVal = log.details?.newValue;
                 if (newVal?.status === 'completed' && oldVal?.status !== 'completed') {
                     // Check if this task triggered a distribution (heuristic: was it completed with 0h or have we seen children?)
                     // Note: We can only confirm children later in the grouping phase, so we might need a post-processing step.
