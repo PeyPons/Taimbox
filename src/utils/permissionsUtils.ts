@@ -19,6 +19,7 @@ export const RESTRICTED_PERMISSIONS: UserPermissions = {
   can_access_deadlines: true,
   can_access_okrs: false,
   can_access_weekly_forecast: false,
+  can_access_activity_log: false,
   can_access_settings: true,
   can_access_agency_settings: false,
   can_access_api_keys: false,
@@ -73,6 +74,9 @@ export function resolveUserPermissions(params: {
       ...p,
       can_access_operations_radar: p.can_access_operations_radar ?? p.can_access_reports ?? false,
       can_access_financial_health: p.can_access_financial_health ?? p.can_access_reports ?? false,
+      // Compat: roles guardados antes de existir el permiso heredan la visibilidad
+      // efectiva del Weekly (opt-out), donde vivía el historial de actividad hasta entonces.
+      can_access_activity_log: p.can_access_activity_log ?? (p.can_access_weekly_forecast !== false),
     };
   }
 

@@ -16,6 +16,7 @@ export interface UserPermissions {
   can_access_deadlines?: boolean;
   can_access_okrs?: boolean;
   can_access_weekly_forecast?: boolean;
+  can_access_activity_log?: boolean;
   can_access_settings?: boolean;
   can_access_agency_settings?: boolean;
   can_access_api_keys?: boolean;
@@ -42,6 +43,7 @@ export const ROUTE_PERMISSIONS: Record<string, keyof UserPermissions> = {
   '/deadlines': 'can_access_deadlines',
   '/okrs': 'can_access_okrs',
   '/weekly-forecast': 'can_access_weekly_forecast',
+  '/actividad': 'can_access_activity_log',
   '/settings': 'can_access_settings',
   '/agency': 'can_access_agency_settings',
   '/exportacion-informes': 'can_access_agency_settings',
@@ -67,6 +69,7 @@ export const DEFAULT_PERMISSIONS: UserPermissions = {
   can_access_deadlines: true,
   can_access_okrs: true,
   can_access_weekly_forecast: true,
+  can_access_activity_log: true,
   can_access_settings: true,
   can_access_agency_settings: true,
   can_access_api_keys: true,
@@ -98,6 +101,7 @@ export const PERMISSION_LABELS: Record<keyof UserPermissions, string> = {
   can_access_deadlines: 'Deadlines',
   can_access_okrs: 'Objetivos (OKRs)',
   can_access_weekly_forecast: 'Forecast',
+  can_access_activity_log: 'Registro de actividad',
   can_access_settings: 'Configuración',
   can_access_agency_settings: 'Configuración de Agencia',
   can_access_api_keys: 'API e integraciones',

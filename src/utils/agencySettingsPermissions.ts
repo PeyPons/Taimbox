@@ -39,6 +39,7 @@ export const AGENCY_ROLE_PERMISSION_GROUPS: {
       'can_access_team_capacity',
       'can_assign_tasks_to_others',
       'can_access_weekly_forecast',
+      'can_access_activity_log',
       'can_access_review_agents',
     ],
   },
@@ -64,6 +65,11 @@ export function isRolePermissionEnabled(
   permission: keyof UserPermissions,
 ): boolean {
   if (isProtectedAdminRole(role)) return true;
+  // Compat: roles guardados antes de existir el permiso heredan la visibilidad
+  // efectiva del Weekly (misma regla que resolveUserPermissions en runtime).
+  if (permission === 'can_access_activity_log' && role.permissions?.can_access_activity_log === undefined) {
+    return role.permissions?.can_access_weekly_forecast !== false;
+  }
   return role.permissions?.[permission] !== false;
 }
 
