@@ -250,8 +250,32 @@
         {
           "date": "2026-07-26",
           "type": "improved",
-          "title": "Scopes por recurso, allowlist RLS y modelo de semanas",
-          "description": "Los tokens API incluyen claim scopes (allowlist de tablas de integración). Políticas RESTRICTIVE niegan blog, Ads, auditoría, soporte, cronómetro y api_tokens al issuer timeboxing-api. allocations escribible con readwrite + scope allocations. Nueva sección Semanas y meses (split weeks / week_start_date). Generación de token alineada con can_access_api_keys."
+          "title": "Scopes por recurso en tokens JWT",
+          "description": "Los tokens incluyen el claim scopes (allowlist de tablas de integración). Al crear un token en API e integraciones puedes marcar solo los recursos necesarios (employees, allocations, projects, etc.). Readonly sigue bloqueando POST/PATCH/DELETE; readwrite solo escribe en scopes concedidos. Los tokens existentes recibieron backfill con el catálogo completo: regenera con scopes mínimos cuando puedas."
+        },
+        {
+          "date": "2026-07-26",
+          "type": "deprecated",
+          "title": "RLS restrictivo: tablas fuera de la API de integración",
+          "description": "Cambio incompatible para integraciones que leían tablas no documentadas: políticas AS RESTRICTIVE niegan al issuer timeboxing-api blog, Ads, auditoría, soporte, review, cronómetro (time_entries, active_timers, timer_sessions), agencies, api_tokens y tablas similares. Solo permanecen accesibles los recursos del catálogo de scopes. Si una petición devuelve [] o 42501, revisa Límites RLS y permisos."
+        },
+        {
+          "date": "2026-07-26",
+          "type": "new",
+          "title": "Escritura de allocations con scope allocations",
+          "description": "Las asignaciones (tareas) se pueden crear y modificar con token readwrite que incluya el scope allocations. Sigue siendo obligatorio employee_id, project_id, week_start_date y hours_assigned. La aceptación de transferencias y el cronómetro siguen siendo solo app."
+        },
+        {
+          "date": "2026-07-26",
+          "type": "new",
+          "title": "Documentación: semanas, meses y split weeks",
+          "description": "Nueva sección Semanas y meses (#weeks-months): week_start_date no siempre es lunes; la primera semana parcial de un mes usa el día 1 del mes. Incluye reglas obligatorias, ejemplo junio→julio e instrucciones para agentes GPT/CRM. Referencia de allocations y OpenAPI actualizados con campos requeridos."
+        },
+        {
+          "date": "2026-07-26",
+          "type": "improved",
+          "title": "Generación y revocación de tokens (permisos Edge)",
+          "description": "Las Edge Functions generate-api-token y revoke-api-token exigen can_access_api_keys o can_access_agency_settings. La UI de API e integraciones muestra checkboxes de scopes al crear tokens. OpenAPI (taimbox-integration-api.json) regenerado con el modelo de semanas y permisos documentados."
         },
         {
           "date": "2026-05-24",
