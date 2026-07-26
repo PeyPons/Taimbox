@@ -213,12 +213,12 @@
       "rows": [
         {
           "scope": "Direct agency_id",
-          "read": "Yes if scope is on the token (employees, clients, projects, …)",
+          "read": "Yes if scope is on the token (employees, clients, projects, allocations, …)",
           "write": "Yes with readwrite + scope",
-          "filter": "Automatic RLS; POST includes agency_id"
+          "filter": "Automatic RLS; POST includes agency_id (optional on allocations: filled by trigger)"
         },
         {
-          "scope": "No agency_id (allocations, deadlines, absences, …)",
+          "scope": "No agency_id (deadlines, absences, …)",
           "read": "Yes with scope",
           "write": "Yes with readwrite + scope (see row)",
           "filter": "employee_id, project_id, month, dates"
@@ -320,6 +320,12 @@
         "fixed": "Fixed"
       },
       "entries": [
+        {
+          "date": "2026-07-26",
+          "type": "improved",
+          "title": "allocations.agency_id (explicit tenant)",
+          "description": "allocations now has agency_id NOT NULL (backfilled from the employee; no rows deleted). A trigger fills and validates employee↔project agency coherence on INSERT/UPDATE. Filter by agency_id on GET; optional on POST. Indexes on (agency_id, week_start_date). Timers (time_entries/active_timers) unchanged: they keep their own agency_id and allocation_id."
+        },
         {
           "date": "2026-07-26",
           "type": "improved",
@@ -472,7 +478,7 @@
     "install": "npm install @supabase/supabase-js",
     "code": "import { createClient } from '@supabase/supabase-js'\n\n// Supabase project URL + anon key (same as the web app)\nconst SUPABASE_URL = 'https://api.taimbox.com'\nconst ANON_KEY = process.env.SUPABASE_ANON_KEY\n\n// API token from API & integrations\nconst API_TOKEN = process.env.TIMEBOXING_API_TOKEN\n\nconst taimbox = createClient(SUPABASE_URL, ANON_KEY, {\n  global: {\n    headers: { Authorization: `Bearer ${API_TOKEN}` }\n  }\n})\n\n// Example: list active employees for your agency\n// (RLS filters by your agency_id automatically)\nconst { data: employees, error } = await taimbox\n  .from('employees')\n  .select('id, name, role, email')\n  .eq('is_active', true)\n  .order('name')\n\nif (error) {\n  console.error('Error:', error.message)\n} else {\n  console.log('Employees:', employees)\n}",
     "noteTitle": "Note:",
-    "noteBody": "On tables with agency_id you do not need to filter on GET: RLS uses the JWT agency_id. For allocations, deadlines, or absences filter by employee_id or project_id."
+    "noteBody": "On tables with agency_id (including allocations) you do not need to filter on GET: RLS uses the JWT agency_id. For deadlines or absences filter by employee_id or project_id."
   },
   "openapi": {
     "title": "OpenAPI",

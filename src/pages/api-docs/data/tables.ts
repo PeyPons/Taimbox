@@ -285,9 +285,10 @@ const agencyId = '<AGENCY_ID>' // UUID desde API e integraciones > Datos de cone
         name: 'allocations',
         description:
           'Unidad atomica de planificacion. Cada asignacion vincula un empleado con un proyecto para una semana concreta.',
-        authNote: 'Sin columna agency_id. Filtra por employee_id o project_id. Escritura (INSERT/UPDATE/DELETE) con token API requiere permissions=readwrite y scope allocations. Respeta week_start_date del mes objetivo (ver Semanas y meses).',
+        authNote: 'Filtra por agency_id (columna denormalizada; RLS tambien acota por empleado/proyecto). Escritura (INSERT/UPDATE/DELETE) con token API requiere permissions=readwrite y scope allocations. Respeta week_start_date del mes objetivo (ver Semanas y meses). En POST, agency_id es opcional: el trigger lo rellena desde el empleado si se omite.',
         columns: [
           { name: 'id', type: 'uuid', required: false, default: 'gen_random_uuid()', pk: true, description: 'Identificador unico.' },
+          { name: 'agency_id', type: 'uuid', required: false, fk: 'agencies(id)', description: 'Agencia (tenant). Se rellena automaticamente desde employees.employee_id si se omite; debe coincidir con la agencia del proyecto.' },
           { name: 'employee_id', type: 'uuid', required: true, fk: 'employees(id)', description: 'Empleado asignado.' },
           { name: 'project_id', type: 'uuid', required: true, fk: 'projects(id)', description: 'Proyecto destino.' },
           { name: 'week_start_date', type: 'date', required: true, description: 'Clave de semana en el mes: lunes ISO en semanas completas; dia 1 del mes en la primera semana parcial (split weeks). No asumas que siempre es lunes. Debe caer en el mes que estas planificando.' },

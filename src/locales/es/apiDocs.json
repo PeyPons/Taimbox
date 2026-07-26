@@ -200,8 +200,8 @@
       "outOfScopeTitle": "Qué no forma parte de la API de integración",
       "outOfScopeIntro": "Esta documentación describe solo recursos útiles para integraciones por agencia. No es un inventario del esquema completo de la base de datos.",
       "rows": [
-        { "scope": "agency_id directo", "read": "Sí si el scope está en el token (employees, clients, projects, …)", "write": "Sí con readwrite + scope", "filter": "RLS automático; POST incluye agency_id" },
-        { "scope": "Sin agency_id (allocations, deadlines, absences, …)", "read": "Sí con scope", "write": "Sí con readwrite + scope (ver fila)", "filter": "employee_id, project_id, month, dates" },
+        { "scope": "agency_id directo", "read": "Sí si el scope está en el token (employees, clients, projects, allocations, …)", "write": "Sí con readwrite + scope", "filter": "RLS automático; POST incluye agency_id (en allocations es opcional: lo rellena un trigger)" },
+        { "scope": "Sin agency_id (deadlines, absences, …)", "read": "Sí con scope", "write": "Sí con readwrite + scope (ver fila)", "filter": "employee_id, project_id, month, dates" },
         { "scope": "allocations (tareas)", "read": "Sí con scope allocations", "write": "Sí con readwrite + scope allocations", "filter": "employee_id / project_id; week_start_date en el mes objetivo" },
         { "scope": "time_entries, active_timers, timer_sessions", "read": "No con token API", "write": "No (solo app / RPC log_timer_hours)", "filter": "N/A con token API" },
         { "scope": "agencies (tabla tenant)", "read": "No (GET → [])", "write": "No", "filter": "agency_id en UI de token; no consultar agencies" },
@@ -247,6 +247,12 @@
         "fixed": "Corregido"
       },
       "entries": [
+        {
+          "date": "2026-07-26",
+          "type": "improved",
+          "title": "allocations.agency_id (tenant explícito)",
+          "description": "La tabla allocations incluye agency_id NOT NULL (backfill desde el empleado, sin borrar filas). Trigger rellena y valida coherencia empleado↔proyecto en INSERT/UPDATE. Filtra por agency_id en GET; en POST es opcional. Índices (agency_id, week_start_date). Timers (time_entries/active_timers) no cambian: siguen con su propio agency_id y allocation_id."
+        },
         {
           "date": "2026-07-26",
           "type": "improved",
@@ -332,7 +338,7 @@
     "install": "npm install @supabase/supabase-js",
     "code": "import { createClient } from '@supabase/supabase-js'\n\n// URL de tu instancia Supabase + clave anónima (la misma que usa la app)\nconst SUPABASE_URL = 'https://api.taimbox.com'\nconst ANON_KEY = process.env.SUPABASE_ANON_KEY\n\n// Token API generado desde API e integraciones\nconst API_TOKEN = process.env.TIMEBOXING_API_TOKEN\n\nconst taimbox = createClient(SUPABASE_URL, ANON_KEY, {\n  global: {\n    headers: { Authorization: `Bearer ${API_TOKEN}` }\n  }\n})\n\n// Ejemplo: listar empleados activos de tu agencia\n// (RLS filtra automáticamente por tu agency_id)\nconst { data: employees, error } = await taimbox\n  .from('employees')\n  .select('id, name, role, email')\n  .eq('is_active', true)\n  .order('name')\n\nif (error) {\n  console.error('Error:', error.message)\n} else {\n  console.log('Empleados:', employees)\n}",
     "noteTitle": "Nota:",
-    "noteBody": "En tablas con agency_id no hace falta filtrar en GET: RLS usa el agency_id del JWT. En allocations, deadlines o absences filtra por employee_id o project_id."
+    "noteBody": "En tablas con agency_id (incl. allocations) no hace falta filtrar en GET: RLS usa el agency_id del JWT. En deadlines o absences filtra por employee_id o project_id."
   },
   "openapi": {
     "title": "OpenAPI",

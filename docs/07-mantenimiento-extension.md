@@ -17,8 +17,9 @@
 
 - **Aislamiento por agencia (multi-tenant)**  
   Todas las lecturas/escrituras deben acotarse a la agencia actual para no mostrar datos de una agencia en otra.
-  - **Tablas con columna `agency_id`** (filtrar siempre por `agency_id` en queries e inserts): `agencies`, `employees`, `clients`, `projects`, `ad_accounts_config`, `ads_sync_logs`, `meta_sync_logs`, `meta_ads_campaigns`, `google_ads_campaigns`, `global_assignments`, `task_transfers`, `department_config`, `user_agencies`, `audit_logs`, `team_events`, `client_settings`, `segmentation_rules`.
-  - **Tablas sin `agency_id` que se filtran por join**: `deadlines` (join con `projects.agency_id` vía `fetchDeadlinesForMonth(monthKey, agencyId)`), `professional_goals` (join con `employees.agency_id` en GoalsContext), `user_routines` (join con `employees.agency_id` en AppContext), `allocations` y `absences` (join con `employees.agency_id`).  
+  - **Tablas con columna `agency_id`** (filtrar siempre por `agency_id` en queries e inserts): `agencies`, `employees`, `clients`, `projects`, `allocations`, `ad_accounts_config`, `ads_sync_logs`, `meta_sync_logs`, `meta_ads_campaigns`, `google_ads_campaigns`, `global_assignments`, `task_transfers`, `department_config`, `user_agencies`, `audit_logs`, `team_events`, `client_settings`, `segmentation_rules`.
+  - **Tablas sin `agency_id` que se filtran por join**: `deadlines` (join con `projects.agency_id` vía `fetchDeadlinesForMonth(monthKey, agencyId)`), `professional_goals` (join con `employees.agency_id` en GoalsContext), `user_routines` (join con `employees.agency_id` en AppContext), `absences` (join con `employees.agency_id`).  
+  - **`allocations.agency_id`**: denormalizado; trigger `allocations_set_agency_id` rellena desde el empleado y exige misma agencia en el proyecto. Migración `20260726140000_allocations_agency_id.sql` (backfill sin borrar histórico). RPCs `partial_close_rollover` / `accept_task_transfer` no necesitan listar `agency_id` en el INSERT.
   - **Tablas sin uso en la app** (solo API externa o deprecadas): `google_ads_changes` (no referenciada en el codebase). La tabla `time_entries` se usa desde la UI con el módulo **Cronómetro de tareas** (RPC `log_timer_hours`); máximo 24 h por entrada (límite efectivo por agencia). La tabla `active_timers` almacena el timer activo por empleado (1 fila por empleado); RLS por `auth.uid()`. La tabla **`timer_sessions`** (append-only) guarda cada cierre de cronómetro con `start_time`/`end_time` exactos para webhooks e integraciones (p. ej. Perfex CRM).
 
 - **Arquitectura híbrida del cronómetro (drift y sincronización multi-pestaña)**  
@@ -61,8 +62,8 @@
   **Políticas RLS por tipo de tabla** (permisivas de tenant; encima van restrictive de API):
   | Tipo | Tablas | Política |
   |------|--------|----------|
-  | `agency_id` directo | agencies, employees, clients, projects, global_assignments, task_transfers, department_config, ad_accounts_config, ads_sync_logs, meta_sync_logs, google_ads_campaigns, meta_ads_campaigns, team_events, client_settings, segmentation_rules, audit_logs, api_tokens, user_agencies | `agency_id IN (SELECT user_agency_ids())` |
-  | Vía `employee_id` (por agencia) | allocations, absences, professional_goals, time_entries | `employee_id IN (SELECT e.id FROM employees e WHERE e.agency_id IN (SELECT user_agency_ids()))` |
+  | `agency_id` directo | agencies, employees, clients, projects, allocations, global_assignments, task_transfers, department_config, ad_accounts_config, ads_sync_logs, meta_sync_logs, google_ads_campaigns, meta_ads_campaigns, team_events, client_settings, segmentation_rules, audit_logs, api_tokens, user_agencies | `agency_id IN (SELECT user_agency_ids())` |
+  | Vía `employee_id` (por agencia) | absences, professional_goals, time_entries | `employee_id IN (SELECT e.id FROM employees e WHERE e.agency_id IN (SELECT user_agency_ids()))` |
   | Vía `employee_id` (por usuario) | active_timers, timer_sessions | Políticas por `auth.uid()` = `employees.user_id`. No dependen de agencia. |
   | Vía `project_id` | deadlines, project_editing_locks | `project_id IN (SELECT p.id FROM projects p WHERE p.agency_id IN (SELECT user_agency_ids()))` |
   | Política “no access” | google_ads_changes | Política `no_access_until_use` con USING (false) y WITH CHECK (false): nadie puede leer ni escribir. Cuando se confirme uso, sustituir por políticas por agency_id. |

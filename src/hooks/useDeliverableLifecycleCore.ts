@@ -32,6 +32,7 @@ function cacheKey(
 
 type SupabaseAllocationRow = {
     id: string;
+    agency_id?: string | null;
     project_id: string;
     employee_id: string;
     week_start_date: string;
@@ -54,10 +55,9 @@ type SupabaseAllocationRow = {
 
 /** Columnas alineadas con `appDataLoader` para listados/edición de tareas en modales. */
 const DELIVERABLE_PHASE_ALLOCATION_COLUMNS =
-    'id, project_id, employee_id, week_start_date, hours_assigned, hours_actual, hours_computed, status, description, task_name, dependency_id, transferred_from_allocation_id, distribution_source_allocation_id, parent_allocation_id, original_transferred_task_name, transfer_source_employee_id, user_priority, focus_date, is_locked';
+    'id, agency_id, project_id, employee_id, week_start_date, hours_assigned, hours_actual, hours_computed, status, description, task_name, dependency_id, transferred_from_allocation_id, distribution_source_allocation_id, parent_allocation_id, original_transferred_task_name, transfer_source_employee_id, user_priority, focus_date, is_locked';
 
-/** Misma técnica que `loadMonthData`: inner join a `employees` para que RLS / políticas permitan leer allocations de la agencia. */
-const DELIVERABLE_PHASE_ALLOCATION_SELECT = `${DELIVERABLE_PHASE_ALLOCATION_COLUMNS}, employees!allocations_employee_id_fkey!inner(agency_id)`;
+const DELIVERABLE_PHASE_ALLOCATION_SELECT = DELIVERABLE_PHASE_ALLOCATION_COLUMNS;
 
 function mapFetchedAllocationRows(data: unknown[] | null): Allocation[] {
     return (data ?? []).map((raw) => {
@@ -70,6 +70,7 @@ function mapFetchedAllocationRows(data: unknown[] | null): Allocation[] {
 export function mapSupabaseAllocationRow(a: SupabaseAllocationRow): Allocation {
     return {
         id: a.id,
+        agencyId: a.agency_id ?? undefined,
         employeeId: a.employee_id,
         projectId: a.project_id,
         weekStartDate: a.week_start_date,
@@ -103,7 +104,7 @@ export async function fetchAllocationsForDeliverablePhase(params: {
         .from('allocations')
         .select(DELIVERABLE_PHASE_ALLOCATION_SELECT)
         .eq('project_id', params.projectId)
-        .eq('employees.agency_id', params.agencyId)
+        .eq('agency_id', params.agencyId)
         .gte('week_start_date', weekGte)
         .lte('week_start_date', weekLte);
 
@@ -125,7 +126,7 @@ export async function fetchAllocationsForDeliverablePhaseBatch(params: {
         .from('allocations')
         .select(DELIVERABLE_PHASE_ALLOCATION_SELECT)
         .in('project_id', params.projectIds)
-        .eq('employees.agency_id', params.agencyId)
+        .eq('agency_id', params.agencyId)
         .gte('week_start_date', weekGte)
         .lte('week_start_date', weekLte);
 

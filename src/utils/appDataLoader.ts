@@ -162,6 +162,7 @@ interface SupabaseProject {
 
 interface SupabaseAllocation {
   id: string;
+  agency_id?: string;
   employee_id: string;
   project_id: string;
   week_start_date: string;
@@ -339,8 +340,8 @@ export async function fetchInitialAppData({
     const [allocRes, absRes, evRes, feedbackRes, routinesRes] = await Promise.all([
       supabase
         .from('allocations')
-        .select('*, employees!allocations_employee_id_fkey!inner(agency_id)')
-        .eq('employees.agency_id', agencyId)
+        .select('*')
+        .eq('agency_id', agencyId)
         .gte('week_start_date', minWeekStart)
         .lte('week_start_date', maxWeekStart),
       supabase
@@ -391,6 +392,7 @@ export async function fetchInitialAppData({
       const mappedAllocations: Allocation[] = allocRes.data.map(
         (a: SupabaseAllocation): Allocation => ({
           id: a.id,
+          agencyId: a.agency_id,
           employeeId: a.employee_id,
           projectId: a.project_id,
           weekStartDate: a.week_start_date,
@@ -616,8 +618,8 @@ export async function loadMonthData({
     const [allocRes, absRes, evRes, feedRes] = await Promise.all([
       supabase
         .from('allocations')
-        .select('*, employees!allocations_employee_id_fkey!inner(agency_id)')
-        .eq('employees.agency_id', agencyId)
+        .select('*')
+        .eq('agency_id', agencyId)
         .gte('week_start_date', minFetchWeek)
         .lte('week_start_date', maxWeekStart),
       supabase
@@ -661,6 +663,7 @@ export async function loadMonthData({
     const mappedAllocations: Allocation[] = allocationRows.map(
       (a: SupabaseAllocation): Allocation => ({
         id: a.id,
+        agencyId: a.agency_id,
         employeeId: a.employee_id,
         projectId: a.project_id,
         weekStartDate: a.week_start_date,

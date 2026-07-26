@@ -43,9 +43,9 @@ El radar y la coherencia del mes usan el **presupuesto/riesgo del mes**. Un entr
 
 Las funciones [`fetchAllocationsForDeliverablePhase` / `fetchAllocationsForDeliverablePhaseBatch`](../src/hooks/useDeliverableLifecycleCore.ts) hacen `.from('allocations').select(...)` **directo** sobre la tabla.
 
-- La tabla **`allocations` no tiene columna `agency_id`** (multi-tenant vía `employee_id` → `employees.agency_id` y `project_id` → `projects`; ver [13-esquema-base-datos.md](13-esquema-base-datos.md) y [`docs/sql/schema-snapshot-context.sql`](sql/schema-snapshot-context.sql)).
+- La tabla **`allocations` tiene columna `agency_id`** (denormalizada; backfill + trigger en `20260726140000_allocations_agency_id.sql`). Filtrar con `.eq('agency_id', agencyId)`.
 - Incluir en `select` un campo que **no exista** en la tabla hace que PostgREST responda **400**; el cliente reintenta / los efectos se disparan con Realtime y la app se percibe **lenta**.
-- Patrón correcto para cargar allocations con filtro por agencia en otros flujos: join explícito, p. ej. `employees!allocations_employee_id_fkey!inner(agency_id)` como en [`appDataLoader.ts`](../src/utils/appDataLoader.ts). **No** copiar columnas de ese join al `select` plano de la tabla si no están en `allocations`.
+- Patrón de carga principal: [`appDataLoader.ts`](../src/utils/appDataLoader.ts) usa `.eq('agency_id', agencyId)` (ya no necesita join a `employees` solo para filtrar).
 
 **Regla para nuevos desarrollos:** antes de ampliar el `select` del ciclo de vida, comprobar el DDL de `allocations` en migraciones o en el snapshot.
 

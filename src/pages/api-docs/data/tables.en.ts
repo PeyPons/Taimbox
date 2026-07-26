@@ -285,9 +285,10 @@ const agencyId = '<AGENCY_ID>' // UUID from API & Integrations > Connection data
         name: 'allocations',
         description:
           'Atomic planning unit. Each allocation links an employee to a project for a specific week.',
-        authNote: 'No agency_id column. Filter by employee_id or project_id. Writes (INSERT/UPDATE/DELETE) with an API token require permissions=readwrite and allocations scope. week_start_date must fall in the target month (see Weeks & months).',
+        authNote: 'Filter by agency_id (denormalized column; RLS also scopes via employee/project). Writes (INSERT/UPDATE/DELETE) with an API token require permissions=readwrite and allocations scope. week_start_date must fall in the target month (see Weeks & months). On POST, agency_id is optional: a trigger fills it from the employee when omitted.',
         columns: [
           { name: 'id', type: 'uuid', required: false, default: 'gen_random_uuid()', pk: true, description: 'Unique identifier.' },
+          { name: 'agency_id', type: 'uuid', required: false, fk: 'agencies(id)', description: 'Agency (tenant). Auto-filled from employees.employee_id if omitted; must match the project agency.' },
           { name: 'employee_id', type: 'uuid', required: true, fk: 'employees(id)', description: 'Assigned employee.' },
           { name: 'project_id', type: 'uuid', required: true, fk: 'projects(id)', description: 'Target project.' },
           { name: 'week_start_date', type: 'date', required: true, description: 'Week key in the month: ISO Monday for full weeks; 1st of the month for the first partial week (split weeks). Do not assume it is always Monday. Must fall in the month you are planning.' },
