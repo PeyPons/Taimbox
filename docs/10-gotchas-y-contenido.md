@@ -1,6 +1,9 @@
 ﻿
 ## 10. Gotchas y Patrones Problemáticos Conocidos
 
+### 10.0 Mes “anterior” al abrir o cambiar de página
+El mes del planificador/dashboard/rentabilidad/etc. se compartía en **`localStorage.planner_date`**: si alguien miraba un mes pasado, al volver otro día seguía ahí. Ahora es **`sessionStorage`** + formato `yyyy-MM` (`src/utils/plannerMonthStorage.ts`): misma pestaña = mes compartido entre vistas; nueva visita = mes actual. Deadlines no usa esta clave (estado local propio).
+
 ### 10.1 Keys duplicadas en listas con datos potencialmente duplicados
 **Archivo afectado**: `GlobalPlanningInconsistencies.tsx`
 
