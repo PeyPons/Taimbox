@@ -285,12 +285,12 @@ const agencyId = '<AGENCY_ID>' // UUID desde API e integraciones > Datos de cone
         name: 'allocations',
         description:
           'Unidad atomica de planificacion. Cada asignacion vincula un empleado con un proyecto para una semana concreta.',
-        authNote: 'Sin columna agency_id. Filtra por employee_id o project_id. Escritura (INSERT/UPDATE/DELETE) requiere permiso can_assign_tasks_for_employee: no disponible con token API (solo sesion de usuario en la app).',
+        authNote: 'Sin columna agency_id. Filtra por employee_id o project_id. Escritura (INSERT/UPDATE/DELETE) con token API requiere permissions=readwrite y scope allocations. Respeta week_start_date del mes objetivo (ver Semanas y meses).',
         columns: [
           { name: 'id', type: 'uuid', required: false, default: 'gen_random_uuid()', pk: true, description: 'Identificador unico.' },
           { name: 'employee_id', type: 'uuid', required: true, fk: 'employees(id)', description: 'Empleado asignado.' },
           { name: 'project_id', type: 'uuid', required: true, fk: 'projects(id)', description: 'Proyecto destino.' },
-          { name: 'week_start_date', type: 'date', required: true, description: 'Lunes de la semana (YYYY-MM-DD).' },
+          { name: 'week_start_date', type: 'date', required: true, description: 'Clave de semana en el mes: lunes ISO en semanas completas; dia 1 del mes en la primera semana parcial (split weeks). No asumas que siempre es lunes. Debe caer en el mes que estas planificando.' },
           { name: 'hours_assigned', type: 'numeric', required: true, description: 'Horas planificadas para la semana.' },
           { name: 'hours_actual', type: 'numeric', required: false, default: '0', description: 'Horas realmente trabajadas (reportadas).' },
           { name: 'hours_computed', type: 'numeric', required: false, default: '0', description: 'Horas calculadas por el sistema.' },
@@ -316,21 +316,37 @@ const agencyId = '<AGENCY_ID>' // UUID desde API e integraciones > Datos de cone
   .gte('week_start_date', '2026-02-01')
   .lte('week_start_date', '2026-02-28')
   .order('week_start_date')`,
-          insert: `// Escritura solo desde sesion de usuario en la app (no token API).
-// Ejemplo de lectura:
-const { data } = await taimbox
+          insert: `// Requiere token readwrite + scope allocations.
+// week_start_date debe caer en el mes objetivo (split weeks: dia 1 si es parcial).
+const { data, error } = await taimbox
   .from('allocations')
-  .select('id, employee_id, project_id, week_start_date, hours_assigned')
-  .eq('project_id', projectId)
-  .gte('week_start_date', '2026-02-01')`,
+  .insert({
+    employee_id: employeeId,
+    project_id: projectId,
+    week_start_date: '2026-02-02', // lunes ISO de esa semana en febrero
+    hours_assigned: 8,
+    task_name: 'Diseno de landing',
+  })
+  .select()
+  .single()`,
           curlSelect: `curl -X GET \\
   '<BASE_URL>/allocations?select=id,employee_id,project_id,week_start_date,'\\
   'hours_assigned,task_name,status&employee_id=eq.<EMPLOYEE_ID>&'\\
   'week_start_date=gte.2026-02-01&week_start_date=lte.2026-02-28&order=week_start_date.asc' \\
   -H 'apikey: <TU_API_KEY>' \\
   -H 'Authorization: Bearer <TU_API_TOKEN>'`,
-          curlInsert: `// POST allocations: solo sesion app (no token API).
-// Ver seccion Limites RLS.`,
+          curlInsert: `curl -X POST '<BASE_URL>/allocations' \\
+  -H 'apikey: <TU_API_KEY>' \\
+  -H 'Authorization: Bearer <TU_API_TOKEN>' \\
+  -H 'Content-Type: application/json' \\
+  -H 'Prefer: return=representation' \\
+  -d '{
+    "employee_id": "<EMPLOYEE_ID>",
+    "project_id": "<PROJECT_ID>",
+    "week_start_date": "2026-02-02",
+    "hours_assigned": 8,
+    "task_name": "Diseno de landing"
+  }'`,
         },
         responses: {
           getList: `[
@@ -338,7 +354,7 @@ const { data } = await taimbox
     "id": "al1-...",
     "employee_id": "e1f2a3b4-...",
     "project_id": "p1q2r3s4-...",
-    "week_start_date": "2026-02-17",
+    "week_start_date": "2026-02-02",
     "hours_assigned": 8,
     "task_name": "Diseno de landing",
     "status": "planned"
@@ -348,24 +364,24 @@ const { data } = await taimbox
   "id": "al1-...",
   "employee_id": "e1f2a3b4-...",
   "project_id": "p1q2r3s4-...",
-  "week_start_date": "2026-02-17",
+  "week_start_date": "2026-02-02",
   "hours_assigned": 8,
   "hours_actual": 0,
   "hours_computed": 0,
   "task_name": "Diseno de landing",
   "status": "planned",
   "is_locked": false,
-  "created_at": "2026-02-15T10:00:00Z"
+  "created_at": "2026-02-01T10:00:00Z"
 }`,
           post: `{
   "id": "al2-...",
   "employee_id": "e1f2a3b4-...",
   "project_id": "p1q2r3s4-...",
-  "week_start_date": "2026-02-17",
+  "week_start_date": "2026-02-02",
   "hours_assigned": 8,
   "task_name": "Diseno de landing",
   "status": "planned",
-  "created_at": "2026-02-17T12:00:00Z"
+  "created_at": "2026-02-02T12:00:00Z"
 }`,
         },
       },
@@ -1024,7 +1040,7 @@ const { data } = await taimbox
         columns: [
           { name: 'id', type: 'uuid', required: false, default: 'gen_random_uuid()', pk: true, description: 'Identificador unico.' },
           { name: 'employee_id', type: 'uuid', required: true, fk: 'employees(id)', description: 'Empleado que reporta.' },
-          { name: 'week_start_date', type: 'date', required: true, description: 'Lunes de la semana (YYYY-MM-DD).' },
+          { name: 'week_start_date', type: 'date', required: true, description: 'Lunes ISO de la semana de feedback (YYYY-MM-DD).' },
           { name: 'project_id', type: 'uuid', required: false, fk: 'projects(id)', description: 'Proyecto afectado.' },
           { name: 'allocation_id', type: 'uuid', required: false, fk: 'allocations(id)', description: 'Asignacion concreta.' },
           { name: 'reason', type: 'text', required: false, check: "IN ('technical_issue','client_blocker','bad_estimation','personal_absence','other')", description: 'Tipo de problema.' },

@@ -32,6 +32,7 @@
       "intro": "Introducción",
       "auth": "Autenticación y seguridad",
       "baseUrl": "URL base y cabeceras",
+      "weeksMonths": "Semanas y meses",
       "responses": "Respuestas y errores",
       "rlsLimits": "Límites RLS y permisos",
       "changelog": "Changelog",
@@ -118,6 +119,7 @@
       "recommendedPathSubtitle": "Si es tu primera integración, sigue este orden:",
       "recommendedPathSteps": [
         { "targetId": "auth", "label": "Autenticación y cabeceras", "description": "Token, ANON_KEY y buenas prácticas." },
+        { "targetId": "weeks-months", "label": "Semanas y meses", "description": "week_start_date y split weeks (obligatorio antes de insertar tareas)." },
         { "targetId": "tutorial-quickstart", "label": "Primeros pasos", "description": "Tu primera petición con el SDK." },
         { "targetId": "res-organizacion", "label": "Referencia de recursos", "description": "Tablas, columnas y ejemplos." }
       ],
@@ -127,7 +129,7 @@
         "Consultar horas asignadas y reales por semana o mes",
         "Crear empleados, clientes, proyectos y ausencias desde integraciones",
         "Generar informes personalizados con datos de planificación",
-        "Leer asignaciones y transferencias pendientes (escritura de tareas solo desde la app)",
+        "Leer y crear asignaciones (tareas) con token readwrite y scope allocations",
         "Recibir cambios en tiempo real mediante suscripciones Realtime"
       ]
     },
@@ -135,13 +137,13 @@
       "title": "Autenticación y seguridad",
       "intro": "Para usar la API necesitas dos valores en las cabeceras de cada petición:",
       "apikeyBody": "La clave anónima (<code>ANON_KEY</code>) de tu instancia Supabase. Es la misma que usa la aplicación web. Se envía en la cabecera <code>apikey</code>.",
-      "authBody": "Token JWT generado desde <0>API e integraciones</0>. Contiene el <code>agency_id</code> de tu agencia. Se envía como <code>Bearer &lt;token&gt;</code>.",
+      "authBody": "Token JWT generado desde <0>API e integraciones</0>. Contiene el <code>agency_id</code> de tu agencia y los <code>scopes</code> de recurso. Se envía como <code>Bearer &lt;token&gt;</code>.",
       "authLink": "API e integraciones",
       "howToTitle": "Cómo obtener un token",
       "steps": [
         "Inicia sesión en Taimbox como administrador de tu agencia.",
         "Ve a Configuración → API e integraciones en el menú lateral.",
-        "Pulsa Crear token, asigna un nombre descriptivo y elige los permisos (solo lectura o lectura/escritura). Los tokens de solo lectura devuelven 403 en POST, PATCH y DELETE.",
+        "Pulsa Crear token, asigna un nombre, elige readonly/readwrite y marca solo los recursos (scopes) que necesite la integración. Los tokens de solo lectura reciben 403 en POST, PATCH y DELETE.",
         "Copia el JWT que se muestra. Solo se muestra una vez; guárdalo en un lugar seguro."
       ],
       "exampleTitle": "Ejemplo de petición autenticada",
@@ -150,11 +152,11 @@
       "security": [
         { "title": "No expongas tokens", "text": "Nunca incluyas tokens en repositorios públicos, registros o código front accesible." },
         { "title": "Rota periódicamente", "text": "Revoca y regenera tokens cada cierto tiempo. Revoca de inmediato si sospechas un compromiso." },
-        { "title": "Permisos mínimos", "text": "Crea tokens solo con los permisos necesarios. Usa solo lectura si no necesitas escribir." },
+        { "title": "Permisos mínimos", "text": "Usa readonly si no escribes. Además, limita scopes a los recursos necesarios (p. ej. solo employees + allocations)." },
         { "title": "Usa caducidad", "text": "Al crear un token puedes definir días de caducidad. Los tokens sin caducidad son más arriesgados." }
       ],
       "rlsTitle": "Row Level Security (RLS):",
-      "rlsBody": "Las políticas RLS limitan cada petición al tenant de tu token (<code>agency_id</code> en el JWT). Algunas tablas no tienen <code>agency_id</code> directo o restringen lectura/escritura al empleado vinculado al usuario. Consulta la sección <strong>Límites RLS y permisos</strong> antes de integrar.",
+      "rlsBody": "Las políticas RLS limitan cada petición al tenant de tu token (<code>agency_id</code> en el JWT) y a los scopes del token. Tablas de blog, Ads, auditoría, soporte, etc. no son accesibles con token de integración. Consulta <strong>Límites RLS y permisos</strong> y <strong>Semanas y meses</strong> antes de integrar.",
       "rateTitle": "Limitación de ritmo:",
       "rateBody": "Actualmente no hay límites estrictos de tasa, pero se recomienda no superar 100 peticiones/minuto. En versiones futuras podrían aplicarse límites formales."
     },
@@ -168,30 +170,50 @@
       "agencyIdRead": "<strong>En lecturas (GET):</strong> Nunca. El token ya identifica tu agencia y RLS filtra automáticamente. No hace falta pasar <code>agency_id</code> en los filtros.",
       "agencyIdWrite": "<strong>En inserciones (POST):</strong> Al crear empleados, clientes, proyectos u otros recursos con <code>agency_id</code>, incluye ese campo en el cuerpo. Cópialo desde <strong>API e integraciones</strong> (apartado «Datos de conexión», campo «ID de agencia»). Ese valor coincide con el <code>agency_id</code> del JWT del token. <strong>No uses GET /agencies</strong> (devuelve <code>[]</code>); la RPC <code>list_my_agencies_directory</code> es opcional y solo devuelve id + name, útil sobre todo con sesión app multi-agencia."
     },
+    "weeks": {
+      "title": "Semanas y meses (week_start_date)",
+      "intro": "Las asignaciones (allocations) se guardan por semana. El planificador de Taimbox usa semanas ISO (lunes–domingo) y, cuando una semana física cruza dos meses, la divide en dos filas distintas (split weeks).",
+      "warning": "<strong>No asumas que week_start_date es siempre un lunes.</strong> En la primera semana parcial de un mes, la clave en base de datos es el <code>día 1 de ese mes</code> (aunque sea martes, jueves, etc.). El mes efectivo de una fila es el mes de <code>week_start_date</code>.",
+      "rulesTitle": "Reglas obligatorias para integraciones",
+      "rule1": "Para planificar el mes M, solo inserta filas cuyo week_start_date caiga en M (mismo año-mes).",
+      "rule2": "Semana completa dentro del mes: week_start_date = lunes ISO de esa semana (YYYY-MM-DD).",
+      "rule3": "Primera semana partida (la semana ISO empieza el mes anterior): week_start_date = primer día del mes M (ej. 2025-07-01), no el lunes de junio.",
+      "rule4": "Antes de insertar en masa, lista las semanas esperadas del mes (o consulta allocations existentes) y no copies «última semana» de un mes a otro sin recalcular.",
+      "exampleTitle": "Ejemplo frontera junio → julio",
+      "exampleIntro": "Si el 30 jun es lunes y el 1 jul es martes, la semana física se parte. Para tareas de julio usa week_start_date en julio:",
+      "exampleCode": "# Incorrecto (cae en junio; no aparecerá en el planificador de julio)\nweek_start_date=2025-06-30\n\n# Correcto para la primera semana parcial de julio\nweek_start_date=2025-07-01\n\n# Semana completa de julio (lunes ISO)\nweek_start_date=2025-07-07",
+      "gptTitle": "Instrucciones para agentes / GPT conectados a CRM",
+      "gptIntro": "Si usas un LLM para sincronizar tareas, incluye estas reglas en el system prompt:",
+      "gptPrompt": "Taimbox allocations use week_start_date as the month key.\n- Full weeks: Monday (ISO).\n- First partial week of a month: use the 1st of that month, even if it is not Monday.\n- Never copy the previous month's last week_start_date into a new month.\n- Before inserting, compute week_start_date values that fall inside the target calendar month.\n- Required fields for POST allocations: employee_id, project_id, week_start_date, hours_assigned.",
+      "gptHint": "Sin estas reglas, un agente suele meter tareas de «última semana» en el mes anterior al cambiar de mes."
+    },
     "rls": {
       "title": "Límites RLS y permisos",
       "intro": "No todas las tablas se comportan igual con un token API. Esta tabla resume qué puedes leer y escribir desde integraciones server-to-server frente a lo que requiere sesión de usuario en la app.",
-      "tokenNote": "Los tokens API identifican la agencia pero no a un empleado concreto. Por eso cronómetro, aceptación de transferencias y edición de asignaciones no están disponibles con Bearer de integración.",
+      "tokenNote": "Los tokens API identifican la agencia (y scopes de recurso) pero no a un empleado concreto. Cronómetro y aceptación de transferencias siguen siendo solo app. Las asignaciones sí se pueden escribir con scope allocations + token readwrite.",
       "thScope": "Ámbito / tablas",
       "thRead": "Lectura (token API)",
       "thWrite": "Escritura (token readwrite)",
       "thFilter": "Cómo filtrar",
-      "permissionsTitle": "Permisos readonly / readwrite",
-      "permissionsBody": "Al crear un token eliges solo lectura (readonly) o lectura/escritura (readwrite). Los tokens readonly reciben 403 en POST, PATCH y DELETE. Los readwrite pueden escribir solo donde RLS lo permita: empleados, clientes, proyectos, ausencias, deadlines, task_transfers (crear solicitud), etc. No desbloquean allocations ni RPCs de app.",
+      "permissionsTitle": "Permisos readonly / readwrite y scopes",
+      "permissionsBody": "Al crear un token eliges solo lectura (readonly) o lectura/escritura (readwrite) y una lista de recursos (scopes). Readonly → 403 en POST/PATCH/DELETE. Readwrite solo escribe en tablas cuyo scope esté concedido. Blog, Ads, auditoría, soporte, api_tokens y cronómetro quedan siempre fuera de la API de integración.",
       "outOfScopeTitle": "Qué no forma parte de la API de integración",
       "outOfScopeIntro": "Esta documentación describe solo recursos útiles para integraciones por agencia. No es un inventario del esquema completo de la base de datos.",
       "rows": [
-        { "scope": "agency_id directo", "read": "Sí (employees, clients, projects, …)", "write": "Sí con token readwrite", "filter": "RLS automático; POST incluye agency_id" },
-        { "scope": "Sin agency_id (allocations, deadlines, absences, …)", "read": "Sí", "write": "Parcial (ver fila)", "filter": "employee_id, project_id, month, dates" },
-        { "scope": "allocations (tareas)", "read": "Sí", "write": "No con token API", "filter": "employee_id / project_id" },
-        { "scope": "time_entries, active_timers, timer_sessions", "read": "Solo sesión app (propio empleado)", "write": "Solo app / RPC log_timer_hours", "filter": "N/A con token API" },
+        { "scope": "agency_id directo", "read": "Sí si el scope está en el token (employees, clients, projects, …)", "write": "Sí con readwrite + scope", "filter": "RLS automático; POST incluye agency_id" },
+        { "scope": "Sin agency_id (allocations, deadlines, absences, …)", "read": "Sí con scope", "write": "Sí con readwrite + scope (ver fila)", "filter": "employee_id, project_id, month, dates" },
+        { "scope": "allocations (tareas)", "read": "Sí con scope allocations", "write": "Sí con readwrite + scope allocations", "filter": "employee_id / project_id; week_start_date en el mes objetivo" },
+        { "scope": "time_entries, active_timers, timer_sessions", "read": "No con token API", "write": "No (solo app / RPC log_timer_hours)", "filter": "N/A con token API" },
         { "scope": "agencies (tabla tenant)", "read": "No (GET → [])", "write": "No", "filter": "agency_id en UI de token; no consultar agencies" },
+        { "scope": "blog_posts, Ads, audit_logs, support_*, review_*", "read": "No con token API", "write": "No", "filter": "Fuera de allowlist de integración" },
         { "scope": "RPC accept_task_transfer", "read": "—", "write": "Solo receptor en app", "filter": "p_transfer_id, p_acceptance_mode" }
       ],
       "outOfScope": [
-        { "name": "api_tokens", "reason": "Generar y revocar tokens solo desde API e integraciones en la app (Edge Functions generate-api-token / revoke-api-token)." },
+        { "name": "api_tokens", "reason": "Generar y revocar tokens solo desde API e integraciones en la app (Edge Functions). El hash del token no es legible por PostgREST." },
+        { "name": "blog_posts", "reason": "CMS de plataforma; no forma parte del tenant de agencia. El token de integración no puede listarlo." },
         { "name": "Notificaciones por email", "reason": "Reglas y envíos se gestionan en la app; no hay endpoints públicos para configurar avisos desde integraciones." },
-        { "name": "Integraciones Ads", "reason": "Google Ads, Meta Ads y reglas de segmentación se configuran en la app, no vía token API." }
+        { "name": "Integraciones Ads", "reason": "Google Ads, Meta Ads y reglas de segmentación se configuran en la app, no vía token API." },
+        { "name": "audit_logs / support / review", "reason": "Herramientas internas de agencia o plataforma; denegadas al issuer timeboxing-api." }
       ]
     },
     "responses": {
@@ -225,6 +247,12 @@
         "fixed": "Corregido"
       },
       "entries": [
+        {
+          "date": "2026-07-26",
+          "type": "improved",
+          "title": "Scopes por recurso, allowlist RLS y modelo de semanas",
+          "description": "Los tokens API incluyen claim scopes (allowlist de tablas de integración). Políticas RESTRICTIVE niegan blog, Ads, auditoría, soporte, cronómetro y api_tokens al issuer timeboxing-api. allocations escribible con readwrite + scope allocations. Nueva sección Semanas y meses (split weeks / week_start_date). Generación de token alineada con can_access_api_keys."
+        },
         {
           "date": "2026-05-24",
           "type": "new",

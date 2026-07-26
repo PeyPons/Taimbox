@@ -15,7 +15,7 @@ Funciones serverless que corren en Deno dentro del contenedor `supabase-edge-fun
 | `oauth-google-ads` | `supabase/functions/oauth-google-ads/index.ts` | **(Nuevo)** Intercambia código OAuth y guarda `refresh_token` en columna de agencia. |
 | `exchange-google-token` | `supabase/functions/exchange-google-token/index.ts` | **Retirada (410).** Usar `oauth-google-ads`. |
 | `sync-meta-ads` | `supabase/functions/sync-meta-ads/index.ts` | Sincroniza insights a nivel campaña (gasto, clics, conversiones, etc.) vía Graph API; **no** persiste presupuesto diario de Meta en `meta_ads_campaigns` (la integración actual no solicita esos campos). |
-| `generate-api-token` | `supabase/functions/generate-api-token/index.ts` | Genera JWT con claim `agency_id` para acceso API. |
+| `generate-api-token` | `supabase/functions/generate-api-token/index.ts` | Genera JWT (`iss=timeboxing-api`) con `agency_id`, `permissions` y `scopes` (allowlist de recursos). |
 | `revoke-api-token` | `supabase/functions/revoke-api-token/index.ts` | Revoca un token API (marca `is_active = false`). |
 | `create-user` | `supabase/functions/create-user/index.ts` | Crea usuario en Auth (body: `email`, `password`, `name`, **`agency_id`**). Exige permiso de invitación en esa agencia (`assertCanInviteToAgency`). |
 | `update-user` | `supabase/functions/update-user/index.ts` | Actualiza usuario en Auth. |

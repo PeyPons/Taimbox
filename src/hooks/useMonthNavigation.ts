@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import { addMonths, format, startOfMonth, subMonths } from 'date-fns';
-import { readStoredPlannerMonth, writeStoredPlannerMonth } from '@/utils/plannerMonthStorage';
+import {
+  PLANNER_MONTH_CHANGE_EVENT,
+  readStoredPlannerMonth,
+  writeStoredPlannerMonth,
+} from '@/utils/plannerMonthStorage';
 
 export interface UseMonthNavigationOptions {
   /** Si no se persiste, solo usa estado en memoria. */
@@ -49,6 +53,24 @@ export function useMonthNavigation(options: UseMonthNavigationOptions = {}) {
       writeStoredPlannerMonth(currentMonth);
     }
   }, [currentMonth, persist]);
+
+  // Sincronizar si el banner (u otra vista) cambia el mes compartido.
+  useEffect(() => {
+    if (!persist) return;
+    const onExternalChange = (event: Event) => {
+      const detail = (event as CustomEvent<{ monthIso?: string }>).detail;
+      const next = detail?.monthIso
+        ? startOfMonth(new Date(detail.monthIso))
+        : readStoredPlannerMonth();
+      if (Number.isNaN(next.getTime())) return;
+      setCurrentMonthState((prev) => {
+        const clamped = clampMonth(next, minMonth, maxMonth);
+        return prev.getTime() === clamped.getTime() ? prev : clamped;
+      });
+    };
+    window.addEventListener(PLANNER_MONTH_CHANGE_EVENT, onExternalChange);
+    return () => window.removeEventListener(PLANNER_MONTH_CHANGE_EVENT, onExternalChange);
+  }, [persist, minMonth, maxMonth]);
 
   const goToPrevMonth = useCallback(() => {
     setCurrentMonth((prev) => subMonths(prev, 1));

@@ -637,7 +637,7 @@
           "Integration resources"
         ],
         "summary": "List allocations",
-        "description": "Unidad atomica de planificacion. Cada asignacion vincula un empleado con un proyecto para una semana concreta. Sin columna agency_id. Filtra por employee_id o project_id. Escritura (INSERT/UPDATE/DELETE) requiere permiso can_assign_tasks_for_employee: no disponible con token API (solo sesion de usuario en la app). Solo lectura con token API.",
+        "description": "Unidad atomica de planificacion. Cada asignacion vincula un empleado con un proyecto para una semana concreta. Sin columna agency_id. Filtra por employee_id o project_id. Escritura (INSERT/UPDATE/DELETE) con token API requiere permissions=readwrite y scope allocations. Respeta week_start_date del mes objetivo (ver Semanas y meses). Requiere scope allocations; week_start_date = clave de mes (split weeks).",
         "operationId": "list_allocations",
         "parameters": [
           {
@@ -681,6 +681,137 @@
           }
         ],
         "x-taimbox-read": true
+      },
+      "post": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "Create allocations",
+        "description": "Unidad atomica de planificacion. Cada asignacion vincula un empleado con un proyecto para una semana concreta. Requires readwrite token where RLS allows INSERT.",
+        "operationId": "create_allocations",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/preferReturn"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/allocations"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created row (with Prefer: return=representation).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/allocations"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-write": "readwrite"
+      },
+      "patch": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "Update allocations",
+        "operationId": "update_allocations",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter: id=eq.{uuid}"
+          },
+          {
+            "$ref": "#/components/parameters/preferReturn"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/allocations"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated row.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/allocations"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-write": "readwrite"
+      },
+      "delete": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "Delete allocations",
+        "operationId": "delete_allocations",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter: id=eq.{uuid}"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted."
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-write": "readwrite"
       }
     },
     "/rest/v1/allocation_notes": {
@@ -3303,7 +3434,7 @@
           "week_start_date": {
             "type": "string",
             "format": "date",
-            "description": "Lunes de la semana (YYYY-MM-DD)."
+            "description": "Clave de semana en el mes: lunes ISO en semanas completas; dia 1 del mes en la primera semana parcial (split weeks). No asumas que siempre es lunes. Debe caer en el mes que estas planificando."
           },
           "hours_assigned": {
             "type": "number",
@@ -3933,7 +4064,7 @@
           "week_start_date": {
             "type": "string",
             "format": "date",
-            "description": "Lunes de la semana (YYYY-MM-DD)."
+            "description": "Lunes ISO de la semana de feedback (YYYY-MM-DD)."
           },
           "project_id": {
             "type": "string",

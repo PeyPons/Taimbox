@@ -96,7 +96,10 @@ serve(async (req) => {
 
     const roles = agency.settings?.roles || []
     const callerRole = roles.find((r: { name: string }) => r.name === callerEmployee.role)
-    const hasPermission = callerRole?.permissions?.can_access_agency_settings === true
+    const rolePerms = callerRole?.permissions || {}
+    const hasPermission =
+      rolePerms.can_access_api_keys === true ||
+      rolePerms.can_access_agency_settings === true
 
     if (!hasPermission) {
       return new Response(

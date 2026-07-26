@@ -90,13 +90,47 @@ serve(async (req) => {
       )
     }
 
-    const { agency_id, name, permissions, expires_in_days } = await req.json()
+    const { agency_id, name, permissions, expires_in_days, scopes } = await req.json()
 
     if (!agency_id || !name) {
       throw new Error('Se requieren agency_id y name.')
     }
 
     const validPermissions = permissions === 'readonly' ? 'readonly' : 'readwrite'
+
+    const DEFAULT_SCOPES = [
+      'employees',
+      'clients',
+      'projects',
+      'allocations',
+      'allocation_notes',
+      'deadlines',
+      'absences',
+      'team_events',
+      'global_assignments',
+      'department_config',
+      'client_settings',
+      'weekly_feedback',
+      'professional_goals',
+      'user_routines',
+      'project_editing_locks',
+      'task_transfers',
+    ] as const
+
+    const allowedScopeSet = new Set<string>(DEFAULT_SCOPES)
+    let validScopes: string[] = [...DEFAULT_SCOPES]
+    if (Array.isArray(scopes)) {
+      const unique = new Set<string>()
+      for (const item of scopes) {
+        if (typeof item === 'string' && allowedScopeSet.has(item)) {
+          unique.add(item)
+        }
+      }
+      if (unique.size === 0) {
+        throw new Error('Debes seleccionar al menos un scope de recurso válido.')
+      }
+      validScopes = DEFAULT_SCOPES.filter((s) => unique.has(s))
+    }
 
     const MAX_EXPIRES_DAYS = 730
     const DEFAULT_EXPIRES_DAYS = 365
@@ -140,7 +174,10 @@ serve(async (req) => {
 
     const roles = agency.settings?.roles || []
     const callerRole = roles.find((r: { name: string }) => r.name === callerEmployee.role)
-    const hasPermission = callerRole?.permissions?.can_access_agency_settings === true
+    const rolePerms = callerRole?.permissions || {}
+    const hasPermission =
+      rolePerms.can_access_api_keys === true ||
+      rolePerms.can_access_agency_settings === true
 
     if (!hasPermission) {
       return new Response(
@@ -159,6 +196,7 @@ serve(async (req) => {
       iss: 'timeboxing-api',
       agency_id: agency_id,
       permissions: validPermissions,
+      scopes: validScopes,
       iat: now,
     }
 
@@ -179,6 +217,7 @@ serve(async (req) => {
         name: name,
         token_hash: tokenHash,
         permissions: validPermissions,
+        scopes: validScopes,
         is_active: true,
         expires_at: expiresAt,
       })
@@ -196,6 +235,7 @@ serve(async (req) => {
         token_id: tokenId,
         name: name,
         permissions: validPermissions,
+        scopes: validScopes,
         expires_at: expiresAt,
         message: 'Guarda este token de forma segura. No se podrá volver a mostrar.',
       }),

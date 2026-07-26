@@ -1905,6 +1905,11 @@
       "hidden": "El resto de datos están ocultos.",
       "clear": "Borrar filtro"
     },
+    "monthBanner": {
+      "viewing": "Estás viendo",
+      "todayIs": "Hoy estamos en",
+      "goCurrent": "Ir al mes actual"
+    },
     "subscriptionBanner": {
       "exceeds": "Tu agencia excede los límites del plan {{planName}} ({{current}}/{{max}} personas). Pasa a {{upgradeOptions}} para volver a planificar.",
       "viewPlans": "Ver planes"

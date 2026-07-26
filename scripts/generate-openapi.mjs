@@ -19,7 +19,7 @@ const ACCESS = {
   employees: { read: true, write: true },
   clients: { read: true, write: true },
   projects: { read: true, write: true },
-  allocations: { read: true, write: false, note: 'Solo lectura con token API.' },
+  allocations: { read: true, write: true, note: 'Requiere scope allocations; week_start_date = clave de mes (split weeks).' },
   allocation_notes: { read: true, write: true },
   deadlines: { read: true, write: true },
   time_entries: { read: false, write: false, appOnly: true },

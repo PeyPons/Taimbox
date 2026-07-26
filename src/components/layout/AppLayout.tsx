@@ -7,6 +7,7 @@ import { Header } from './Header';
 import { ImpersonationProvider } from '@/components/admin/ImpersonationBanner';
 import { DepartmentViewBanner } from '@/components/layout/DepartmentViewBanner';
 import { SubscriptionSoftLockBanner } from '@/components/layout/SubscriptionSoftLockBanner';
+import { PlannerMonthBanner } from '@/components/layout/PlannerMonthBanner';
 import { PrivacyDemoIndicator } from '@/components/privacy/PrivacyDemoIndicator';
 import { useAllocationNotesRealtime } from '@/hooks/useAllocationNotes';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -29,8 +30,9 @@ export function AppLayout() {
     <ImpersonationProvider>
     <div className="min-h-screen bg-slate-50 flex flex-col">
       <Header onMenuClick={() => setIsSidebarOpen(true)} />
-      <DepartmentViewBanner />
       <SubscriptionSoftLockBanner />
+      <DepartmentViewBanner />
+      <PlannerMonthBanner />
       <PrivacyDemoIndicator />
 
       <div className="flex flex-1">

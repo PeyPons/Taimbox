@@ -47,6 +47,7 @@ Si modificas una interface, revisa estos consumidores:
 | `permissions.ts` → `ROUTE_PERMISSIONS` | `App.tsx` (guards), `PermissionProtectedRoute.tsx`, `Sidebar.tsx` |
 | `plans.ts` → `ROUTES_REQUIRE_PRO` / `ROUTES_REQUIRE_BUSINESS`, `PLAN_MODULES`, `PLAN_LIMITS` | `PlanGuard.tsx`, `useSubscriptionLimits.ts`, `Sidebar.tsx` (`canAccessRouteByPlan`), `OnboardingWizard`, `AgencyBillingTab`, `planExportBlocks.ts`, `plans.access.test.ts` |
 | `useSubscriptionLimits.ts` | `PlanGuard`, `TeamPage`, `SubscriptionSoftLockBanner`, `usePlanMonthNavigation`, páginas con tope de mes (planificador, finanzas, capacidad, deadlines, radar, clientes, dashboard empleado) |
+| `plannerMonthStorage.ts` / `useMonthNavigation.ts` | `PlannerMonthBanner`, planificador, previsión, capacidad, deadlines, radar, finanzas; evento `taimbox:planner-month-change` |
 | `usePlanMonthNavigation.ts` + `planHistoryUtils.ts` | Cualquier vista con navegación de mes que deba respetar histórico Free (2 meses) |
 | `planExportBlocks.ts` | `DataExportHubPage.tsx` (bloques básicos Team vs avanzados Agency+) |
 | `commonExpensesAllocation.ts` (`byPayroll` sin `getEmployeePayroll` usa pesos por horas; éxito con `unallocatedAmount` / `unallocatedEntries`; aviso 0 h si **alguna** línea es `byHours`) | `FinancialHealthPage.tsx` (coste cargado, banner si hay importe no imputado); `financialHealthExportCompute`; `CommonExpensesSettingsCard.tsx`; tests en `src/utils/__tests__/commonExpensesAllocation.test.ts` |
