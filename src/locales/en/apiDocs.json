@@ -329,8 +329,32 @@
         {
           "date": "2026-07-26",
           "type": "improved",
-          "title": "Per-resource scopes, RLS allowlist, and weeks model",
-          "description": "API tokens include a scopes claim (integration table allowlist). RESTRICTIVE policies deny blog, Ads, audit, support, timer, and api_tokens to issuer timeboxing-api. Allocations writable with readwrite + allocations scope. New Weeks & months section (split weeks / week_start_date). Token generation aligned with can_access_api_keys."
+          "title": "Per-resource scopes on JWT tokens",
+          "description": "Tokens now include a scopes claim (integration table allowlist). When creating a token in API & integrations you can select only the resources you need (employees, allocations, projects, etc.). Readonly still blocks POST/PATCH/DELETE; readwrite only writes to granted scopes. Existing tokens were backfilled with the full catalog—regenerate with minimal scopes when you can."
+        },
+        {
+          "date": "2026-07-26",
+          "type": "deprecated",
+          "title": "Restrictive RLS: tables outside the integration API",
+          "description": "Breaking change for integrations that read undocumented tables: AS RESTRICTIVE policies deny issuer timeboxing-api access to blog, Ads, audit, support, review, timer (time_entries, active_timers, timer_sessions), agencies, api_tokens, and similar tables. Only scoped catalog resources remain accessible. If a request returns [] or 42501, check RLS limits and permissions."
+        },
+        {
+          "date": "2026-07-26",
+          "type": "new",
+          "title": "Allocations write with allocations scope",
+          "description": "Tasks (allocations) can be created and updated with a readwrite token that includes the allocations scope. employee_id, project_id, week_start_date, and hours_assigned remain required. Transfer acceptance and the live timer are still app-only."
+        },
+        {
+          "date": "2026-07-26",
+          "type": "new",
+          "title": "Docs: weeks, months, and split weeks",
+          "description": "New Weeks & months section (#weeks-months): week_start_date is not always a Monday; the first partial week of a month uses the 1st of that month. Includes mandatory rules, a June→July example, and instructions for GPT/CRM agents. Allocations reference and OpenAPI updated with required fields."
+        },
+        {
+          "date": "2026-07-26",
+          "type": "improved",
+          "title": "Token generate/revoke (Edge permissions)",
+          "description": "Edge Functions generate-api-token and revoke-api-token require can_access_api_keys or can_access_agency_settings. The API & integrations UI shows scope checkboxes when creating tokens. OpenAPI (taimbox-integration-api.json) regenerated with the weeks model and documented permissions."
         },
         {
           "date": "2026-05-24",
