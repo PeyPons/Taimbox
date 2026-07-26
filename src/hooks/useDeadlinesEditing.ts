@@ -1,6 +1,7 @@
 /**
  * Hook de edición inline en Deadlines: locks (adquirir/renovar/liberar),
- * estado del formulario inline, autoSave serializado, handleFormPatch. Usado solo por DeadlinesPage.
+ * estado del formulario inline, autoSave serializado por snapshot/proyecto,
+ * handleFormPatch. Usado solo por DeadlinesPage.
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react';
@@ -88,16 +89,23 @@ export function useDeadlinesEditing(params: UseDeadlinesEditingParams) {
   const [isLockAcquiring, setIsLockAcquiring] = useState(false);
   const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const autoSaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const autoSaveTimeoutProjectRef = useRef<string | null>(null);
   const lockRefreshIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lockAttemptRef = useRef(0);
   const inlineFormDataRef = useRef(inlineFormData);
   const saveChainRef = useRef(Promise.resolve());
+  /** Proyecto en edición (sync, para ignorar blur/patches tardíos de otro proyecto). */
+  const currentEditingIdRef = useRef<string | null>(null);
+  const isLockAcquiringRef = useRef(false);
+  /** Último snapshot pendiente por projectId (coalesce sin cruzar formularios). */
+  const pendingSaveByProjectRef = useRef<Record<string, InlineFormData>>({});
 
   useEffect(() => {
     inlineFormDataRef.current = inlineFormData;
   }, [inlineFormData]);
 
   useEffect(() => {
+    currentEditingIdRef.current = editingProjectId;
     if (editingProjectIdRef) editingProjectIdRef.current = editingProjectId;
   }, [editingProjectId, editingProjectIdRef]);
 
@@ -370,12 +378,21 @@ export function useDeadlinesEditing(params: UseDeadlinesEditingParams) {
     [selectedMonth, getProjectDeadline, getProject, setDeadlines, setHiddenProjects, verifyEditLock]
   );
 
-  /** Cola serializada: cada guardado lee el snapshot más reciente del formulario. */
+  /**
+   * Cola serializada por snapshot atado al projectId.
+   * Coalesce: varios enqueue del mismo proyecto conservan solo el último snapshot.
+   * Nunca lee el formulario “actual” al ejecutar (evita cruzar A↔B al cambiar de proyecto).
+   */
   const enqueueAutoSave = useCallback(
-    (projectId: string) => {
+    (projectId: string, formSnapshot?: InlineFormData) => {
+      const snapshot = cloneFormData(formSnapshot ?? inlineFormDataRef.current);
+      pendingSaveByProjectRef.current[projectId] = snapshot;
+
       saveChainRef.current = saveChainRef.current
         .then(async () => {
-          const formData = cloneFormData(inlineFormDataRef.current);
+          const formData = pendingSaveByProjectRef.current[projectId];
+          if (!formData) return;
+          delete pendingSaveByProjectRef.current[projectId];
           await persistSaveDeadline(projectId, formData);
         })
         .catch(() => {
@@ -386,37 +403,60 @@ export function useDeadlinesEditing(params: UseDeadlinesEditingParams) {
     [persistSaveDeadline]
   );
 
+  const clearDebouncedSave = useCallback(() => {
+    if (autoSaveTimeoutRef.current) {
+      clearTimeout(autoSaveTimeoutRef.current);
+      autoSaveTimeoutRef.current = null;
+    }
+    autoSaveTimeoutProjectRef.current = null;
+  }, []);
+
   const flushAutoSave = useCallback(
-    (projectId: string) => {
-      if (autoSaveTimeoutRef.current) {
-        clearTimeout(autoSaveTimeoutRef.current);
-        autoSaveTimeoutRef.current = null;
+    (projectId: string, formSnapshot?: InlineFormData) => {
+      clearDebouncedSave();
+      // Blur tardío de otro proyecto sin snapshot: no cruzar formularios.
+      if (!formSnapshot && currentEditingIdRef.current !== projectId) {
+        return saveChainRef.current;
       }
-      return enqueueAutoSave(projectId);
+      return enqueueAutoSave(projectId, formSnapshot ?? inlineFormDataRef.current);
     },
-    [enqueueAutoSave]
+    [enqueueAutoSave, clearDebouncedSave]
   );
 
   const scheduleDebouncedSave = useCallback(
-    (projectId: string, delayMs: number) => {
-      if (autoSaveTimeoutRef.current) clearTimeout(autoSaveTimeoutRef.current);
+    (projectId: string, delayMs: number, formSnapshot: InlineFormData) => {
+      clearDebouncedSave();
       setAutoSaveStatus('idle');
+      autoSaveTimeoutProjectRef.current = projectId;
+      // Snapshot de respaldo por si el form cambia de proyecto antes del timeout.
+      const fallbackSnapshot = cloneFormData(formSnapshot);
       autoSaveTimeoutRef.current = setTimeout(() => {
         autoSaveTimeoutRef.current = null;
-        enqueueAutoSave(projectId);
+        autoSaveTimeoutProjectRef.current = null;
+        if (currentEditingIdRef.current !== projectId) return;
+        enqueueAutoSave(projectId, inlineFormDataRef.current ?? fallbackSnapshot);
       }, delayMs);
     },
-    [enqueueAutoSave]
+    [enqueueAutoSave, clearDebouncedSave]
   );
 
   const cancelEditingProject = useCallback(async () => {
     lockAttemptRef.current += 1;
+    isLockAcquiringRef.current = false;
     setIsLockAcquiring(false);
-    const projectIdToRelease = editingProjectId;
+    const projectIdToRelease = currentEditingIdRef.current ?? editingProjectId;
+    const formSnapshot =
+      projectIdToRelease && autoSaveTimeoutProjectRef.current === projectIdToRelease
+        ? cloneFormData(inlineFormDataRef.current)
+        : null;
 
-    if (autoSaveTimeoutRef.current) {
-      clearTimeout(autoSaveTimeoutRef.current);
-      autoSaveTimeoutRef.current = null;
+    // Invalidar edición ya: blur de cierre no debe mutar/guardar de nuevo.
+    currentEditingIdRef.current = null;
+    if (editingProjectIdRef) editingProjectIdRef.current = null;
+
+    clearDebouncedSave();
+    if (projectIdToRelease && formSnapshot) {
+      enqueueAutoSave(projectIdToRelease, formSnapshot);
     }
     if (projectIdToRelease) {
       try {
@@ -439,11 +479,11 @@ export function useDeadlinesEditing(params: UseDeadlinesEditingParams) {
     setEditingProjectId(null);
     setInlineFormData({ employeeHours: {}, notes: '', isHidden: false });
     inlineFormDataRef.current = { employeeHours: {}, notes: '', isHidden: false };
-  }, [editingProjectId, releaseEditLock]);
+  }, [editingProjectId, releaseEditLock, clearDebouncedSave, enqueueAutoSave, editingProjectIdRef]);
 
   const renewEditLock = useCallback(
     async (projectId: string) => {
-      if (!currentUser || editingProjectId !== projectId) return;
+      if (!currentUser || currentEditingIdRef.current !== projectId) return;
       try {
         const { data, error } = await supabase
           .from('project_editing_locks')
@@ -461,16 +501,21 @@ export function useDeadlinesEditing(params: UseDeadlinesEditingParams) {
         console.error('Error renovando lock:', error);
       }
     },
-    [currentUser, selectedMonth, editingProjectId, cancelEditingProject]
+    [currentUser, selectedMonth, cancelEditingProject]
   );
 
   const startEditingProject = useCallback(
     async (projectId: string) => {
       const t0 = perfNow();
-      if (!canEditDeadlines || editingProjectId === projectId) return;
+      if (!canEditDeadlines || currentEditingIdRef.current === projectId) return;
 
       const attemptId = ++lockAttemptRef.current;
-      const previousEditingId = editingProjectId;
+      const previousEditingId = currentEditingIdRef.current;
+      const previousFormSnapshot = previousEditingId
+        ? cloneFormData(inlineFormDataRef.current)
+        : null;
+      const hadPendingDebounce =
+        !!autoSaveTimeoutRef.current && autoSaveTimeoutProjectRef.current === previousEditingId;
       const tBeforeLock = perfNow();
 
       const knownLock = editingLocks[projectId];
@@ -490,6 +535,18 @@ export function useDeadlinesEditing(params: UseDeadlinesEditingParams) {
           window.removeEventListener('beforeunload', win.__deadlineBeforeUnload as EventListener);
           delete win.__deadlineBeforeUnload;
         }
+      }
+
+      // Flush del proyecto anterior CON su snapshot, antes de sustituir el formulario.
+      if (previousEditingId && previousEditingId !== projectId) {
+        clearDebouncedSave();
+        if (hadPendingDebounce && previousFormSnapshot) {
+          enqueueAutoSave(previousEditingId, previousFormSnapshot);
+        }
+        void (async () => {
+          await saveChainRef.current;
+          await releaseEditLock(previousEditingId);
+        })();
       }
 
       const deadline = getProjectDeadline(projectId);
@@ -514,23 +571,16 @@ export function useDeadlinesEditing(params: UseDeadlinesEditingParams) {
         budgetOverride,
       };
 
+      // Refs sync ya: blur tardío del proyecto anterior se ignora.
+      currentEditingIdRef.current = projectId;
+      if (editingProjectIdRef) editingProjectIdRef.current = projectId;
+      isLockAcquiringRef.current = true;
+      inlineFormDataRef.current = initialForm;
+
       setEditingProjectId(projectId);
       setInlineFormData(initialForm);
-      inlineFormDataRef.current = initialForm;
       setExpandedProjects((prev) => new Set([...prev, projectId]));
       setIsLockAcquiring(true);
-
-      if (previousEditingId && previousEditingId !== projectId) {
-        if (autoSaveTimeoutRef.current) {
-          clearTimeout(autoSaveTimeoutRef.current);
-          autoSaveTimeoutRef.current = null;
-          enqueueAutoSave(previousEditingId);
-        }
-        void (async () => {
-          await saveChainRef.current;
-          await releaseEditLock(previousEditingId);
-        })();
-      }
 
       const lockAcquired = await acquireEditLock(projectId);
       if (attemptId !== lockAttemptRef.current) {
@@ -538,11 +588,17 @@ export function useDeadlinesEditing(params: UseDeadlinesEditingParams) {
         return;
       }
       if (!lockAcquired) {
+        isLockAcquiringRef.current = false;
         setIsLockAcquiring(false);
+        if (currentEditingIdRef.current === projectId) {
+          currentEditingIdRef.current = null;
+          if (editingProjectIdRef) editingProjectIdRef.current = null;
+        }
         setEditingProjectId((current) => (current === projectId ? null : current));
         logPerf('startEditingProject:lockRejected', t0, { projectId });
         return;
       }
+      isLockAcquiringRef.current = false;
       setIsLockAcquiring(false);
       logPerf('startEditingProject:untilLockAcquired', tBeforeLock, { projectId });
 
@@ -560,7 +616,6 @@ export function useDeadlinesEditing(params: UseDeadlinesEditingParams) {
     },
     [
       canEditDeadlines,
-      editingProjectId,
       acquireEditLock,
       editingLocks,
       getProjectDeadline,
@@ -571,39 +626,41 @@ export function useDeadlinesEditing(params: UseDeadlinesEditingParams) {
       currentUser,
       releaseEditLock,
       enqueueAutoSave,
+      clearDebouncedSave,
       skipEditLocks,
+      editingProjectIdRef,
     ]
   );
 
   const handleFormPatch = useCallback(
     (patch: Partial<InlineFormData>, saveAfterMs?: number) => {
-      if (isLockAcquiring) return;
-      const projectId = editingProjectId;
+      if (isLockAcquiringRef.current) return;
+      const projectId = currentEditingIdRef.current;
       if (!projectId) return;
 
       setInlineFormData((prev) => {
+        if (currentEditingIdRef.current !== projectId) return prev;
         const next = { ...prev, ...patch, employeeHours: { ...prev.employeeHours, ...(patch.employeeHours ?? {}) } };
         inlineFormDataRef.current = next;
         if (saveAfterMs !== undefined) {
-          scheduleDebouncedSave(projectId, saveAfterMs);
+          scheduleDebouncedSave(projectId, saveAfterMs, next);
         } else {
-          if (autoSaveTimeoutRef.current) {
-            clearTimeout(autoSaveTimeoutRef.current);
-            autoSaveTimeoutRef.current = null;
-          }
-          enqueueAutoSave(projectId);
+          flushAutoSave(projectId, next);
         }
         return next;
       });
     },
-    [editingProjectId, enqueueAutoSave, scheduleDebouncedSave, isLockAcquiring]
+    [flushAutoSave, scheduleDebouncedSave]
   );
 
   const updateInlineEmployeeHours = useCallback(
     (employeeId: string, hours: number, projectId: string, immediate = false) => {
-      if (isLockAcquiring) return;
+      if (isLockAcquiringRef.current) return;
+      // Ignora blur/onChange tardíos de un proyecto que ya no está en edición.
+      if (currentEditingIdRef.current !== projectId) return;
 
       setInlineFormData((prev) => {
+        if (currentEditingIdRef.current !== projectId) return prev;
         const nextEmployeeHours = { ...prev.employeeHours };
         const safe = hours >= 0 ? hours : 0;
         if (safe > 0) {
@@ -615,18 +672,14 @@ export function useDeadlinesEditing(params: UseDeadlinesEditingParams) {
         inlineFormDataRef.current = next;
 
         if (immediate) {
-          if (autoSaveTimeoutRef.current) {
-            clearTimeout(autoSaveTimeoutRef.current);
-            autoSaveTimeoutRef.current = null;
-          }
-          enqueueAutoSave(projectId);
+          flushAutoSave(projectId, next);
         } else {
-          scheduleDebouncedSave(projectId, 800);
+          scheduleDebouncedSave(projectId, 800, next);
         }
         return next;
       });
     },
-    [enqueueAutoSave, scheduleDebouncedSave, isLockAcquiring]
+    [flushAutoSave, scheduleDebouncedSave]
   );
 
   const toggleProjectExpanded = useCallback(
@@ -635,22 +688,23 @@ export function useDeadlinesEditing(params: UseDeadlinesEditingParams) {
         const newSet = new Set(prev);
         if (newSet.has(projectId)) {
           newSet.delete(projectId);
-          if (editingProjectId === projectId) void cancelEditingProject();
+          if (currentEditingIdRef.current === projectId) void cancelEditingProject();
         } else {
           newSet.add(projectId);
         }
         return newSet;
       });
     },
-    [setExpandedProjects, editingProjectId, cancelEditingProject]
+    [setExpandedProjects, cancelEditingProject]
   );
 
   const saveInlineDeadline = useCallback(
     async (projectId: string) => {
       setIsSaving(true);
       try {
-        await flushAutoSave(projectId);
+        await flushAutoSave(projectId, inlineFormDataRef.current);
         toast.success('Guardado');
+        currentEditingIdRef.current = null;
         setEditingProjectId(null);
         if (editingProjectIdRef) editingProjectIdRef.current = null;
       } catch (error) {
