@@ -184,7 +184,7 @@
         }
       ],
       "rlsTitle": "Row Level Security (RLS):",
-      "rlsBody": "RLS policies scope each request to your token’s tenant (<code>agency_id</code> in the JWT) and to the token’s scopes. Blog, Ads, audit, support, and similar tables are not reachable with an integration token. Read <strong>RLS limits & permissions</strong> and <strong>Weeks & months</strong> before integrating.",
+      "rlsBody": "RLS policies scope each request to your token’s tenant (<code>agency_id</code> in the JWT) and to the token’s scopes. Only the resources documented in this guide are available. Read <strong>RLS limits & permissions</strong> and <strong>Weeks & months</strong> before integrating.",
       "rateTitle": "Rate limiting:",
       "rateBody": "There are no hard limits yet, but stay under ~100 requests/minute. Formal limits may be added later."
     },
@@ -207,9 +207,9 @@
       "thWrite": "Write (readwrite token)",
       "thFilter": "How to filter",
       "permissionsTitle": "readonly / readwrite and scopes",
-      "permissionsBody": "When creating a token you choose readonly or readwrite and a list of resource scopes. Readonly → 403 on POST/PATCH/DELETE. Readwrite only writes tables whose scope is granted. Blog, Ads, audit, support, api_tokens, and timer tables stay outside the integration API.",
-      "outOfScopeTitle": "What is not part of the integration API",
-      "outOfScopeIntro": "This documentation covers only resources useful for per-agency integrations. It is not a full database schema inventory.",
+      "permissionsBody": "When creating a token you choose readonly or readwrite and a list of resource scopes. Readonly → 403 on POST/PATCH/DELETE. Readwrite only writes tables whose scope is granted. The token only reaches the resources documented in this guide.",
+      "outOfScopeTitle": "Useful limits to keep in mind",
+      "outOfScopeIntro": "This API documents per-agency integration resources. Anything not in the reference is outside the public contract.",
       "rows": [
         {
           "scope": "Direct agency_id",
@@ -242,12 +242,6 @@
           "filter": "agency_id from token UI; do not query agencies"
         },
         {
-          "scope": "blog_posts, Ads, audit_logs, support_*, review_*",
-          "read": "No with API token",
-          "write": "No",
-          "filter": "Outside integration allowlist"
-        },
-        {
           "scope": "RPC accept_task_transfer",
           "read": "—",
           "write": "Receiver in app only",
@@ -256,24 +250,16 @@
       ],
       "outOfScope": [
         {
-          "name": "api_tokens",
-          "reason": "Create/revoke tokens only from API & integrations in the app (Edge Functions). Token hash is not readable via PostgREST."
+          "name": "Create and revoke tokens",
+          "reason": "Done in API & integrations inside the app, not via PostgREST."
         },
         {
-          "name": "blog_posts",
-          "reason": "Platform CMS; not part of the agency tenant. Integration tokens cannot list it."
+          "name": "Live timer",
+          "reason": "Timer logging and related RPCs require an employee session in the app."
         },
         {
-          "name": "Email notifications",
-          "reason": "Rules and deliveries are managed in the app; no public endpoints to configure alerts from integrations."
-        },
-        {
-          "name": "Ads integrations",
-          "reason": "Google Ads, Meta Ads, and segmentation rules are configured in the app, not via API token."
-        },
-        {
-          "name": "audit_logs / support / review",
-          "reason": "Internal agency or platform tools; denied for issuer timeboxing-api."
+          "name": "Accept transfers",
+          "reason": "The accept_task_transfer RPC is run by the authenticated receiver in the app."
         }
       ]
     },
@@ -329,14 +315,8 @@
         {
           "date": "2026-07-26",
           "type": "improved",
-          "title": "Per-resource scopes on JWT tokens",
-          "description": "Tokens now include a scopes claim (integration table allowlist). When creating a token in API & integrations you can select only the resources you need (employees, allocations, projects, etc.). Readonly still blocks POST/PATCH/DELETE; readwrite only writes to granted scopes. Existing tokens were backfilled with the full catalog—regenerate with minimal scopes when you can."
-        },
-        {
-          "date": "2026-07-26",
-          "type": "deprecated",
-          "title": "Restrictive RLS: tables outside the integration API",
-          "description": "Breaking change for integrations that read undocumented tables: AS RESTRICTIVE policies deny issuer timeboxing-api access to blog, Ads, audit, support, review, timer (time_entries, active_timers, timer_sessions), agencies, api_tokens, and similar tables. Only scoped catalog resources remain accessible. If a request returns [] or 42501, check RLS limits and permissions."
+          "title": "Per-resource scopes on tokens",
+          "description": "When creating a token you choose readonly/readwrite and select only the resources you need (employees, allocations, projects, etc.). Tokens only reach what this guide documents. Existing tokens received the full catalog—regenerate with minimal scopes when you can."
         },
         {
           "date": "2026-07-26",
@@ -353,8 +333,8 @@
         {
           "date": "2026-07-26",
           "type": "improved",
-          "title": "Token generate/revoke (Edge permissions)",
-          "description": "Edge Functions generate-api-token and revoke-api-token require can_access_api_keys or can_access_agency_settings. The API & integrations UI shows scope checkboxes when creating tokens. OpenAPI (taimbox-integration-api.json) regenerated with the weeks model and documented permissions."
+          "title": "Create and revoke tokens in the app",
+          "description": "Token create/revoke happens in API & integrations. The UI shows scope checkboxes when creating tokens. OpenAPI regenerated with the weeks model and documented permissions."
         },
         {
           "date": "2026-05-24",

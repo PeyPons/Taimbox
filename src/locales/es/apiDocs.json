@@ -156,7 +156,7 @@
         { "title": "Usa caducidad", "text": "Al crear un token puedes definir días de caducidad. Los tokens sin caducidad son más arriesgados." }
       ],
       "rlsTitle": "Row Level Security (RLS):",
-      "rlsBody": "Las políticas RLS limitan cada petición al tenant de tu token (<code>agency_id</code> en el JWT) y a los scopes del token. Tablas de blog, Ads, auditoría, soporte, etc. no son accesibles con token de integración. Consulta <strong>Límites RLS y permisos</strong> y <strong>Semanas y meses</strong> antes de integrar.",
+      "rlsBody": "Las políticas RLS limitan cada petición al tenant de tu token (<code>agency_id</code> en el JWT) y a los scopes del token. Solo están disponibles los recursos documentados en esta guía. Consulta <strong>Límites RLS y permisos</strong> y <strong>Semanas y meses</strong> antes de integrar.",
       "rateTitle": "Limitación de ritmo:",
       "rateBody": "Actualmente no hay límites estrictos de tasa, pero se recomienda no superar 100 peticiones/minuto. En versiones futuras podrían aplicarse límites formales."
     },
@@ -196,24 +196,21 @@
       "thWrite": "Escritura (token readwrite)",
       "thFilter": "Cómo filtrar",
       "permissionsTitle": "Permisos readonly / readwrite y scopes",
-      "permissionsBody": "Al crear un token eliges solo lectura (readonly) o lectura/escritura (readwrite) y una lista de recursos (scopes). Readonly → 403 en POST/PATCH/DELETE. Readwrite solo escribe en tablas cuyo scope esté concedido. Blog, Ads, auditoría, soporte, api_tokens y cronómetro quedan siempre fuera de la API de integración.",
-      "outOfScopeTitle": "Qué no forma parte de la API de integración",
-      "outOfScopeIntro": "Esta documentación describe solo recursos útiles para integraciones por agencia. No es un inventario del esquema completo de la base de datos.",
+      "permissionsBody": "Al crear un token eliges solo lectura (readonly) o lectura/escritura (readwrite) y una lista de recursos (scopes). Readonly → 403 en POST/PATCH/DELETE. Readwrite solo escribe en tablas cuyo scope esté concedido. El token solo alcanza los recursos documentados en esta guía.",
+      "outOfScopeTitle": "Límites útiles a tener en cuenta",
+      "outOfScopeIntro": "Esta API documenta los recursos de integración por agencia. Lo que no aparece en la referencia no forma parte del contrato público.",
       "rows": [
         { "scope": "agency_id directo", "read": "Sí si el scope está en el token (employees, clients, projects, allocations, …)", "write": "Sí con readwrite + scope", "filter": "RLS automático; POST incluye agency_id (en allocations es opcional: lo rellena un trigger)" },
         { "scope": "Sin agency_id (deadlines, absences, …)", "read": "Sí con scope", "write": "Sí con readwrite + scope (ver fila)", "filter": "employee_id, project_id, month, dates" },
         { "scope": "allocations (tareas)", "read": "Sí con scope allocations", "write": "Sí con readwrite + scope allocations", "filter": "employee_id / project_id; week_start_date en el mes objetivo" },
         { "scope": "time_entries, active_timers, timer_sessions", "read": "No con token API", "write": "No (solo app / RPC log_timer_hours)", "filter": "N/A con token API" },
         { "scope": "agencies (tabla tenant)", "read": "No (GET → [])", "write": "No", "filter": "agency_id en UI de token; no consultar agencies" },
-        { "scope": "blog_posts, Ads, audit_logs, support_*, review_*", "read": "No con token API", "write": "No", "filter": "Fuera de allowlist de integración" },
         { "scope": "RPC accept_task_transfer", "read": "—", "write": "Solo receptor en app", "filter": "p_transfer_id, p_acceptance_mode" }
       ],
       "outOfScope": [
-        { "name": "api_tokens", "reason": "Generar y revocar tokens solo desde API e integraciones en la app (Edge Functions). El hash del token no es legible por PostgREST." },
-        { "name": "blog_posts", "reason": "CMS de plataforma; no forma parte del tenant de agencia. El token de integración no puede listarlo." },
-        { "name": "Notificaciones por email", "reason": "Reglas y envíos se gestionan en la app; no hay endpoints públicos para configurar avisos desde integraciones." },
-        { "name": "Integraciones Ads", "reason": "Google Ads, Meta Ads y reglas de segmentación se configuran en la app, no vía token API." },
-        { "name": "audit_logs / support / review", "reason": "Herramientas internas de agencia o plataforma; denegadas al issuer timeboxing-api." }
+        { "name": "Crear y revocar tokens", "reason": "Se hace en API e integraciones dentro de la app, no desde PostgREST." },
+        { "name": "Cronómetro en vivo", "reason": "El registro con cronómetro y sus RPC asociadas requieren sesión de empleado en la app." },
+        { "name": "Aceptar transferencias", "reason": "La RPC accept_task_transfer la ejecuta el receptor autenticado en la app." }
       ]
     },
     "responses": {
@@ -256,14 +253,8 @@
         {
           "date": "2026-07-26",
           "type": "improved",
-          "title": "Scopes por recurso en tokens JWT",
-          "description": "Los tokens incluyen el claim scopes (allowlist de tablas de integración). Al crear un token en API e integraciones puedes marcar solo los recursos necesarios (employees, allocations, projects, etc.). Readonly sigue bloqueando POST/PATCH/DELETE; readwrite solo escribe en scopes concedidos. Los tokens existentes recibieron backfill con el catálogo completo: regenera con scopes mínimos cuando puedas."
-        },
-        {
-          "date": "2026-07-26",
-          "type": "deprecated",
-          "title": "RLS restrictivo: tablas fuera de la API de integración",
-          "description": "Cambio incompatible para integraciones que leían tablas no documentadas: políticas AS RESTRICTIVE niegan al issuer timeboxing-api blog, Ads, auditoría, soporte, review, cronómetro (time_entries, active_timers, timer_sessions), agencies, api_tokens y tablas similares. Solo permanecen accesibles los recursos del catálogo de scopes. Si una petición devuelve [] o 42501, revisa Límites RLS y permisos."
+          "title": "Scopes por recurso en tokens",
+          "description": "Al crear un token eliges readonly/readwrite y marcas solo los recursos necesarios (employees, allocations, projects, etc.). Solo alcanzan lo documentado en esta guía. Los tokens existentes recibieron el catálogo completo: regenera con scopes mínimos cuando puedas."
         },
         {
           "date": "2026-07-26",
@@ -280,8 +271,8 @@
         {
           "date": "2026-07-26",
           "type": "improved",
-          "title": "Generación y revocación de tokens (permisos Edge)",
-          "description": "Las Edge Functions generate-api-token y revoke-api-token exigen can_access_api_keys o can_access_agency_settings. La UI de API e integraciones muestra checkboxes de scopes al crear tokens. OpenAPI (taimbox-integration-api.json) regenerado con el modelo de semanas y permisos documentados."
+          "title": "Crear y revocar tokens desde la app",
+          "description": "La generación y revocación de tokens se hace en API e integraciones. La UI muestra checkboxes de scopes al crear tokens. OpenAPI regenerado con el modelo de semanas y permisos documentados."
         },
         {
           "date": "2026-05-24",

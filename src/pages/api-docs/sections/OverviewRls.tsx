@@ -71,7 +71,7 @@ export function OverviewRls() {
             key={item.name}
             className="p-3 rounded-lg bg-white/[0.03] border border-white/5 text-sm"
           >
-            <span className="font-mono text-indigo-200">{item.name}</span>
+            <span className="font-medium text-indigo-100">{item.name}</span>
             <span className="text-indigo-100/75"> — {item.reason}</span>
           </li>
         ))}
