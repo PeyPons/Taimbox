@@ -28,3 +28,8 @@ dist-ssr
 .env.development
 .env.production
 .cursor/mcp.env
+
+# Acceso servidor / runbooks locales (NO subir a GitHub)
+.cursor/server-access.local.md
+.cursor/**/*.local.*
+!.cursor/**/*.local.example.*
