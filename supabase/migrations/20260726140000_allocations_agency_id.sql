@@ -28,6 +28,9 @@ COMMENT ON COLUMN public.allocations.agency_id IS
 -- ---------------------------------------------------------------------------
 -- 2) Backfill (UPDATE only; never DELETE)
 -- ---------------------------------------------------------------------------
+-- protect_allocations_comprehensive trata JWT vacío como usuario de app y
+-- bloquea UPDATEs de mantenimiento. Desactivar solo durante el backfill.
+ALTER TABLE public.allocations DISABLE TRIGGER enforce_allocations_protection;
 
 UPDATE public.allocations a
 SET agency_id = e.agency_id
@@ -42,6 +45,8 @@ FROM public.projects p
 WHERE a.project_id = p.id
   AND a.agency_id IS NULL
   AND p.agency_id IS NOT NULL;
+
+ALTER TABLE public.allocations ENABLE TRIGGER enforce_allocations_protection;
 
 DO $$
 DECLARE
