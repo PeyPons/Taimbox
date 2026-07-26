@@ -36,8 +36,17 @@ function cloneFormData(data: InlineFormData): InlineFormData {
   };
 }
 
+/** TTL del lock en BD; el renew (~20s) debe quedar claramente por debajo. */
+const LOCK_TTL_MS = 60_000;
+/** Si queda menos que esto, el holder probablemente dejó de hacer heartbeat → se puede tomar. */
+const LOCK_STALE_REMAINING_MS = 30_000;
+/** Tras ocultar la pestaña, liberar si no vuelve (evita locks fantasma sin presencia pesada). */
+const LOCK_HIDDEN_RELEASE_MS = 8_000;
+
 type ChannelRef = ReturnType<typeof supabase.channel> | null;
-type SetEditingLocks = React.Dispatch<React.SetStateAction<Record<string, { employeeId: string; employeeName: string; lockedAt: string }>>>;
+type SetEditingLocks = React.Dispatch<
+  React.SetStateAction<Record<string, { employeeId: string; employeeName: string; lockedAt: string; expiresAt?: string }>>
+>;
 
 export interface UseDeadlinesEditingParams {
   canEditDeadlines: boolean;
@@ -50,7 +59,7 @@ export interface UseDeadlinesEditingParams {
   hiddenProjects: Set<string>;
   setHiddenProjects: React.Dispatch<React.SetStateAction<Set<string>>>;
   setDeadlines: React.Dispatch<React.SetStateAction<Deadline[]>>;
-  editingLocks: Record<string, { employeeId: string; employeeName: string; lockedAt: string }>;
+  editingLocks: Record<string, { employeeId: string; employeeName: string; lockedAt: string; expiresAt?: string }>;
   setEditingLocks: SetEditingLocks;
   broadcastChannelRef: React.RefObject<ChannelRef>;
   setExpandedProjects: React.Dispatch<React.SetStateAction<Set<string>>>;
@@ -91,6 +100,7 @@ export function useDeadlinesEditing(params: UseDeadlinesEditingParams) {
   const autoSaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const autoSaveTimeoutProjectRef = useRef<string | null>(null);
   const lockRefreshIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const lockHiddenReleaseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lockAttemptRef = useRef(0);
   const inlineFormDataRef = useRef(inlineFormData);
   const saveChainRef = useRef(Promise.resolve());
@@ -108,6 +118,26 @@ export function useDeadlinesEditing(params: UseDeadlinesEditingParams) {
     currentEditingIdRef.current = editingProjectId;
     if (editingProjectIdRef) editingProjectIdRef.current = editingProjectId;
   }, [editingProjectId, editingProjectIdRef]);
+
+  const rememberForeignLock = useCallback(
+    (
+      projectId: string,
+      lock: { employee_id: string; locked_at?: string; expires_at?: string }
+    ) => {
+      const editor = employees.find((e) => e.id === lock.employee_id);
+      setEditingLocks((prev) => ({
+        ...prev,
+        [projectId]: {
+          employeeId: lock.employee_id,
+          employeeName: editor?.first_name || editor?.name || 'Alguien',
+          lockedAt: String(lock.locked_at || new Date().toISOString()),
+          expiresAt: String(lock.expires_at || new Date(Date.now() + LOCK_TTL_MS).toISOString()),
+        },
+      }));
+      return editor?.first_name || editor?.name || 'Alguien';
+    },
+    [employees, setEditingLocks]
+  );
 
   const releaseEditLock = useCallback(
     async (projectId: string) => {
@@ -145,7 +175,7 @@ export function useDeadlinesEditing(params: UseDeadlinesEditingParams) {
       if (!currentUser) return false;
       const { data: lock, error } = await supabase
         .from('project_editing_locks')
-        .select('employee_id')
+        .select('employee_id,locked_at,expires_at')
         .eq('project_id', projectId)
         .eq('month', selectedMonth)
         .gt('expires_at', new Date().toISOString())
@@ -154,13 +184,11 @@ export function useDeadlinesEditing(params: UseDeadlinesEditingParams) {
       if (error) return true;
       if (!lock || lock.employee_id === currentUser.id) return true;
 
-      const editor = employees.find((e) => e.id === lock.employee_id);
-      toast.warning(
-        `${editor?.first_name || editor?.name || 'Alguien'} está editando este proyecto. No se guardaron los cambios.`
-      );
+      const name = rememberForeignLock(projectId, lock);
+      toast.warning(`${name} está editando este proyecto. No se guardaron los cambios.`);
       return false;
     },
-    [currentUser, selectedMonth, employees, skipEditLocks]
+    [currentUser, selectedMonth, skipEditLocks, rememberForeignLock]
   );
 
   const acquireEditLock = useCallback(
@@ -171,35 +199,48 @@ export function useDeadlinesEditing(params: UseDeadlinesEditingParams) {
         return true;
       }
       if (!currentUser) return false;
-      const expiresAt = new Date(Date.now() + 60 * 1000).toISOString();
+      const expiresAt = new Date(Date.now() + LOCK_TTL_MS).toISOString();
+
+      const takeOverLock = async (lockId: string) => {
+        const { error } = await supabase
+          .from('project_editing_locks')
+          .update({
+            expires_at: expiresAt,
+            employee_id: currentUser.id,
+            locked_at: new Date().toISOString(),
+          })
+          .eq('id', lockId);
+        return !error;
+      };
+
       try {
         const { data: existingLock } = await supabase
           .from('project_editing_locks')
-          .select('id,employee_id,locked_at')
+          .select('id,employee_id,locked_at,expires_at')
           .eq('project_id', projectId)
           .eq('month', selectedMonth)
-          .gt('expires_at', new Date().toISOString())
           .maybeSingle();
 
         if (existingLock) {
-          if (existingLock.employee_id !== currentUser.id) {
-            const editor = employees.find((e) => e.id === existingLock.employee_id);
-            setEditingLocks((prev) => ({
-              ...prev,
-              [projectId]: {
-                employeeId: existingLock.employee_id,
-                employeeName: editor?.first_name || editor?.name || 'Alguien',
-                lockedAt: String((existingLock as { locked_at?: string }).locked_at || new Date().toISOString()),
-              },
-            }));
-            toast.warning(`${editor?.first_name || editor?.name || 'Alguien'} está editando este proyecto. Espera a que termine.`);
-            return false;
+          const remaining = new Date(existingLock.expires_at).getTime() - Date.now();
+          const isExpired = remaining <= 0;
+          const isStale = remaining < LOCK_STALE_REMAINING_MS;
+
+          if (existingLock.employee_id === currentUser.id) {
+            await supabase
+              .from('project_editing_locks')
+              .update({ expires_at: expiresAt })
+              .eq('id', existingLock.id);
+            return true;
           }
-          await supabase
-            .from('project_editing_locks')
-            .update({ expires_at: expiresAt })
-            .eq('id', existingLock.id);
-          return true;
+
+          if (isExpired || isStale) {
+            return takeOverLock(existingLock.id);
+          }
+
+          const name = rememberForeignLock(projectId, existingLock);
+          toast.warning(`${name} está editando este proyecto. Espera a que termine.`);
+          return false;
         }
 
         const { error } = await supabase.from('project_editing_locks').insert({
@@ -209,41 +250,34 @@ export function useDeadlinesEditing(params: UseDeadlinesEditingParams) {
           expires_at: expiresAt,
         });
 
-        if (error) {
-          const pgCode =
-            typeof error === 'object' && error && 'code' in error
-              ? String((error as { code: string }).code)
-              : '';
-          const { data: conflictLock } = await supabase
-            .from('project_editing_locks')
-            .select('id,employee_id,locked_at')
-            .eq('project_id', projectId)
-            .eq('month', selectedMonth)
-            .gt('expires_at', new Date().toISOString())
-            .maybeSingle();
+        if (!error) return true;
 
-          if (conflictLock?.employee_id !== currentUser.id) {
-            const editor = employees.find((e) => e.id === conflictLock?.employee_id);
-            setEditingLocks((prev) => ({
-              ...prev,
-              [projectId]: {
-                employeeId: conflictLock!.employee_id,
-                employeeName: editor?.first_name || editor?.name || 'Alguien',
-                lockedAt: String((conflictLock as { locked_at?: string }).locked_at || new Date().toISOString()),
-              },
-            }));
-            toast.warning(`${editor?.first_name || editor?.name || 'Alguien'} está editando este proyecto. Espera a que termine.`);
-            return false;
-          }
+        // Unique (project, month): re-leer y resolver (caducado / stale / ajeno).
+        const { data: conflictLock } = await supabase
+          .from('project_editing_locks')
+          .select('id,employee_id,locked_at,expires_at')
+          .eq('project_id', projectId)
+          .eq('month', selectedMonth)
+          .maybeSingle();
 
-          if (conflictLock && pgCode === '23505') {
-            await supabase
-              .from('project_editing_locks')
-              .update({ expires_at: expiresAt, employee_id: currentUser.id })
-              .eq('id', conflictLock.id);
-          }
+        if (!conflictLock) {
+          const retry = await supabase.from('project_editing_locks').insert({
+            project_id: projectId,
+            employee_id: currentUser.id,
+            month: selectedMonth,
+            expires_at: expiresAt,
+          });
+          return !retry.error;
         }
-        return true;
+
+        const remaining = new Date(conflictLock.expires_at).getTime() - Date.now();
+        if (conflictLock.employee_id === currentUser.id || remaining < LOCK_STALE_REMAINING_MS) {
+          return takeOverLock(conflictLock.id);
+        }
+
+        const name = rememberForeignLock(projectId, conflictLock);
+        toast.warning(`${name} está editando este proyecto. Espera a que termine.`);
+        return false;
       } catch (error) {
         console.error('Error adquiriendo lock:', error);
         return false;
@@ -251,7 +285,7 @@ export function useDeadlinesEditing(params: UseDeadlinesEditingParams) {
         logPerf('acquireEditLock', t0, { projectId, month: selectedMonth });
       }
     },
-    [currentUser, selectedMonth, employees, setEditingLocks, skipEditLocks]
+    [currentUser, selectedMonth, rememberForeignLock, skipEditLocks]
   );
 
   const persistSaveDeadline = useCallback(
@@ -440,6 +474,34 @@ export function useDeadlinesEditing(params: UseDeadlinesEditingParams) {
     [enqueueAutoSave, clearDebouncedSave]
   );
 
+  const clearLockPresenceWatch = useCallback(() => {
+    if (lockRefreshIntervalRef.current) {
+      clearInterval(lockRefreshIntervalRef.current);
+      lockRefreshIntervalRef.current = null;
+    }
+    if (lockHiddenReleaseTimeoutRef.current) {
+      clearTimeout(lockHiddenReleaseTimeoutRef.current);
+      lockHiddenReleaseTimeoutRef.current = null;
+    }
+    const win = window as unknown as {
+      __deadlineBeforeUnload?: () => void;
+      __deadlineVisibility?: () => void;
+      __deadlinePageHide?: () => void;
+    };
+    if (win.__deadlineBeforeUnload) {
+      window.removeEventListener('beforeunload', win.__deadlineBeforeUnload as EventListener);
+      delete win.__deadlineBeforeUnload;
+    }
+    if (win.__deadlineVisibility) {
+      document.removeEventListener('visibilitychange', win.__deadlineVisibility);
+      delete win.__deadlineVisibility;
+    }
+    if (win.__deadlinePageHide) {
+      window.removeEventListener('pagehide', win.__deadlinePageHide);
+      delete win.__deadlinePageHide;
+    }
+  }, []);
+
   const cancelEditingProject = useCallback(async () => {
     lockAttemptRef.current += 1;
     isLockAcquiringRef.current = false;
@@ -453,6 +515,7 @@ export function useDeadlinesEditing(params: UseDeadlinesEditingParams) {
     // Invalidar edición ya: blur de cierre no debe mutar/guardar de nuevo.
     currentEditingIdRef.current = null;
     if (editingProjectIdRef) editingProjectIdRef.current = null;
+    clearLockPresenceWatch();
 
     clearDebouncedSave();
     if (projectIdToRelease && formSnapshot) {
@@ -467,27 +530,26 @@ export function useDeadlinesEditing(params: UseDeadlinesEditingParams) {
     }
 
     if (projectIdToRelease) await releaseEditLock(projectIdToRelease);
-    if (lockRefreshIntervalRef.current) {
-      clearInterval(lockRefreshIntervalRef.current);
-      lockRefreshIntervalRef.current = null;
-    }
-    const win = window as unknown as { __deadlineBeforeUnload?: () => void };
-    if (win.__deadlineBeforeUnload) {
-      window.removeEventListener('beforeunload', win.__deadlineBeforeUnload as EventListener);
-      delete win.__deadlineBeforeUnload;
-    }
     setEditingProjectId(null);
     setInlineFormData({ employeeHours: {}, notes: '', isHidden: false });
     inlineFormDataRef.current = { employeeHours: {}, notes: '', isHidden: false };
-  }, [editingProjectId, releaseEditLock, clearDebouncedSave, enqueueAutoSave, editingProjectIdRef]);
+  }, [
+    editingProjectId,
+    releaseEditLock,
+    clearDebouncedSave,
+    enqueueAutoSave,
+    editingProjectIdRef,
+    clearLockPresenceWatch,
+  ]);
 
   const renewEditLock = useCallback(
     async (projectId: string) => {
       if (!currentUser || currentEditingIdRef.current !== projectId) return;
+      if (typeof document !== 'undefined' && document.hidden) return;
       try {
         const { data, error } = await supabase
           .from('project_editing_locks')
-          .update({ expires_at: new Date(Date.now() + 60 * 1000).toISOString() })
+          .update({ expires_at: new Date(Date.now() + LOCK_TTL_MS).toISOString() })
           .eq('project_id', projectId)
           .eq('employee_id', currentUser.id)
           .eq('month', selectedMonth)
@@ -495,13 +557,93 @@ export function useDeadlinesEditing(params: UseDeadlinesEditingParams) {
           .maybeSingle();
 
         if (error?.code === 'PGRST116' || !data) {
-          cancelEditingProject();
+          void cancelEditingProject();
         }
       } catch (error) {
         console.error('Error renovando lock:', error);
       }
     },
     [currentUser, selectedMonth, cancelEditingProject]
+  );
+
+  const attachLockPresenceWatch = useCallback(
+    (projectId: string) => {
+      clearLockPresenceWatch();
+      if (skipEditLocks || !currentUser) return;
+
+      lockRefreshIntervalRef.current = setInterval(() => renewEditLock(projectId), 20 * 1000);
+
+      const releaseIfStillEditing = () => {
+        if (currentEditingIdRef.current === projectId) {
+          void releaseEditLock(projectId);
+        }
+      };
+
+      const handleBeforeUnload = () => {
+        releaseIfStillEditing();
+      };
+
+      const handleVisibility = () => {
+        if (document.hidden) {
+          if (lockRefreshIntervalRef.current) {
+            clearInterval(lockRefreshIntervalRef.current);
+            lockRefreshIntervalRef.current = null;
+          }
+          // Acortar TTL en BD para que otros no esperen 60s si abandonamos la pestaña.
+          void supabase
+            .from('project_editing_locks')
+            .update({
+              expires_at: new Date(Date.now() + LOCK_HIDDEN_RELEASE_MS + 2_000).toISOString(),
+            })
+            .eq('project_id', projectId)
+            .eq('employee_id', currentUser.id)
+            .eq('month', selectedMonth);
+          if (lockHiddenReleaseTimeoutRef.current) clearTimeout(lockHiddenReleaseTimeoutRef.current);
+          lockHiddenReleaseTimeoutRef.current = setTimeout(() => {
+            lockHiddenReleaseTimeoutRef.current = null;
+            if (currentEditingIdRef.current === projectId && document.hidden) {
+              void cancelEditingProject();
+            }
+          }, LOCK_HIDDEN_RELEASE_MS);
+        } else {
+          if (lockHiddenReleaseTimeoutRef.current) {
+            clearTimeout(lockHiddenReleaseTimeoutRef.current);
+            lockHiddenReleaseTimeoutRef.current = null;
+          }
+          if (currentEditingIdRef.current === projectId) {
+            void renewEditLock(projectId);
+            if (!lockRefreshIntervalRef.current) {
+              lockRefreshIntervalRef.current = setInterval(() => renewEditLock(projectId), 20 * 1000);
+            }
+          }
+        }
+      };
+
+      const handlePageHide = () => {
+        releaseIfStillEditing();
+      };
+
+      window.addEventListener('beforeunload', handleBeforeUnload);
+      document.addEventListener('visibilitychange', handleVisibility);
+      window.addEventListener('pagehide', handlePageHide);
+      const win = window as unknown as {
+        __deadlineBeforeUnload?: () => void;
+        __deadlineVisibility?: () => void;
+        __deadlinePageHide?: () => void;
+      };
+      win.__deadlineBeforeUnload = handleBeforeUnload;
+      win.__deadlineVisibility = handleVisibility;
+      win.__deadlinePageHide = handlePageHide;
+    },
+    [
+      clearLockPresenceWatch,
+      skipEditLocks,
+      currentUser,
+      renewEditLock,
+      releaseEditLock,
+      cancelEditingProject,
+      selectedMonth,
+    ]
   );
 
   const startEditingProject = useCallback(
@@ -520,21 +662,25 @@ export function useDeadlinesEditing(params: UseDeadlinesEditingParams) {
 
       const knownLock = editingLocks[projectId];
       if (!skipEditLocks && knownLock && knownLock.employeeId !== currentUser?.id) {
-        toast.warning(`${knownLock.employeeName || 'Alguien'} está editando este proyecto. Espera a que termine.`);
-        logPerf('startEditingProject:knownLockRejected', t0, { projectId });
-        return;
+        const knownExpired =
+          knownLock.expiresAt != null && new Date(knownLock.expiresAt).getTime() <= Date.now();
+        if (!knownExpired) {
+          toast.warning(
+            `${knownLock.employeeName || 'Alguien'} está editando este proyecto. Espera a que termine.`
+          );
+          logPerf('startEditingProject:knownLockRejected', t0, { projectId });
+          return;
+        }
+        setEditingLocks((prev) => {
+          if (!prev[projectId]) return prev;
+          const next = { ...prev };
+          delete next[projectId];
+          return next;
+        });
       }
 
       if (previousEditingId) {
-        if (lockRefreshIntervalRef.current) {
-          clearInterval(lockRefreshIntervalRef.current);
-          lockRefreshIntervalRef.current = null;
-        }
-        const win = window as unknown as { __deadlineBeforeUnload?: () => void };
-        if (win.__deadlineBeforeUnload) {
-          window.removeEventListener('beforeunload', win.__deadlineBeforeUnload as EventListener);
-          delete win.__deadlineBeforeUnload;
-        }
+        clearLockPresenceWatch();
       }
 
       // Flush del proyecto anterior CON su snapshot, antes de sustituir el formulario.
@@ -602,31 +748,24 @@ export function useDeadlinesEditing(params: UseDeadlinesEditingParams) {
       setIsLockAcquiring(false);
       logPerf('startEditingProject:untilLockAcquired', tBeforeLock, { projectId });
 
-      if (lockRefreshIntervalRef.current) clearInterval(lockRefreshIntervalRef.current);
-      if (!skipEditLocks) {
-        lockRefreshIntervalRef.current = setInterval(() => renewEditLock(projectId), 20 * 1000);
-
-        const handleBeforeUnload = () => {
-          if (currentUser) releaseEditLock(projectId);
-        };
-        window.addEventListener('beforeunload', handleBeforeUnload);
-        (window as unknown as { __deadlineBeforeUnload?: () => void }).__deadlineBeforeUnload = handleBeforeUnload;
-      }
+      attachLockPresenceWatch(projectId);
       logPerf('startEditingProject:total', t0, { projectId });
     },
     [
       canEditDeadlines,
       acquireEditLock,
       editingLocks,
+      setEditingLocks,
       getProjectDeadline,
       getProject,
       hiddenProjects,
       setExpandedProjects,
-      renewEditLock,
       currentUser,
       releaseEditLock,
       enqueueAutoSave,
       clearDebouncedSave,
+      clearLockPresenceWatch,
+      attachLockPresenceWatch,
       skipEditLocks,
       editingProjectIdRef,
     ]
@@ -719,15 +858,10 @@ export function useDeadlinesEditing(params: UseDeadlinesEditingParams) {
 
   useEffect(() => {
     return () => {
-      if (lockRefreshIntervalRef.current) clearInterval(lockRefreshIntervalRef.current);
-      const win = window as unknown as { __deadlineBeforeUnload?: () => void };
-      if (win.__deadlineBeforeUnload) {
-        window.removeEventListener('beforeunload', win.__deadlineBeforeUnload as EventListener);
-        delete win.__deadlineBeforeUnload;
-      }
+      clearLockPresenceWatch();
       if (editingProjectId && currentUser) releaseEditLock(editingProjectId);
     };
-  }, [editingProjectId, currentUser, selectedMonth, releaseEditLock]);
+  }, [editingProjectId, currentUser, selectedMonth, releaseEditLock, clearLockPresenceWatch]);
 
   return {
     editingProjectId,
