@@ -47,7 +47,7 @@
       "ppc": {
         "title": "Monitor de presupuestos",
         "description": "Controla el gasto publicitario de tus clientes",
-        "badge": "Plan Business"
+        "badge": "Plan Agency"
       },
       "security": {
         "title": "Seguridad y Privacidad",
@@ -83,7 +83,7 @@
     },
     "ppc": {
       "title": "Monitor de presupuestos",
-      "badge": "Plan Business"
+      "badge": "Plan Agency"
     },
     "security": {
       "title": "Seguridad",
@@ -116,7 +116,7 @@
     "ctaButton": "Crear mi cuenta",
     "ctaTrial": "Prueba gratuita. Sin tarjeta de crédito.",
     "ctaPitchLead": "¿Te parece caro?",
-    "ctaPitch": "Recupera la inversión en el primer mes",
+    "ctaPitch": "Calcula el retorno con nuestra presentación de ROI",
     "copyright": "© {{year}} Taimbox. Todos los derechos reservados.",
     "privacy": "Privacidad",
     "terms": "Condiciones",
@@ -169,7 +169,7 @@
     "integrationsCards": [
       {
         "title": "Exporta",
-        "description": "Informes en PDF. Datos históricos e integración vía API REST."
+        "description": "Informes en CSV y JSON. Datos históricos e integración vía API REST."
       },
       {
         "title": "Conecta",
@@ -177,7 +177,7 @@
       },
       {
         "title": "Sincroniza",
-        "description": "Conecta con calendarios externos en tiempo real."
+        "description": "Colaboración en tiempo real: los cambios se sincronizan al instante en todo el equipo."
       }
     ],
     "featuresCarousel": [
@@ -193,8 +193,8 @@
           "Asistente: sugiere a quién pasar carga (nombre y proyectos en común)"
         ],
         "example": "María está al 120% esta semana. El asistente detecta quién está saturado y te sugiere con nombre y apellido a quién pasarle la carga, cruzando los proyectos que tienen en común. Redistribución en segundos.",
-        "stat": "+40%",
-        "statLabel": "visibilidad del equipo",
+        "stat": "1 clic",
+        "statLabel": "para reasignar carga",
         "landingUrl": "/planificador-recursos"
       },
       {
@@ -226,8 +226,8 @@
           "Alertas de desviación"
         ],
         "example": "El equipo tiene cargas desiguales. El sistema detecta quién puede ceder horas y a quién pasarlas — solo entre empleados que comparten proyectos — y te muestra el impacto antes de decidir.",
-        "stat": "85%",
-        "statLabel": "cumplimiento de deadlines",
+        "stat": "En vivo",
+        "statLabel": "planificado vs ejecutado",
         "landingUrl": "/control-proyectos"
       },
       {
@@ -290,8 +290,8 @@
           "Avisos de bloqueos"
         ],
         "example": "Ves en la vista que el proyecto lleva 60% completado y el mes avanza. Los indicadores te avisan para actuar antes del cierre.",
-        "stat": "60%",
-        "statLabel": "problemas detectados antes",
+        "stat": "Al instante",
+        "statLabel": "sobrecargas y desvíos en pantalla",
         "landingUrl": "/dashboard-empleado"
       },
       {
@@ -307,8 +307,8 @@
           "Integración API"
         ],
         "example": "A mitad de mes ves el ingreso devengado y el ritmo: si un proyecto va por encima del tiempo transcurrido, aviso en rojo. Si ya cumplió el 100 % de horas, el fee total.",
-        "stat": "+78%",
-        "statLabel": "precisión en estimaciones",
+        "stat": "Al céntimo",
+        "statLabel": "ingreso devengado y costes",
         "landingUrl": "/reportes-rentabilidad"
       }
     ],
@@ -323,7 +323,7 @@
       },
       {
         "question": "¿Son seguros mis datos?",
-        "answer": "Absolutamente. Utilizamos encriptación de extremo a extremo para proteger tus datos tanto en tránsito como en reposo. Cumplimos con el GDPR y todos los estándares de seguridad internacionales. Tienes control total sobre tus datos y puedes exportarlos o eliminarlos en cualquier momento."
+        "answer": "Sí. Tus datos viajan cifrados (TLS) y se almacenan cifrados en reposo, con aislamiento por agencia a nivel de base de datos (Row Level Security). Cumplimos con el RGPD: tienes control sobre tus datos y puedes solicitar su exportación o eliminación en cualquier momento."
       },
       {
         "question": "¿Puedo integrarlo con otras herramientas?",
@@ -334,15 +334,15 @@
       },
       {
         "question": "¿Cuánto tiempo toma implementarlo?",
-        "answer": "La plataforma está lista para usar desde el primer día. Puedes empezar a añadir tu equipo y proyectos inmediatamente. La curva de aprendizaje es mínima gracias a nuestra interfaz intuitiva. La mayoría de los equipos están completamente operativos en menos de una semana."
+        "answer": "La plataforma está lista para usar desde el primer día. Puedes empezar a añadir tu equipo y proyectos inmediatamente. La curva de aprendizaje es mínima gracias a nuestra interfaz intuitiva y a la guía paso a paso."
       },
       {
         "question": "¿Hay soporte técnico?",
-        "answer": "Sí, ofrecemos soporte técnico completo. Puedes contactarnos por correo electrónico y nuestro equipo te ayudará con cualquier duda o problema. Además, tenemos documentación completa, tutoriales y una comunidad activa donde puedes encontrar respuestas y compartir experiencias."
+        "answer": "Sí, ofrecemos soporte técnico completo. Puedes contactarnos por correo electrónico y nuestro equipo te ayudará con cualquier duda o problema. Además, tenemos documentación completa y tutoriales donde puedes encontrar respuestas."
       },
       {
         "question": "¿Dónde se almacenan mis datos?",
-        "answer": "Tus datos se almacenan en servidores seguros ubicados en centros de datos con certificaciones internacionales de seguridad. Utilizamos infraestructura en la nube de nivel empresarial que garantiza alta disponibilidad, respaldo automático y protección física de los servidores. Todos los datos están encriptados y protegidos por múltiples capas de seguridad."
+        "answer": "Tus datos se almacenan en infraestructura ubicada en la Unión Europea, bajo nuestro control operativo, con copias de seguridad diarias y cifrado en tránsito y en reposo. Publicamos nuestras prácticas reales y objetivos de recuperación en la página de Seguridad."
       },
       {
         "question": "¿Quién puede acceder a mis datos?",
@@ -390,13 +390,13 @@
     "securitySubtitle": "Cumplimos los más altos estándares de seguridad",
     "securityBadgeTls": "TLS/SSL",
     "securityBadgeGdpr": "GDPR",
-    "securityBadge247": "24/7",
+    "securityBadge247": "Backups diarios",
     "securityCardEncryptionTitle": "Encriptación",
     "securityCardEncryptionDesc": "Datos encriptados en tránsito y en reposo con algoritmos empresariales",
     "securityCardPrivacyTitle": "Privacidad",
     "securityCardPrivacyDesc": "Control total sobre tus datos. Exportación y eliminación cuando quieras.",
     "securityCardInfraTitle": "Infraestructura",
-    "securityCardInfraDesc": "Servidores certificados, backups diarios y monitoreo continuo",
+    "securityCardInfraDesc": "Infraestructura en la UE, backups diarios y monitorización continua",
     "securityButton": "Ver demo",
     "audienceTitle": "Para equipos que valoran su tiempo",
     "audienceBadges": [
@@ -444,14 +444,14 @@
   },
   "pricing": {
     "seoTitle": "Precios y planes | Taimbox",
-    "seoDescription": "Planes Starter, Pro, Business y Enterprise con Taimbox. Gestión operativa, financiera y de tiempos para agencias de todos los tamaños.",
+    "seoDescription": "Planes Free, Team, Agency, Scale y Enterprise con Taimbox. Gestión operativa, financiera y de tiempos para agencias de todos los tamaños.",
     "heroKicker": "Para agencias y equipos creativos",
     "heroLine1": "Precios diseñados para escalar con tu",
     "heroHighlight": "rentabilidad",
     "earlyAdopter": "Precios Early Adopter — 50% de descuento de por vida",
     "heroSub": "Empieza gratis. Sube de plan cuando requieras más inteligencia financiera, reportes avanzados o integraciones complejas para tu agencia.",
     "pill1": "Plan gratuito disponible",
-    "pill2": "Prueba de 14 días (Business)",
+    "pill2": "Prueba de 14 días (Agency)",
     "pill3": "Sin permanencia",
     "recommended": "Recomendado",
     "earlyTariff": "Tarifa Early Adopter · de por vida",
@@ -460,18 +460,18 @@
     "currencyBillingEur": "Importes orientativos en EUR. La suscripción se cobra en USD.",
     "currencyBillingConverted": "Importes orientativos en {{currency}}. La suscripción se cobra en USD.",
     "enterpriseTitle": "¿Más de 100 personas o requisitos enterprise?",
-    "enterpriseSub": "Personas sin límite · SLA · SSO · DPA · Facturación y hosting a medida",
+    "enterpriseSub": "Personas sin límite · SLA · DPA · Facturación y hosting a medida",
     "enterpriseCta": "Hablar con ventas",
     "enterpriseMailSubject": "Plan Enterprise",
     "includedTitle": "Todo lo que necesitas",
     "includedH2": "Incluido en todos los planes",
-    "includedSub": "No importa si estás en el plan Starter o en Business, Taimbox siempre ofrece recursos robustos y premium de base.",
+    "includedSub": "No importa si estás en el plan Free o en Agency, Taimbox siempre ofrece recursos robustos y premium de base.",
     "faqKicker": "Preguntas frecuentes",
     "faqH2": "Todo sobre planes y facturación",
     "finalH2": "¿Listo para tomar el control de tu agencia?",
     "finalSub": "Crea tu cuenta en menos de un minuto. Sin necesidad de métodos de pago para crear la cuenta y usar nuestro plan Starter libremente.",
     "finalStat1Label": "para empezar a operar",
-    "finalStat2Label": "días de prueba en Business",
+    "finalStat2Label": "días de prueba en Agency",
     "finalStat3Label": "para invitar al equipo",
     "finalCta": "Empezar gratis",
     "finalLogin": "¿Ya tienes cuenta?",
@@ -533,7 +533,7 @@
       },
       "enterprise": {
         "period": "",
-        "description": "Más de 100 personas, holdings o SLA/SSO/DPA y hosting dedicado.",
+        "description": "Más de 100 personas, holdings o SLA/DPA y hosting dedicado.",
         "cta": "Hablar con ventas",
         "customPrice": "A medida",
         "features": [
@@ -541,7 +541,7 @@
           "SLA y soporte dedicado",
           "Integraciones a medida",
           "Facturación personalizada",
-          "Single Sign-On",
+          "Opciones de acceso a medida",
           "Cuenta técnica asignada"
         ]
       }
@@ -565,7 +565,7 @@
       },
       {
         "title": "Seguridad y privacidad",
-        "desc": "Infraestructura cloud robusta y aislamiento de datos por agencia."
+        "desc": "Infraestructura en la UE y aislamiento de datos por agencia (RLS)."
       },
       {
         "title": "Permisos granulares",
@@ -574,7 +574,7 @@
     ],
     "trust": [
       {
-        "text": "14 días de prueba en Business",
+        "text": "14 días de prueba en Agency",
         "sub": "Gratis hasta que decidas"
       },
       {
@@ -596,7 +596,7 @@
         "a": "Recibirás un aviso y tu agencia entrará en modo solo lectura hasta que actualices tu plan o ajustes el número de empleados activos. Nunca borraremos tus datos."
       },
       {
-        "q": "¿Qué pasa si somos más de 50 empleados?",
+        "q": "¿Qué pasa si somos más de 100 empleados?",
         "a": "Tenemos planes Enterprise sin límite de usuarios y con soporte dedicado. Contáctanos por el chat de la app o a hello@taimbox.com."
       },
       {
@@ -604,12 +604,12 @@
         "a": "Sí. Si contratas ahora, tu tarifa queda congelada de por vida aunque los precios suban a 99 $/249 $ en el futuro."
       },
       {
-        "q": "¿La prueba de Business requiere tarjeta de crédito?",
-        "a": "Al registrarte obtienes 14 días del plan Agency (Business) sin tarjeta. Si contratas por Stripe después, el checkout puede pedir método de pago según el plan elegido; solo hay un trial por agencia. Al terminar sin suscripción, pasas a Free conservando tus datos."
+        "q": "¿La prueba de Agency requiere tarjeta de crédito?",
+        "a": "Al registrarte obtienes 14 días del plan Agency sin tarjeta. Si contratas por Stripe después, el checkout puede pedir método de pago según el plan elegido; solo hay un trial por agencia. Al terminar sin suscripción, pasas a Free conservando tus datos."
       },
       {
         "q": "¿Hay descuentos por pago anual?",
-        "a": "Por el momento ofrecemos facturación mensual flexible. Si superáis ~100 personas gestionadas o necesitáis SLA, SSO o facturación especial, contactad ventas (plan Enterprise)."
+        "a": "Por el momento ofrecemos facturación mensual flexible. Si superáis ~100 personas gestionadas o necesitáis SLA o facturación especial, contactad ventas (plan Enterprise)."
       }
     ]
   },
@@ -677,9 +677,9 @@
     "scaleTitle": "Construido para escalar (developer-first)",
     "scaleP": "No somos una herramienta «low-code» hecha con parches. Somos una infraestructura de ingeniería de software diseñada para empresas que se toman en serio sus datos.",
     "apiTitle": "API abierta y documentada",
-    "apiDesc": "¿Tienes un ERP o un CRM propio? Conecta nuestra API RESTful en minutos. Te entregamos los datos ya procesados (hours_computed), ahorrándote cientos de horas de ingeniería matemática. <1>Documentación completa →</1>",
-    "securityTitle": "Seguridad bancaria (RLS)",
-    "securityDesc": "Tus datos están aislados a nivel de base de datos mediante Row Level Security. Es matemáticamente imposible que otra agencia acceda a tu información.",
+    "apiDesc": "¿Tienes un ERP o un CRM propio? Conecta nuestra API RESTful en minutos. Te entregamos los datos ya procesados (hours_computed), para que no tengas que reimplementar los cálculos. <1>Documentación completa →</1>",
+    "securityTitle": "Aislamiento por agencia (RLS)",
+    "securityDesc": "Tus datos están aislados a nivel de base de datos mediante Row Level Security: el propio motor rechaza cualquier acceso desde otra agencia.",
     "tokensTitle": "Tokens criptográficos",
     "tokensDesc": "Sistema de autenticación propio con firma HMAC SHA-256.",
     "apiPreview1": "Obtener rentabilidad por proyecto (paso 2 del tutorial de reportes)",
@@ -1134,26 +1134,24 @@
         },
         "subprocessors": {
           "title": "6. Subencargados del Tratamiento",
-          "intro": "Para ofrecer un servicio seguro y escalable, nos apoyamos en los siguientes proveedores (subencargados):",
+          "intro": "La aplicación y la base de datos se alojan en infraestructura propia ubicada en la Unión Europea, bajo nuestro control operativo. Para funciones concretas nos apoyamos en los siguientes proveedores (subencargados):",
           "table": {
             "vendor": "Proveedor",
             "function": "Función",
             "location": "Ubicación",
-            "awsFunction": "Infraestructura de aplicación (UE)",
-            "supabaseFunction": "Base de datos y autenticación",
             "stripeFunction": "Procesamiento de pagos",
+            "resendFunction": "Envío de correo transaccional",
             "googleFunction": "Sincronización de campañas (solo lectura)",
             "metaFunction": "Sincronización de campañas (solo lectura)",
-            "locationFrankfurt": "Unión Europea",
-            "locationUE": "Unión Europea",
             "locationStripe": "UE / EE.UU. (PCI-DSS L1)",
+            "locationResend": "UE / EE.UU. (Cláusulas Contractuales Tipo)",
             "locationGlobal": "Global (Cláusulas Contractuales Tipo)"
           }
         },
         "transfers": {
           "title": "7. Transferencias Internacionales de Datos",
           "p1": "La instancia principal de Taimbox opera en la <0>Unión Europea</0> (infraestructura bajo nuestro control operativo con PostgreSQL/Supabase). Los datos de la aplicación se tratan conforme al RGPD.",
-          "p2": "En los casos donde intervienen proveedores con presencia fuera del Espacio Económico Europeo (Stripe, Google, Meta), las transferencias se amparan en <0>Cláusulas Contractuales Tipo (SCC)</0> aprobadas por la Comisión Europea, decisiones de adecuación o mecanismos equivalentes que garantizan un nivel adecuado de protección."
+          "p2": "En los casos donde intervienen proveedores con presencia fuera del Espacio Económico Europeo (Stripe, Resend, Google, Meta), las transferencias se amparan en <0>Cláusulas Contractuales Tipo (SCC)</0> aprobadas por la Comisión Europea, decisiones de adecuación o mecanismos equivalentes que garantizan un nivel adecuado de protección."
         },
         "retention": {
           "title": "8. Plazos de Conservación",
@@ -1171,7 +1169,7 @@
           "erasure": "Supresión",
           "erasureDesc": "Solicitar la eliminación de tus datos (derecho al olvido).",
           "portability": "Portabilidad",
-          "portabilityDesc": "Recibir tus datos en un formato estructurado y legible por máquina (JSON/CSV vía nuestra API).",
+          "portabilityDesc": "Recibir tus datos en un formato estructurado y legible por máquina (JSON/CSV). Puedes solicitarlo escribiendo a hello@taimbox.com o, en planes con acceso API, exportarlos directamente vía API.",
           "objection": "Oposición",
           "objectionDesc": "Oponerte al tratamiento basado en interés legítimo.",
           "limitation": "Limitación",
@@ -1218,9 +1216,9 @@
         },
         "billing": {
           "title": "3. Suscripciones y Pagos",
-          "plans": "<0>Planes y Tarifas:</0> El Servicio se ofrece mediante planes de suscripción (ej. Starter, Pro, Business). Las funcionalidades y límites (ej. número máximo de empleados) de cada plan se detallan en la página de precios.",
-          "process": "<0>Proceso de Pago:</0> Los pagos se procesan a través de Stripe y se renuevan automáticamente al final de cada ciclo de facturación (mensual o anual) salvo cancelación previa. Si un pago falla, Taimbox suspenderá temporalmente el acceso hasta que se actualice el método de pago.",
-          "trial": "<0>Período de Prueba (Trial):</0> Los nuevos registros pueden incluir un período de prueba gratuito de 14 días. Solo se permite un período de prueba por Agencia. Al finalizar la prueba, si no se suscribe un plan de pago, la cuenta puede degradarse automáticamente a la versión gratuita (Plan Starter) con menores prestaciones.",
+          "plans": "<0>Planes y Tarifas:</0> El Servicio se ofrece mediante planes de suscripción (ej. Free, Team, Agency). Las funcionalidades y límites (ej. número máximo de empleados) de cada plan se detallan en la página de precios.",
+          "process": "<0>Proceso de Pago:</0> Los pagos se procesan a través de Stripe y se renuevan automáticamente al final de cada ciclo de facturación (mensual) salvo cancelación previa. Si un pago falla, Taimbox suspenderá temporalmente el acceso hasta que se actualice el método de pago.",
+          "trial": "<0>Período de Prueba (Trial):</0> Los nuevos registros pueden incluir un período de prueba gratuito de 14 días. Solo se permite un período de prueba por Agencia. Al finalizar la prueba, si no se suscribe un plan de pago, la cuenta puede degradarse automáticamente a la versión gratuita (plan Free) con menores prestaciones.",
           "mod": "<0>Modificación del Plan:</0> La Agencia puede ampliar (upgrade) o reducir (downgrade) su plan en cualquier momento desde los ajustes de la plataforma. La mejora se prorrateará y facturará inmediatamente, mientras que la reducción se aplicará en el siguiente ciclo."
         },
         "acceptableUse": {
@@ -1245,12 +1243,12 @@
         },
         "privacySection": {
           "title": "7. Privacidad y Protección de Datos",
-          "p1": "Nuestra base de datos aplica separación nativa (Row Level Security) para asegurar que los datos de una Agencia sean técnica y criptográficamente invisibles para cualquier otra.",
+          "p1": "Nuestra base de datos aplica separación nativa (Row Level Security) para asegurar que los datos de una Agencia queden aislados en el propio motor de base de datos y no sean accesibles para ninguna otra.",
           "p2": "El tratamiento de datos personales vinculado a la prestación del Servicio se realiza conforme a nuestra <1>Política de Privacidad</1>. Taimbox actúa como <0>Encargado del Tratamiento</0> respecto a los datos alojados por la Agencia, y la propia Agencia actúa como Responsable del Tratamiento frente a sus clientes y empleados."
         },
         "availability": {
           "title": "8. Disponibilidad y Mantenimiento (SLA)",
-          "p1": "Hacemos el mayor esfuerzo para que el Servicio esté disponible ininterrumpidamente, estableciendo el objetivo de un 99.9% de uptime (tiempo de actividad).",
+          "p1": "Hacemos el mayor esfuerzo para que el Servicio esté disponible ininterrumpidamente. Los planes estándar no incluyen un compromiso de disponibilidad (SLA) garantizado; para acuerdos de disponibilidad específicos, consulta el plan Enterprise.",
           "p2": "No obstante, nos reservamos el derecho de interrumpir el servicio temporalmente por tareas de mantenimiento programado (idealmente fuera de horario laboral de Europa) o de emergencia. No garantizamos que el uso del Servicio esté libre de interrupciones, retrasos o imperfecciones bajo cualquier circunstancia y red."
         },
         "liability": {
@@ -1498,8 +1496,8 @@
               "label": "para cerrar la semana"
             },
             {
-              "num": "94%",
-              "label": "fiabilidad media"
+              "num": "En vivo",
+              "label": "métricas de fiabilidad personales"
             }
           ],
           "btn": "Probar gratis",
@@ -1948,8 +1946,8 @@
               "label": "visibilidad de capacidad"
             },
             {
-              "num": "91%",
-              "label": "fiabilidad media"
+              "num": "En vivo",
+              "label": "capacidad y fiabilidad del equipo"
             }
           ],
           "btn": "Probar gratis",
@@ -2006,8 +2004,8 @@
               "pct": 20
             }
           ],
-          "exportPdf": "Exportar PDF",
-          "exportExcel": "Excel"
+          "exportPdf": "Exportar CSV",
+          "exportExcel": "JSON"
         },
         "mockForecast": {
           "title": "Previsión semanal",
@@ -2310,8 +2308,8 @@
               "label": "errores silenciosos"
             },
             {
-              "num": "85%",
-              "label": "cumplimiento de deadlines"
+              "num": "En vivo",
+              "label": "planificado vs ejecutado"
             },
             {
               "num": "∞",
@@ -2336,7 +2334,7 @@
           "colSpend": "Gasto",
           "colConv": "Conv.",
           "colCpa": "CPA",
-          "lastSync": "Última sincronización: hace 15 min",
+          "lastSync": "Última sincronización: hace 1 h",
           "campaigns": [
             {
               "campaign": "Brand Search Q1",
@@ -2434,18 +2432,18 @@
             "Google Ads",
             "Meta Ads",
             "API REST",
-            "Sincronización CRM/ERP",
+            "Export CSV para CRM/ERP",
             "Weekly Feedback"
           ]
         },
         "s1": {
           "kicker": "Google Ads",
-          "h2": "Campañas de Google, datos en tiempo real",
-          "p": "Conecta las cuentas de Google Ads de tus clientes y monitoriza el consumo de sus campañas en tiempo real. Detecta sobrecostes antes de que ocurran y ahorra a tus gestores PPC la revisión manual diaria de presupuestos.",
+          "h2": "Campañas de Google, datos siempre al día",
+          "p": "Conecta las cuentas de Google Ads de tus clientes y monitoriza el consumo de sus campañas con sincronización automática cada hora. Detecta sobrecostes antes de que ocurran y evita a tus gestores PPC la revisión manual diaria de presupuestos.",
           "bullets": [
-            "Monitor de presupuesto por cliente en tiempo real",
+            "Monitor de presupuesto por cliente, actualizado cada hora",
             "Alertas anti-despistes: evita sobrepasar el presupuesto pactado",
-            "Ahorra 1h diaria a tus gestores PPC"
+            "Elimina la revisión manual cuenta por cuenta"
           ]
         },
         "s2": {
@@ -2460,13 +2458,13 @@
         },
         "ppcCta": {
           "title": "¿Quieres saber cómo proteger los márgenes de tus campañas?",
-          "subtitle": "Descubre el Monitor de presupuestos PPC — exclusivo del plan Business.",
+          "subtitle": "Descubre el Monitor de presupuestos PPC — disponible desde el plan Agency.",
           "btn": "Saber más sobre el control de presupuestos"
         },
         "s3": {
           "kicker": "Para desarrolladores",
           "h2": "API REST: haz lo que quieras",
-          "p": "API completa con autenticación JWT, sincronización de tiempos con tu CRM/ERP y exportación directa a sistemas externos (sujeto a integración). Conecta Taimbox con cualquier herramienta de tu stack.",
+          "p": "API completa con autenticación JWT: sincroniza los tiempos con tu CRM/ERP a través de la API y exporta a sistemas externos en CSV/JSON. Conecta Taimbox con cualquier herramienta de tu stack.",
           "tiles": [
             {
               "label": "REST",
@@ -2474,7 +2472,7 @@
             },
             {
               "label": "CRM/ERP",
-              "desc": "Sincronización de tiempos; exportación a sistemas externos"
+              "desc": "Sincronización de tiempos vía API; exportación CSV/JSON"
             },
             {
               "label": "Auth JWT",
@@ -2517,8 +2515,8 @@
               "desc": "Cierre semanal automático"
             },
             {
-              "label": "Importar/Exportar",
-              "desc": "Excel, CSV, JSON"
+              "label": "Exportación",
+              "desc": "CSV, JSON y API"
             },
             {
               "label": "Dashboard unificado",
@@ -2531,11 +2529,11 @@
           "p": "Conecta Google Ads, Meta Ads y cualquier herramienta de tu stack. Controla los presupuestos de las campañas de tus clientes y toda la información de tu agencia centralizada.",
           "stats": [
             {
-              "num": "5+",
-              "label": "integraciones nativas"
+              "num": "2",
+              "label": "plataformas Ads nativas (Google y Meta)"
             },
             {
-              "num": "15min",
+              "num": "1h",
               "label": "sincronización automática"
             },
             {
@@ -2638,7 +2636,7 @@
           "hidden": "Stradivarius (oculta)"
         },
         "hero": {
-          "badge": "Exclusivo del Plan Business",
+          "badge": "Desde el Plan Agency",
           "titleBefore": "Duerme tranquilo.",
           "titleGradient": "Controla el presupuesto",
           "titleAfter": "de todos tus clientes desde un solo lugar.",
@@ -2754,11 +2752,11 @@
               "label": "para conectar Ads"
             },
             {
-              "num": "−1h/día",
-              "label": "por gestor de cuentas"
+              "num": "Solo lectura",
+              "label": "acceso OAuth2 a tus cuentas"
             }
           ],
-          "btn": "Empezar prueba gratuita del Plan Business",
+          "btn": "Empezar prueba gratuita del Plan Agency",
           "sub": "Sin tarjeta de crédito. Configuración en 2 minutos.",
           "footers": [
             "Google Ads",
@@ -2786,7 +2784,7 @@
         "threePillarsKicker": "Fundamentos Técnicos",
         "threePillarsH2": "Los 3 pilares de nuestra infraestructura",
         "pillar1Title": "Aislamiento Físico (RLS)",
-        "pillar1Body": "Utilizamos <strong>PostgreSQL Row Level Security (RLS)</strong> de forma nativa. Esto significa que la separación de agencias ocurre en el motor de la base de datos, no en el código de la aplicación. Es criptográficamente imposible que un error en nuestro frontend exponga datos de una agencia a otra.",
+        "pillar1Body": "Utilizamos <strong>PostgreSQL Row Level Security (RLS)</strong> de forma nativa. Esto significa que la separación de agencias ocurre en el motor de la base de datos, no en el código de la aplicación: aunque hubiera un error en nuestro frontend, la base de datos rechaza cualquier acceso a datos de otra agencia.",
         "pillar2Title": "Cifrado en Tránsito y Reposo",
         "pillar2Body": "Toda comunicación viaja sobre <strong>TLS 1.3</strong> (cifrado en tránsito) y todos los discos de la base de datos utilizan el estándar <strong>AES-256</strong> (cifrado en reposo). El acceso interno a bases de datos de producción está estrictamente restringido por políticas de 'Mínimo Privilegio' y requiere justificación expresa para labores de soporte.",
         "pillar3Title": "Cero credenciales compartidas",
@@ -2799,7 +2797,7 @@
           "Monitor de disponibilidad; sin SLA 99,99% hasta infraestructura gestionada HA.",
           "Pagos y datos de tarjeta delegados en Stripe (PCI DSS Nivel 1)."
         ],
-        "mockNodeLabel": "Node 01 (EU-Central-1)",
+        "mockNodeLabel": "Node 01 (UE)",
         "mockHealthy": "Healthy",
         "mockRlsWall": "Row Level Security Wall",
         "mockPartitionFooter": "Strict Data Partitioning",
@@ -2835,7 +2833,7 @@
         "complianceCard2P": "Tus datos son tuyos. No practicamos el 'Vendor Lock-in'. Ofrecemos endpoints a través de nuestra API REST para que puedas exportar el histórico de tu agencia, tus métricas de rentabilidad y tus tablas de tiempos a CSV/JSON en el momento que lo necesites.",
         "faqH3": "Preguntas Frecuentes sobre Seguridad IT e ISO",
         "faq1q": "¿Qué terceros (Subencargados) intervienen en Taimbox?",
-        "faq1a": "Subencargados habituales: <strong>Supabase</strong> (base de datos y autenticación, despliegue en UE), <strong>Stripe</strong> (pagos), <strong>Resend</strong> u otro proveedor de email transaccional si está activo, y <strong>Google/Meta</strong> (solo lectura vía OAuth2 para Ads). No vendemos ni transferimos tus datos de campañas a terceros con fines publicitarios.",
+        "faq1a": "La base de datos y la autenticación corren en infraestructura propia en la UE (PostgreSQL/Supabase self-hosted), por lo que no intervienen terceros en el almacenamiento principal. Subencargados habituales: <strong>Stripe</strong> (pagos), <strong>Resend</strong> (email transaccional) y <strong>Google/Meta</strong> (solo lectura vía OAuth2 para Ads). No vendemos ni transferimos tus datos de campañas a terceros con fines publicitarios.",
         "faq2q": "¿Dónde están hospedados los datos?",
         "faq2a": "La instancia de producción opera en la <strong>Unión Europea</strong> (infraestructura self-hosted bajo nuestro control operativo). El tratamiento de datos personales se realiza conforme al <strong>RGPD</strong>. Para clientes Enterprise con requisitos de hosting dedicado o DPA ampliado, contacta con ventas.",
         "faq3q": "¿Qué ocurre con mis datos en caso de cancelación total?",
