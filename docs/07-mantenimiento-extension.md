@@ -17,8 +17,9 @@
 
 - **Aislamiento por agencia (multi-tenant)**  
   Todas las lecturas/escrituras deben acotarse a la agencia actual para no mostrar datos de una agencia en otra.
-  - **Tablas con columna `agency_id`** (filtrar siempre por `agency_id` en queries e inserts): `agencies`, `employees`, `clients`, `projects`, `ad_accounts_config`, `ads_sync_logs`, `meta_sync_logs`, `meta_ads_campaigns`, `google_ads_campaigns`, `global_assignments`, `task_transfers`, `department_config`, `user_agencies`, `audit_logs`, `team_events`, `client_settings`, `segmentation_rules`.
-  - **Tablas sin `agency_id` que se filtran por join**: `deadlines` (join con `projects.agency_id` vía `fetchDeadlinesForMonth(monthKey, agencyId)`), `professional_goals` (join con `employees.agency_id` en GoalsContext), `user_routines` (join con `employees.agency_id` en AppContext), `allocations` y `absences` (join con `employees.agency_id`).  
+  - **Tablas con columna `agency_id`** (filtrar siempre por `agency_id` en queries e inserts): `agencies`, `employees`, `clients`, `projects`, `allocations`, `ad_accounts_config`, `ads_sync_logs`, `meta_sync_logs`, `meta_ads_campaigns`, `google_ads_campaigns`, `global_assignments`, `task_transfers`, `department_config`, `user_agencies`, `audit_logs`, `team_events`, `client_settings`, `segmentation_rules`.
+  - **Tablas sin `agency_id` que se filtran por join**: `deadlines` (join con `projects.agency_id` vía `fetchDeadlinesForMonth(monthKey, agencyId)`), `professional_goals` (join con `employees.agency_id` en GoalsContext), `user_routines` (join con `employees.agency_id` en AppContext), `absences` (join con `employees.agency_id`).  
+  - **`allocations.agency_id`**: denormalizado; trigger `allocations_set_agency_id` rellena desde el empleado y exige misma agencia en el proyecto. Migración `20260726140000_allocations_agency_id.sql` (backfill sin borrar histórico). RPCs `partial_close_rollover` / `accept_task_transfer` no necesitan listar `agency_id` en el INSERT.
   - **Tablas sin uso en la app** (solo API externa o deprecadas): `google_ads_changes` (no referenciada en el codebase). La tabla `time_entries` se usa desde la UI con el módulo **Cronómetro de tareas** (RPC `log_timer_hours`); máximo 24 h por entrada (límite efectivo por agencia). La tabla `active_timers` almacena el timer activo por empleado (1 fila por empleado); RLS por `auth.uid()`. La tabla **`timer_sessions`** (append-only) guarda cada cierre de cronómetro con `start_time`/`end_time` exactos para webhooks e integraciones (p. ej. Perfex CRM).
 
 - **Arquitectura híbrida del cronómetro (drift y sincronización multi-pestaña)**  
@@ -40,26 +41,34 @@
   
   La función anterior `requesting_agency_id()` solo devolvía **una** agencia (la primaria), lo que causaba que usuarios con múltiples agencias o con `is_primary = false` no pudieran operar en la agencia correcta. `user_agency_ids()` devuelve un `SETOF uuid` con todas las agencias, y las políticas RLS usan `IN (SELECT user_agency_ids())` en lugar de `= requesting_agency_id()`. El campo `is_primary` solo afecta a la UI (agencia por defecto al login), no a la seguridad.
 
-  **Tabla `api_tokens`**: Almacena metadatos de tokens API emitidos (hash SHA-256, permisos, expiración). El JWT real solo se muestra una vez al crearlo.
+  **Superficie de integración (allowlist + scopes)** — migración `20260726120000_api_token_scopes_restrictive_rls.sql`:
+  - Helpers: `is_api_token()`, `api_default_scopes()`, `api_effective_scopes()`, `api_scope_allows(resource, mode)`.
+  - Columna / claim JWT `scopes` (text[]): allowlist de recursos (`employees`, `allocations`, …). Catálogo TS: `src/lib/apiTokenScopes.ts`.
+  - Políticas **`AS RESTRICTIVE`**: niegan el issuer API en tablas fuera de integración (blog, Ads, audit, support, review, `api_tokens`, cronómetro, `agencies`, …) y exigen scope en las tablas documentadas.
+  - Tokens legacy sin scopes → `api_default_scopes()` (compatibilidad; no reabren blog/Ads).
+  - `can_assign_tasks_for_employee`: con JWT API exige `api_scope_allows('allocations','write')` (readwrite + scope).
+  - `api_tokens`: `authenticated` solo puede **SELECT** metadatos (sin `token_hash`); create/revoke solo Edge con `service_role`.
+
+  **Tabla `api_tokens`**: Metadatos de tokens (hash SHA-256, `permissions`, `scopes`, expiración). El JWT real solo se muestra una vez al crearlo.
 
   **Revocación y expiración con efecto inmediato**: `user_agency_ids()` y `can_write_via_api()` consultan `api_tokens` (`is_active`, `expires_at`) en cada petición con JWT API. Revocar un token (`is_active = false`) niega acceso al instante.
 
-  **Permisos readonly/readwrite**: `can_write_via_api()` devuelve `false` para tokens API con `permissions = 'readonly'`. Las políticas RLS de INSERT/UPDATE/DELETE lo invocan junto con el scope de agencia.
+  **Permisos readonly/readwrite + scopes**: `can_write_via_api()` devuelve `false` para tokens API con `permissions = 'readonly'`. Además, cada tabla de integración exige el scope correspondiente vía políticas restrictive.
 
   **Edge Functions relacionadas**:
-  - `generate-api-token`: Recibe `{ agency_id, name, permissions?, expires_in_days? }` del admin autenticado. Si no se indica `expires_in_days`, expira a **365 días**. Firma JWT con `iss = 'timeboxing-api'`, claim `agency_id` y `sub` = id del registro en `api_tokens`.
-  - `revoke-api-token`: Recibe `{ token_id }`, verifica que el caller es admin de la agencia dueña y marca `is_active = false`. El acceso se deniega en la siguiente petición vía `user_agency_ids()` / `can_write_via_api()`.
+  - `generate-api-token`: Recibe `{ agency_id, name, permissions?, scopes?, expires_in_days? }`. Permiso caller: `can_access_api_keys` **o** `can_access_agency_settings`. Si no se indica `expires_in_days`, expira a **365 días**. Firma JWT con `iss = 'timeboxing-api'`, `agency_id`, `permissions`, `scopes` y `sub` = id en `api_tokens`.
+  - `revoke-api-token`: Recibe `{ token_id }`, mismos permisos de caller, marca `is_active = false`.
 
-  **Políticas RLS por tipo de tabla**:
+  **Políticas RLS por tipo de tabla** (permisivas de tenant; encima van restrictive de API):
   | Tipo | Tablas | Política |
   |------|--------|----------|
-  | `agency_id` directo | agencies, employees, clients, projects, global_assignments, task_transfers, department_config, ad_accounts_config, ads_sync_logs, meta_sync_logs, google_ads_campaigns, meta_ads_campaigns, team_events, client_settings, segmentation_rules, audit_logs, api_tokens, user_agencies | `agency_id IN (SELECT user_agency_ids())` |
-  | Vía `employee_id` (por agencia) | allocations, absences, professional_goals, time_entries | `employee_id IN (SELECT e.id FROM employees e WHERE e.agency_id IN (SELECT user_agency_ids()))` |
+  | `agency_id` directo | agencies, employees, clients, projects, allocations, global_assignments, task_transfers, department_config, ad_accounts_config, ads_sync_logs, meta_sync_logs, google_ads_campaigns, meta_ads_campaigns, team_events, client_settings, segmentation_rules, audit_logs, api_tokens, user_agencies | `agency_id IN (SELECT user_agency_ids())` |
+  | Vía `employee_id` (por agencia) | absences, professional_goals, time_entries | `employee_id IN (SELECT e.id FROM employees e WHERE e.agency_id IN (SELECT user_agency_ids()))` |
   | Vía `employee_id` (por usuario) | active_timers, timer_sessions | Políticas por `auth.uid()` = `employees.user_id`. No dependen de agencia. |
   | Vía `project_id` | deadlines, project_editing_locks | `project_id IN (SELECT p.id FROM projects p WHERE p.agency_id IN (SELECT user_agency_ids()))` |
   | Política “no access” | google_ads_changes | Política `no_access_until_use` con USING (false) y WITH CHECK (false): nadie puede leer ni escribir. Cuando se confirme uso, sustituir por políticas por agency_id. |
 
-  **Tabla `agencies` (solo lectura vía API)**: Para impedir que integradores creen agencias por API, conviene revocar `INSERT` en `public.agencies` para los roles `anon` y `authenticated`. La creación de agencias debe hacerse desde la app (registro/onboarding) o con service_role.
+  **Tabla `agencies`**: el token API **no** puede leerla (restrictive + GET `[]`). La creación de agencias sigue siendo solo app/onboarding/service_role.
 
   **Carga de agencia en la SPA (no filtra solo RLS)**: Las políticas RLS suelen permitir `SELECT` de la fila `agencies` a cualquier miembro del tenant; eso exponía en red y en memoria tokens OAuth (columnas y JSON `settings.integrations`), IDs Stripe, etc. La app usa la RPC **`get_agency_for_app_client(p_agency_id)`** (`SECURITY DEFINER`, migración `20260505140000`): comprueba membresía (`user_agencies` o `employees`), devuelve la fila completa solo si el rol del empleado tiene `can_access_agency_settings` o si el usuario es **platform admin**; en caso contrario devuelve el mismo shape con secretos y campos de facturación sensibles redactados. **`AgencyContext`** y **`getAgencyMembersUtil`** consumen esta RPC en lugar de `select('*')` sobre `agencies`.
 

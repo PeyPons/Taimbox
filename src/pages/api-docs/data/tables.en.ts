@@ -147,7 +147,7 @@ const agencyId = '<AGENCY_ID>' // UUID from API & Integrations > Connection data
   "default_weekly_capacity": 40,
   "work_schedule": { "monday": 8, "tuesday": 8, "wednesday": 8, "thursday": 8, "friday": 8, "saturday": 0, "sunday": 0 },
   "agency_id": "a1b2c3d4-...",
-  "created_at": "2026-02-17T12:00:00Z"
+  "created_at": "2026-02-02T12:00:00Z"
 }`,
         },
       },
@@ -191,7 +191,7 @@ const agencyId = '<AGENCY_ID>' // UUID from API & Integrations > Connection data
   "name": "Example client",
   "color": "#8B5CF6",
   "agency_id": "a1b2c3d4-...",
-  "created_at": "2026-02-17T12:00:00Z"
+  "created_at": "2026-02-02T12:00:00Z"
 }`,
         },
       },
@@ -270,7 +270,7 @@ const agencyId = '<AGENCY_ID>' // UUID from API & Integrations > Connection data
   "monthly_fee": 3500,
   "status": "active",
   "agency_id": "a1b2c3d4-...",
-  "created_at": "2026-02-17T12:00:00Z"
+  "created_at": "2026-02-02T12:00:00Z"
 }`,
         },
       },
@@ -285,12 +285,13 @@ const agencyId = '<AGENCY_ID>' // UUID from API & Integrations > Connection data
         name: 'allocations',
         description:
           'Atomic planning unit. Each allocation links an employee to a project for a specific week.',
-        authNote: 'No agency_id column. Filter by employee_id or project_id. Writes (INSERT/UPDATE/DELETE) require can_assign_tasks_for_employee: not available with API tokens (app user session only).',
+        authNote: 'Filter by agency_id (denormalized column; RLS also scopes via employee/project). Writes (INSERT/UPDATE/DELETE) with an API token require permissions=readwrite and allocations scope. week_start_date must fall in the target month (see Weeks & months). On POST, agency_id is optional: a trigger fills it from the employee when omitted.',
         columns: [
           { name: 'id', type: 'uuid', required: false, default: 'gen_random_uuid()', pk: true, description: 'Unique identifier.' },
+          { name: 'agency_id', type: 'uuid', required: false, fk: 'agencies(id)', description: 'Agency (tenant). Auto-filled from employees.employee_id if omitted; must match the project agency.' },
           { name: 'employee_id', type: 'uuid', required: true, fk: 'employees(id)', description: 'Assigned employee.' },
           { name: 'project_id', type: 'uuid', required: true, fk: 'projects(id)', description: 'Target project.' },
-          { name: 'week_start_date', type: 'date', required: true, description: 'Monday of the week (YYYY-MM-DD).' },
+          { name: 'week_start_date', type: 'date', required: true, description: 'Week key in the month: ISO Monday for full weeks; 1st of the month for the first partial week (split weeks). Do not assume it is always Monday. Must fall in the month you are planning.' },
           { name: 'hours_assigned', type: 'numeric', required: true, description: 'Planned hours for the week.' },
           { name: 'hours_actual', type: 'numeric', required: false, default: '0', description: 'Hours actually worked (reported).' },
           { name: 'hours_computed', type: 'numeric', required: false, default: '0', description: 'System-calculated hours.' },
@@ -316,21 +317,37 @@ const agencyId = '<AGENCY_ID>' // UUID from API & Integrations > Connection data
   .gte('week_start_date', '2026-02-01')
   .lte('week_start_date', '2026-02-28')
   .order('week_start_date')`,
-          insert: `// Writes only from app user session (not API token).
-// Read example:
-const { data } = await taimbox
+          insert: `// Requires readwrite token + allocations scope.
+// week_start_date must fall in the target month (split weeks: day 1 if partial).
+const { data, error } = await taimbox
   .from('allocations')
-  .select('id, employee_id, project_id, week_start_date, hours_assigned')
-  .eq('project_id', projectId)
-  .gte('week_start_date', '2026-02-01')`,
+  .insert({
+    employee_id: employeeId,
+    project_id: projectId,
+    week_start_date: '2026-02-02', // ISO Monday for that February week
+    hours_assigned: 8,
+    task_name: 'Landing design',
+  })
+  .select()
+  .single()`,
           curlSelect: `curl -X GET \\
   '<BASE_URL>/allocations?select=id,employee_id,project_id,week_start_date,'\\
   'hours_assigned,task_name,status&employee_id=eq.<EMPLOYEE_ID>&'\\
   'week_start_date=gte.2026-02-01&week_start_date=lte.2026-02-28&order=week_start_date.asc' \\
   -H 'apikey: <YOUR_API_KEY>' \\
   -H 'Authorization: Bearer <YOUR_API_TOKEN>'`,
-          curlInsert: `// POST allocations: app session only (not API token).
-// See RLS limits section.`,
+          curlInsert: `curl -X POST '<BASE_URL>/allocations' \\
+  -H 'apikey: <YOUR_API_KEY>' \\
+  -H 'Authorization: Bearer <YOUR_API_TOKEN>' \\
+  -H 'Content-Type: application/json' \\
+  -H 'Prefer: return=representation' \\
+  -d '{
+    "employee_id": "<EMPLOYEE_ID>",
+    "project_id": "<PROJECT_ID>",
+    "week_start_date": "2026-02-02",
+    "hours_assigned": 8,
+    "task_name": "Landing design"
+  }'`,
         },
         responses: {
           getList: `[
@@ -338,7 +355,7 @@ const { data } = await taimbox
     "id": "al1-...",
     "employee_id": "e1f2a3b4-...",
     "project_id": "p1q2r3s4-...",
-    "week_start_date": "2026-02-17",
+    "week_start_date": "2026-02-02",
     "hours_assigned": 8,
     "task_name": "Landing design",
     "status": "planned"
@@ -348,24 +365,24 @@ const { data } = await taimbox
   "id": "al1-...",
   "employee_id": "e1f2a3b4-...",
   "project_id": "p1q2r3s4-...",
-  "week_start_date": "2026-02-17",
+  "week_start_date": "2026-02-02",
   "hours_assigned": 8,
   "hours_actual": 0,
   "hours_computed": 0,
   "task_name": "Landing design",
   "status": "planned",
   "is_locked": false,
-  "created_at": "2026-02-15T10:00:00Z"
+  "created_at": "2026-02-01T10:00:00Z"
 }`,
           post: `{
   "id": "al2-...",
   "employee_id": "e1f2a3b4-...",
   "project_id": "p1q2r3s4-...",
-  "week_start_date": "2026-02-17",
+  "week_start_date": "2026-02-02",
   "hours_assigned": 8,
   "task_name": "Landing design",
   "status": "planned",
-  "created_at": "2026-02-17T12:00:00Z"
+  "created_at": "2026-02-02T12:00:00Z"
 }`,
         },
       },
@@ -428,7 +445,7 @@ const { data } = await taimbox
   "allocation_id": "al1-...",
   "body": "Upload ES images and EN/DE copy",
   "source": "user",
-  "created_at": "2026-02-17T12:00:00Z"
+  "created_at": "2026-02-02T12:00:00Z"
 }`,
         },
       },
@@ -491,7 +508,7 @@ const { data } = await taimbox
   "month": "2026-03",
   "employee_hours": { "e1f2a3b4-...": 40 },
   "budget_override": 100,
-  "created_at": "2026-02-17T12:00:00Z"
+  "created_at": "2026-02-02T12:00:00Z"
 }`,
         },
       },
@@ -785,7 +802,7 @@ const { data } = await taimbox
   "end_date": "2026-03-14",
   "type": "vacation",
   "description": "Easter week",
-  "created_at": "2026-02-17T12:00:00Z"
+  "created_at": "2026-02-02T12:00:00Z"
 }`,
         },
       },
@@ -838,7 +855,7 @@ const { data } = await taimbox
   "date": "2026-12-06",
   "hours_reduction": 8,
   "affected_employee_ids": ["e1f2a3b4-...", "c5d6e7f8-..."],
-  "created_at": "2026-02-17T12:00:00Z"
+  "created_at": "2026-02-02T12:00:00Z"
 }`,
         },
       },
@@ -897,7 +914,7 @@ const { data } = await taimbox
   "hours": 4,
   "affects_all": true,
   "agency_id": "a1b2c3d4-...",
-  "created_at": "2026-02-17T12:00:00Z"
+  "created_at": "2026-02-02T12:00:00Z"
 }`,
         },
       },
@@ -959,7 +976,7 @@ const { data } = await taimbox
   "department_name": "Engineering",
   "closing_day": 4,
   "closing_hour": 14,
-  "created_at": "2026-02-17T12:00:00Z"
+  "created_at": "2026-02-02T12:00:00Z"
 }`,
         },
       },
@@ -1052,12 +1069,12 @@ const { data } = await taimbox
         },
         responses: {
           getList: `[
-  { "id": "wf1-...", "employee_id": "e1f2a3b4-...", "week_start_date": "2026-02-17", "reason": "client_blocker", "comments": "Waiting for approval" }
+  { "id": "wf1-...", "employee_id": "e1f2a3b4-...", "week_start_date": "2026-02-02", "reason": "client_blocker", "comments": "Waiting for approval" }
 ]`,
           getOne: `{
   "id": "wf1-...",
   "employee_id": "e1f2a3b4-...",
-  "week_start_date": "2026-02-17",
+  "week_start_date": "2026-02-02",
   "project_id": "p1q2r3s4-...",
   "reason": "client_blocker",
   "comments": "Waiting for client approval",
@@ -1066,11 +1083,11 @@ const { data } = await taimbox
           post: `{
   "id": "wf2-...",
   "employee_id": "e1f2a3b4-...",
-  "week_start_date": "2026-02-17",
+  "week_start_date": "2026-02-02",
   "project_id": "p1q2r3s4-...",
   "reason": "client_blocker",
   "comments": "Waiting for client approval",
-  "created_at": "2026-02-17T12:00:00Z"
+  "created_at": "2026-02-02T12:00:00Z"
 }`,
         },
       },
@@ -1136,7 +1153,7 @@ const { data } = await taimbox
   "start_date": "2026-01-01",
   "due_date": "2026-06-30",
   "progress": 0,
-  "created_at": "2026-02-17T12:00:00Z"
+  "created_at": "2026-02-02T12:00:00Z"
 }`,
         },
       },
@@ -1188,7 +1205,7 @@ const { data } = await taimbox
   "title": "Daily standup",
   "estimated_minutes": 15,
   "is_active": true,
-  "created_at": "2026-02-17T12:00:00Z"
+  "created_at": "2026-02-02T12:00:00Z"
 }`,
         },
       },

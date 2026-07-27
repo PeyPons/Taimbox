@@ -315,6 +315,8 @@ export interface OKR {
 
 export interface Allocation {
   id: string;
+  /** Tenant denormalizado (columna allocations.agency_id). Opcional en clientes antiguos/mocks. */
+  agencyId?: string;
   employeeId: string;
   projectId: string;
   weekStartDate: string;

@@ -79,6 +79,7 @@ interface SupabaseProject {
 
 interface SupabaseAllocation {
   id: string;
+  agency_id?: string;
   employee_id: string;
   project_id: string;
   week_start_date: string;
@@ -487,10 +488,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       .channel(`app-realtime-${currentAgency.id}`)
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'allocations' },
+        { event: '*', schema: 'public', table: 'allocations', filter: `agency_id=eq.${currentAgency.id}` },
         (payload) => {
           const mapAllocation = (row: SupabaseAllocation): Allocation => ({
             id: row.id,
+            agencyId: row.agency_id,
             employeeId: row.employee_id,
             projectId: row.project_id,
             weekStartDate: row.week_start_date,
@@ -856,6 +858,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // --- ALLOCATIONS ---
   const addAllocation = useCallback(async (allocation: Omit<Allocation, 'id'>): Promise<Allocation | null> => {
     const { data, error } = await supabase.from('allocations').insert({
+      agency_id: allocation.agencyId || currentAgency?.id,
       employee_id: allocation.employeeId,
       project_id: allocation.projectId,
       week_start_date: allocation.weekStartDate,
@@ -885,6 +888,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (data) {
       const mappedAllocation = {
         ...data,
+        agencyId: data.agency_id,
         employeeId: data.employee_id,
         projectId: data.project_id,
         weekStartDate: data.week_start_date,

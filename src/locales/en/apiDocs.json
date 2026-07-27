@@ -32,6 +32,7 @@
       "intro": "Introduction",
       "auth": "Authentication & security",
       "baseUrl": "Base URL & headers",
+      "weeksMonths": "Weeks & months",
       "responses": "Responses & errors",
       "rlsLimits": "RLS limits & permissions",
       "changelog": "Changelog",
@@ -117,9 +118,26 @@
       "recommendedPathTitle": "Recommended path",
       "recommendedPathSubtitle": "If this is your first integration, follow this order:",
       "recommendedPathSteps": [
-        { "targetId": "auth", "label": "Authentication & headers", "description": "Token, ANON_KEY, and security basics." },
-        { "targetId": "tutorial-quickstart", "label": "Quick start", "description": "Your first request with the SDK." },
-        { "targetId": "res-organizacion", "label": "Resource reference", "description": "Tables, columns, and examples." }
+        {
+          "targetId": "auth",
+          "label": "Authentication & headers",
+          "description": "Token, ANON_KEY, and security basics."
+        },
+        {
+          "targetId": "weeks-months",
+          "label": "Weeks & months",
+          "description": "week_start_date and split weeks (required before inserting tasks)."
+        },
+        {
+          "targetId": "tutorial-quickstart",
+          "label": "Quick start",
+          "description": "Your first request with the SDK."
+        },
+        {
+          "targetId": "res-organizacion",
+          "label": "Resource reference",
+          "description": "Tables, columns, and examples."
+        }
       ],
       "useCasesTitle": "Use cases",
       "useCases": [
@@ -127,7 +145,7 @@
         "Query planned vs. actual hours by week or month",
         "Create employees, clients, projects, and absences from integrations",
         "Build custom reports from planning data",
-        "Read assignments and pending transfers (task writes require the app)",
+        "Read and create allocations (tasks) with a readwrite token and allocations scope",
         "Receive live updates via Realtime subscriptions"
       ]
     },
@@ -135,26 +153,38 @@
       "title": "Authentication & security",
       "intro": "Every request needs two header values:",
       "apikeyBody": "The anonymous key (<code>ANON_KEY</code>) for your Supabase instance—the same one the web app uses. Send it in the <code>apikey</code> header.",
-      "authBody": "JWT token created in <0>API & integrations</0>. It contains your agency’s <code>agency_id</code>. Send it as <code>Bearer &lt;token&gt;</code>.",
+      "authBody": "JWT token created in <0>API & integrations</0>. It contains your agency’s <code>agency_id</code> and resource <code>scopes</code>. Send it as <code>Bearer &lt;token&gt;</code>.",
       "authLink": "API & integrations",
       "howToTitle": "How to get a token",
       "steps": [
         "Sign in to Taimbox as an admin of your agency.",
         "Open Settings → API & integrations in the sidebar.",
-        "Click Create token, pick a clear name, and choose read-only or read/write permissions. Read-only tokens return 403 on POST, PATCH, and DELETE.",
+        "Click Create token, pick a name, choose readonly/readwrite, and select only the resource scopes the integration needs. Read-only tokens return 403 on POST, PATCH, and DELETE.",
         "Copy the JWT shown. It is shown only once—store it somewhere safe."
       ],
       "exampleTitle": "Authenticated request example",
       "curlExample": "curl -X GET \\\n  'https://api.taimbox.com/rest/v1/employees?is_active=eq.true' \\\n  -H 'apikey: <ANON_KEY>' \\\n  -H 'Authorization: Bearer <YOUR_API_TOKEN>' \\\n  -H 'Content-Type: application/json'",
       "securityTitle": "Security best practices",
       "security": [
-        { "title": "Do not expose tokens", "text": "Never put tokens in public repos, logs, or client-side code." },
-        { "title": "Rotate regularly", "text": "Revoke and reissue tokens periodically. Revoke immediately if you suspect compromise." },
-        { "title": "Least privilege", "text": "Create tokens with only the permissions you need. Use read-only when you do not write." },
-        { "title": "Use expiry", "text": "When creating a token you can set expiry days. Non-expiring tokens are riskier." }
+        {
+          "title": "Do not expose tokens",
+          "text": "Never put tokens in public repos, logs, or client-side code."
+        },
+        {
+          "title": "Rotate regularly",
+          "text": "Revoke and reissue tokens periodically. Revoke immediately if you suspect compromise."
+        },
+        {
+          "title": "Least privilege",
+          "text": "Use readonly when you do not write. Also limit scopes to the resources you need (e.g. employees + allocations only)."
+        },
+        {
+          "title": "Use expiry",
+          "text": "When creating a token you can set expiry days. Non-expiring tokens are riskier."
+        }
       ],
       "rlsTitle": "Row Level Security (RLS):",
-      "rlsBody": "RLS policies scope each request to your token’s tenant (<code>agency_id</code> in the JWT). Some tables have no direct <code>agency_id</code> or restrict access to the employee linked to the signed-in user. Read <strong>RLS limits & permissions</strong> before integrating.",
+      "rlsBody": "RLS policies scope each request to your token’s tenant (<code>agency_id</code> in the JWT) and to the token’s scopes. Only the resources documented in this guide are available. Read <strong>RLS limits & permissions</strong> and <strong>Weeks & months</strong> before integrating.",
       "rateTitle": "Rate limiting:",
       "rateBody": "There are no hard limits yet, but stay under ~100 requests/minute. Formal limits may be added later."
     },
@@ -171,27 +201,66 @@
     "rls": {
       "title": "RLS limits & permissions",
       "intro": "Not every table behaves the same with an API token. This table summarizes what you can read and write from server-to-server integrations vs. what requires an app user session.",
-      "tokenNote": "API tokens identify the agency but not a specific employee. Timer, transfer acceptance, and assignment edits are therefore unavailable with integration Bearer tokens.",
+      "tokenNote": "API tokens identify the agency (and resource scopes) but not a specific employee. Timer and transfer acceptance remain app-only. Allocations can be written with allocations scope + readwrite.",
       "thScope": "Scope / tables",
       "thRead": "Read (API token)",
       "thWrite": "Write (readwrite token)",
       "thFilter": "How to filter",
-      "permissionsTitle": "readonly / readwrite permissions",
-      "permissionsBody": "When creating a token you choose read-only (readonly) or read/write (readwrite). Readonly tokens get 403 on POST, PATCH, and DELETE. Readwrite tokens can write only where RLS allows: employees, clients, projects, absences, deadlines, task_transfers (create request), etc. They do not unlock allocations or app RPCs.",
-      "outOfScopeTitle": "What is not part of the integration API",
-      "outOfScopeIntro": "This documentation covers only resources useful for per-agency integrations. It is not a full database schema inventory.",
+      "permissionsTitle": "readonly / readwrite and scopes",
+      "permissionsBody": "When creating a token you choose readonly or readwrite and a list of resource scopes. Readonly → 403 on POST/PATCH/DELETE. Readwrite only writes tables whose scope is granted. The token only reaches the resources documented in this guide.",
+      "outOfScopeTitle": "Useful limits to keep in mind",
+      "outOfScopeIntro": "This API documents per-agency integration resources. Anything not in the reference is outside the public contract.",
       "rows": [
-        { "scope": "Direct agency_id", "read": "Yes (employees, clients, projects, …)", "write": "Yes with readwrite token", "filter": "Automatic RLS; POST includes agency_id" },
-        { "scope": "No agency_id (allocations, deadlines, absences, …)", "read": "Yes", "write": "Partial (see row)", "filter": "employee_id, project_id, month, dates" },
-        { "scope": "allocations (tasks)", "read": "Yes", "write": "No with API token", "filter": "employee_id / project_id" },
-        { "scope": "time_entries, active_timers, timer_sessions", "read": "App session only (own employee)", "write": "App only / log_timer_hours RPC", "filter": "N/A with API token" },
-        { "scope": "agencies (tenant table)", "read": "No (GET → [])", "write": "No", "filter": "agency_id from token UI; do not query agencies" },
-        { "scope": "RPC accept_task_transfer", "read": "—", "write": "Receiver in app only", "filter": "p_transfer_id, p_acceptance_mode" }
+        {
+          "scope": "Direct agency_id",
+          "read": "Yes if scope is on the token (employees, clients, projects, allocations, …)",
+          "write": "Yes with readwrite + scope",
+          "filter": "Automatic RLS; POST includes agency_id (optional on allocations: filled by trigger)"
+        },
+        {
+          "scope": "No agency_id (deadlines, absences, …)",
+          "read": "Yes with scope",
+          "write": "Yes with readwrite + scope (see row)",
+          "filter": "employee_id, project_id, month, dates"
+        },
+        {
+          "scope": "allocations (tasks)",
+          "read": "Yes with allocations scope",
+          "write": "Yes with readwrite + allocations scope",
+          "filter": "employee_id / project_id; week_start_date in target month"
+        },
+        {
+          "scope": "time_entries, active_timers, timer_sessions",
+          "read": "No with API token",
+          "write": "No (app only / log_timer_hours RPC)",
+          "filter": "N/A with API token"
+        },
+        {
+          "scope": "agencies (tenant table)",
+          "read": "No (GET → [])",
+          "write": "No",
+          "filter": "agency_id from token UI; do not query agencies"
+        },
+        {
+          "scope": "RPC accept_task_transfer",
+          "read": "—",
+          "write": "Receiver in app only",
+          "filter": "p_transfer_id, p_acceptance_mode"
+        }
       ],
       "outOfScope": [
-        { "name": "api_tokens", "reason": "Create and revoke tokens only from API & integrations in the app (Edge Functions generate-api-token / revoke-api-token)." },
-        { "name": "Email notifications", "reason": "Rules and deliveries are managed in the app; no public endpoints to configure alerts from integrations." },
-        { "name": "Ads integrations", "reason": "Google Ads, Meta Ads, and segmentation rules are configured in the app, not via API token." }
+        {
+          "name": "Create and revoke tokens",
+          "reason": "Done in API & integrations inside the app, not via PostgREST."
+        },
+        {
+          "name": "Live timer",
+          "reason": "Timer logging and related RPCs require an employee session in the app."
+        },
+        {
+          "name": "Accept transfers",
+          "reason": "The accept_task_transfer RPC is run by the authenticated receiver in the app."
+        }
       ]
     },
     "responses": {
@@ -201,9 +270,21 @@
       "empty200Body": "A valid GET (good token) may return <code>[]</code> with 200 when no rows match or RLS hides every row. You only get 401/403 for invalid tokens or missing permission. Treat 200 + empty array as “no results”, not an error.",
       "formatTitle": "Payload shapes",
       "formatCards": [
-        { "title": "GET list", "status": "200", "desc": "JSON array of objects. It may be empty when there are no matches or RLS hides all rows (still 200—by design)." },
-        { "title": "GET/POST/PATCH one", "status": "200/201", "desc": "Single JSON object when using Prefer: return=representation." },
-        { "title": "DELETE", "status": "204", "desc": "No response body. Confirm status is 204." }
+        {
+          "title": "GET list",
+          "status": "200",
+          "desc": "JSON array of objects. It may be empty when there are no matches or RLS hides all rows (still 200—by design)."
+        },
+        {
+          "title": "GET/POST/PATCH one",
+          "status": "200/201",
+          "desc": "Single JSON object when using Prefer: return=representation."
+        },
+        {
+          "title": "DELETE",
+          "status": "204",
+          "desc": "No response body. Confirm status is 204."
+        }
       ],
       "codesTitle": "Status codes",
       "thCode": "Code",
@@ -225,6 +306,36 @@
         "fixed": "Fixed"
       },
       "entries": [
+        {
+          "date": "2026-07-26",
+          "type": "improved",
+          "title": "allocations.agency_id (explicit tenant)",
+          "description": "allocations now has agency_id NOT NULL (backfilled from the employee; no rows deleted). A trigger fills and validates employee↔project agency coherence on INSERT/UPDATE. Filter by agency_id on GET; optional on POST. Indexes on (agency_id, week_start_date). Timers (time_entries/active_timers) unchanged: they keep their own agency_id and allocation_id."
+        },
+        {
+          "date": "2026-07-26",
+          "type": "improved",
+          "title": "Per-resource scopes on tokens",
+          "description": "When creating a token you choose readonly/readwrite and select only the resources you need (employees, allocations, projects, etc.). Tokens only reach what this guide documents. Existing tokens received the full catalog—regenerate with minimal scopes when you can."
+        },
+        {
+          "date": "2026-07-26",
+          "type": "new",
+          "title": "Allocations write with allocations scope",
+          "description": "Tasks (allocations) can be created and updated with a readwrite token that includes the allocations scope. employee_id, project_id, week_start_date, and hours_assigned remain required. Transfer acceptance and the live timer are still app-only."
+        },
+        {
+          "date": "2026-07-26",
+          "type": "new",
+          "title": "Docs: weeks, months, and split weeks",
+          "description": "New Weeks & months section (#weeks-months): week_start_date is not always a Monday; the first partial week of a month uses the 1st of that month. Includes mandatory rules, a June→July example, and instructions for GPT/CRM agents. Allocations reference and OpenAPI updated with required fields."
+        },
+        {
+          "date": "2026-07-26",
+          "type": "improved",
+          "title": "Create and revoke tokens in the app",
+          "description": "Token create/revoke happens in API & integrations. The UI shows scope checkboxes when creating tokens. OpenAPI regenerated with the weeks model and documented permissions."
+        },
         {
           "date": "2026-05-24",
           "type": "new",
@@ -262,6 +373,23 @@
           "description": "Admins can create and revoke JWT tokens in API & integrations. Each token is tied to an agency_id, supports read-only or read/write scopes, and is protected by RLS policies."
         }
       ]
+    },
+    "weeks": {
+      "title": "Weeks & months (week_start_date)",
+      "intro": "Allocations are stored per week. Taimbox uses ISO weeks (Monday–Sunday) and, when a physical week spans two months, splits it into two rows (split weeks).",
+      "warning": "<strong>Do not assume week_start_date is always a Monday.</strong> For the first partial week of a month, the database key is the <code>1st day of that month</code> (even if it is a Tuesday, Thursday, etc.). A row’s effective month is the calendar month of <code>week_start_date</code>.",
+      "rulesTitle": "Mandatory rules for integrations",
+      "rule1": "When planning month M, only insert rows whose week_start_date falls in M (same year-month).",
+      "rule2": "Full week inside the month: week_start_date = ISO Monday of that week (YYYY-MM-DD).",
+      "rule3": "First split week (ISO week starts in the previous month): week_start_date = first day of month M (e.g. 2025-07-01), not the June Monday.",
+      "rule4": "Before bulk inserts, list the expected week keys for the month (or query existing allocations) and never copy “last week” from another month without recalculating.",
+      "exampleTitle": "Example June → July boundary",
+      "exampleIntro": "If 30 Jun is Monday and 1 Jul is Tuesday, the physical week is split. For July tasks use a July week_start_date:",
+      "exampleCode": "# Wrong (lands in June; will not show in July planner)\nweek_start_date=2025-06-30\n\n# Correct for July’s first partial week\nweek_start_date=2025-07-01\n\n# Full July week (ISO Monday)\nweek_start_date=2025-07-07",
+      "gptTitle": "Instructions for CRM / GPT agents",
+      "gptIntro": "If an LLM syncs tasks, put these rules in the system prompt:",
+      "gptPrompt": "Taimbox allocations use week_start_date as the month key.\n- Full weeks: Monday (ISO).\n- First partial week of a month: use the 1st of that month, even if it is not Monday.\n- Never copy the previous month's last week_start_date into a new month.\n- Before inserting, compute week_start_date values that fall inside the target calendar month.\n- Required fields for POST allocations: employee_id, project_id, week_start_date, hours_assigned.",
+      "gptHint": "Without these rules, agents often place “last week” tasks in the previous month at month boundaries."
     }
   },
   "filtering": {
@@ -279,16 +407,66 @@
     "fullIntro": "Fetch February 2026 allocations for an employee, sorted by week:",
     "fullCode": "const { data, error, count } = await taimbox\n  .from('allocations')\n  .select('id, project_id, week_start_date, hours_assigned, task_name, status', { count: 'exact' })\n  .eq('employee_id', employeeId)\n  .gte('week_start_date', '2026-02-01')\n  .lte('week_start_date', '2026-02-28')\n  .eq('status', 'planned')\n  .order('week_start_date')\n  .range(0, 49)\n\n// count = total matching rows (for pagination)\n// data = allocation rows",
     "ops": [
-      { "op": "Equals", "sdk": ".eq(col, val)", "http": "col=eq.val", "desc": "Exact match" },
-      { "op": "Not equal", "sdk": ".neq(col, val)", "http": "col=neq.val", "desc": "Not equal" },
-      { "op": "Greater than", "sdk": ".gt(col, val)", "http": "col=gt.val", "desc": "Strictly greater" },
-      { "op": "Greater or equal", "sdk": ".gte(col, val)", "http": "col=gte.val", "desc": "Greater or equal" },
-      { "op": "Less than", "sdk": ".lt(col, val)", "http": "col=lt.val", "desc": "Strictly less" },
-      { "op": "Less or equal", "sdk": ".lte(col, val)", "http": "col=lte.val", "desc": "Less or equal" },
-      { "op": "Contains (case sensitive)", "sdk": ".like(col, pattern)", "http": "col=like.%val%", "desc": "SQL LIKE" },
-      { "op": "Contains (case insensitive)", "sdk": ".ilike(col, pattern)", "http": "col=ilike.%val%", "desc": "SQL ILIKE" },
-      { "op": "In list", "sdk": ".in(col, [a,b])", "http": "col=in.(a,b)", "desc": "IN list" },
-      { "op": "Is null", "sdk": ".is(col, null)", "http": "col=is.null", "desc": "IS NULL" }
+      {
+        "op": "Equals",
+        "sdk": ".eq(col, val)",
+        "http": "col=eq.val",
+        "desc": "Exact match"
+      },
+      {
+        "op": "Not equal",
+        "sdk": ".neq(col, val)",
+        "http": "col=neq.val",
+        "desc": "Not equal"
+      },
+      {
+        "op": "Greater than",
+        "sdk": ".gt(col, val)",
+        "http": "col=gt.val",
+        "desc": "Strictly greater"
+      },
+      {
+        "op": "Greater or equal",
+        "sdk": ".gte(col, val)",
+        "http": "col=gte.val",
+        "desc": "Greater or equal"
+      },
+      {
+        "op": "Less than",
+        "sdk": ".lt(col, val)",
+        "http": "col=lt.val",
+        "desc": "Strictly less"
+      },
+      {
+        "op": "Less or equal",
+        "sdk": ".lte(col, val)",
+        "http": "col=lte.val",
+        "desc": "Less or equal"
+      },
+      {
+        "op": "Contains (case sensitive)",
+        "sdk": ".like(col, pattern)",
+        "http": "col=like.%val%",
+        "desc": "SQL LIKE"
+      },
+      {
+        "op": "Contains (case insensitive)",
+        "sdk": ".ilike(col, pattern)",
+        "http": "col=ilike.%val%",
+        "desc": "SQL ILIKE"
+      },
+      {
+        "op": "In list",
+        "sdk": ".in(col, [a,b])",
+        "http": "col=in.(a,b)",
+        "desc": "IN list"
+      },
+      {
+        "op": "Is null",
+        "sdk": ".is(col, null)",
+        "http": "col=is.null",
+        "desc": "IS NULL"
+      }
     ]
   },
   "realtime": {
@@ -304,7 +482,7 @@
     "install": "npm install @supabase/supabase-js",
     "code": "import { createClient } from '@supabase/supabase-js'\n\n// Supabase project URL + anon key (same as the web app)\nconst SUPABASE_URL = 'https://api.taimbox.com'\nconst ANON_KEY = process.env.SUPABASE_ANON_KEY\n\n// API token from API & integrations\nconst API_TOKEN = process.env.TIMEBOXING_API_TOKEN\n\nconst taimbox = createClient(SUPABASE_URL, ANON_KEY, {\n  global: {\n    headers: { Authorization: `Bearer ${API_TOKEN}` }\n  }\n})\n\n// Example: list active employees for your agency\n// (RLS filters by your agency_id automatically)\nconst { data: employees, error } = await taimbox\n  .from('employees')\n  .select('id, name, role, email')\n  .eq('is_active', true)\n  .order('name')\n\nif (error) {\n  console.error('Error:', error.message)\n} else {\n  console.log('Employees:', employees)\n}",
     "noteTitle": "Note:",
-    "noteBody": "On tables with agency_id you do not need to filter on GET: RLS uses the JWT agency_id. For allocations, deadlines, or absences filter by employee_id or project_id."
+    "noteBody": "On tables with agency_id (including allocations) you do not need to filter on GET: RLS uses the JWT agency_id. For deadlines or absences filter by employee_id or project_id."
   },
   "openapi": {
     "title": "OpenAPI",
@@ -367,11 +545,41 @@
       "nextText": "Now that the connection works, learn how to",
       "nextLink": "sync your team",
       "steps": [
-        { "title": "Generate your API token", "description": "Open Settings > API & integrations in Taimbox and create a token. Give it a clear name like “My integration” and pick read permissions.", "note": "The token is shown only once—copy it to a secure place (e.g. an environment variable).", "code": null, "lang": null },
-        { "title": "Install the SDK (optional)", "description": "If you use JavaScript/TypeScript, install the Supabase client to simplify queries.", "note": null, "code": "npm install @supabase/supabase-js", "lang": "bash" },
-        { "title": "Configure the client", "description": "Keep credentials in config or env vars—never hard-code tokens in source.", "note": "If you only use HTTP (cURL, Postman, Python requests, …), skip this step: use the base URL plus apikey and Authorization on every call. Jump to step 5 for a cURL sample.", "code": "import { createClient } from '@supabase/supabase-js'\n\nconst taimbox = createClient(\n  'https://api.taimbox.com',\n  process.env.SUPABASE_ANON_KEY!,\n  {\n    global: {\n      headers: { Authorization: `Bearer ${process.env.TIMEBOXING_API_TOKEN}` }\n    }\n  }\n)", "lang": "typescript" },
-        { "title": "Make your first request", "description": "List active employees to confirm everything works.", "note": "401 means bad ANON_KEY or API token. An empty array may simply mean no active employees yet.", "code": "const { data, error } = await taimbox\n  .from('employees')\n  .select('id, name, role')\n  .eq('is_active', true)\n  .limit(5)\n\nif (error) {\n  console.error('Connection error:', error.message)\n} else {\n  console.log('Connected! Employees:', data)\n  // [{ id: \"...\", name: \"Jane Doe\", role: \"Designer\" }, ...]\n}", "lang": "typescript" },
-        { "title": "Plain cURL works too", "description": "Without JavaScript you can hit the API directly.", "note": null, "code": "curl -s \\\n  'https://api.taimbox.com/rest/v1/employees?is_active=eq.true&limit=5&select=id,name,role' \\\n  -H 'apikey: YOUR_ANON_KEY' \\\n  -H 'Authorization: Bearer YOUR_API_TOKEN' | json_pp", "lang": "bash" }
+        {
+          "title": "Generate your API token",
+          "description": "Open Settings > API & integrations in Taimbox and create a token. Give it a clear name like “My integration” and pick read permissions.",
+          "note": "The token is shown only once—copy it to a secure place (e.g. an environment variable).",
+          "code": null,
+          "lang": null
+        },
+        {
+          "title": "Install the SDK (optional)",
+          "description": "If you use JavaScript/TypeScript, install the Supabase client to simplify queries.",
+          "note": null,
+          "code": "npm install @supabase/supabase-js",
+          "lang": "bash"
+        },
+        {
+          "title": "Configure the client",
+          "description": "Keep credentials in config or env vars—never hard-code tokens in source.",
+          "note": "If you only use HTTP (cURL, Postman, Python requests, …), skip this step: use the base URL plus apikey and Authorization on every call. Jump to step 5 for a cURL sample.",
+          "code": "import { createClient } from '@supabase/supabase-js'\n\nconst taimbox = createClient(\n  'https://api.taimbox.com',\n  process.env.SUPABASE_ANON_KEY!,\n  {\n    global: {\n      headers: { Authorization: `Bearer ${process.env.TIMEBOXING_API_TOKEN}` }\n    }\n  }\n)",
+          "lang": "typescript"
+        },
+        {
+          "title": "Make your first request",
+          "description": "List active employees to confirm everything works.",
+          "note": "401 means bad ANON_KEY or API token. An empty array may simply mean no active employees yet.",
+          "code": "const { data, error } = await taimbox\n  .from('employees')\n  .select('id, name, role')\n  .eq('is_active', true)\n  .limit(5)\n\nif (error) {\n  console.error('Connection error:', error.message)\n} else {\n  console.log('Connected! Employees:', data)\n  // [{ id: \"...\", name: \"Jane Doe\", role: \"Designer\" }, ...]\n}",
+          "lang": "typescript"
+        },
+        {
+          "title": "Plain cURL works too",
+          "description": "Without JavaScript you can hit the API directly.",
+          "note": null,
+          "code": "curl -s \\\n  'https://api.taimbox.com/rest/v1/employees?is_active=eq.true&limit=5&select=id,name,role' \\\n  -H 'apikey: YOUR_ANON_KEY' \\\n  -H 'Authorization: Bearer YOUR_API_TOKEN' | json_pp",
+          "lang": "bash"
+        }
       ]
     },
     "syncTeam": {
@@ -386,12 +594,48 @@
       "nextText": "With clients and projects synced, learn to",
       "nextLink": "automate planning",
       "steps": [
-        { "title": "Read every employee", "description": "Fetch all active employees with their core fields.", "note": "RLS scopes results to your agency—no agency_id filter needed on reads.", "code": "const { data: employees, error } = await taimbox\n  .from('employees')\n  .select('id, name, email, role, default_weekly_capacity, work_schedule, is_active')\n  .eq('is_active', true)\n  .order('name')\n\n// => array of employees\n// [{ id: \"e1-...\", name: \"Jane Doe\", email: \"jane@...\", role: \"Designer\", ... }]", "lang": "typescript" },
-        { "title": "Create a new employee", "description": "Required fields: name, role, default_weekly_capacity, work_schedule, and agency_id (copy from API & integrations → Connection data).", "note": null, "code": "const { data: newEmployee, error } = await taimbox\n  .from('employees')\n  .insert({\n    name: 'Laura Martinez',\n    first_name: 'Laura',\n    last_name: 'Martinez',\n    email: 'laura@agency.com',\n    role: 'Developer',\n    default_weekly_capacity: 40,\n    work_schedule: {\n      monday: 8, tuesday: 8, wednesday: 8,\n      thursday: 8, friday: 8, saturday: 0, sunday: 0\n    },\n    agency_id: '<AGENCY_ID>'\n  })\n  .select()\n  .single()\n\nif (error) {\n  console.error('Create failed:', error.message)\n} else {\n  console.log('Created employee:', newEmployee.id)\n}", "lang": "typescript" },
-        { "title": "Update working hours", "description": "Adjust weekly capacity or per-day hours when schedules change.", "note": null, "code": "const { data, error } = await taimbox\n  .from('employees')\n  .update({\n    default_weekly_capacity: 32,\n    work_schedule: {\n      monday: 8, tuesday: 8, wednesday: 8,\n      thursday: 8, friday: 0, saturday: 0, sunday: 0\n    }\n  })\n  .eq('id', employeeId)\n  .select()\n  .single()\n\n// Employee now works 32h/week Mon–Thu", "lang": "typescript" },
-        { "title": "Deactivate an employee", "description": "Prefer deactivating over deleting to keep historical allocations.", "note": "Inactive employees keep past allocations. Avoid DELETE unless you truly need to purge records.", "code": "const { error } = await taimbox\n  .from('employees')\n  .update({ is_active: false })\n  .eq('id', employeeId)\n\n// Hidden from planning and active views", "lang": "typescript" },
-        { "title": "List and create clients", "description": "Sync your commercial portfolio. Each client needs name, color (hex), and agency_id.", "note": null, "code": "const { data: clients } = await taimbox\n  .from('clients')\n  .select('id, name, color')\n  .order('name')\n\nconst { data: newClient } = await taimbox\n  .from('clients')\n  .insert({ name: 'Acme Corp', color: '#3B82F6', agency_id: '<AGENCY_ID>' })\n  .select()\n  .single()", "lang": "typescript" },
-        { "title": "Create linked projects", "description": "Projects belong to a client_id. You can set budget, fee, and deliverable dates.", "note": "Use external_id to map your CRM record.", "code": "const { data: project } = await taimbox\n  .from('projects')\n  .insert({\n    client_id: clientId,\n    name: 'Q2 2026 Campaign',\n    budget_hours: 80,\n    monthly_fee: 2400,\n    project_type: 'Monthly',\n    agency_id: '<AGENCY_ID>',\n    external_id: 1042\n  })\n  .select()\n  .single()", "lang": "typescript" }
+        {
+          "title": "Read every employee",
+          "description": "Fetch all active employees with their core fields.",
+          "note": "RLS scopes results to your agency—no agency_id filter needed on reads.",
+          "code": "const { data: employees, error } = await taimbox\n  .from('employees')\n  .select('id, name, email, role, default_weekly_capacity, work_schedule, is_active')\n  .eq('is_active', true)\n  .order('name')\n\n// => array of employees\n// [{ id: \"e1-...\", name: \"Jane Doe\", email: \"jane@...\", role: \"Designer\", ... }]",
+          "lang": "typescript"
+        },
+        {
+          "title": "Create a new employee",
+          "description": "Required fields: name, role, default_weekly_capacity, work_schedule, and agency_id (copy from API & integrations → Connection data).",
+          "note": null,
+          "code": "const { data: newEmployee, error } = await taimbox\n  .from('employees')\n  .insert({\n    name: 'Laura Martinez',\n    first_name: 'Laura',\n    last_name: 'Martinez',\n    email: 'laura@agency.com',\n    role: 'Developer',\n    default_weekly_capacity: 40,\n    work_schedule: {\n      monday: 8, tuesday: 8, wednesday: 8,\n      thursday: 8, friday: 8, saturday: 0, sunday: 0\n    },\n    agency_id: '<AGENCY_ID>'\n  })\n  .select()\n  .single()\n\nif (error) {\n  console.error('Create failed:', error.message)\n} else {\n  console.log('Created employee:', newEmployee.id)\n}",
+          "lang": "typescript"
+        },
+        {
+          "title": "Update working hours",
+          "description": "Adjust weekly capacity or per-day hours when schedules change.",
+          "note": null,
+          "code": "const { data, error } = await taimbox\n  .from('employees')\n  .update({\n    default_weekly_capacity: 32,\n    work_schedule: {\n      monday: 8, tuesday: 8, wednesday: 8,\n      thursday: 8, friday: 0, saturday: 0, sunday: 0\n    }\n  })\n  .eq('id', employeeId)\n  .select()\n  .single()\n\n// Employee now works 32h/week Mon–Thu",
+          "lang": "typescript"
+        },
+        {
+          "title": "Deactivate an employee",
+          "description": "Prefer deactivating over deleting to keep historical allocations.",
+          "note": "Inactive employees keep past allocations. Avoid DELETE unless you truly need to purge records.",
+          "code": "const { error } = await taimbox\n  .from('employees')\n  .update({ is_active: false })\n  .eq('id', employeeId)\n\n// Hidden from planning and active views",
+          "lang": "typescript"
+        },
+        {
+          "title": "List and create clients",
+          "description": "Sync your commercial portfolio. Each client needs name, color (hex), and agency_id.",
+          "note": null,
+          "code": "const { data: clients } = await taimbox\n  .from('clients')\n  .select('id, name, color')\n  .order('name')\n\nconst { data: newClient } = await taimbox\n  .from('clients')\n  .insert({ name: 'Acme Corp', color: '#3B82F6', agency_id: '<AGENCY_ID>' })\n  .select()\n  .single()",
+          "lang": "typescript"
+        },
+        {
+          "title": "Create linked projects",
+          "description": "Projects belong to a client_id. You can set budget, fee, and deliverable dates.",
+          "note": "Use external_id to map your CRM record.",
+          "code": "const { data: project } = await taimbox\n  .from('projects')\n  .insert({\n    client_id: clientId,\n    name: 'Q2 2026 Campaign',\n    budget_hours: 80,\n    monthly_fee: 2400,\n    project_type: 'Monthly',\n    agency_id: '<AGENCY_ID>',\n    external_id: 1042\n  })\n  .select()\n  .single()",
+          "lang": "typescript"
+        }
       ]
     },
     "planning": {
@@ -402,12 +646,48 @@
       "nextLink": "log and query actual hours",
       "nextSuffix": " (time_entries and the timer).",
       "steps": [
-        { "title": "Read existing allocations", "description": "Fetch planned work for an employee between two dates.", "note": null, "code": "const { data: allocations } = await taimbox\n  .from('allocations')\n  .select(`\n    id, employee_id, project_id, week_start_date,\n    hours_assigned, hours_actual, task_name, status\n  `)\n  .eq('employee_id', employeeId)\n  .gte('week_start_date', '2026-03-01')\n  .lte('week_start_date', '2026-03-31')\n  .order('week_start_date')\n\n// Result: allocations for March", "lang": "typescript" },
-        { "title": "Create an allocation", "description": "Assign an employee’s hours to a project for a specific week. week_start_date should be a Monday.", "note": "Writing allocations requires an app user session (can_assign_tasks_for_employee). Integration API tokens cannot create or edit tasks—use the app or read-only integration.", "code": "// Read-only with API token:\nconst { data: allocation } = await taimbox\n  .from('allocations')\n  .select('id, employee_id, project_id, week_start_date, hours_assigned, task_name')\n  .eq('employee_id', employeeId)\n  .eq('week_start_date', '2026-03-02')\n  .maybeSingle()", "lang": "typescript" },
-        { "title": "Spread hours across weeks", "description": "Query several weeks of a project to compare planned load.", "note": "Creating rows in bulk requires the Taimbox app (planner).", "code": "const weeks = ['2026-03-02', '2026-03-09', '2026-03-16', '2026-03-23']\n\nconst { data } = await taimbox\n  .from('allocations')\n  .select('week_start_date, hours_assigned, hours_actual')\n  .eq('project_id', projectId)\n  .in('week_start_date', weeks)\n  .order('week_start_date')\n\nconsole.log('Hours per week:', data)", "lang": "typescript" },
-        { "title": "Update actual hours", "description": "Query hours_actual on completed allocations.", "note": "PATCH on allocations returns 403 with API tokens. Timer logging uses log_timer_hours RPC from the app.", "code": "const { data } = await taimbox\n  .from('allocations')\n  .select('id, hours_assigned, hours_actual, status')\n  .eq('project_id', projectId)\n  .eq('status', 'completed')\n  .gte('week_start_date', '2026-03-01')", "lang": "typescript" },
-        { "title": "Monthly targets (deadlines)", "description": "Set how many hours each employee owes a project in a month.", "note": "budget_override replaces the project’s default budget for that month only. Null falls back to project.budget_hours.", "code": "const { data: deadline } = await taimbox\n  .from('deadlines')\n  .upsert({\n    project_id: projectId,\n    month: '2026-03',\n    employee_hours: {\n      [employeeId1]: 40,\n      [employeeId2]: 20\n    },\n    budget_override: 120\n  })\n  .select()\n  .single()\n\n// Goal: 40h + 20h across March", "lang": "typescript" },
-        { "title": "Task notes (allocation_notes)", "description": "Append-only comments on an allocation. Different from weekly_feedback.comments and time_entries.notes.", "note": "Soft delete uses deleted_at in the app; filter with .is('deleted_at', null) in API queries.", "code": "const { data: notes } = await taimbox\n  .from('allocation_notes')\n  .select('id, body, author_employee_id, created_at')\n  .eq('allocation_id', allocationId)\n  .is('deleted_at', null)\n  .order('created_at')\n\nconst { data: note } = await taimbox\n  .from('allocation_notes')\n  .insert({\n    allocation_id: allocationId,\n    agency_id: '<AGENCY_ID>',\n    author_employee_id: employeeId,\n    body: 'Upload ES images and EN/DE copy',\n    source: 'user'\n  })\n  .select()\n  .single()", "lang": "typescript" }
+        {
+          "title": "Read existing allocations",
+          "description": "Fetch planned work for an employee between two dates.",
+          "note": null,
+          "code": "const { data: allocations } = await taimbox\n  .from('allocations')\n  .select(`\n    id, employee_id, project_id, week_start_date,\n    hours_assigned, hours_actual, task_name, status\n  `)\n  .eq('employee_id', employeeId)\n  .gte('week_start_date', '2026-03-01')\n  .lte('week_start_date', '2026-03-31')\n  .order('week_start_date')\n\n// Result: allocations for March",
+          "lang": "typescript"
+        },
+        {
+          "title": "Create an allocation",
+          "description": "Assign an employee’s hours to a project for a specific week. week_start_date should be a Monday.",
+          "note": "Writing allocations requires an app user session (can_assign_tasks_for_employee). Integration API tokens cannot create or edit tasks—use the app or read-only integration.",
+          "code": "// Read-only with API token:\nconst { data: allocation } = await taimbox\n  .from('allocations')\n  .select('id, employee_id, project_id, week_start_date, hours_assigned, task_name')\n  .eq('employee_id', employeeId)\n  .eq('week_start_date', '2026-03-02')\n  .maybeSingle()",
+          "lang": "typescript"
+        },
+        {
+          "title": "Spread hours across weeks",
+          "description": "Query several weeks of a project to compare planned load.",
+          "note": "Creating rows in bulk requires the Taimbox app (planner).",
+          "code": "const weeks = ['2026-03-02', '2026-03-09', '2026-03-16', '2026-03-23']\n\nconst { data } = await taimbox\n  .from('allocations')\n  .select('week_start_date, hours_assigned, hours_actual')\n  .eq('project_id', projectId)\n  .in('week_start_date', weeks)\n  .order('week_start_date')\n\nconsole.log('Hours per week:', data)",
+          "lang": "typescript"
+        },
+        {
+          "title": "Update actual hours",
+          "description": "Query hours_actual on completed allocations.",
+          "note": "PATCH on allocations returns 403 with API tokens. Timer logging uses log_timer_hours RPC from the app.",
+          "code": "const { data } = await taimbox\n  .from('allocations')\n  .select('id, hours_assigned, hours_actual, status')\n  .eq('project_id', projectId)\n  .eq('status', 'completed')\n  .gte('week_start_date', '2026-03-01')",
+          "lang": "typescript"
+        },
+        {
+          "title": "Monthly targets (deadlines)",
+          "description": "Set how many hours each employee owes a project in a month.",
+          "note": "budget_override replaces the project’s default budget for that month only. Null falls back to project.budget_hours.",
+          "code": "const { data: deadline } = await taimbox\n  .from('deadlines')\n  .upsert({\n    project_id: projectId,\n    month: '2026-03',\n    employee_hours: {\n      [employeeId1]: 40,\n      [employeeId2]: 20\n    },\n    budget_override: 120\n  })\n  .select()\n  .single()\n\n// Goal: 40h + 20h across March",
+          "lang": "typescript"
+        },
+        {
+          "title": "Task notes (allocation_notes)",
+          "description": "Append-only comments on an allocation. Different from weekly_feedback.comments and time_entries.notes.",
+          "note": "Soft delete uses deleted_at in the app; filter with .is('deleted_at', null) in API queries.",
+          "code": "const { data: notes } = await taimbox\n  .from('allocation_notes')\n  .select('id, body, author_employee_id, created_at')\n  .eq('allocation_id', allocationId)\n  .is('deleted_at', null)\n  .order('created_at')\n\nconst { data: note } = await taimbox\n  .from('allocation_notes')\n  .insert({\n    allocation_id: allocationId,\n    agency_id: '<AGENCY_ID>',\n    author_employee_id: employeeId,\n    body: 'Upload ES images and EN/DE copy',\n    source: 'user'\n  })\n  .select()\n  .single()",
+          "lang": "typescript"
+        }
       ]
     },
     "transfers": {
@@ -418,11 +698,41 @@
       "nextLink": "export profitability reports",
       "nextSuffix": " using planning data.",
       "steps": [
-        { "title": "List pending transfers", "description": "Fetch open requests for your agency to sync with an external system or custom dashboard.", "note": "Filter by status pending. RLS scopes to your token’s agency_id.", "code": "const { data: pending } = await taimbox\n  .from('task_transfers')\n  .select('id, allocation_id, from_employee_id, to_employee_id, hours_transferred, status, reason, requested_at')\n  .eq('status', 'pending')\n  .order('requested_at', { ascending: false })\n\nconsole.log(`${pending?.length ?? 0} pending transfers`)", "lang": "typescript" },
-        { "title": "Create a request", "description": "An employee asks to move task hours to a teammate. The receiver must accept in Taimbox (accept_task_transfer RPC).", "note": "Requires a readwrite token. Only one pending request per allocation_id.", "code": "const { data: transfer, error } = await taimbox\n  .from('task_transfers')\n  .insert({\n    allocation_id: allocationId,\n    from_employee_id: fromEmployeeId,\n    to_employee_id: toEmployeeId,\n    hours_transferred: 4,\n    reason: 'Overloaded this week',\n    agency_id: '<AGENCY_ID>'\n  })\n  .select()\n  .single()\n\nif (!error) console.log('Request created:', transfer.id)", "lang": "typescript" },
-        { "title": "Cancel a request", "description": "The sender can cancel a transfer that is still pending before the receiver responds.", "note": null, "code": "const { error } = await taimbox\n  .from('task_transfers')\n  .update({ status: 'cancelled' })\n  .eq('id', transferId)\n  .eq('status', 'pending')\n\nif (!error) console.log('Transfer cancelled')", "lang": "typescript" },
-        { "title": "Query history by status", "description": "Export accepted, rejected, or cancelled transfers for audit or reporting.", "note": "After acceptance, check result_allocation_ids on the row for child or continuation allocations.", "code": "const { data: accepted } = await taimbox\n  .from('task_transfers')\n  .select('id, status, acceptance_mode, result_allocation_ids, responded_at')\n  .eq('status', 'accepted')\n  .gte('responded_at', '2026-03-01')\n  .order('responded_at', { ascending: false })", "lang": "typescript" },
-        { "title": "Acceptance in the app", "description": "Modes keep, move, distribute, and rollover change allocations atomically. Only the authenticated receiver can do this.", "note": "Documented under REST → App RPCs (accept_task_transfer). Server-to-server integrations cannot replace Taimbox acceptance.", "code": "// App user session only (not API token):\nconst { data, error } = await taimbox.rpc('accept_task_transfer', {\n  p_transfer_id: transferId,\n  p_acceptance_mode: 'keep'\n})", "lang": "typescript" }
+        {
+          "title": "List pending transfers",
+          "description": "Fetch open requests for your agency to sync with an external system or custom dashboard.",
+          "note": "Filter by status pending. RLS scopes to your token’s agency_id.",
+          "code": "const { data: pending } = await taimbox\n  .from('task_transfers')\n  .select('id, allocation_id, from_employee_id, to_employee_id, hours_transferred, status, reason, requested_at')\n  .eq('status', 'pending')\n  .order('requested_at', { ascending: false })\n\nconsole.log(`${pending?.length ?? 0} pending transfers`)",
+          "lang": "typescript"
+        },
+        {
+          "title": "Create a request",
+          "description": "An employee asks to move task hours to a teammate. The receiver must accept in Taimbox (accept_task_transfer RPC).",
+          "note": "Requires a readwrite token. Only one pending request per allocation_id.",
+          "code": "const { data: transfer, error } = await taimbox\n  .from('task_transfers')\n  .insert({\n    allocation_id: allocationId,\n    from_employee_id: fromEmployeeId,\n    to_employee_id: toEmployeeId,\n    hours_transferred: 4,\n    reason: 'Overloaded this week',\n    agency_id: '<AGENCY_ID>'\n  })\n  .select()\n  .single()\n\nif (!error) console.log('Request created:', transfer.id)",
+          "lang": "typescript"
+        },
+        {
+          "title": "Cancel a request",
+          "description": "The sender can cancel a transfer that is still pending before the receiver responds.",
+          "note": null,
+          "code": "const { error } = await taimbox\n  .from('task_transfers')\n  .update({ status: 'cancelled' })\n  .eq('id', transferId)\n  .eq('status', 'pending')\n\nif (!error) console.log('Transfer cancelled')",
+          "lang": "typescript"
+        },
+        {
+          "title": "Query history by status",
+          "description": "Export accepted, rejected, or cancelled transfers for audit or reporting.",
+          "note": "After acceptance, check result_allocation_ids on the row for child or continuation allocations.",
+          "code": "const { data: accepted } = await taimbox\n  .from('task_transfers')\n  .select('id, status, acceptance_mode, result_allocation_ids, responded_at')\n  .eq('status', 'accepted')\n  .gte('responded_at', '2026-03-01')\n  .order('responded_at', { ascending: false })",
+          "lang": "typescript"
+        },
+        {
+          "title": "Acceptance in the app",
+          "description": "Modes keep, move, distribute, and rollover change allocations atomically. Only the authenticated receiver can do this.",
+          "note": "Documented under REST → App RPCs (accept_task_transfer). Server-to-server integrations cannot replace Taimbox acceptance.",
+          "code": "// App user session only (not API token):\nconst { data, error } = await taimbox.rpc('accept_task_transfer', {\n  p_transfer_id: transferId,\n  p_acceptance_mode: 'keep'\n})",
+          "lang": "typescript"
+        }
       ]
     },
     "reports": {
@@ -433,10 +743,34 @@
       "nextLink": "manage absences and events",
       "nextSuffix": " so capacity stays accurate.",
       "steps": [
-        { "title": "Hours per project per month", "description": "Pull every allocation in a month and aggregate by project.", "note": null, "code": "const { data: allocations } = await taimbox\n  .from('allocations')\n  .select('project_id, hours_assigned, hours_actual, hours_computed')\n  .gte('week_start_date', '2026-02-01')\n  .lte('week_start_date', '2026-02-28')\n\nconst byProject = {}\nallocations?.forEach(a => {\n  if (!byProject[a.project_id]) {\n    byProject[a.project_id] = { planned: 0, actual: 0, computed: 0 }\n  }\n  byProject[a.project_id].planned += a.hours_assigned\n  byProject[a.project_id].actual += a.hours_actual\n  byProject[a.project_id].computed += a.hours_computed\n})\n\nconsole.log('Hours by project:', byProject)", "lang": "typescript" },
-        { "title": "Profitability snapshot", "description": "Join hours with project budget and monthly fee.", "note": null, "code": "const { data: projects } = await taimbox\n  .from('projects')\n  .select('id, name, budget_hours, monthly_fee')\n  .eq('status', 'active')\n\nconst report = projects?.map(p => {\n  const hours = byProject[p.id] || { planned: 0, actual: 0, computed: 0 }\n  const progress = p.budget_hours > 0\n    ? Math.round((hours.computed / p.budget_hours) * 100)\n    : 0\n  const hourValue = p.budget_hours > 0\n    ? (p.monthly_fee / p.budget_hours).toFixed(2)\n    : '0'\n\n  return {\n    project: p.name,\n    budgetHours: p.budget_hours,\n    hoursPlanned: hours.planned,\n    hoursActual: hours.actual,\n    progress: `${progress}%`,\n    hourValue: `${hourValue} EUR/h`\n  }\n})\n\nconsole.table(report)", "lang": "typescript" },
-        { "title": "Team utilization", "description": "Measure each employee’s load to spot overload or idle time.", "note": null, "code": "const { data: employees } = await taimbox\n  .from('employees')\n  .select('id, name, default_weekly_capacity')\n  .eq('is_active', true)\n\nconst { data: monthAllocations } = await taimbox\n  .from('allocations')\n  .select('employee_id, hours_assigned')\n  .gte('week_start_date', '2026-02-01')\n  .lte('week_start_date', '2026-02-28')\n\nconst occupancy = employees?.map(emp => {\n  const totalHours = monthAllocations\n    ?.filter(a => a.employee_id === emp.id)\n    .reduce((sum, a) => sum + a.hours_assigned, 0) || 0\n  const capacity = emp.default_weekly_capacity * 4\n  const load = capacity > 0 ? Math.round((totalHours / capacity) * 100) : 0\n\n  return { name: emp.name, totalHours, capacity, load: `${load}%` }\n})\n\nconsole.table(occupancy)", "lang": "typescript" },
-        { "title": "Export to CSV", "description": "Serialize rows for Excel or Sheets.", "note": null, "code": "function toCSV(data, headers) {\n  const rows = [headers.join(',')]\n  data.forEach(row => {\n    rows.push(headers.map(h => JSON.stringify(row[h] ?? '')).join(','))\n  })\n  return rows.join('\\n')\n}\n\nconst csv = toCSV(report, ['project', 'budgetHours', 'hoursPlanned', 'hoursActual', 'progress', 'hourValue'])\n\n// Node: fs.writeFileSync('report.csv', csv)\n// Browser: Blob + URL.createObjectURL", "lang": "typescript" }
+        {
+          "title": "Hours per project per month",
+          "description": "Pull every allocation in a month and aggregate by project.",
+          "note": null,
+          "code": "const { data: allocations } = await taimbox\n  .from('allocations')\n  .select('project_id, hours_assigned, hours_actual, hours_computed')\n  .gte('week_start_date', '2026-02-01')\n  .lte('week_start_date', '2026-02-28')\n\nconst byProject = {}\nallocations?.forEach(a => {\n  if (!byProject[a.project_id]) {\n    byProject[a.project_id] = { planned: 0, actual: 0, computed: 0 }\n  }\n  byProject[a.project_id].planned += a.hours_assigned\n  byProject[a.project_id].actual += a.hours_actual\n  byProject[a.project_id].computed += a.hours_computed\n})\n\nconsole.log('Hours by project:', byProject)",
+          "lang": "typescript"
+        },
+        {
+          "title": "Profitability snapshot",
+          "description": "Join hours with project budget and monthly fee.",
+          "note": null,
+          "code": "const { data: projects } = await taimbox\n  .from('projects')\n  .select('id, name, budget_hours, monthly_fee')\n  .eq('status', 'active')\n\nconst report = projects?.map(p => {\n  const hours = byProject[p.id] || { planned: 0, actual: 0, computed: 0 }\n  const progress = p.budget_hours > 0\n    ? Math.round((hours.computed / p.budget_hours) * 100)\n    : 0\n  const hourValue = p.budget_hours > 0\n    ? (p.monthly_fee / p.budget_hours).toFixed(2)\n    : '0'\n\n  return {\n    project: p.name,\n    budgetHours: p.budget_hours,\n    hoursPlanned: hours.planned,\n    hoursActual: hours.actual,\n    progress: `${progress}%`,\n    hourValue: `${hourValue} EUR/h`\n  }\n})\n\nconsole.table(report)",
+          "lang": "typescript"
+        },
+        {
+          "title": "Team utilization",
+          "description": "Measure each employee’s load to spot overload or idle time.",
+          "note": null,
+          "code": "const { data: employees } = await taimbox\n  .from('employees')\n  .select('id, name, default_weekly_capacity')\n  .eq('is_active', true)\n\nconst { data: monthAllocations } = await taimbox\n  .from('allocations')\n  .select('employee_id, hours_assigned')\n  .gte('week_start_date', '2026-02-01')\n  .lte('week_start_date', '2026-02-28')\n\nconst occupancy = employees?.map(emp => {\n  const totalHours = monthAllocations\n    ?.filter(a => a.employee_id === emp.id)\n    .reduce((sum, a) => sum + a.hours_assigned, 0) || 0\n  const capacity = emp.default_weekly_capacity * 4\n  const load = capacity > 0 ? Math.round((totalHours / capacity) * 100) : 0\n\n  return { name: emp.name, totalHours, capacity, load: `${load}%` }\n})\n\nconsole.table(occupancy)",
+          "lang": "typescript"
+        },
+        {
+          "title": "Export to CSV",
+          "description": "Serialize rows for Excel or Sheets.",
+          "note": null,
+          "code": "function toCSV(data, headers) {\n  const rows = [headers.join(',')]\n  data.forEach(row => {\n    rows.push(headers.map(h => JSON.stringify(row[h] ?? '')).join(','))\n  })\n  return rows.join('\\n')\n}\n\nconst csv = toCSV(report, ['project', 'budgetHours', 'hoursPlanned', 'hoursActual', 'progress', 'hourValue'])\n\n// Node: fs.writeFileSync('report.csv', csv)\n// Browser: Blob + URL.createObjectURL",
+          "lang": "typescript"
+        }
       ]
     },
     "absences": {
@@ -447,12 +781,48 @@
       "nextLink": "departments and client settings",
       "nextSuffix": " from integrations.",
       "steps": [
-        { "title": "Read an employee’s absences", "description": "List absences that overlap a date range.", "note": null, "code": "const { data: absences } = await taimbox\n  .from('absences')\n  .select('id, employee_id, start_date, end_date, type, hours, description')\n  .eq('employee_id', employeeId)\n  .gte('end_date', '2026-03-01')\n  .order('start_date')\n\n// March PTO / leave for this employee", "lang": "typescript" },
-        { "title": "Create a vacation block", "description": "Insert a multi-day vacation; capacity drops automatically in planning.", "note": "Common type strings: vacation, sick, leave, training—but any text works.", "code": "const { data: absence, error } = await taimbox\n  .from('absences')\n  .insert({\n    employee_id: employeeId,\n    start_date: '2026-04-06',\n    end_date: '2026-04-10',\n    type: 'vacation',\n    description: 'Spring break'\n  })\n  .select()\n  .single()\n\nif (!error) {\n  console.log('Absence saved:', absence.id)\n}", "lang": "typescript" },
-        { "title": "Partial-day absence", "description": "Use the hours field when the whole day is not off.", "note": null, "code": "const { data } = await taimbox\n  .from('absences')\n  .insert({\n    employee_id: employeeId,\n    start_date: '2026-03-15',\n    end_date: '2026-03-15',\n    type: 'leave',\n    hours: 4,\n    description: 'Morning doctor visit'\n  })\n  .select()\n  .single()\n\n// Only 4h removed that day", "lang": "typescript" },
-        { "title": "Team-wide event (holiday)", "description": "team_events can target many employees at once.", "note": null, "code": "const { data: employees } = await taimbox\n  .from('employees')\n  .select('id')\n  .eq('is_active', true)\n\nconst employeeIds = employees?.map(e => e.id) || []\n\nconst { data: event } = await taimbox\n  .from('team_events')\n  .insert({\n    name: 'Regional holiday',\n    date: '2026-02-28',\n    hours_reduction: 8,\n    affected_employee_ids: employeeIds,\n    description: 'Office closed'\n  })\n  .select()\n  .single()\n\nconsole.log('Event created for', employeeIds.length, 'people')", "lang": "typescript" },
-        { "title": "Estimate real capacity", "description": "Combine absences, events, and base weekly hours for a rough net capacity.", "note": "Taimbox uses a finer daily model internally—this is a simplified illustration.", "code": "const weekStart = '2026-03-09'\nconst weekEnd = '2026-03-13'\n\nconst [{ data: absences }, { data: events }, { data: employee }] = await Promise.all([\n  taimbox.from('absences')\n    .select('start_date, end_date, hours')\n    .eq('employee_id', empId)\n    .lte('start_date', weekEnd)\n    .gte('end_date', weekStart),\n  taimbox.from('team_events')\n    .select('date, hours_reduction')\n    .gte('date', weekStart)\n    .lte('date', weekEnd),\n  taimbox.from('employees')\n    .select('default_weekly_capacity')\n    .eq('id', empId)\n    .single()\n])\n\nconst baseCapacity = employee?.default_weekly_capacity || 40\nconst absenceHours = absences?.reduce((s, a) => s + (a.hours || 8), 0) || 0\nconst eventHours = events?.reduce((s, e) => s + e.hours_reduction, 0) || 0\nconst effectiveCapacity = Math.max(0, baseCapacity - Math.max(absenceHours, eventHours))\n\nconsole.log(`Effective capacity: ${effectiveCapacity}h / ${baseCapacity}h`)", "lang": "typescript" },
-        { "title": "Global capacity assignments", "description": "Reserve monthly hours for training, fixed meetings, or other cross-team load (global_assignments).", "note": "With affects_all: true it applies to everyone; otherwise use affected_employee_ids.", "code": "const { data: globals } = await taimbox\n  .from('global_assignments')\n  .select('id, month, name, hours, affects_all')\n  .eq('agency_id', '<AGENCY_ID>')\n  .eq('month', '2026-03')\n\nconst { data: training } = await taimbox\n  .from('global_assignments')\n  .insert({\n    month: '2026-03',\n    name: 'Monthly training',\n    hours: 4,\n    affects_all: true,\n    agency_id: '<AGENCY_ID>'\n  })\n  .select()\n  .single()", "lang": "typescript" }
+        {
+          "title": "Read an employee’s absences",
+          "description": "List absences that overlap a date range.",
+          "note": null,
+          "code": "const { data: absences } = await taimbox\n  .from('absences')\n  .select('id, employee_id, start_date, end_date, type, hours, description')\n  .eq('employee_id', employeeId)\n  .gte('end_date', '2026-03-01')\n  .order('start_date')\n\n// March PTO / leave for this employee",
+          "lang": "typescript"
+        },
+        {
+          "title": "Create a vacation block",
+          "description": "Insert a multi-day vacation; capacity drops automatically in planning.",
+          "note": "Common type strings: vacation, sick, leave, training—but any text works.",
+          "code": "const { data: absence, error } = await taimbox\n  .from('absences')\n  .insert({\n    employee_id: employeeId,\n    start_date: '2026-04-06',\n    end_date: '2026-04-10',\n    type: 'vacation',\n    description: 'Spring break'\n  })\n  .select()\n  .single()\n\nif (!error) {\n  console.log('Absence saved:', absence.id)\n}",
+          "lang": "typescript"
+        },
+        {
+          "title": "Partial-day absence",
+          "description": "Use the hours field when the whole day is not off.",
+          "note": null,
+          "code": "const { data } = await taimbox\n  .from('absences')\n  .insert({\n    employee_id: employeeId,\n    start_date: '2026-03-15',\n    end_date: '2026-03-15',\n    type: 'leave',\n    hours: 4,\n    description: 'Morning doctor visit'\n  })\n  .select()\n  .single()\n\n// Only 4h removed that day",
+          "lang": "typescript"
+        },
+        {
+          "title": "Team-wide event (holiday)",
+          "description": "team_events can target many employees at once.",
+          "note": null,
+          "code": "const { data: employees } = await taimbox\n  .from('employees')\n  .select('id')\n  .eq('is_active', true)\n\nconst employeeIds = employees?.map(e => e.id) || []\n\nconst { data: event } = await taimbox\n  .from('team_events')\n  .insert({\n    name: 'Regional holiday',\n    date: '2026-02-28',\n    hours_reduction: 8,\n    affected_employee_ids: employeeIds,\n    description: 'Office closed'\n  })\n  .select()\n  .single()\n\nconsole.log('Event created for', employeeIds.length, 'people')",
+          "lang": "typescript"
+        },
+        {
+          "title": "Estimate real capacity",
+          "description": "Combine absences, events, and base weekly hours for a rough net capacity.",
+          "note": "Taimbox uses a finer daily model internally—this is a simplified illustration.",
+          "code": "const weekStart = '2026-03-09'\nconst weekEnd = '2026-03-13'\n\nconst [{ data: absences }, { data: events }, { data: employee }] = await Promise.all([\n  taimbox.from('absences')\n    .select('start_date, end_date, hours')\n    .eq('employee_id', empId)\n    .lte('start_date', weekEnd)\n    .gte('end_date', weekStart),\n  taimbox.from('team_events')\n    .select('date, hours_reduction')\n    .gte('date', weekStart)\n    .lte('date', weekEnd),\n  taimbox.from('employees')\n    .select('default_weekly_capacity')\n    .eq('id', empId)\n    .single()\n])\n\nconst baseCapacity = employee?.default_weekly_capacity || 40\nconst absenceHours = absences?.reduce((s, a) => s + (a.hours || 8), 0) || 0\nconst eventHours = events?.reduce((s, e) => s + e.hours_reduction, 0) || 0\nconst effectiveCapacity = Math.max(0, baseCapacity - Math.max(absenceHours, eventHours))\n\nconsole.log(`Effective capacity: ${effectiveCapacity}h / ${baseCapacity}h`)",
+          "lang": "typescript"
+        },
+        {
+          "title": "Global capacity assignments",
+          "description": "Reserve monthly hours for training, fixed meetings, or other cross-team load (global_assignments).",
+          "note": "With affects_all: true it applies to everyone; otherwise use affected_employee_ids.",
+          "code": "const { data: globals } = await taimbox\n  .from('global_assignments')\n  .select('id, month, name, hours, affects_all')\n  .eq('agency_id', '<AGENCY_ID>')\n  .eq('month', '2026-03')\n\nconst { data: training } = await taimbox\n  .from('global_assignments')\n  .insert({\n    month: '2026-03',\n    name: 'Monthly training',\n    hours: 4,\n    affects_all: true,\n    agency_id: '<AGENCY_ID>'\n  })\n  .select()\n  .single()",
+          "lang": "typescript"
+        }
       ]
     },
     "timeTracking": {
@@ -463,10 +833,34 @@
       "nextLink": "manage task transfers",
       "nextSuffix": " between team members.",
       "steps": [
-        { "title": "Read time entries", "description": "time_entries stores actual hours per allocation and day (UNIQUE employee + allocation + date).", "note": "With an API token you only see rows RLS allows; in practice the timer runs in the app with an employee session.", "code": "const { data: entries } = await taimbox\n  .from('time_entries')\n  .select('id, allocation_id, employee_id, date, hours, notes')\n  .eq('employee_id', employeeId)\n  .gte('date', '2026-03-01')\n  .lte('date', '2026-03-31')\n  .order('date')", "lang": "typescript" },
-        { "title": "Insert hours manually", "description": "POST works when RLS allows it (employee linked to the user or agency policies).", "note": "For bulk integrations, exporting hours_actual from allocations or timer_sessions webhooks via Edge Functions is often more reliable.", "code": "const { data, error } = await taimbox\n  .from('time_entries')\n  .insert({\n    allocation_id: allocationId,\n    employee_id: employeeId,\n    date: '2026-03-10',\n    hours: 2.5,\n    notes: 'Layout review',\n    agency_id: '<AGENCY_ID>'\n  })\n  .select()\n  .single()", "lang": "typescript" },
-        { "title": "Timer in the app", "description": "active_timers holds the running timer; timer_sessions records each stop with exact start/end.", "note": "Not available with integration API tokens. Use log_timer_hours from an app session or query allocations.hours_actual for aggregated reports.", "code": "// App user session only:\nconst { error } = await taimbox.rpc('log_timer_hours', {\n  p_employee_id: employeeId,\n  p_allocation_id: allocationId,\n  p_hours: 1.5,\n  p_notes: 'Review'\n})", "lang": "typescript" },
-        { "title": "Export hours for billing", "description": "Join time_entries (or hours_actual) with projects for ERP or invoicing.", "note": null, "code": "const { data: entries } = await taimbox\n  .from('time_entries')\n  .select('date, hours, allocation_id, allocations(project_id, projects(name))')\n  .eq('employee_id', employeeId)\n  .gte('date', '2026-03-01')\n\nconst total = entries?.reduce((s, e) => s + Number(e.hours), 0) ?? 0\nconsole.log(`March total: ${total} h`)", "lang": "typescript" }
+        {
+          "title": "Read time entries",
+          "description": "time_entries stores actual hours per allocation and day (UNIQUE employee + allocation + date).",
+          "note": "With an API token you only see rows RLS allows; in practice the timer runs in the app with an employee session.",
+          "code": "const { data: entries } = await taimbox\n  .from('time_entries')\n  .select('id, allocation_id, employee_id, date, hours, notes')\n  .eq('employee_id', employeeId)\n  .gte('date', '2026-03-01')\n  .lte('date', '2026-03-31')\n  .order('date')",
+          "lang": "typescript"
+        },
+        {
+          "title": "Insert hours manually",
+          "description": "POST works when RLS allows it (employee linked to the user or agency policies).",
+          "note": "For bulk integrations, exporting hours_actual from allocations or timer_sessions webhooks via Edge Functions is often more reliable.",
+          "code": "const { data, error } = await taimbox\n  .from('time_entries')\n  .insert({\n    allocation_id: allocationId,\n    employee_id: employeeId,\n    date: '2026-03-10',\n    hours: 2.5,\n    notes: 'Layout review',\n    agency_id: '<AGENCY_ID>'\n  })\n  .select()\n  .single()",
+          "lang": "typescript"
+        },
+        {
+          "title": "Timer in the app",
+          "description": "active_timers holds the running timer; timer_sessions records each stop with exact start/end.",
+          "note": "Not available with integration API tokens. Use log_timer_hours from an app session or query allocations.hours_actual for aggregated reports.",
+          "code": "// App user session only:\nconst { error } = await taimbox.rpc('log_timer_hours', {\n  p_employee_id: employeeId,\n  p_allocation_id: allocationId,\n  p_hours: 1.5,\n  p_notes: 'Review'\n})",
+          "lang": "typescript"
+        },
+        {
+          "title": "Export hours for billing",
+          "description": "Join time_entries (or hours_actual) with projects for ERP or invoicing.",
+          "note": null,
+          "code": "const { data: entries } = await taimbox\n  .from('time_entries')\n  .select('date, hours, allocation_id, allocations(project_id, projects(name))')\n  .eq('employee_id', employeeId)\n  .gte('date', '2026-03-01')\n\nconst total = entries?.reduce((s, e) => s + Number(e.hours), 0) ?? 0\nconsole.log(`March total: ${total} h`)",
+          "lang": "typescript"
+        }
       ]
     },
     "configuration": {
@@ -477,10 +871,34 @@
       "nextLink": "weekly feedback",
       "nextSuffix": " employees report when closing the week.",
       "steps": [
-        { "title": "Read department settings", "description": "Each department can define weekly close day/hour and a forced default view.", "note": "closing_day: 0=Sunday … 6=Saturday. closing_hour: 0–23.", "code": "const { data: depts } = await taimbox\n  .from('department_config')\n  .select('id, department_name, default_view, closing_day, closing_hour, is_view_strict')\n  .eq('agency_id', '<AGENCY_ID>')", "lang": "typescript" },
-        { "title": "Update weekly close", "description": "Sync close policy from HR or ops tooling.", "note": null, "code": "const { data } = await taimbox\n  .from('department_config')\n  .update({ closing_day: 4, closing_hour: 14 })\n  .eq('id', departmentConfigId)\n  .select()\n  .single()", "lang": "typescript" },
-        { "title": "Advanced client settings", "description": "client_settings uses client_id as PK: budget cap, commercial group, visibility.", "note": null, "code": "const { data: settings } = await taimbox\n  .from('client_settings')\n  .select('client_id, budget_limit, group_name, is_hidden, is_sales_account')\n  .eq('client_id', clientId)", "lang": "typescript" },
-        { "title": "Upsert client_settings", "description": "Create or update settings without duplicate rows.", "note": "Handy when importing CRM clients with custom billing rules.", "code": "const { data } = await taimbox\n  .from('client_settings')\n  .upsert({\n    client_id: clientId,\n    budget_limit: 5000,\n    group_name: 'Premium',\n    is_sales_account: true\n  })\n  .select()\n  .single()", "lang": "typescript" }
+        {
+          "title": "Read department settings",
+          "description": "Each department can define weekly close day/hour and a forced default view.",
+          "note": "closing_day: 0=Sunday … 6=Saturday. closing_hour: 0–23.",
+          "code": "const { data: depts } = await taimbox\n  .from('department_config')\n  .select('id, department_name, default_view, closing_day, closing_hour, is_view_strict')\n  .eq('agency_id', '<AGENCY_ID>')",
+          "lang": "typescript"
+        },
+        {
+          "title": "Update weekly close",
+          "description": "Sync close policy from HR or ops tooling.",
+          "note": null,
+          "code": "const { data } = await taimbox\n  .from('department_config')\n  .update({ closing_day: 4, closing_hour: 14 })\n  .eq('id', departmentConfigId)\n  .select()\n  .single()",
+          "lang": "typescript"
+        },
+        {
+          "title": "Advanced client settings",
+          "description": "client_settings uses client_id as PK: budget cap, commercial group, visibility.",
+          "note": null,
+          "code": "const { data: settings } = await taimbox\n  .from('client_settings')\n  .select('client_id, budget_limit, group_name, is_hidden, is_sales_account')\n  .eq('client_id', clientId)",
+          "lang": "typescript"
+        },
+        {
+          "title": "Upsert client_settings",
+          "description": "Create or update settings without duplicate rows.",
+          "note": "Handy when importing CRM clients with custom billing rules.",
+          "code": "const { data } = await taimbox\n  .from('client_settings')\n  .upsert({\n    client_id: clientId,\n    budget_limit: 5000,\n    group_name: 'Premium',\n    is_sales_account: true\n  })\n  .select()\n  .single()",
+          "lang": "typescript"
+        }
       ]
     },
     "feedback": {
@@ -491,10 +909,34 @@
       "nextLink": "professional goals and routines",
       "nextSuffix": " for the team.",
       "steps": [
-        { "title": "List feedback for a week", "description": "Filter by employee_id and week_start_date (Monday).", "note": "reason: technical_issue, client_blocker, bad_estimation, personal_absence, other.", "code": "const { data } = await taimbox\n  .from('weekly_feedback')\n  .select('id, project_id, allocation_id, reason, weekly_action, comments')\n  .eq('employee_id', employeeId)\n  .eq('week_start_date', '2026-03-02')\n  .order('created_at')", "lang": "typescript" },
-        { "title": "Report a blocker", "description": "Log an issue tied to a project or specific allocation.", "note": null, "code": "const { data } = await taimbox\n  .from('weekly_feedback')\n  .insert({\n    employee_id: employeeId,\n    week_start_date: '2026-03-02',\n    project_id: projectId,\n    allocation_id: allocationId,\n    reason: 'client_blocker',\n    comments: 'Waiting for client approval'\n  })\n  .select()\n  .single()", "lang": "typescript" },
-        { "title": "Weekly close action", "description": "weekly_action records what the employee chose at close: keep, postpone, distribute, transfer, justify, cancel, move.", "note": "Executing the action (e.g. transfer) may require app flows; the feedback row is the audit trail.", "code": "const { data } = await taimbox\n  .from('weekly_feedback')\n  .update({ weekly_action: 'postpone', comments: 'Move to next week' })\n  .eq('id', feedbackId)\n  .select()\n  .single()", "lang": "typescript" },
-        { "title": "Export feedback for retros", "description": "Aggregate by reason or project for ops dashboards.", "note": null, "code": "const { data } = await taimbox\n  .from('weekly_feedback')\n  .select('reason, weekly_action, project_id, comments')\n  .gte('week_start_date', '2026-02-01')\n  .lte('week_start_date', '2026-02-28')\n\nconst byReason = {}\ndata?.forEach(f => {\n  byReason[f.reason ?? 'other'] = (byReason[f.reason ?? 'other'] || 0) + 1\n})\nconsole.log('February issues:', byReason)", "lang": "typescript" }
+        {
+          "title": "List feedback for a week",
+          "description": "Filter by employee_id and week_start_date (Monday).",
+          "note": "reason: technical_issue, client_blocker, bad_estimation, personal_absence, other.",
+          "code": "const { data } = await taimbox\n  .from('weekly_feedback')\n  .select('id, project_id, allocation_id, reason, weekly_action, comments')\n  .eq('employee_id', employeeId)\n  .eq('week_start_date', '2026-03-02')\n  .order('created_at')",
+          "lang": "typescript"
+        },
+        {
+          "title": "Report a blocker",
+          "description": "Log an issue tied to a project or specific allocation.",
+          "note": null,
+          "code": "const { data } = await taimbox\n  .from('weekly_feedback')\n  .insert({\n    employee_id: employeeId,\n    week_start_date: '2026-03-02',\n    project_id: projectId,\n    allocation_id: allocationId,\n    reason: 'client_blocker',\n    comments: 'Waiting for client approval'\n  })\n  .select()\n  .single()",
+          "lang": "typescript"
+        },
+        {
+          "title": "Weekly close action",
+          "description": "weekly_action records what the employee chose at close: keep, postpone, distribute, transfer, justify, cancel, move.",
+          "note": "Executing the action (e.g. transfer) may require app flows; the feedback row is the audit trail.",
+          "code": "const { data } = await taimbox\n  .from('weekly_feedback')\n  .update({ weekly_action: 'postpone', comments: 'Move to next week' })\n  .eq('id', feedbackId)\n  .select()\n  .single()",
+          "lang": "typescript"
+        },
+        {
+          "title": "Export feedback for retros",
+          "description": "Aggregate by reason or project for ops dashboards.",
+          "note": null,
+          "code": "const { data } = await taimbox\n  .from('weekly_feedback')\n  .select('reason, weekly_action, project_id, comments')\n  .gte('week_start_date', '2026-02-01')\n  .lte('week_start_date', '2026-02-28')\n\nconst byReason = {}\ndata?.forEach(f => {\n  byReason[f.reason ?? 'other'] = (byReason[f.reason ?? 'other'] || 0) + 1\n})\nconsole.log('February issues:', byReason)",
+          "lang": "typescript"
+        }
       ]
     },
     "goals": {
@@ -505,10 +947,34 @@
       "nextLink": "editing locks",
       "nextSuffix": " used in collaborative planning.",
       "steps": [
-        { "title": "Read professional goals", "description": "Each employee can have goals with key_results, dates, and 0–100 progress.", "note": null, "code": "const { data: goals } = await taimbox\n  .from('professional_goals')\n  .select('id, title, key_results, progress, start_date, due_date')\n  .eq('employee_id', employeeId)\n  .order('due_date')", "lang": "typescript" },
-        { "title": "Create a goal", "description": "Import targets from people ops or an LMS.", "note": null, "code": "const { data } = await taimbox\n  .from('professional_goals')\n  .insert({\n    employee_id: employeeId,\n    title: 'Google Ads certification',\n    key_results: [{ title: 'Pass exam', done: false }],\n    start_date: '2026-01-01',\n    due_date: '2026-06-30',\n    progress: 0\n  })\n  .select()\n  .single()", "lang": "typescript" },
-        { "title": "Update progress", "description": "Sync advances from external reviews.", "note": null, "code": "const { data } = await taimbox\n  .from('professional_goals')\n  .update({ progress: 50 })\n  .eq('id', goalId)\n  .select()\n  .single()", "lang": "typescript" },
-        { "title": "Recurring routines (user_routines)", "description": "Daily standups, weekly reviews, etc. Optionally linked to project_id.", "note": null, "code": "const { data: routines } = await taimbox\n  .from('user_routines')\n  .select('id, title, estimated_minutes, project_id, is_active')\n  .eq('employee_id', employeeId)\n  .eq('is_active', true)\n\nconst { data: routine } = await taimbox\n  .from('user_routines')\n  .insert({\n    employee_id: employeeId,\n    title: 'Daily standup',\n    estimated_minutes: 15\n  })\n  .select()\n  .single()", "lang": "typescript" }
+        {
+          "title": "Read professional goals",
+          "description": "Each employee can have goals with key_results, dates, and 0–100 progress.",
+          "note": null,
+          "code": "const { data: goals } = await taimbox\n  .from('professional_goals')\n  .select('id, title, key_results, progress, start_date, due_date')\n  .eq('employee_id', employeeId)\n  .order('due_date')",
+          "lang": "typescript"
+        },
+        {
+          "title": "Create a goal",
+          "description": "Import targets from people ops or an LMS.",
+          "note": null,
+          "code": "const { data } = await taimbox\n  .from('professional_goals')\n  .insert({\n    employee_id: employeeId,\n    title: 'Google Ads certification',\n    key_results: [{ title: 'Pass exam', done: false }],\n    start_date: '2026-01-01',\n    due_date: '2026-06-30',\n    progress: 0\n  })\n  .select()\n  .single()",
+          "lang": "typescript"
+        },
+        {
+          "title": "Update progress",
+          "description": "Sync advances from external reviews.",
+          "note": null,
+          "code": "const { data } = await taimbox\n  .from('professional_goals')\n  .update({ progress: 50 })\n  .eq('id', goalId)\n  .select()\n  .single()",
+          "lang": "typescript"
+        },
+        {
+          "title": "Recurring routines (user_routines)",
+          "description": "Daily standups, weekly reviews, etc. Optionally linked to project_id.",
+          "note": null,
+          "code": "const { data: routines } = await taimbox\n  .from('user_routines')\n  .select('id, title, estimated_minutes, project_id, is_active')\n  .eq('employee_id', employeeId)\n  .eq('is_active', true)\n\nconst { data: routine } = await taimbox\n  .from('user_routines')\n  .insert({\n    employee_id: employeeId,\n    title: 'Daily standup',\n    estimated_minutes: 15\n  })\n  .select()\n  .single()",
+          "lang": "typescript"
+        }
       ]
     },
     "locks": {
@@ -519,9 +985,27 @@
       "doneLink": "resource reference",
       "doneSuffix": " for column details, sample responses, and RLS limits.",
       "steps": [
-        { "title": "Check active locks", "description": "A valid lock has expires_at in the future (expires after 5 minutes).", "note": null, "code": "const { data: locks } = await taimbox\n  .from('project_editing_locks')\n  .select('id, project_id, employee_id, month, locked_at, expires_at')\n  .eq('project_id', projectId)\n  .eq('month', '2026-03')\n  .gt('expires_at', new Date().toISOString())", "lang": "typescript" },
-        { "title": "Acquire a lock", "description": "Before editing deadlines or collaborative planning, the app creates a lock per project/month.", "note": "Server-to-server integrations usually only need reads; planning edits remain mainly in the app.", "code": "const { data: lock } = await taimbox\n  .from('project_editing_locks')\n  .insert({\n    project_id: projectId,\n    employee_id: employeeId,\n    month: '2026-03'\n  })\n  .select()\n  .single()", "lang": "typescript" },
-        { "title": "Release or wait for expiry", "description": "Delete the lock when done or let it expire on its own.", "note": "If you hit a conflict, another employee holds the active lock for that project_id + month.", "code": "await taimbox\n  .from('project_editing_locks')\n  .delete()\n  .eq('id', lockId)", "lang": "typescript" }
+        {
+          "title": "Check active locks",
+          "description": "A valid lock has expires_at in the future (expires after 5 minutes).",
+          "note": null,
+          "code": "const { data: locks } = await taimbox\n  .from('project_editing_locks')\n  .select('id, project_id, employee_id, month, locked_at, expires_at')\n  .eq('project_id', projectId)\n  .eq('month', '2026-03')\n  .gt('expires_at', new Date().toISOString())",
+          "lang": "typescript"
+        },
+        {
+          "title": "Acquire a lock",
+          "description": "Before editing deadlines or collaborative planning, the app creates a lock per project/month.",
+          "note": "Server-to-server integrations usually only need reads; planning edits remain mainly in the app.",
+          "code": "const { data: lock } = await taimbox\n  .from('project_editing_locks')\n  .insert({\n    project_id: projectId,\n    employee_id: employeeId,\n    month: '2026-03'\n  })\n  .select()\n  .single()",
+          "lang": "typescript"
+        },
+        {
+          "title": "Release or wait for expiry",
+          "description": "Delete the lock when done or let it expire on its own.",
+          "note": "If you hit a conflict, another employee holds the active lock for that project_id + month.",
+          "code": "await taimbox\n  .from('project_editing_locks')\n  .delete()\n  .eq('id', lockId)",
+          "lang": "typescript"
+        }
       ]
     }
   }

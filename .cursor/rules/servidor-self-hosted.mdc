@@ -1,0 +1,42 @@
+---
+description: >-
+  Acceso SSH, deploy en Pi, Supabase Docker, migraciones y MCP. Usar cuando el
+  usuario pida actualizar producción, aplicar SQL, Edge Functions o conectar al
+  servidor. Leer primero el runbook local gitignored si existe.
+globs:
+alwaysApply: false
+---
+
+# Servidor self-hosted (Taimbox)
+
+## Runbook local (prioritario)
+
+Si existe **[`.cursor/server-access.local.md`](../server-access.local.md)** en el workspace, **léelo primero**. Ese archivo es **gitignored** (no está en GitHub) y concentra host, puertos, rutas y comandos operativos.
+
+Si no existe (p. ej. Cloud Agent sin copia local), usa la documentación pública del repo:
+
+- [`docs/05-integraciones-automatizacion.md`](../../docs/05-integraciones-automatizacion.md) — Edge Functions, MCP, túnel SSH
+- [`docs/ops-backups-runbook.md`](../../docs/ops-backups-runbook.md) — backups
+- [`.cursor/rules/deploy-edge-functions.mdc`](deploy-edge-functions.mdc)
+- [`.cursor/rules/supabase-mcp-database.mdc`](supabase-mcp-database.mdc)
+
+## Reglas de seguridad
+
+- **Nunca** commitear contraseñas, tokens JWT, `service_role`, claves Stripe ni `.cursor/server-access.local.md`.
+- Migraciones DDL: preferir `supabase_admin` como owner de tablas en self-hosted.
+- `actualizar.sh` en el servidor hace `git reset --hard origin/main` — avisar si hay cambios locales en el Pi.
+
+## Comandos rápidos (sin secretos)
+
+```bash
+# Deploy SPA
+cd /home/alex/Timeboxing && ./actualizar.sh
+
+# Edge Functions
+cd /home/alex/Timeboxing && git pull && \
+rsync -a ./supabase/functions/ /home/alex/supabase-pi/supabase/docker/volumes/functions/ && \
+docker restart supabase-edge-functions
+
+# SQL (ejemplo)
+docker exec -i supabase-db psql -U supabase_admin -d postgres -v ON_ERROR_STOP=1 < migracion.sql
+```

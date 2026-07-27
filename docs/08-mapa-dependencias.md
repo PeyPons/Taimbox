@@ -47,6 +47,7 @@ Si modificas una interface, revisa estos consumidores:
 | `permissions.ts` → `ROUTE_PERMISSIONS` | `App.tsx` (guards), `PermissionProtectedRoute.tsx`, `Sidebar.tsx` |
 | `plans.ts` → `ROUTES_REQUIRE_PRO` / `ROUTES_REQUIRE_BUSINESS`, `PLAN_MODULES`, `PLAN_LIMITS` | `PlanGuard.tsx`, `useSubscriptionLimits.ts`, `Sidebar.tsx` (`canAccessRouteByPlan`), `OnboardingWizard`, `AgencyBillingTab`, `planExportBlocks.ts`, `plans.access.test.ts` |
 | `useSubscriptionLimits.ts` | `PlanGuard`, `TeamPage`, `SubscriptionSoftLockBanner`, `usePlanMonthNavigation`, páginas con tope de mes (planificador, finanzas, capacidad, deadlines, radar, clientes, dashboard empleado) |
+| `plannerMonthStorage.ts` / `useMonthNavigation.ts` | `PlannerMonthBanner`, planificador, previsión, capacidad, deadlines, radar, finanzas; evento `taimbox:planner-month-change` |
 | `usePlanMonthNavigation.ts` + `planHistoryUtils.ts` | Cualquier vista con navegación de mes que deba respetar histórico Free (2 meses) |
 | `planExportBlocks.ts` | `DataExportHubPage.tsx` (bloques básicos Team vs avanzados Agency+) |
 | `commonExpensesAllocation.ts` (`byPayroll` sin `getEmployeePayroll` usa pesos por horas; éxito con `unallocatedAmount` / `unallocatedEntries`; aviso 0 h si **alguna** línea es `byHours`) | `FinancialHealthPage.tsx` (coste cargado, banner si hay importe no imputado); `financialHealthExportCompute`; `CommonExpensesSettingsCard.tsx`; tests en `src/utils/__tests__/commonExpensesAllocation.test.ts` |
@@ -65,7 +66,7 @@ Si modificas una interface, revisa estos consumidores:
 | `timerReconcile.ts` / `timerDisplay.ts` | `useAllocationActions.ts`, planificador (`AllocationSheet`, `AllocationTaskRow`); solo completar + formato HH:MM |
 | `useWeeklyCloseMutations.ts` | `WeeklyReportDialog.tsx` (mutaciones de cierre Weekly / parcial; exporta `WEEKLY_SLOT_EXTRA_MONTHS`, reexporta `parseWeeklyCloseHours`, `normalizeWeeklyHourInput` desde `weeklyCloseShared.ts`; `applyRollover` → RPC `partial_close_rollover` + `logUpdate`/`logCreate` en `auditService` para no perder historial) |
 | `weeklyCloseShared.ts` | `useWeeklyCloseMutations.ts` (validación y parse de horas para posponer / completar) |
-| `useDeliverableLifecycle.ts` / `useDeliverableLifecycleBatch.ts` + [`useDeliverableLifecycleCore.ts`](../src/hooks/useDeliverableLifecycleCore.ts) | Fetch de allocations por rango de fase para métricas de ciclo de vida. **El `select` solo puede incluir columnas que existan en `allocations`** (no `agency_id`). Ver [14-ciclo-vida-entregables.md](14-ciclo-vida-entregables.md) § «Consultas Supabase». |
+| `useDeliverableLifecycle.ts` / `useDeliverableLifecycleBatch.ts` + [`useDeliverableLifecycleCore.ts`](../src/hooks/useDeliverableLifecycleCore.ts) | Fetch de allocations por rango de fase para métricas de ciclo de vida. Filtra por `allocations.agency_id`. Ver [14-ciclo-vida-entregables.md](14-ciclo-vida-entregables.md) § «Consultas Supabase». |
 
 ### 8.5 Dependencias de Componentes Complejos (Team)
 

@@ -38,12 +38,20 @@ import {
 } from '@/components/ui/select';
 import { Link } from 'react-router-dom';
 import { AppTrans, useAppTranslation } from '@/hooks/useAppTranslation';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  API_TOKEN_SCOPE_CATALOG,
+  API_TOKEN_SCOPE_LABELS,
+  type ApiTokenScope,
+  normalizeApiTokenScopes,
+} from '@/lib/apiTokenScopes';
 
 interface ApiToken {
   id: string;
   agency_id: string;
   name: string;
   permissions: 'readonly' | 'readwrite';
+  scopes?: string[] | null;
   is_active: boolean;
   last_used_at: string | null;
   created_at: string;
@@ -101,7 +109,9 @@ export default function ApiKeysPage() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newTokenName, setNewTokenName] = useState('');
   const [newTokenPermissions, setNewTokenPermissions] = useState<'readonly' | 'readwrite'>('readwrite');
+  const [newTokenScopes, setNewTokenScopes] = useState<ApiTokenScope[]>([...API_TOKEN_SCOPE_CATALOG]);
   const [newTokenExpiration, setNewTokenExpiration] = useState<string>('365d');
+  const lang = i18n.language.startsWith('en') ? 'en' : 'es';
 
   const [generatedToken, setGeneratedToken] = useState<string | null>(null);
   const [generatedTokenName, setGeneratedTokenName] = useState('');
@@ -116,7 +126,7 @@ export default function ApiKeysPage() {
       setLoading(true);
       const { data, error } = await supabase
         .from('api_tokens')
-        .select('id, agency_id, name, permissions, is_active, last_used_at, created_at, expires_at')
+        .select('id, agency_id, name, permissions, scopes, is_active, last_used_at, created_at, expires_at')
         .eq('agency_id', currentAgency.id)
         .order('created_at', { ascending: false });
       if (error) throw error;
@@ -142,11 +152,16 @@ export default function ApiKeysPage() {
         case '365d': expiresInDays = 365; break;
         default: expiresInDays = undefined;
       }
+      const scopes = normalizeApiTokenScopes(newTokenScopes);
+      if (scopes.length === 0) {
+        throw new Error(t('apiKeys.createDialog.scopesRequired', 'Selecciona al menos un recurso.'));
+      }
       const { data, error } = await supabase.functions.invoke('generate-api-token', {
         body: {
           agency_id: currentAgency.id,
           name: newTokenName.trim(),
           permissions: newTokenPermissions,
+          scopes,
           expires_in_days: expiresInDays,
         },
       });
@@ -156,6 +171,7 @@ export default function ApiKeysPage() {
       setShowCreateDialog(false);
       setNewTokenName('');
       setNewTokenPermissions('readwrite');
+      setNewTokenScopes([...API_TOKEN_SCOPE_CATALOG]);
       setNewTokenExpiration('never');
 
       setGeneratedToken(data.token);
@@ -331,6 +347,11 @@ export default function ApiKeysPage() {
                         <Badge variant="outline" className="text-xs">
                           {token.permissions === 'readonly' ? t('apiKeys.readonly') : t('apiKeys.readwrite')}
                         </Badge>
+                        {Array.isArray(token.scopes) && token.scopes.length > 0 && (
+                          <Badge variant="outline" className="text-xs text-slate-500">
+                            {t('apiKeys.scopesCount', '{{count}} recursos', { count: token.scopes.length })}
+                          </Badge>
+                        )}
                       </div>
                       <div className="flex items-center gap-4 text-xs text-slate-500 flex-wrap">
                         <span className="flex items-center gap-1">
@@ -346,6 +367,11 @@ export default function ApiKeysPage() {
                           <span className="text-slate-400">{t('apiKeys.noExpiration')}</span>
                         )}
                       </div>
+                      {Array.isArray(token.scopes) && token.scopes.length > 0 && (
+                        <p className="text-[11px] text-slate-400 mt-1 truncate" title={token.scopes.join(', ')}>
+                          {token.scopes.join(', ')}
+                        </p>
+                      )}
                     </div>
                     <Button
                       variant="ghost" size="sm"
@@ -447,7 +473,7 @@ export default function ApiKeysPage() {
 
       {/* Crear token */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{t('apiKeys.createDialog.title', 'Crear token API')}</DialogTitle>
             <DialogDescription>
@@ -476,6 +502,63 @@ export default function ApiKeysPage() {
               </Select>
             </div>
             <div className="space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <Label>{t('apiKeys.createDialog.scopesLabel', 'Recursos permitidos')}</Label>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => setNewTokenScopes([...API_TOKEN_SCOPE_CATALOG])}
+                  >
+                    {t('apiKeys.createDialog.scopesAll', 'Todos')}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => setNewTokenScopes([])}
+                  >
+                    {t('apiKeys.createDialog.scopesNone', 'Ninguno')}
+                  </Button>
+                </div>
+              </div>
+              <p className="text-xs text-slate-500">
+                {t(
+                  'apiKeys.createDialog.scopesHint',
+                  'Principio de mínimo privilegio: solo marca lo que la integración necesita. Blog, Ads, auditoría y tokens quedan siempre fuera.'
+                )}
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto rounded-md border p-3 bg-slate-50">
+                {API_TOKEN_SCOPE_CATALOG.map((scope) => {
+                  const checked = newTokenScopes.includes(scope);
+                  const label = API_TOKEN_SCOPE_LABELS[scope][lang];
+                  return (
+                    <label key={scope} className="flex items-start gap-2 text-sm cursor-pointer">
+                      <Checkbox
+                        checked={checked}
+                        onCheckedChange={(value) => {
+                          setNewTokenScopes((prev) => {
+                            if (value === true) {
+                              return normalizeApiTokenScopes([...prev, scope]);
+                            }
+                            return prev.filter((s) => s !== scope);
+                          });
+                        }}
+                        className="mt-0.5"
+                      />
+                      <span>
+                        <span className="font-medium text-slate-800">{label}</span>
+                        <span className="block font-mono text-[10px] text-slate-400">{scope}</span>
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="space-y-2">
               <Label>{t('apiKeys.expiration')}</Label>
               <Select value={newTokenExpiration} onValueChange={setNewTokenExpiration}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
@@ -490,7 +573,10 @@ export default function ApiKeysPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowCreateDialog(false)}>{t('apiKeys.createDialog.cancel', 'Cancel')}</Button>
-            <Button onClick={handleCreateToken} disabled={creating || !newTokenName.trim()}>
+            <Button
+              onClick={handleCreateToken}
+              disabled={creating || !newTokenName.trim() || newTokenScopes.length === 0}
+            >
               {creating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Key className="h-4 w-4 mr-2" />}
               {t('apiKeys.createDialog.generate', 'Generate token')}
             </Button>

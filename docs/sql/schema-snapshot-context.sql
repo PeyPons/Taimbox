@@ -73,6 +73,7 @@ CREATE TABLE public.agencies (
 );
 CREATE TABLE public.allocations (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
+  agency_id uuid NOT NULL,
   employee_id uuid NOT NULL,
   project_id uuid NOT NULL,
   week_start_date date NOT NULL,
@@ -93,6 +94,7 @@ CREATE TABLE public.allocations (
   is_locked boolean DEFAULT false,
   focus_date date,
   CONSTRAINT allocations_pkey PRIMARY KEY (id),
+  CONSTRAINT allocations_agency_id_fkey FOREIGN KEY (agency_id) REFERENCES public.agencies(id),
   CONSTRAINT allocations_dependency_id_fkey FOREIGN KEY (dependency_id) REFERENCES public.allocations(id),
   CONSTRAINT allocations_distribution_source_allocation_id_fkey FOREIGN KEY (distribution_source_allocation_id) REFERENCES public.allocations(id),
   CONSTRAINT allocations_employee_id_fkey FOREIGN KEY (employee_id) REFERENCES public.employees(id),

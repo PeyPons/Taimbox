@@ -2787,6 +2787,11 @@
       "hidden": "The rest of the data is hidden.",
       "clear": "Clear filter"
     },
+    "monthBanner": {
+      "viewing": "You are viewing",
+      "todayIs": "Today is",
+      "goCurrent": "Go to current month"
+    },
     "subscriptionBanner": {
       "exceeds": "Your agency exceeds {{planName}} limits ({{current}}/{{max}} people). Upgrade to {{upgradeOptions}} to plan again.",
       "viewPlans": "View plans"

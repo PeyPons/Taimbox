@@ -22,7 +22,7 @@ Si el código o una migración **contradice** el snapshot, **prevalece el códig
 
 ## 13.3. Planificador y tiempo
 
-- **`allocations`**: tareas semanales (horas, estado, transferencias, `focus_date`, `user_priority`, bloqueo). **No tiene `agency_id`**; la agencia se deduce por `employee_id` / `project_id` y RLS. Las queries PostgREST directas a `allocations` no deben pedir columnas ajenas a esta tabla (p. ej. un `select` con `agency_id` devuelve 400).
+- **`allocations`**: tareas semanales (horas, estado, transferencias, `focus_date`, `user_priority`, bloqueo). **Tiene `agency_id` NOT NULL** (denormalizado desde el empleado; trigger valida coherencia con `project_id`). Migración `20260726140000_allocations_agency_id.sql` (backfill sin DELETE). Las queries pueden filtrar `.eq('agency_id', …)`; en POST `agency_id` es opcional (lo rellena el trigger).
 - **`allocation_notes`**: anotaciones append-only por allocation (`body`, `author_employee_id`, `agency_id`, `source`). Distinto de `weekly_feedback.comments` (cierre semanal) y `time_entries.notes` (cronómetro). La columna legacy `allocations.description` ya no se escribe desde la app; datos migrados a notas con `source = legacy_description`. RPC `copy_allocation_notes` en rollover/transfer/distribución.
 - **`absences`**, **`team_events`**: capacidad y calendario.
 - **`time_entries`**, **`timer_sessions`**, **`active_timers`**: registro de tiempo y cronómetro (muchas tablas llevan `agency_id` para RLS directo).
@@ -37,7 +37,7 @@ Si el código o una migración **contradice** el snapshot, **prevalece el códig
 ## 13.5. Ads, API y plataforma
 
 - **`ad_accounts_config`**, **`ads_sync_logs`**, **`meta_sync_logs`**, **`google_ads_campaigns`**, **`meta_ads_campaigns`**, **`google_ads_changes`**, **`segmentation_rules`**.
-- **`api_tokens`**: tokens de integración por agencia.
+- **`api_tokens`**: tokens de integración por agencia (`permissions` readonly|readwrite, **`scopes` text[]** allowlist de recursos, hash, expiración). Metadatos listables por app; `token_hash` no expuesto a `authenticated`. Create/revoke vía Edge. Ver scopes en migración `20260726120000_api_token_scopes_restrictive_rls.sql` y `src/lib/apiTokenScopes.ts`.
 - **`notification_rules`**, **`notification_deliveries`**: reglas de avisos por email por agencia y registro/dedupe de envíos (ver `docs/05`, Edge `notify-task-transfer`, `process-event-notifications`, `process-notification-rules`).
 - **`audit_logs`**: auditoría (usuario, agencia, recurso); se elimina al purgar la agencia. Escrita solo desde el frontend (`src/services/auditService.ts`), no por triggers. Desde `20260714200000_audit_logs_indexes_retention.sql`: los UPDATE guardan en `details` un **diff compacto** (`changed` + mini-snapshot `context`) en lugar de duplicar el objeto completo (`previousValue`/`newValue`, formato legado que el historial sigue sabiendo leer); índices `(agency_id, resource, created_at DESC)` y `(resource_id)`; **retención 12 meses** vía `public.purge_old_audit_logs()` + job pg_cron diario `purge_old_audit_logs_daily` (03:10). No bajar la retención sin revisar `ActivityLogSection` (navega meses pasados y traza linaje sin filtro de fecha).
 - **`platform_audit_logs`**: auditoría **a nivel plataforma** (sin `agency_id`); sobrevive al purge. Evento típico `agency_purged` con payload (slug, conteos, `had_stripe_subscription`, `by_user_id`). RLS: solo `platform_admins` pueden `SELECT`; inserción desde RPC `admin_delete_agency` (SECURITY DEFINER). Migración `20260503120000_platform_audit_logs.sql`.

@@ -15,6 +15,7 @@ export const TOC_GROUPS: TocGroup[] = [
       { id: 'intro', labelKey: 'toc.items.intro' },
       { id: 'auth', labelKey: 'toc.items.auth' },
       { id: 'base-url', labelKey: 'toc.items.baseUrl' },
+      { id: 'weeks-months', labelKey: 'toc.items.weeksMonths' },
       { id: 'responses', labelKey: 'toc.items.responses' },
       { id: 'rls-limits', labelKey: 'toc.items.rlsLimits' },
       { id: 'changelog', labelKey: 'toc.items.changelog' },

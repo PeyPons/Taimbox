@@ -31,10 +31,13 @@ Antes de modificar cualquier archivo crítico, usa este checklist:
 - [ ] ¿Filtré eventos por `agency_id` o contexto (ej. `project_id` en lista de proyectos de la agencia) para evitar fugas de datos?
 
 ### Al modificar políticas RLS o tokens API:
-- [ ] ¿La función `requesting_agency_id()` sigue devolviendo el `agency_id` correcto para ambos escenarios (usuario normal y API token)?
-- [ ] ¿Las edge functions `generate-api-token` y `revoke-api-token` verifican permisos del caller (`can_access_api_keys` o `can_access_agency_settings`)?
+- [ ] ¿`user_agency_ids()` / `can_write_via_api()` / `api_scope_allows()` siguen correctos para app y JWT `iss=timeboxing-api`?
+- [ ] ¿Tablas nuevas fuera de la allowlist tienen política **RESTRICTIVE** `api_block_*` (o están denegadas al issuer API)?
+- [ ] ¿Tablas nuevas de integración están en `api_default_scopes()` + `src/lib/apiTokenScopes.ts` + api-docs + OpenAPI?
+- [ ] ¿Las edge functions `generate-api-token` y `revoke-api-token` verifican `can_access_api_keys` (o `can_access_agency_settings`)?
 - [ ] ¿La nueva tabla tiene política RLS? Si no, el acceso será denegado por defecto (RLS habilitado sin policy).
 - [ ] ¿El `service_role` key sigue funcionando? (Bypasea RLS, no necesita policy).
+- [ ] ¿Documentaste `week_start_date` / split weeks si tocas allocations vía API?
 
 ### Al cargar o modificar deadlines:
 - [ ] ¿Uso `fetchDeadlinesForMonth(monthKey, currentAgency?.id)` o `useDeadlines({ agencyId: currentAgency?.id })` para no mezclar datos entre agencias en el mismo Supabase?

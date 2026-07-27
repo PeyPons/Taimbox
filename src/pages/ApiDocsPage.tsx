@@ -14,6 +14,7 @@ import { getAllSectionIds } from './api-docs/data/toc';
 import { OverviewIntro } from './api-docs/sections/OverviewIntro';
 import { OverviewAuth } from './api-docs/sections/OverviewAuth';
 import { OverviewBaseUrl } from './api-docs/sections/OverviewBaseUrl';
+import { OverviewWeeks } from './api-docs/sections/OverviewWeeks';
 import { OverviewResponses } from './api-docs/sections/OverviewResponses';
 import { OverviewRls } from './api-docs/sections/OverviewRls';
 import { OverviewChangelog } from './api-docs/sections/OverviewChangelog';
@@ -284,6 +285,7 @@ export default function ApiDocsPage() {
             <OverviewIntro />
             <OverviewAuth />
             <OverviewBaseUrl />
+            <OverviewWeeks />
             <OverviewResponses />
             <OverviewRls />
             <OverviewChangelog />

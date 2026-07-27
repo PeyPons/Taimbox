@@ -143,18 +143,18 @@ export function LandingHeader({ variant = "dark" }: LandingHeaderProps) {
       </header>
       <div className={spacerH} />
 
+      {/* Overlay + panel: fondo opaco y scroll interno para no cortar el último ítem */}
       <div
         className={cn(
-          `${navBp}:hidden fixed inset-x-0 z-40 transition-all duration-300`,
+          `${navBp}:hidden fixed inset-x-0 bottom-0 z-40 flex flex-col transition-all duration-300`,
           topOffset,
           mobileOpen ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 -translate-y-4 pointer-events-none",
         )}
       >
         <div
           className={cn(
-            "fixed inset-x-0 backdrop-blur-sm transition-opacity duration-300",
-            topOffset,
-            light ? "bg-slate-900/30" : "bg-black/60",
+            "absolute inset-0 transition-opacity duration-300",
+            light ? "bg-slate-900/45 backdrop-blur-md" : "bg-black/75 backdrop-blur-md",
             mobileOpen ? "opacity-100" : "opacity-0",
           )}
           onClick={() => setMobileOpen(false)}
@@ -163,13 +163,14 @@ export function LandingHeader({ variant = "dark" }: LandingHeaderProps) {
 
         <div
           className={cn(
-            "relative mx-3 mt-2 max-h-[78vh] overflow-y-auto overflow-hidden rounded-2xl border backdrop-blur-2xl",
+            "relative z-10 mx-3 mt-2 mb-[max(0.75rem,env(safe-area-inset-bottom))] flex min-h-0 flex-col overflow-hidden rounded-2xl border",
+            "max-h-[min(82dvh,calc(100dvh-4.5rem))]",
             light
-              ? "border-slate-200/70 bg-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.7),0_30px_80px_-20px_rgba(15,23,42,0.2),0_18px_48px_-22px_rgba(15,23,42,0.15)]"
-              : "border-white/15 bg-slate-900/98 shadow-2xl shadow-black/50 max-h-[70vh]",
+              ? "border-slate-200 bg-white shadow-[0_30px_80px_-20px_rgba(15,23,42,0.28),0_18px_48px_-22px_rgba(15,23,42,0.18)]"
+              : "border-white/20 bg-slate-950 shadow-2xl shadow-black/60",
           )}
         >
-          <div className={cn("px-4 py-3.5 flex flex-wrap gap-2 border-b", light ? "border-slate-100" : "border-white/10")}>
+          <div className={cn("shrink-0 px-4 py-3.5 flex flex-wrap gap-2 border-b", light ? "border-slate-100" : "border-white/10")}>
             {(["/precios", "/guia", "/api-docs", "/contacto"] as const).map((path) => (
               <Link
                 key={path}
@@ -178,8 +179,8 @@ export function LandingHeader({ variant = "dark" }: LandingHeaderProps) {
                 className={cn(
                   "flex-1 min-w-[80px] rounded-xl py-2 text-center text-[13px] font-medium transition-colors",
                   light
-                    ? "border border-slate-200/60 bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900"
-                    : "rounded-lg border border-white/10 bg-white/5 text-indigo-200 hover:text-white",
+                    ? "border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+                    : "border border-white/15 bg-white/10 text-indigo-100 hover:bg-white/15 hover:text-white",
                 )}
               >
                 {path === "/precios" && t("header.pricing")}
@@ -190,10 +191,10 @@ export function LandingHeader({ variant = "dark" }: LandingHeaderProps) {
             ))}
           </div>
 
-          <div className="px-3 py-3">
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-3 pb-4">
             <div className="mb-2 flex items-center gap-2 px-2">
               <span className={cn("h-1 w-1 rounded-full", light ? "bg-violet-500" : "bg-indigo-400")} />
-              <p className={cn("text-[10px] font-semibold uppercase tracking-[0.18em]", light ? "text-slate-500" : "text-indigo-300/80")}>
+              <p className={cn("text-[10px] font-semibold uppercase tracking-[0.18em]", light ? "text-slate-500" : "text-indigo-300")}>
                 {t("header.featuresTrigger")}
               </p>
             </div>
@@ -206,7 +207,10 @@ export function LandingHeader({ variant = "dark" }: LandingHeaderProps) {
                     key={feature.hrefEs}
                     to={href}
                     onClick={() => setMobileOpen(false)}
-                    className={cn("flex items-center gap-3 rounded-xl p-2.5 transition-colors", light ? "hover:bg-slate-50" : "hover:bg-white/5")}
+                    className={cn(
+                      "flex items-center gap-3 rounded-xl p-2.5 transition-colors",
+                      light ? "hover:bg-slate-50" : "hover:bg-white/10",
+                    )}
                   >
                     <div
                       className={cn(
@@ -220,9 +224,11 @@ export function LandingHeader({ variant = "dark" }: LandingHeaderProps) {
                       <p className={cn("truncate text-sm font-medium", light ? "text-slate-900" : "text-white")}>
                         {t(`mobileFeatures.${feature.id}.title`)}
                       </p>
-                      <p className={cn("text-[10px]", light ? "text-slate-500" : "text-white/50")}>{t(`mobileFeatures.${feature.id}.badge`)}</p>
+                      <p className={cn("text-[10px]", light ? "text-slate-500" : "text-indigo-200/70")}>
+                        {t(`mobileFeatures.${feature.id}.badge`)}
+                      </p>
                     </div>
-                    <ArrowRight className={cn("h-3.5 w-3.5", light ? "text-slate-400" : "text-slate-500")} />
+                    <ArrowRight className={cn("h-3.5 w-3.5 shrink-0", light ? "text-slate-400" : "text-indigo-300/70")} />
                   </Link>
                 );
               })}
@@ -230,7 +236,7 @@ export function LandingHeader({ variant = "dark" }: LandingHeaderProps) {
           </div>
 
           {light && (
-            <div className="flex items-center justify-between border-t border-slate-100 px-4 py-3">
+            <div className="flex shrink-0 items-center justify-between border-t border-slate-100 px-4 py-3">
               <span className="text-[11px] font-mono uppercase tracking-[0.18em] text-slate-400">Idioma</span>
               <LanguageSelector surface="light" />
             </div>
