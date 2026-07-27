@@ -5,6 +5,7 @@ import {
     getBearerToken,
 } from '../_shared/agency-access.ts'
 import { resolveOAuthRedirectUri } from '../_shared/oauth-redirect.ts'
+import { assertPlanIncludesAds } from '../_shared/plan-entitlements.ts'
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -75,6 +76,9 @@ Deno.serve(async (req) => {
             agencyId: agency_id,
             permission: 'can_access_agency_settings',
         })
+
+        // Conectar Ads requiere un plan con módulo PPC
+        await assertPlanIncludesAds(supabase, agency_id)
 
         const finalRedirectUri = resolveOAuthRedirectUri(
             'google',

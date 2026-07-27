@@ -7,6 +7,7 @@ import {
   assertCanInviteToAgency,
   getBearerToken,
 } from "../_shared/auth-user-access.ts"
+import { assertManagedUserCapacity } from "../_shared/plan-entitlements.ts"
 import { parseEmail, parseOptionalPassword } from "../_shared/input-limits.ts"
 
 const corsHeaders = {
@@ -61,6 +62,9 @@ serve(async (req) => {
     const name = typeof body.name === 'string' ? body.name.trim() : cleanEmail
 
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
+
+    // Cupo de personas gestionadas del plan (mismo criterio que el frontend)
+    await assertManagedUserCapacity(supabaseAdmin, agencyId)
 
     const { data: existingEmployee } = await supabaseAdmin
       .from('employees')

@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
+import { effectivePlanIdFromRow, planIncludesApi } from "../_shared/plan-entitlements.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -161,7 +162,7 @@ serve(async (req) => {
 
     const { data: agency, error: agencyError } = await supabaseAdmin
       .from('agencies')
-      .select('settings')
+      .select('settings, plan_id, subscription_status, trial_ends_at')
       .eq('id', agency_id)
       .single()
 
@@ -169,6 +170,14 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ error: 'Agencia no encontrada.' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 404 }
+      )
+    }
+
+    const effectivePlan = effectivePlanIdFromRow(agency)
+    if (!planIncludesApi(effectivePlan)) {
+      return new Response(
+        JSON.stringify({ error: 'Tu plan no incluye acceso a la API. Disponible desde el plan Agency.' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
       )
     }
 

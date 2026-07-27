@@ -7,6 +7,7 @@ import {
   assertCanInviteToAgency,
   getBearerToken,
 } from "../_shared/auth-user-access.ts"
+import { assertManagedUserCapacity } from "../_shared/plan-entitlements.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -221,6 +222,9 @@ serve(async (req) => {
           throw new Error('No se encontró el empleado para crear copia')
         }
 
+        // Cupo de personas gestionadas del plan (solo cuando se añade un empleado nuevo)
+        await assertManagedUserCapacity(supabaseAdmin, agencyId)
+
         // Crear un NUEVO empleado para esta agencia
         // Con la nueva restricción única compuesta (email, agency_id), esto funcionará
         // incluso si el email ya existe en otra agencia
@@ -258,6 +262,9 @@ serve(async (req) => {
       }
     } else {
       // Usuario no existe, crear nuevo empleado
+      // Cupo de personas gestionadas del plan antes de crear Auth + empleado
+      await assertManagedUserCapacity(supabaseAdmin, agencyId)
+
       // Primero crear usuario en Auth
       const tempPassword = Math.random().toString(36).slice(-12) + 'A1!'
 
