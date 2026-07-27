@@ -9,6 +9,7 @@ Este módulo describe el **comportamiento actual del código** (junio 2026). Si 
 - `src/hooks/usePlanMonthNavigation.ts` — tope de meses en vistas con calendario
 - `src/components/auth/PlanGuard.tsx` — bloqueo de rutas por plan
 - Edge: `register-agency`, `create-checkout-session`, `stripe-webhook`, `expire-trials`, `_shared/sync-agency-modules.ts`, `scheduled-ads-sync`
+- Edge (enforcement, julio 2026): `_shared/plan-entitlements.ts` — plan efectivo (trial vencido → Free), cupo de personas gestionadas y gates de API/PPC aplicados en servidor: `generate-api-token` (API Agency+), `create-user` e `invite-user-to-agency` (cupo por plan, mismo criterio que `src/utils/managedUsers.ts`), `sync-google-ads`/`sync-meta-ads` (sync manual solo planes con PPC) y `oauth-google-ads`/`oauth-meta` (conectar Ads solo planes con PPC)
 
 Copy de marketing: `src/locales/{es,en}/landing.json` → `pricing.plans.*` (home y `/precios` leen el mismo bloque).
 
@@ -192,7 +193,7 @@ Resumen:
 2. `src/config/planExportBlocks.ts` (si cambian exports)
 3. `src/config/publicPricing.ts` + layout + Stripe price IDs
 4. `src/locales/*/landing.json` (`pricing.plans`)
-5. Edge `sync-agency-modules.ts` (mantener alineado con `PLAN_MODULES`)
+5. Edge `sync-agency-modules.ts` (mantener alineado con `PLAN_MODULES`) y `_shared/plan-entitlements.ts` (mantener alineado con `PLAN_LIMITS`)
 6. Migración SQL si nuevos `plan_id` o columnas
 7. Este documento y [DOCUMENTACION.md](../DOCUMENTACION.md)
 

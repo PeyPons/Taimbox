@@ -6,6 +6,7 @@ import {
     getBearerToken,
 } from '../_shared/agency-access.ts'
 import { completeAdsSyncLog } from '../_shared/complete-ads-sync-log.ts'
+import { assertPlanIncludesAds } from '../_shared/plan-entitlements.ts'
 
 // Configuración de CORS
 const corsHeaders = {
@@ -67,6 +68,8 @@ Deno.serve(async (req) => {
                     agencyId: agency_id,
                     permission: 'can_access_google_ads',
                 })
+                // El sync manual exige que el plan efectivo incluya PPC (igual que el cron)
+                await assertPlanIncludesAds(supabase, agency_id)
             }
         }
         const logId = job_id || `edge-${Date.now()}`;
