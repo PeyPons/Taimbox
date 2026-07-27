@@ -238,19 +238,14 @@ export default function PrivacyPolicyPage() {
                                 </thead>
                                 <tbody className="text-slate-400">
                                     <tr className="border-b border-slate-800/50">
-                                        <td className="py-2 pr-4 font-medium text-slate-300">Amazon Web Services (AWS)</td>
-                                        <td className="py-2 pr-4">{t(`${S}.sections.subprocessors.table.awsFunction`)}</td>
-                                        <td className="py-2">{t(`${S}.sections.subprocessors.table.locationFrankfurt`)}</td>
-                                    </tr>
-                                    <tr className="border-b border-slate-800/50">
-                                        <td className="py-2 pr-4 font-medium text-slate-300">Supabase</td>
-                                        <td className="py-2 pr-4">{t(`${S}.sections.subprocessors.table.supabaseFunction`)}</td>
-                                        <td className="py-2">{t(`${S}.sections.subprocessors.table.locationUE`)}</td>
-                                    </tr>
-                                    <tr className="border-b border-slate-800/50">
                                         <td className="py-2 pr-4 font-medium text-slate-300">Stripe</td>
                                         <td className="py-2 pr-4">{t(`${S}.sections.subprocessors.table.stripeFunction`)}</td>
                                         <td className="py-2">{t(`${S}.sections.subprocessors.table.locationStripe`)}</td>
+                                    </tr>
+                                    <tr className="border-b border-slate-800/50">
+                                        <td className="py-2 pr-4 font-medium text-slate-300">Resend</td>
+                                        <td className="py-2 pr-4">{t(`${S}.sections.subprocessors.table.resendFunction`)}</td>
+                                        <td className="py-2">{t(`${S}.sections.subprocessors.table.locationResend`)}</td>
                                     </tr>
                                     <tr className="border-b border-slate-800/50">
                                         <td className="py-2 pr-4 font-medium text-slate-300">Google (API Ads)</td>

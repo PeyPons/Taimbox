@@ -5,7 +5,7 @@
     "titleLine2": "Si no encaja, te ayudamos a salir.",
     "ctaPrimary": "Empezar gratis",
     "ctaSecondary": "Qué cuesta no medir (3 min)",
-    "trust1": "14 días Business gratis",
+    "trust1": "14 días Agency gratis",
     "trust2": "Sin tarjeta de crédito",
     "trust3": "Export en cualquier momento"
   },
@@ -34,7 +34,7 @@
       {
         "step": "03 · Rentabilidad por proyecto",
         "heading": "Coste, ingreso, margen y euros por hora, con el detalle visible",
-        "body": "Cuatro cifras encadenadas — coste del equipo, ingreso del periodo, margen y precio por hora — con la misma lógica que en la app. Ves de dónde sale cada número, no solo el total. Mes en curso o cerrado; exportas a Excel, CSV o API si lo necesitas."
+        "body": "Cuatro cifras encadenadas — coste del equipo, ingreso del periodo, margen y precio por hora — con la misma lógica que en la app. Ves de dónde sale cada número, no solo el total. Mes en curso o cerrado; exportas a CSV, JSON o vía API si lo necesitas."
       }
     ],
     "visual1": {
@@ -302,7 +302,7 @@
         "bullets": [
           "F1 a F4 y EHR sin caja negra",
           "Ingreso devengado al céntimo, por proyecto y por agencia",
-          "Exporta a Excel, CSV, JSON o conéctalo por API"
+          "Exporta a CSV o JSON, o conéctalo por API"
         ],
         "linkText": "Ver rentabilidad",
         "linkHref": "/reportes-rentabilidad"
@@ -387,7 +387,7 @@
       },
       {
         "title": "Exports",
-        "desc": "Excel, CSV y JSON. Tus datos siempre tuyos, en tu modelo."
+        "desc": "CSV y JSON. Tus datos siempre tuyos, en tu modelo."
       }
     ],
     "ppcKicker": "Monitor PPC en vivo",
@@ -530,7 +530,7 @@
         "bullets": [
           "Ingreso devengado y pacing por proyecto, al día",
           "F1 a F4 y precio hora sin caja negra",
-          "Vista de agencia y export a Excel, CSV, JSON o API"
+          "Vista de agencia y export a CSV, JSON o API"
         ]
       },
       {

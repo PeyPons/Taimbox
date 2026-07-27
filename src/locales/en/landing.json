@@ -47,7 +47,7 @@
       "ppc": {
         "title": "Budget monitor",
         "description": "Control client ad spend",
-        "badge": "Business plan"
+        "badge": "Agency plan"
       },
       "security": {
         "title": "Security & privacy",
@@ -83,7 +83,7 @@
     },
     "ppc": {
       "title": "Budget monitor",
-      "badge": "Business plan"
+      "badge": "Agency plan"
     },
     "security": {
       "title": "Security",
@@ -116,7 +116,7 @@
     "ctaButton": "Create my account",
     "ctaTrial": "Free trial. No credit card required.",
     "ctaPitchLead": "Worried about price?",
-    "ctaPitch": "See how you can recover the investment in month one",
+    "ctaPitch": "Estimate your return with our ROI presentation",
     "copyright": "© {{year}} Taimbox. All rights reserved.",
     "privacy": "Privacy",
     "terms": "Terms",
@@ -169,7 +169,7 @@
     "integrationsCards": [
       {
         "title": "Export",
-        "description": "PDF reports. Historical data and integration via REST API."
+        "description": "CSV and JSON reports. Historical data and integration via REST API."
       },
       {
         "title": "Connect",
@@ -177,7 +177,7 @@
       },
       {
         "title": "Sync",
-        "description": "Connect with external calendars in real time."
+        "description": "Real-time collaboration: changes sync instantly across your whole team."
       }
     ],
     "featuresCarousel": [
@@ -193,8 +193,8 @@
           "Assistant suggests who can take load (name + shared projects)"
         ],
         "example": "María is at 120% this week. The assistant spots who’s overloaded and suggests by name who could take work, using shared projects. Redistribution in seconds.",
-        "stat": "+40%",
-        "statLabel": "team visibility",
+        "stat": "1 click",
+        "statLabel": "to reassign load",
         "landingUrl": "/planificador-recursos"
       },
       {
@@ -226,8 +226,8 @@
           "Deviation alerts"
         ],
         "example": "The team’s load is uneven. The system finds who can give hours and who can take them — only among people on shared projects — and shows impact before you decide.",
-        "stat": "85%",
-        "statLabel": "deadline adherence",
+        "stat": "Live",
+        "statLabel": "planned vs. actual",
         "landingUrl": "/control-proyectos"
       },
       {
@@ -290,8 +290,8 @@
           "Blocking notices"
         ],
         "example": "You see the project at 60% and the month moving. Indicators nudge you to act before close.",
-        "stat": "60%",
-        "statLabel": "issues caught early",
+        "stat": "Instant",
+        "statLabel": "overloads and deviations on screen",
         "landingUrl": "/dashboard-empleado"
       },
       {
@@ -307,8 +307,8 @@
           "API integration"
         ],
         "example": "Mid-month you see accrued revenue and pacing: if a project is ahead of time elapsed, red alert. If 100% of hours are used, full fee.",
-        "stat": "+78%",
-        "statLabel": "estimate accuracy",
+        "stat": "To the cent",
+        "statLabel": "accrued revenue and costs",
         "landingUrl": "/reportes-rentabilidad"
       }
     ],
@@ -323,7 +323,7 @@
       },
       {
         "question": "Is my data secure?",
-        "answer": "Yes. We use strong encryption in transit and at rest, comply with GDPR and international security standards, and you stay in control — export or delete your data anytime."
+        "answer": "Yes. Your data travels encrypted (TLS) and is stored encrypted at rest, with per-agency isolation at the database level (Row Level Security). We comply with GDPR: you stay in control and can request an export or deletion of your data anytime."
       },
       {
         "question": "Can I integrate with other tools?",
@@ -334,15 +334,15 @@
       },
       {
         "question": "How long does implementation take?",
-        "answer": "You can use it from day one. Add your team and projects immediately. The learning curve is small thanks to the intuitive UI. Most teams are fully up and running in under a week."
+        "answer": "You can use it from day one. Add your team and projects immediately. The learning curve is small thanks to the intuitive UI and the step-by-step guide."
       },
       {
         "question": "Is there technical support?",
-        "answer": "Yes — full technical support. Reach us by email and we’ll help with any question or issue. We also provide complete docs, tutorials, and an active community to share experiences."
+        "answer": "Yes — full technical support. Reach us by email and we’ll help with any question or issue. We also provide complete docs and tutorials where you can find answers."
       },
       {
         "question": "Where is my data stored?",
-        "answer": "Data lives on secure servers in certified data centers. We use enterprise-grade cloud infrastructure with high availability, automatic backups, and physical protection. Everything is encrypted with multiple security layers."
+        "answer": "Your data lives on infrastructure located in the European Union, under our operational control, with daily backups and encryption in transit and at rest. We publish our actual practices and recovery objectives on the Security page."
       },
       {
         "question": "Who can access my data?",
@@ -390,13 +390,13 @@
     "securitySubtitle": "We meet the highest security standards",
     "securityBadgeTls": "TLS/SSL",
     "securityBadgeGdpr": "GDPR",
-    "securityBadge247": "24/7",
+    "securityBadge247": "Daily backups",
     "securityCardEncryptionTitle": "Encryption",
     "securityCardEncryptionDesc": "Data encrypted in transit and at rest with enterprise-grade algorithms",
     "securityCardPrivacyTitle": "Privacy",
     "securityCardPrivacyDesc": "Full control over your data. Export and delete whenever you want.",
     "securityCardInfraTitle": "Infrastructure",
-    "securityCardInfraDesc": "Certified servers, daily backups, and continuous monitoring",
+    "securityCardInfraDesc": "EU-based infrastructure, daily backups, and continuous monitoring",
     "securityButton": "View demo",
     "audienceTitle": "For teams that value their time",
     "audienceBadges": [
@@ -444,14 +444,14 @@
   },
   "pricing": {
     "seoTitle": "Pricing & plans | Taimbox",
-    "seoDescription": "Starter, Pro, Business, and Enterprise plans with Taimbox. Operational, financial, and time management for agencies of every size.",
+    "seoDescription": "Free, Team, Agency, Scale, and Enterprise plans with Taimbox. Operational, financial, and time management for agencies of every size.",
     "heroKicker": "For agencies and creative teams",
     "heroLine1": "Pricing built to scale with your",
     "heroHighlight": "profitability",
     "earlyAdopter": "Early adopter pricing — 50% off for life",
     "heroSub": "Start free. Upgrade when you need more financial intelligence, advanced reporting, or complex integrations.",
     "pill1": "Free plan available",
-    "pill2": "14-day trial (Business)",
+    "pill2": "14-day trial (Agency)",
     "pill3": "No lock-in",
     "recommended": "Recommended",
     "earlyTariff": "Early adopter rate · for life",
@@ -460,18 +460,18 @@
     "currencyBillingEur": "Indicative amounts in EUR. Your subscription is billed in USD.",
     "currencyBillingConverted": "Indicative amounts in {{currency}}. Your subscription is billed in USD.",
     "enterpriseTitle": "More than 100 people or enterprise requirements?",
-    "enterpriseSub": "Unlimited people · SLA · SSO · DPA · Custom billing & hosting",
+    "enterpriseSub": "Unlimited people · SLA · DPA · Custom billing & hosting",
     "enterpriseCta": "Talk to sales",
     "enterpriseMailSubject": "Enterprise plan",
     "includedTitle": "Everything you need",
     "includedH2": "Included in every plan",
-    "includedSub": "Whether you’re on Starter or Business, Taimbox always includes robust, premium foundations.",
+    "includedSub": "Whether you’re on Free or Agency, Taimbox always includes robust, premium foundations.",
     "faqKicker": "FAQ",
     "faqH2": "Plans & billing",
     "finalH2": "Ready to take control of your agency?",
     "finalSub": "Create your account in under a minute. No payment method required to sign up and use Starter freely.",
     "finalStat1Label": "to start operating",
-    "finalStat2Label": "day Business trial",
+    "finalStat2Label": "day Agency trial",
     "finalStat3Label": "to invite the team",
     "finalCta": "Start free",
     "finalLogin": "Already have an account?",
@@ -533,7 +533,7 @@
       },
       "enterprise": {
         "period": "",
-        "description": "100+ people, holdings, or SLA/SSO/DPA and dedicated hosting.",
+        "description": "100+ people, holdings, or SLA/DPA and dedicated hosting.",
         "cta": "Talk to sales",
         "customPrice": "Custom",
         "features": [
@@ -541,7 +541,7 @@
           "SLA and dedicated support",
           "Custom integrations",
           "Custom billing",
-          "Single Sign-On",
+          "Custom access options",
           "Assigned technical account"
         ]
       }
@@ -565,7 +565,7 @@
       },
       {
         "title": "Security & privacy",
-        "desc": "Robust cloud infrastructure and data isolation per agency."
+        "desc": "EU-based infrastructure and per-agency data isolation (RLS)."
       },
       {
         "title": "Granular permissions",
@@ -574,7 +574,7 @@
     ],
     "trust": [
       {
-        "text": "14-day Business trial",
+        "text": "14-day Agency trial",
         "sub": "Free until you decide"
       },
       {
@@ -596,7 +596,7 @@
         "a": "You’ll get a warning and your agency enters read-only mode until you upgrade or adjust active employees. We never delete your data."
       },
       {
-        "q": "What if we have more than 50 employees?",
+        "q": "What if we have more than 100 employees?",
         "a": "We offer unlimited Enterprise plans with dedicated support. Contact us via in-app chat or hello@taimbox.com."
       },
       {
@@ -604,12 +604,12 @@
         "a": "Yes. If you subscribe now, your rate is locked for life even if prices rise to 99 $/249 $ later."
       },
       {
-        "q": "Does the Business trial require a card?",
-        "a": "Sign-up includes 14 days on the Agency (Business) plan with no card. Stripe checkout later may require a payment method depending on the plan; one trial per agency. When it ends without a paid plan, you move to Free and keep your data."
+        "q": "Does the Agency trial require a card?",
+        "a": "Sign-up includes 14 days on the Agency plan with no card. Stripe checkout later may require a payment method depending on the plan; one trial per agency. When it ends without a paid plan, you move to Free and keep your data."
       },
       {
         "q": "Are there annual discounts?",
-        "a": "For now we offer flexible monthly billing. If you exceed ~100 managed users or need SLA, SSO, or special invoicing, contact sales (Enterprise plan)."
+        "a": "For now we offer flexible monthly billing. If you exceed ~100 managed users or need an SLA or special invoicing, contact sales (Enterprise plan)."
       }
     ]
   },
@@ -677,9 +677,9 @@
     "scaleTitle": "Built to scale (developer-first)",
     "scaleP": "We aren’t a “low-code” tool built with patches. We are software engineering infrastructure designed for companies that take their data seriously.",
     "apiTitle": "Open and documented API",
-    "apiDesc": "Have your own ERP or CRM? Connect our RESTful API in minutes. We deliver already processed data (hours_computed), saving you hundreds of hours of mathematical engineering. <1>Full documentation →</1>",
-    "securityTitle": "Bank-grade security (RLS)",
-    "securityDesc": "Your data is isolated at the database level using Row Level Security. It is mathematically impossible for another agency to access your information.",
+    "apiDesc": "Have your own ERP or CRM? Connect our RESTful API in minutes. We deliver already processed data (hours_computed), so you don't have to reimplement the calculations. <1>Full documentation →</1>",
+    "securityTitle": "Per-agency isolation (RLS)",
+    "securityDesc": "Your data is isolated at the database level using Row Level Security: the engine itself rejects any access from another agency.",
     "tokensTitle": "Cryptographic tokens",
     "tokensDesc": "Our own authentication system with HMAC SHA-256 signatures.",
     "apiPreview1": "Get profitability per project (Step 2 of the reports tutorial)",
@@ -1134,26 +1134,24 @@
         },
         "subprocessors": {
           "title": "6. Data Sub-processors",
-          "intro": "To offer a secure and scalable service, we rely on the following providers (sub-processors):",
+          "intro": "The application and database are hosted on our own infrastructure located in the European Union, under our operational control. For specific functions we rely on the following providers (sub-processors):",
           "table": {
             "vendor": "Provider",
             "function": "Function",
             "location": "Location",
-            "awsFunction": "Application infrastructure (EU)",
-            "supabaseFunction": "Database and authentication",
             "stripeFunction": "Payment processing",
+            "resendFunction": "Transactional email delivery",
             "googleFunction": "Campaign sync (read-only)",
             "metaFunction": "Campaign sync (read-only)",
-            "locationFrankfurt": "Frankfurt, EU",
-            "locationUE": "EU (AWS Frankfurt)",
             "locationStripe": "EU / USA (PCI-DSS L1)",
+            "locationResend": "EU / USA (Standard Contractual Clauses)",
             "locationGlobal": "Global (Standard Contractual Clauses)"
           }
         },
         "transfers": {
           "title": "7. International Data Transfers",
           "p1": "Taimbox's main instance operates in the <0>European Union</0> (PostgreSQL/Supabase under our operational control). Application data is processed under GDPR.",
-          "p2": "In cases involving providers with a presence outside the European Economic Area (Stripe, Google, Meta), transfers are covered by <0>Standard Contractual Clauses (SCCs)</0> approved by the European Commission, adequacy decisions, or equivalent mechanisms that ensure an adequate level of protection."
+          "p2": "In cases involving providers with a presence outside the European Economic Area (Stripe, Resend, Google, Meta), transfers are covered by <0>Standard Contractual Clauses (SCCs)</0> approved by the European Commission, adequacy decisions, or equivalent mechanisms that ensure an adequate level of protection."
         },
         "retention": {
           "title": "8. Retention Periods",
@@ -1171,7 +1169,7 @@
           "erasure": "Erasure",
           "erasureDesc": "Request the deletion of your data (right to be forgotten).",
           "portability": "Portability",
-          "portabilityDesc": "Receive your data in a structured, machine-readable format (JSON/CSV via our API).",
+          "portabilityDesc": "Receive your data in a structured, machine-readable format (JSON/CSV). Request it at hello@taimbox.com or, on plans with API access, export it directly via the API.",
           "objection": "Objection",
           "objectionDesc": "Object to processing based on legitimate interest.",
           "limitation": "Limitation",
@@ -1218,9 +1216,9 @@
         },
         "billing": {
           "title": "3. Subscriptions and Payments",
-          "plans": "<0>Plans and Fees:</0> The Service is offered through subscription plans (e.g., Starter, Pro, Business). Features and limits (e.g., maximum number of employees) for each plan are detailed on the pricing page.",
-          "process": "<0>Payment Process:</0> Payments are processed via Stripe and automatically renew at the end of each billing cycle (monthly or annual) unless cancelled beforehand. If a payment fails, Taimbox will temporarily suspend access until the payment method is updated.",
-          "trial": "<0>Trial Period:</0> New registrations may include a 14-day free trial period. Only one trial period per Agency is permitted. At the end of the trial, if no paid plan is subscribed to, the account may be automatically downgraded to the free version (Starter Plan) with fewer features.",
+          "plans": "<0>Plans and Fees:</0> The Service is offered through subscription plans (e.g., Free, Team, Agency). Features and limits (e.g., maximum number of employees) for each plan are detailed on the pricing page.",
+          "process": "<0>Payment Process:</0> Payments are processed via Stripe and automatically renew at the end of each billing cycle (monthly) unless cancelled beforehand. If a payment fails, Taimbox will temporarily suspend access until the payment method is updated.",
+          "trial": "<0>Trial Period:</0> New registrations may include a 14-day free trial period. Only one trial period per Agency is permitted. At the end of the trial, if no paid plan is subscribed to, the account may be automatically downgraded to the free version (Free plan) with fewer features.",
           "mod": "<0>Plan Modification:</0> The Agency can upgrade or downgrade its plan at any time from platform settings. Upgrades are prorated and billed immediately, while downgrades apply in the next cycle."
         },
         "acceptableUse": {
@@ -1245,12 +1243,12 @@
         },
         "privacySection": {
           "title": "7. Privacy and Data Protection",
-          "p1": "Our database applies native Row Level Security to ensure that an Agency's data is technically and cryptographically invisible to any other.",
+          "p1": "Our database applies native Row Level Security to ensure that an Agency's data is isolated by the database engine itself and cannot be accessed by any other Agency.",
           "p2": "The processing of personal data linked to service provision is carried out in accordance with our <1>Privacy Policy</1>. Taimbox acts as a <0>Data Processor</0> regarding data hosted by the Agency, and the Agency acts as a Data Controller toward its clients and employees."
         },
         "availability": {
           "title": "8. Availability and Maintenance (SLA)",
-          "p1": "We make every effort to ensure the Service is available uninterruptedly, aiming for 99.9% uptime.",
+          "p1": "We make every effort to ensure the Service is available uninterruptedly. Standard plans do not include a guaranteed availability commitment (SLA); for specific availability agreements, see the Enterprise plan.",
           "p2": "However, we reserve the right to temporarily interrupt the service for scheduled maintenance (ideally outside European business hours) or emergencies. We do not guarantee that Service use will be free of interruptions, delays, or imperfections under any circumstances or network conditions."
         },
         "liability": {
@@ -1498,8 +1496,8 @@
               "label": "to close the week"
             },
             {
-              "num": "94%",
-              "label": "avg. reliability"
+              "num": "Live",
+              "label": "personal reliability metrics"
             }
           ],
           "btn": "Try free",
@@ -1948,8 +1946,8 @@
               "label": "capacity visibility"
             },
             {
-              "num": "91%",
-              "label": "average reliability"
+              "num": "Live",
+              "label": "team capacity and reliability"
             }
           ],
           "btn": "Try free",
@@ -2006,8 +2004,8 @@
               "pct": 20
             }
           ],
-          "exportPdf": "Export PDF",
-          "exportExcel": "Excel"
+          "exportPdf": "Export CSV",
+          "exportExcel": "JSON"
         },
         "mockForecast": {
           "title": "Weekly forecast",
@@ -2310,8 +2308,8 @@
               "label": "silent errors"
             },
             {
-              "num": "85%",
-              "label": "deadline adherence"
+              "num": "Live",
+              "label": "planned vs. actual"
             },
             {
               "num": "∞",
@@ -2336,7 +2334,7 @@
           "colSpend": "Spend",
           "colConv": "Conv.",
           "colCpa": "CPA",
-          "lastSync": "Last sync: 15 min ago",
+          "lastSync": "Last sync: 1 h ago",
           "campaigns": [
             {
               "campaign": "Brand Search Q1",
@@ -2434,18 +2432,18 @@
             "Google Ads",
             "Meta Ads",
             "REST API",
-            "CRM/ERP sync",
+            "CSV export for your CRM/ERP",
             "Weekly feedback"
           ]
         },
         "s1": {
           "kicker": "Google Ads",
-          "h2": "Google campaigns, live data",
-          "p": "Connect your clients’ Google Ads accounts and monitor campaign spend in real time. Catch overspend before it happens and save your PPC team the daily manual budget checks.",
+          "h2": "Google campaigns, always up to date",
+          "p": "Connect your clients’ Google Ads accounts and monitor campaign spend with automatic hourly sync. Catch overspend before it happens and spare your PPC team the daily manual budget checks.",
           "bullets": [
-            "Per-client budget monitor in real time",
+            "Per-client budget monitor, refreshed every hour",
             "Anti-slip alerts: stay within agreed budgets",
-            "Save your PPC team ~1 hour every day"
+            "No more account-by-account manual reviews"
           ]
         },
         "s2": {
@@ -2460,13 +2458,13 @@
         },
         "ppcCta": {
           "title": "Want to protect your campaign margins?",
-          "subtitle": "Meet the PPC budget monitor — available on the Business plan.",
+          "subtitle": "Meet the PPC budget monitor — available from the Agency plan.",
           "btn": "Learn more about budget control"
         },
         "s3": {
           "kicker": "For developers",
           "h2": "REST API: build what you need",
-          "p": "Full API with JWT authentication, time sync with your CRM/ERP, and export to external systems (subject to integration). Connect Taimbox to any tool in your stack.",
+          "p": "Full API with JWT authentication: sync time entries with your CRM/ERP through the API and export to external systems as CSV/JSON. Connect Taimbox to any tool in your stack.",
           "tiles": [
             {
               "label": "REST",
@@ -2474,7 +2472,7 @@
             },
             {
               "label": "CRM/ERP",
-              "desc": "Time sync; export to external systems"
+              "desc": "Time sync via API; CSV/JSON export"
             },
             {
               "label": "JWT auth",
@@ -2517,8 +2515,8 @@
               "desc": "Automated weekly close"
             },
             {
-              "label": "Import / export",
-              "desc": "Excel, CSV, JSON"
+              "label": "Export",
+              "desc": "CSV, JSON, and API"
             },
             {
               "label": "Unified dashboard",
@@ -2531,11 +2529,11 @@
           "p": "Connect Google Ads, Meta Ads, and any tool in your stack. Control client campaign budgets and keep your agency data in one place.",
           "stats": [
             {
-              "num": "5+",
-              "label": "native integrations"
+              "num": "2",
+              "label": "native Ads platforms (Google & Meta)"
             },
             {
-              "num": "15 min",
+              "num": "1h",
               "label": "automatic sync"
             },
             {
@@ -2638,7 +2636,7 @@
           "hidden": "Stradivarius (hidden)"
         },
         "hero": {
-          "badge": "Business plan only",
+          "badge": "From the Agency plan",
           "titleBefore": "Sleep better.",
           "titleGradient": "Control every budget",
           "titleAfter": "for all your clients from one place.",
@@ -2754,11 +2752,11 @@
               "label": "to connect Ads"
             },
             {
-              "num": "−1h/día",
-              "label": "per account manager"
+              "num": "Read-only",
+              "label": "OAuth2 access to your accounts"
             }
           ],
-          "btn": "Start free Business trial",
+          "btn": "Start free Agency trial",
           "sub": "No credit card. Set up in about 2 minutes.",
           "footers": [
             "Google Ads",
@@ -2786,7 +2784,7 @@
         "threePillarsKicker": "Technical foundations",
         "threePillarsH2": "The three pillars of our infrastructure",
         "pillar1Title": "Physical isolation (RLS)",
-        "pillar1Body": "We use <strong>PostgreSQL Row Level Security (RLS)</strong> natively. Tenant separation happens in the database engine—not in app code—so a frontend bug cannot expose one agency’s data to another.",
+        "pillar1Body": "We use <strong>PostgreSQL Row Level Security (RLS)</strong> natively. Tenant separation happens in the database engine—not in app code—so even if there were a frontend bug, the database rejects any access to another agency’s data.",
         "pillar2Title": "Encryption in transit and at rest",
         "pillar2Body": "All traffic uses <strong>TLS 1.3</strong> (in transit). Database disks use <strong>AES‑256</strong> (at rest). Production database access follows least-privilege policies and requires explicit justification for support work.",
         "pillar3Title": "Zero shared credentials",
@@ -2799,7 +2797,7 @@
           "Availability monitoring; no 99.99% SLA until managed HA infrastructure.",
           "Card payments handled by Stripe (PCI DSS Level 1)."
         ],
-        "mockNodeLabel": "Node 01 (EU-Central-1)",
+        "mockNodeLabel": "Node 01 (EU)",
         "mockHealthy": "Healthy",
         "mockRlsWall": "Row Level Security wall",
         "mockPartitionFooter": "Strict data partitioning",
@@ -2835,7 +2833,7 @@
         "complianceCard2P": "Your data is yours—no vendor lock‑in. Use our REST API to export history, profitability metrics, and time tables to CSV/JSON whenever you need.",
         "faqH3": "FAQ: security, IT, and ISO",
         "faq1q": "Which subprocessors does Taimbox use?",
-        "faq1a": "Typical subprocessors: <strong>Supabase</strong> (database and auth, EU deployment), <strong>Stripe</strong> (payments), transactional email if enabled, and <strong>Google/Meta</strong> (read‑only OAuth2 for Ads). We do not sell your campaign data to third parties.",
+        "faq1a": "The database and authentication run on our own EU infrastructure (self-hosted PostgreSQL/Supabase), so no third party is involved in primary storage. Typical subprocessors: <strong>Stripe</strong> (payments), <strong>Resend</strong> (transactional email), and <strong>Google/Meta</strong> (read‑only OAuth2 for Ads). We do not sell your campaign data to third parties.",
         "faq2q": "Where is data hosted?",
         "faq2a": "Production runs in the <strong>European Union</strong> (self-hosted infrastructure under our operational control). Processing follows <strong>GDPR</strong>. For Enterprise dedicated hosting or extended DPA, contact sales.",
         "faq3q": "What happens to my data if I cancel?",

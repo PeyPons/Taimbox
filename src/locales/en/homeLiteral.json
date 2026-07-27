@@ -5,7 +5,7 @@
     "titleLine2": "If it's not a fit, we'll help you leave.",
     "ctaPrimary": "Start free",
     "ctaSecondary": "What not tracking costs (3 min)",
-    "trust1": "14 days Business free",
+    "trust1": "14 days Agency free",
     "trust2": "No credit card",
     "trust3": "Export anytime"
   },
@@ -34,7 +34,7 @@
       {
         "step": "03 · Project profitability",
         "heading": "Cost, revenue, margin, and hourly rate — with the breakdown visible",
-        "body": "Four linked figures — team cost, period revenue, margin, and hourly rate — using the same logic as in the app. You see where each number comes from, not just the total. Open or closed month; export to Excel, CSV, or API when you need to."
+        "body": "Four linked figures — team cost, period revenue, margin, and hourly rate — using the same logic as in the app. You see where each number comes from, not just the total. Open or closed month; export to CSV, JSON, or via the API when you need to."
       }
     ],
     "visual1": {
@@ -302,7 +302,7 @@
         "bullets": [
           "F1 through F4 and EHR without a black box",
           "Accrued revenue to the cent, by project and agency",
-          "Export to Excel, CSV, JSON, or connect via API"
+          "Export to CSV or JSON, or connect via API"
         ],
         "linkText": "See profitability",
         "linkHref": "/reportes-rentabilidad"
@@ -387,7 +387,7 @@
       },
       {
         "title": "Exports",
-        "desc": "Excel, CSV, and JSON. Your data, always yours, in your model."
+        "desc": "CSV and JSON. Your data, always yours, in your model."
       }
     ],
     "ppcKicker": "Live PPC monitor",
@@ -530,7 +530,7 @@
         "bullets": [
           "Accrued revenue and pacing per project, up to date",
           "F1 through F4 and hourly rate without a black box",
-          "Agency view and export to Excel, CSV, JSON, or API"
+          "Agency view and export to CSV, JSON, or API"
         ]
       },
       {
