@@ -64,7 +64,8 @@ export function PlannerMonthBanner() {
         className="h-7 gap-1 border-amber-400 text-amber-900 hover:bg-amber-100 shrink-0 px-2 sm:px-3 text-[11px] sm:text-xs"
         onClick={() => writeStoredPlannerMonth(todayMonth)}
       >
-        {t('layout.monthBanner.goCurrentShort', 'Mes actual')}
+        <span className="sm:hidden">{t('layout.monthBanner.goCurrentShort', 'Mes actual')}</span>
+        <span className="hidden sm:inline">{t('layout.monthBanner.goCurrent', 'Ir al mes actual')}</span>
       </Button>
     </div>
   );
