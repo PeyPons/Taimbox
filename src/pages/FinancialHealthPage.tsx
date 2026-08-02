@@ -77,6 +77,7 @@ import {
 import { getMarginSemaphore } from '@/utils/marginSemaphore';
 import { DeliverableLifecycleTable } from '@/components/financial/DeliverableLifecycleTable';
 import { ProfitabilityAttributionMobileList } from '@/components/financial/ProfitabilityAttributionMobileList';
+import { ProfitabilityMobileMetrics } from '@/components/financial/ProfitabilityMobileMetrics';
 import { deliverablePhaseOverlapsMonth, getDeliverablePhase } from '@/utils/deliverableLifecycle';
 import { PROJECT_TYPE_ENTREGABLE } from '@/config/projectTypePresets';
 import { useFormatMoney } from '@/hooks/useFormatMoney';
@@ -1867,49 +1868,72 @@ export default function FinancialHealthPage() {
                                                         <li key={`radar-m-${p.projectId}`} className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
                                                             <button
                                                                 type="button"
-                                                                className="w-full text-left p-3 flex items-start gap-3"
+                                                                className="w-full text-left p-3"
                                                                 onClick={() => toggleProject(p.projectId)}
                                                             >
-                                                                <div className="min-w-0 flex-1 space-y-1">
-                                                                    <p className="font-semibold text-slate-900 text-sm leading-snug">
-                                                                        <SensitiveText kind="project" id={p.projectId}>{p.projectName}</SensitiveText>
-                                                                    </p>
-                                                                    <p className="text-[11px] text-slate-500 leading-snug">
-                                                                        <SensitiveText kind="account" id={p.clientId ?? 'unknown-client'}>{clientName}</SensitiveText>
-                                                                    </p>
-                                                                    <p className="text-[11px] text-slate-600 font-mono tabular-nums">
-                                                                        {formatMoney(displayFeeRadar)} · {projectHours.toFixed(1)}h / {p.budget.toFixed(1)}h
-                                                                    </p>
-                                                                </div>
-                                                                <div className="shrink-0 flex flex-col items-end gap-1.5">
-                                                                    <span className={cn('font-mono text-sm font-semibold tabular-nums inline-flex items-center gap-1', semaphoreRadar.className)}>
-                                                                        {semaphoreRadar.showAlert && <AlertTriangle className="h-3.5 w-3.5" aria-hidden />}
-                                                                        {formatMoney(displayMarginRadar)}
-                                                                    </span>
-                                                                    {projectHours > 0 ? (
-                                                                        <Badge
-                                                                            variant={ehrBelowTarget ? 'destructive' : 'outline'}
-                                                                            className={cn(
-                                                                                'text-[10px] font-semibold tabular-nums',
-                                                                                ehrBelowTarget
-                                                                                    ? 'bg-red-600 text-white border-red-600'
-                                                                                    : 'bg-emerald-50 text-emerald-700 border-emerald-300'
-                                                                            )}
-                                                                        >
-                                                                            {ehrLabel}
-                                                                        </Badge>
-                                                                    ) : (
-                                                                        <Badge variant="outline" className="text-[10px] text-slate-500 border-slate-300 bg-slate-50">
-                                                                            {t('financialHealth.kpis.ehr.notStarted')}
-                                                                        </Badge>
-                                                                    )}
-                                                                    <span className="text-[11px] text-slate-500 inline-flex items-center gap-0.5">
+                                                                <div className="flex items-start justify-between gap-2">
+                                                                    <div className="min-w-0">
+                                                                        <p className="font-semibold text-slate-900 text-sm leading-snug">
+                                                                            <SensitiveText kind="project" id={p.projectId}>{p.projectName}</SensitiveText>
+                                                                        </p>
+                                                                        <p className="text-[11px] text-slate-500 leading-snug mt-0.5">
+                                                                            <SensitiveText kind="account" id={p.clientId ?? 'unknown-client'}>{clientName}</SensitiveText>
+                                                                        </p>
+                                                                    </div>
+                                                                    <span className="text-[11px] text-slate-500 inline-flex items-center gap-0.5 shrink-0">
                                                                         {isExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
                                                                         {isExpanded
-                                                                            ? t('financialHealth.mobile.closeBreakdown', 'Cerrar desglose')
+                                                                            ? t('financialHealth.mobile.closeBreakdown', 'Cerrar')
                                                                             : t('financialHealth.mobile.openBreakdown', 'Ver desglose')}
                                                                     </span>
                                                                 </div>
+                                                                <ProfitabilityMobileMetrics
+                                                                    items={[
+                                                                        {
+                                                                            label: t('financialHealth.columns.margin', 'Margen'),
+                                                                            value: (
+                                                                                <span className={cn('inline-flex items-center gap-1 font-semibold', semaphoreRadar.className)}>
+                                                                                    {semaphoreRadar.showAlert && <AlertTriangle className="h-3.5 w-3.5" aria-hidden />}
+                                                                                    {formatMoney(displayMarginRadar)}
+                                                                                    {displayFeeRadar > 0 && (
+                                                                                        <span className="text-[11px] font-normal">({marginPctRadar.toFixed(0)}%)</span>
+                                                                                    )}
+                                                                                </span>
+                                                                            ),
+                                                                            emphasize: true,
+                                                                        },
+                                                                        {
+                                                                            label: t('financialHealth.mobile.revenueShort', 'Ingreso'),
+                                                                            value: formatMoney(displayFeeRadar),
+                                                                        },
+                                                                        {
+                                                                            label: t('financialHealth.columns.hours', 'Horas'),
+                                                                            value: `${projectHours.toFixed(1)} h`,
+                                                                        },
+                                                                        {
+                                                                            label: t('financialHealth.mobile.budgetShort', 'Presupuesto'),
+                                                                            value: `${p.budget.toFixed(1)} h`,
+                                                                        },
+                                                                        {
+                                                                            label: t('financialHealth.columns.ehr', 'EHR'),
+                                                                            value: projectHours > 0 ? (
+                                                                                <Badge
+                                                                                    variant={ehrBelowTarget ? 'destructive' : 'outline'}
+                                                                                    className={cn(
+                                                                                        'text-[10px] font-semibold tabular-nums',
+                                                                                        ehrBelowTarget
+                                                                                            ? 'bg-red-600 text-white border-red-600'
+                                                                                            : 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                                                                                    )}
+                                                                                >
+                                                                                    {ehrLabel}
+                                                                                </Badge>
+                                                                            ) : (
+                                                                                <span className="text-slate-500">{t('financialHealth.kpis.ehr.notStarted')}</span>
+                                                                            ),
+                                                                        },
+                                                                    ]}
+                                                                />
                                                             </button>
                                                             {isExpanded && (
                                                                 <div className="border-t border-slate-100 bg-slate-50/80 px-3 py-3">
@@ -2036,9 +2060,6 @@ export default function FinancialHealthPage() {
                                                                                     </div>
                                                                                     <div className="text-[11px] text-slate-500 break-words whitespace-normal leading-snug mt-0.5">
                                                                                         <SensitiveText kind="account" id={p.clientId ?? 'unknown-client'}>{clientName}</SensitiveText>
-                                                                                    </div>
-                                                                                    <div className="sm:hidden mt-1 text-[11px] text-slate-600 font-mono tabular-nums">
-                                                                                        {formatMoney(displayFeeRadar)} · {projectHours.toFixed(1)}h / {p.budget.toFixed(1)}h
                                                                                     </div>
                                                                                 </div>
                                                                             </div>
@@ -2359,13 +2380,28 @@ export default function FinancialHealthPage() {
                                                         <p className="text-[11px] text-slate-500 mt-0.5">
                                                             <SensitiveText kind="account" id={p.clientId ?? 'unknown-client'}>{clientName}</SensitiveText>
                                                         </p>
-                                                        <div className="mt-2 flex items-end justify-between gap-3">
-                                                            <span className="text-[11px] text-slate-600 font-mono tabular-nums">{hours.toFixed(1)} h</span>
-                                                            <span className="font-mono text-sm font-semibold tabular-nums text-slate-800">{formatMoney(pcm.cost)}</span>
-                                                        </div>
-                                                        <p className="mt-1 text-[10px] text-slate-500 font-mono tabular-nums">
-                                                            {t('financialHealth.columns.payrollImputed')}: {formatMoney(pcm.payrollCost)} · {t('financialHealth.columns.commonOverhead')}: {formatMoney(pcm.overheadCost)}
-                                                        </p>
+                                                        <ProfitabilityMobileMetrics
+                                                            items={[
+                                                                {
+                                                                    label: t('financialHealth.columns.costTotal', 'Coste total'),
+                                                                    value: formatMoney(pcm.cost),
+                                                                    emphasize: true,
+                                                                    className: 'font-semibold',
+                                                                },
+                                                                {
+                                                                    label: t('financialHealth.columns.hours', 'Horas'),
+                                                                    value: `${hours.toFixed(1)} h`,
+                                                                },
+                                                                {
+                                                                    label: t('financialHealth.columns.payrollImputed', 'Nómina imputada'),
+                                                                    value: formatMoney(pcm.payrollCost),
+                                                                },
+                                                                {
+                                                                    label: t('financialHealth.columns.commonOverhead', 'Gastos comunes'),
+                                                                    value: formatMoney(pcm.overheadCost),
+                                                                },
+                                                            ]}
+                                                        />
                                                     </li>
                                                 );
                                             })}
@@ -2490,22 +2526,39 @@ export default function FinancialHealthPage() {
                                                     const semDept = getMarginSemaphore(marginPctDept);
                                                     return (
                                                         <li key={`dept-m-${dept.id}`} className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
-                                                            <div className="flex items-start justify-between gap-3">
-                                                                <div className="min-w-0">
-                                                                    <p className="font-semibold text-slate-900 text-sm truncate">{dept.name}</p>
-                                                                    <p className="text-[11px] text-slate-600 font-mono tabular-nums mt-1">
-                                                                        {formatMoney(dept.revenue)} · {dept.hours.toFixed(1)} h
-                                                                    </p>
-                                                                </div>
-                                                                <div className="shrink-0 flex flex-col items-end gap-1">
-                                                                    <span className={cn('font-mono text-sm font-semibold tabular-nums', semDept.className)}>
-                                                                        {formatMoney(dept.margin)}
-                                                                    </span>
-                                                                    <span className={cn('text-[11px] font-semibold tabular-nums', isBelowTarget ? 'text-red-600' : 'text-emerald-700')}>
-                                                                        {formatPerHour(dept.ehr, 0)}
-                                                                    </span>
-                                                                </div>
-                                                            </div>
+                                                            <p className="font-semibold text-slate-900 text-sm truncate">{dept.name}</p>
+                                                            <ProfitabilityMobileMetrics
+                                                                items={[
+                                                                    {
+                                                                        label: t('financialHealth.columns.margin', 'Margen'),
+                                                                        value: (
+                                                                            <span className={cn('font-semibold', semDept.className)}>
+                                                                                {formatMoney(dept.margin)}
+                                                                                {dept.revenue > 0 && (
+                                                                                    <span className="text-[11px] font-normal ml-1">({marginPctDept.toFixed(0)}%)</span>
+                                                                                )}
+                                                                            </span>
+                                                                        ),
+                                                                        emphasize: true,
+                                                                    },
+                                                                    {
+                                                                        label: t('financialHealth.mobile.revenueShort', 'Ingreso'),
+                                                                        value: formatMoney(dept.revenue),
+                                                                    },
+                                                                    {
+                                                                        label: t('financialHealth.columns.hours', 'Horas'),
+                                                                        value: `${dept.hours.toFixed(1)} h`,
+                                                                    },
+                                                                    {
+                                                                        label: t('financialHealth.columns.ehr', 'EHR'),
+                                                                        value: (
+                                                                            <span className={cn('font-semibold', isBelowTarget ? 'text-red-600' : 'text-emerald-700')}>
+                                                                                {formatPerHour(dept.ehr, 0)}
+                                                                            </span>
+                                                                        ),
+                                                                    },
+                                                                ]}
+                                                            />
                                                         </li>
                                                     );
                                                 })}
@@ -2605,18 +2658,32 @@ export default function FinancialHealthPage() {
                                                         const semaphore = getMarginSemaphore(marginPct);
                                                         return (
                                                             <li key={`resumen-emp-m-${ep.employeeId}`} className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
-                                                                <div className="flex items-start justify-between gap-3">
-                                                                    <div className="min-w-0">
-                                                                        <p className="font-semibold text-slate-900 text-sm truncate">{ep.employeeName}</p>
-                                                                        <p className="text-[11px] text-slate-600 font-mono tabular-nums mt-1">
-                                                                            {h.toFixed(1)} h · {formatMoney(attr)}
-                                                                        </p>
-                                                                    </div>
-                                                                    <span className={cn('shrink-0 font-mono text-sm font-semibold tabular-nums inline-flex items-center gap-1', semaphore.className)}>
-                                                                        {semaphore.showAlert && <AlertTriangle className="h-3.5 w-3.5" aria-hidden />}
-                                                                        {formatMoney(margin)}
-                                                                    </span>
-                                                                </div>
+                                                                <p className="font-semibold text-slate-900 text-sm truncate">{ep.employeeName}</p>
+                                                                <ProfitabilityMobileMetrics
+                                                                    items={[
+                                                                        {
+                                                                            label: t('financialHealth.columns.margin', 'Margen'),
+                                                                            value: (
+                                                                                <span className={cn('inline-flex items-center gap-1 font-semibold', semaphore.className)}>
+                                                                                    {semaphore.showAlert && <AlertTriangle className="h-3.5 w-3.5" aria-hidden />}
+                                                                                    {formatMoney(margin)}
+                                                                                    {attr > 0 && (
+                                                                                        <span className="text-[11px] font-normal">({marginPct.toFixed(0)}%)</span>
+                                                                                    )}
+                                                                                </span>
+                                                                            ),
+                                                                            emphasize: true,
+                                                                        },
+                                                                        {
+                                                                            label: t('financialHealth.columns.hours', 'Horas'),
+                                                                            value: `${h.toFixed(1)} h`,
+                                                                        },
+                                                                        {
+                                                                            label: t('financialHealth.mobile.revenueShort', 'Ingreso'),
+                                                                            value: formatMoney(attr),
+                                                                        },
+                                                                    ]}
+                                                                />
                                                             </li>
                                                         );
                                                     })}
@@ -2877,33 +2944,58 @@ export default function FinancialHealthPage() {
                                                 <li key={`m-${p.projectId}`} className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
                                                     <button
                                                         type="button"
-                                                        className="w-full text-left p-3 flex items-start gap-3"
+                                                        className="w-full text-left p-3"
                                                         onClick={() => toggleProject(p.projectId)}
                                                     >
-                                                        <div className="min-w-0 flex-1 space-y-1">
-                                                            <p className="font-semibold text-slate-900 text-sm leading-snug">
-                                                                <SensitiveText kind="project" id={p.projectId}>{p.projectName}</SensitiveText>
-                                                            </p>
-                                                            <p className="text-[11px] text-slate-500 leading-snug">
-                                                                <SensitiveText kind="account" id={p.clientId ?? 'unknown-client'}>{clientName}</SensitiveText>
-                                                            </p>
-                                                            <p className="text-[11px] text-slate-600 font-mono tabular-nums">
-                                                                {formatMoney(displayFeeProj)} · {projectHours.toFixed(1)}h / {p.budget.toFixed(1)}h
-                                                            </p>
-                                                        </div>
-                                                        <div className="shrink-0 flex flex-col items-end gap-1.5">
-                                                            <span className={cn('font-mono text-sm font-semibold tabular-nums inline-flex items-center gap-1', semaphoreProj.className)}>
-                                                                {semaphoreProj.showAlert && <AlertTriangle className="h-3.5 w-3.5" aria-hidden />}
-                                                                {formatMoney(displayMarginProj)}
-                                                            </span>
-                                                            <Badge variant="outline" className="text-[10px] font-semibold tabular-nums">{ehrLabel}</Badge>
-                                                            <span className="text-[11px] text-slate-500 inline-flex items-center gap-0.5">
+                                                        <div className="flex items-start justify-between gap-2">
+                                                            <div className="min-w-0">
+                                                                <p className="font-semibold text-slate-900 text-sm leading-snug">
+                                                                    <SensitiveText kind="project" id={p.projectId}>{p.projectName}</SensitiveText>
+                                                                </p>
+                                                                <p className="text-[11px] text-slate-500 leading-snug mt-0.5">
+                                                                    <SensitiveText kind="account" id={p.clientId ?? 'unknown-client'}>{clientName}</SensitiveText>
+                                                                </p>
+                                                            </div>
+                                                            <span className="text-[11px] text-slate-500 inline-flex items-center gap-0.5 shrink-0">
                                                                 {isExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
                                                                 {isExpanded
-                                                                    ? t('financialHealth.mobile.closeBreakdown', 'Cerrar desglose')
+                                                                    ? t('financialHealth.mobile.closeBreakdown', 'Cerrar')
                                                                     : t('financialHealth.mobile.openBreakdown', 'Ver desglose')}
                                                             </span>
                                                         </div>
+                                                        <ProfitabilityMobileMetrics
+                                                            items={[
+                                                                {
+                                                                    label: t('financialHealth.columns.margin', 'Margen'),
+                                                                    value: (
+                                                                        <span className={cn('inline-flex items-center gap-1 font-semibold', semaphoreProj.className)}>
+                                                                            {semaphoreProj.showAlert && <AlertTriangle className="h-3.5 w-3.5" aria-hidden />}
+                                                                            {formatMoney(displayMarginProj)}
+                                                                            {displayFeeProj > 0 && (
+                                                                                <span className="text-[11px] font-normal">({marginPctProj.toFixed(0)}%)</span>
+                                                                            )}
+                                                                        </span>
+                                                                    ),
+                                                                    emphasize: true,
+                                                                },
+                                                                {
+                                                                    label: t('financialHealth.mobile.revenueShort', 'Ingreso'),
+                                                                    value: formatMoney(displayFeeProj),
+                                                                },
+                                                                {
+                                                                    label: t('financialHealth.columns.hours', 'Horas'),
+                                                                    value: `${projectHours.toFixed(1)} h`,
+                                                                },
+                                                                {
+                                                                    label: t('financialHealth.mobile.budgetShort', 'Presupuesto'),
+                                                                    value: `${p.budget.toFixed(1)} h`,
+                                                                },
+                                                                {
+                                                                    label: t('financialHealth.columns.ehr', 'EHR'),
+                                                                    value: <Badge variant="outline" className="text-[10px] font-semibold tabular-nums">{ehrLabel}</Badge>,
+                                                                },
+                                                            ]}
+                                                        />
                                                     </button>
                                                     {isExpanded && (
                                                         <div className="border-t border-slate-100 bg-slate-50/80 px-3 py-3">
@@ -3328,10 +3420,28 @@ export default function FinancialHealthPage() {
                                                     <p className="text-[11px] text-slate-500 mt-0.5">
                                                         <SensitiveText kind="account" id={p.clientId ?? 'unknown-client'}>{clientName}</SensitiveText>
                                                     </p>
-                                                    <div className="mt-2 flex items-end justify-between gap-3">
-                                                        <span className="text-[11px] text-slate-600 font-mono tabular-nums">{hours.toFixed(1)} h</span>
-                                                        <span className="font-mono text-sm font-semibold tabular-nums text-slate-800">{formatMoney(pcm.cost)}</span>
-                                                    </div>
+                                                    <ProfitabilityMobileMetrics
+                                                        items={[
+                                                            {
+                                                                label: t('financialHealth.columns.costTotal', 'Coste total'),
+                                                                value: formatMoney(pcm.cost),
+                                                                emphasize: true,
+                                                                className: 'font-semibold',
+                                                            },
+                                                            {
+                                                                label: t('financialHealth.columns.hours', 'Horas'),
+                                                                value: `${hours.toFixed(1)} h`,
+                                                            },
+                                                            {
+                                                                label: t('financialHealth.columns.payrollImputed', 'Nómina imputada'),
+                                                                value: formatMoney(pcm.payrollCost),
+                                                            },
+                                                            {
+                                                                label: t('financialHealth.columns.commonOverhead', 'Gastos comunes'),
+                                                                value: formatMoney(pcm.overheadCost),
+                                                            },
+                                                        ]}
+                                                    />
                                                 </li>
                                             );
                                         })}
@@ -3482,36 +3592,55 @@ export default function FinancialHealthPage() {
                                                 <li key={`m-emp-${ep.employeeId}`} className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
                                                     <button
                                                         type="button"
-                                                        className="w-full text-left p-3 flex items-start gap-3"
+                                                        className="w-full text-left p-3"
                                                         onClick={() => toggleProject(`emp-${ep.employeeId}`)}
                                                     >
-                                                        <Avatar className="h-9 w-9 border shrink-0">
-                                                            <AvatarFallback className="bg-slate-100 text-slate-600 text-xs font-bold">
-                                                                {ep.employeeName.substring(0, 2).toUpperCase()}
-                                                            </AvatarFallback>
-                                                        </Avatar>
-                                                        <div className="min-w-0 flex-1 space-y-1">
-                                                            <p className="font-semibold text-slate-900 text-sm leading-snug truncate">{ep.employeeName}</p>
-                                                            <p className="text-[11px] text-slate-600 font-mono tabular-nums">
-                                                                {displayHours.toFixed(1)} h · {formatMoney(displayAttr)} · {formatMoney(displayCost)}
-                                                            </p>
-                                                        </div>
-                                                        <div className="shrink-0 flex flex-col items-end gap-1.5">
-                                                            <span className={cn('font-mono text-sm font-semibold tabular-nums inline-flex items-center gap-1', semaphoreEmp.className)}>
-                                                                {semaphoreEmp.showAlert && <AlertTriangle className="h-3.5 w-3.5" aria-hidden />}
-                                                                {formatMoney(displayMargin)}
-                                                            </span>
-                                                            {displayAttr > 0 && (
-                                                                <span className={cn('text-[10px] font-mono tabular-nums', semaphoreEmp.className)}>
-                                                                    {displayMarginPct.toFixed(1)}%
-                                                                </span>
-                                                            )}
-                                                            <span className="text-[11px] text-slate-500 inline-flex items-center gap-0.5">
-                                                                {isExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
-                                                                {isExpanded
-                                                                    ? t('financialHealth.mobile.closeBreakdown', 'Cerrar desglose')
-                                                                    : t('financialHealth.mobile.openBreakdown', 'Ver desglose')}
-                                                            </span>
+                                                        <div className="flex items-start gap-3">
+                                                            <Avatar className="h-9 w-9 border shrink-0">
+                                                                <AvatarFallback className="bg-slate-100 text-slate-600 text-xs font-bold">
+                                                                    {ep.employeeName.substring(0, 2).toUpperCase()}
+                                                                </AvatarFallback>
+                                                            </Avatar>
+                                                            <div className="min-w-0 flex-1">
+                                                                <div className="flex items-start justify-between gap-2">
+                                                                    <p className="font-semibold text-slate-900 text-sm leading-snug truncate">{ep.employeeName}</p>
+                                                                    <span className="text-[11px] text-slate-500 inline-flex items-center gap-0.5 shrink-0">
+                                                                        {isExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+                                                                        {isExpanded
+                                                                            ? t('financialHealth.mobile.closeBreakdown', 'Cerrar')
+                                                                            : t('financialHealth.mobile.openBreakdown', 'Ver desglose')}
+                                                                    </span>
+                                                                </div>
+                                                                <ProfitabilityMobileMetrics
+                                                                    items={[
+                                                                        {
+                                                                            label: t('financialHealth.columns.margin', 'Margen'),
+                                                                            value: (
+                                                                                <span className={cn('inline-flex items-center gap-1 font-semibold', semaphoreEmp.className)}>
+                                                                                    {semaphoreEmp.showAlert && <AlertTriangle className="h-3.5 w-3.5" aria-hidden />}
+                                                                                    {formatMoney(displayMargin)}
+                                                                                    {displayAttr > 0 && (
+                                                                                        <span className="text-[11px] font-normal">({displayMarginPct.toFixed(1)}%)</span>
+                                                                                    )}
+                                                                                </span>
+                                                                            ),
+                                                                            emphasize: true,
+                                                                        },
+                                                                        {
+                                                                            label: t('financialHealth.columns.hours', 'Horas'),
+                                                                            value: `${displayHours.toFixed(1)} h`,
+                                                                        },
+                                                                        {
+                                                                            label: t('financialHealth.mobile.revenueShort', 'Ingreso'),
+                                                                            value: formatMoney(displayAttr),
+                                                                        },
+                                                                        {
+                                                                            label: t('financialHealth.mobile.costShort', 'Coste'),
+                                                                            value: formatMoney(displayCost),
+                                                                        },
+                                                                    ]}
+                                                                />
+                                                            </div>
                                                         </div>
                                                     </button>
                                                     {isExpanded && (
@@ -3525,17 +3654,37 @@ export default function FinancialHealthPage() {
                                                                         const sem = getMarginSemaphore(pct);
                                                                         return (
                                                                             <li key={bp.projectId} className="rounded-lg border border-slate-200 bg-white p-2.5">
-                                                                                <div className="flex items-start justify-between gap-2">
-                                                                                    <p className="text-sm font-medium text-slate-900 leading-snug min-w-0">
-                                                                                        <SensitiveText kind="project" id={bp.projectId}>{bp.projectName}</SensitiveText>
-                                                                                    </p>
-                                                                                    <span className={cn('font-mono text-xs font-semibold tabular-nums shrink-0', sem.className)}>
-                                                                                        {formatMoney(bp.margin)}
-                                                                                    </span>
-                                                                                </div>
-                                                                                <p className="mt-1 text-[11px] text-slate-600 font-mono tabular-nums">
-                                                                                    {bp.hoursDisplay.toFixed(1)} h · {formatMoney(bp.attributedRevenue)} · {formatMoney(bp.cost)}
+                                                                                <p className="text-sm font-medium text-slate-900 leading-snug">
+                                                                                    <SensitiveText kind="project" id={bp.projectId}>{bp.projectName}</SensitiveText>
                                                                                 </p>
+                                                                                <ProfitabilityMobileMetrics
+                                                                                    items={[
+                                                                                        {
+                                                                                            label: t('financialHealth.columns.margin', 'Margen'),
+                                                                                            value: (
+                                                                                                <span className={cn('font-semibold', sem.className)}>
+                                                                                                    {formatMoney(bp.margin)}
+                                                                                                    {bp.attributedRevenue > 0 && (
+                                                                                                        <span className="text-[11px] font-normal ml-1">({pct.toFixed(0)}%)</span>
+                                                                                                    )}
+                                                                                                </span>
+                                                                                            ),
+                                                                                            emphasize: true,
+                                                                                        },
+                                                                                        {
+                                                                                            label: t('financialHealth.columns.hours', 'Horas'),
+                                                                                            value: `${bp.hoursDisplay.toFixed(1)} h`,
+                                                                                        },
+                                                                                        {
+                                                                                            label: t('financialHealth.mobile.revenueShort', 'Ingreso'),
+                                                                                            value: formatMoney(bp.attributedRevenue),
+                                                                                        },
+                                                                                        {
+                                                                                            label: t('financialHealth.mobile.costShort', 'Coste'),
+                                                                                            value: formatMoney(bp.cost),
+                                                                                        },
+                                                                                    ]}
+                                                                                />
                                                                             </li>
                                                                         );
                                                                     })}

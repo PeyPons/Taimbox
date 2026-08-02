@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getMarginSemaphore } from '@/utils/marginSemaphore';
+import { ProfitabilityMobileMetrics } from '@/components/financial/ProfitabilityMobileMetrics';
 
 export type ProfitabilityAttributionRow = {
   employeeId: string;
@@ -23,8 +24,7 @@ type Props = {
 };
 
 /**
- * Desglose por empleado en móvil: tarjetas apiladas (sin tabla ancha).
- * Mantiene nombre, horas, coste y margen — lo esencial para decidir.
+ * Desglose por empleado en móvil: tarjetas apiladas con métricas etiquetadas.
  */
 export function ProfitabilityAttributionMobileList({
   rows,
@@ -52,7 +52,7 @@ export function ProfitabilityAttributionMobileList({
 
   return (
     <div className="space-y-2 md:hidden">
-      <p className="text-[11px] text-slate-400 px-0.5">{hoursModeLabel}</p>
+      <p className="text-[11px] text-slate-500 px-0.5">{hoursModeLabel}</p>
       <ul className="space-y-2">
         {rows.map((row) => {
           const marginPct =
@@ -68,60 +68,77 @@ export function ProfitabilityAttributionMobileList({
               key={row.employeeId}
               className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm"
             >
-              <div className="flex items-start justify-between gap-2">
-                <p className="font-medium text-slate-900 text-sm leading-snug min-w-0">
-                  {employeeNameById(row.employeeId)}
-                </p>
-                <span
-                  className={cn(
-                    'font-mono text-sm font-semibold tabular-nums shrink-0 inline-flex items-center gap-1',
-                    sem.className,
-                  )}
-                >
-                  {sem.showAlert && <AlertTriangle className="h-3.5 w-3.5" aria-hidden />}
-                  {formatMoney(row.margin)}
-                </span>
-              </div>
-              <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs text-slate-600">
-                <div>
-                  <dt className="text-slate-400">{t('financialHealth.columns.hours', 'Horas')}</dt>
-                  <dd className="font-mono tabular-nums">{row.hoursDisplay.toFixed(1)} h</dd>
-                </div>
-                <div>
-                  <dt className="text-slate-400">{t('financialHealth.mobile.revenueShort', 'Ingreso')}</dt>
-                  <dd className="font-mono tabular-nums">{formatMoney(row.attributedRevenue)}</dd>
-                </div>
-                <div>
-                  <dt className="text-slate-400">{t('financialHealth.mobile.costShort', 'Coste')}</dt>
-                  <dd className="font-mono tabular-nums">{formatMoney(row.cost)}</dd>
-                </div>
-                <div>
-                  <dt className="text-slate-400">{t('financialHealth.columns.costPerHour', 'Coste/h')}</dt>
-                  <dd className="font-mono tabular-nums">
-                    {row.hoursDisplay > 0.001 ? formatPerHour(costPh, 2) : '–'}
-                  </dd>
-                </div>
-              </dl>
+              <p className="font-medium text-slate-900 text-sm leading-snug">
+                {employeeNameById(row.employeeId)}
+              </p>
+              <ProfitabilityMobileMetrics
+                items={[
+                  {
+                    label: t('financialHealth.columns.margin', 'Margen'),
+                    value: (
+                      <span className={cn('inline-flex items-center gap-1 font-semibold', sem.className)}>
+                        {sem.showAlert && <AlertTriangle className="h-3.5 w-3.5" aria-hidden />}
+                        {formatMoney(row.margin)}
+                        {row.attributedRevenue > 0 && (
+                          <span className="text-[11px] font-normal">({marginPct.toFixed(0)}%)</span>
+                        )}
+                      </span>
+                    ),
+                    emphasize: true,
+                  },
+                  {
+                    label: t('financialHealth.columns.hours', 'Horas'),
+                    value: `${row.hoursDisplay.toFixed(1)} h`,
+                  },
+                  {
+                    label: t('financialHealth.mobile.revenueShort', 'Ingreso'),
+                    value: formatMoney(row.attributedRevenue),
+                  },
+                  {
+                    label: t('financialHealth.mobile.costShort', 'Coste'),
+                    value: formatMoney(row.cost),
+                  },
+                  {
+                    label: t('financialHealth.columns.costPerHour', 'Coste/h'),
+                    value: row.hoursDisplay > 0.001 ? formatPerHour(costPh, 2) : '–',
+                  },
+                ]}
+              />
             </li>
           );
         })}
       </ul>
       <div className="rounded-xl border border-slate-200 bg-slate-100/90 p-3">
-        <div className="flex items-center justify-between gap-2">
-          <p className="text-sm font-semibold text-slate-800">{t('financialHealth.expand.total')}</p>
-          <span
-            className={cn(
-              'font-mono text-sm font-semibold tabular-nums inline-flex items-center gap-1',
-              totSem.className,
-            )}
-          >
-            {totSem.showAlert && <AlertTriangle className="h-3.5 w-3.5" aria-hidden />}
-            {formatMoney(totMargin)}
-          </span>
-        </div>
-        <p className="mt-1 text-[11px] text-slate-500 font-mono tabular-nums">
-          {totH.toFixed(1)} h · {formatMoney(totRev)} · {formatMoney(totCost)}
-        </p>
+        <p className="text-sm font-semibold text-slate-800">{t('financialHealth.expand.total')}</p>
+        <ProfitabilityMobileMetrics
+          items={[
+            {
+              label: t('financialHealth.columns.margin', 'Margen'),
+              value: (
+                <span className={cn('inline-flex items-center gap-1 font-semibold', totSem.className)}>
+                  {totSem.showAlert && <AlertTriangle className="h-3.5 w-3.5" aria-hidden />}
+                  {formatMoney(totMargin)}
+                  {totRev > 0 && (
+                    <span className="text-[11px] font-normal">({totMarginPct.toFixed(0)}%)</span>
+                  )}
+                </span>
+              ),
+              emphasize: true,
+            },
+            {
+              label: t('financialHealth.columns.hours', 'Horas'),
+              value: `${totH.toFixed(1)} h`,
+            },
+            {
+              label: t('financialHealth.mobile.revenueShort', 'Ingreso'),
+              value: formatMoney(totRev),
+            },
+            {
+              label: t('financialHealth.mobile.costShort', 'Coste'),
+              value: formatMoney(totCost),
+            },
+          ]}
+        />
       </div>
     </div>
   );
