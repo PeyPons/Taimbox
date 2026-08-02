@@ -6,7 +6,8 @@
     "contact": "Contact",
     "login": "Log in",
     "menuAria": "Menu",
-    "featuresTrigger": "Features"
+    "featuresTrigger": "Features",
+    "language": "Language"
   },
   "features": {
     "exploreByRole": "Explore by role",

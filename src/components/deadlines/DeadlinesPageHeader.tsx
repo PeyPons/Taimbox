@@ -127,11 +127,16 @@ export function DeadlinesPageHeader({
         {isMobile && employees.length > 0 && (
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-1.5">
-                <PanelRight className="h-4 w-4" />
-                <span className="text-xs">{t('deadlines.page.team', 'Equipo')}</span>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 gap-1.5 shrink-0 px-2.5"
+                aria-label={t('deadlines.page.team', 'Equipo')}
+              >
+                <PanelRight className="h-4 w-4 shrink-0" />
+                <span className="text-xs whitespace-nowrap">{t('deadlines.page.team', 'Equipo')}</span>
               </Button>
-              </SheetTrigger>
+            </SheetTrigger>
             <SheetContent side="right" className="w-[85vw] max-w-xs p-4 overflow-y-auto">
               <SheetHeader className="mb-4">
                 <SheetTitle className="text-base">{t('deadlines.page.teamAvailability', 'Disponibilidad del equipo')}</SheetTitle>

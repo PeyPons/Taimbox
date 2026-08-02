@@ -6,7 +6,8 @@
     "contact": "Contacto",
     "login": "Login",
     "menuAria": "Menú",
-    "featuresTrigger": "Funcionalidades"
+    "featuresTrigger": "Funcionalidades",
+    "language": "Idioma"
   },
   "features": {
     "exploreByRole": "Explora por rol",
@@ -2887,4 +2888,3 @@
     "pending": "pendiente"
   }
 }
-
