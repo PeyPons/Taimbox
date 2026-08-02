@@ -61,13 +61,14 @@ Mínimo en un pase rápido: **375, 768, 1280**. Completar 428 y 1536 en páginas
 
 ## Checklist de rotura (layout)
 
-- [ ] Scroll horizontal en `body` / contenedor principal (salvo tabla con `overflow-x-auto` intencional y usable).
+- [ ] Scroll horizontal en `body` / contenedor principal: **FAIL** si existe. En móvil denso, **no** basta con `overflow-x-auto` en la página: sustituir por **cards/lista** (`md:hidden` + tabla `hidden md:block`).
 - [ ] Texto cortado, truncado sin acceso al valor completo, o columnas que “desaparecen” sin alternativa mobile.
 - [ ] Toolbar / filtros: botones apilados o wrap legible; touch targets ≥ ~40px en móvil.
 - [ ] Tabs: etiquetas legibles; no se solapan; scroll horizontal de tabs solo si es inevitable y obvio.
-- [ ] Tablas: en móvil, columnas prioritarias visibles; resto oculto con `hidden md/lg:table-cell` **o** cards/listas; desgloses expandibles no deben empujar fuera de pantalla sin scroll interno claro.
+- [ ] Tablas: en móvil preferir **cards** con métricas clave (nombre, margen/horas, EHR). Ocultar columnas con `hidden md:table-cell` solo si la fila sigue legible **sin** scroll horizontal.
+- [ ] Header fijo móvil (`Header` `fixed h-16`): banners globales (`PlannerMonthBanner`, etc.) deben vivir **dentro** del offset (`pt-16` en el wrapper de AppLayout), no con `margin-top` solo en `<main>` (deja hueco y tapa el texto).
 - [ ] Sticky headers / sidebars / modales: no tapan CTAs ni el teclado virtual de forma grave.
-- [ ] Imágenes / avatares / badges: no provocan overflow.
+- [ ] Imágenes / avatares / badges: no provocan overflow; en filas móviles limitar badges a alertas críticas.
 - [ ] Consola: sin errores JS nuevos (`TypeError`, hydration, imports fallidos).
 
 ## Checklist de claridad (producto denso)
@@ -113,4 +114,6 @@ Claridad:
 - Dar por bueno un screenshot desktop único.
 - “Pixel-perfect” contra Figma sin pedirlo (esta skill prioriza usabilidad multi-dispositivo).
 - Añadir más botones/badges en el primer viewport para “arreglar” densidad.
+- Compactar una tabla ancha en móvil dejando 3–4 columnas + scroll horizontal: **no es solución**; usar cards.
+- Offset del header con `margin-top` en main mientras los banners quedan fuera: el aviso de “otro mes” queda tapado.
 - Persistir credenciales o URLs con secretos en el repo.

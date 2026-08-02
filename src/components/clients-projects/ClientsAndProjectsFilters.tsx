@@ -131,11 +131,6 @@ export function ClientsAndProjectsFilters({
       ? t('clientsAndProjects.filters.types.all', 'Todos los tipos')
       : activeFilters.find((f) => f.id === projectTypeFilter)?.displayName ?? t('clientsAndProjects.filters.types.placeholder', 'Tipo');
 
-  const mobileSummary = [
-    statusLabels[statusFilter],
-    activeFilter !== 'all' ? quickLabels[activeFilter] : null,
-  ].filter(Boolean).join(' · ');
-
   const dropdownFilters = (
     <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-2 sm:gap-3 min-w-0">
       <Popover open={openStatusFilter} onOpenChange={setOpenStatusFilter}>
@@ -357,45 +352,52 @@ export function ClientsAndProjectsFilters({
   );
 
   return (
-    <div className="space-y-3 min-w-0">
-      <div className="relative w-full min-w-0 sm:max-w-md sm:flex-1">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-        <Input
-          placeholder={t('clientsAndProjects.filters.searchPlaceholder', 'Buscar cliente o proyecto...')}
-          value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
-          className="pl-10 h-9"
-        />
-        {searchInput && (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
-            onClick={() => setSearchInput('')}
-          >
-            <X className="h-3 w-3" />
-          </Button>
-        )}
-      </div>
+    <div className="space-y-2 sm:space-y-3 min-w-0">
+      <Collapsible open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen} className="space-y-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="relative w-full min-w-0 sm:max-w-md sm:flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+            <Input
+              placeholder={t('clientsAndProjects.filters.searchPlaceholder', 'Buscar cliente o proyecto...')}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              className="pl-10 h-9"
+            />
+            {searchInput && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+                onClick={() => setSearchInput('')}
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            )}
+          </div>
 
-      <Collapsible open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen} className="sm:hidden space-y-2">
-        <CollapsibleTrigger asChild>
-          <Button type="button" variant="outline" size="sm" className="h-9 w-full justify-between gap-2 bg-white">
-            <span className="inline-flex items-center gap-2 text-xs font-medium text-slate-700 truncate min-w-0">
+          <CollapsibleTrigger asChild>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="sm:hidden h-9 px-2.5 gap-1.5 bg-white shrink-0"
+              aria-label={t('clientsAndProjects.filters.openFilters', 'Filtros')}
+            >
               <SlidersHorizontal className="h-3.5 w-3.5 shrink-0" />
-              <span className="truncate">
+              <span className="text-xs font-medium truncate max-w-[6rem]">
                 {mobileFiltersOpen
-                  ? t('clientsAndProjects.filters.hideFilters', 'Ocultar filtros')
-                  : t('clientsAndProjects.filters.summary', {
-                      summary: mobileSummary,
-                      defaultValue: mobileSummary,
-                    })}
+                  ? t('clientsAndProjects.filters.hideFiltersShort', 'Cerrar')
+                  : t('clientsAndProjects.filters.openFilters', 'Filtros')}
               </span>
-            </span>
-            {mobileFiltersOpen ? <ChevronDown className="h-4 w-4 shrink-0" /> : <ChevronRight className="h-4 w-4 shrink-0" />}
-          </Button>
-        </CollapsibleTrigger>
-        <CollapsibleContent className="space-y-3 pt-1">
+              {(statusFilter !== 'active' || activeFilter !== 'all') && !mobileFiltersOpen && (
+                <span className="h-1.5 w-1.5 rounded-full bg-indigo-500 shrink-0" aria-hidden />
+              )}
+              {mobileFiltersOpen ? <ChevronDown className="h-3.5 w-3.5 shrink-0" /> : <ChevronRight className="h-3.5 w-3.5 shrink-0" />}
+            </Button>
+          </CollapsibleTrigger>
+        </div>
+
+        <CollapsibleContent className="sm:hidden space-y-3">
           {dropdownFilters}
           {quickFilters}
         </CollapsibleContent>

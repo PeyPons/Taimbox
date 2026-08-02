@@ -84,15 +84,18 @@ import { usePlanMonthNavigation } from '@/hooks/usePlanMonthNavigation';
 import { useEnsureMonthWithLoading } from '@/hooks/useEnsureMonthWithLoading';
 import { isAtPlanHistoryMinMonth } from '@/utils/planHistoryUtils';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export default function FinancialHealthPage() {
     const { t } = useTranslation('app');
     const dateLocale = useDateLocale();
+    const isMobile = useIsMobile();
     const [searchQuery, setSearchQuery] = useState('');
     const [hoursMode, setHoursMode] = useState<'actual' | 'computed'>('computed');
     const [costMode, setCostMode] = useState<'standard' | 'dynamic'>('standard');
     const [lifecycleCostMode, setLifecycleCostMode] = useState<'standard' | 'dynamic'>('standard');
     const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+    const [commonExpensesMobileOpen, setCommonExpensesMobileOpen] = useState(false);
     const [costHelpOpen, setCostHelpOpen] = useState(false);
     const [profitSettingsOpen, setProfitSettingsOpen] = useState(false);
     const [profitSettingsSaving, setProfitSettingsSaving] = useState(false);
@@ -1077,11 +1080,11 @@ export default function FinancialHealthPage() {
     }, [dynamicCostFallbackActive, costMode, agencyTotalOverheadApplied, t]);
 
     return (
-        <div className="p-4 sm:p-6 md:p-8 max-w-[1600px] mx-auto space-y-6 min-w-0 w-full">
+        <div className="p-3 sm:p-6 md:p-8 max-w-[1600px] mx-auto space-y-3 sm:space-y-6 min-w-0 w-full">
             {/* Cabecera: en móvil solo título para dejar sitio a KPIs/tablas */}
             <header className="space-y-1 sm:space-y-3">
-                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-                    <DollarSign className="h-6 w-6 sm:h-7 sm:w-7 text-emerald-600 shrink-0" aria-hidden />
+                <h1 className="text-lg sm:text-2xl md:text-3xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                    <DollarSign className="h-5 w-5 sm:h-7 sm:w-7 text-emerald-600 shrink-0" aria-hidden />
                     {t('financialHealth.title', 'Rentabilidad')}
                 </h1>
                 <p className="text-slate-600 text-sm max-w-xl hidden sm:block">
@@ -1101,26 +1104,26 @@ export default function FinancialHealthPage() {
 
             {/* Controles: mes siempre visible; filtros/modos colapsables en móvil */}
             <TooltipProvider delayDuration={300}>
-                <div className="flex flex-col gap-2.5 sm:gap-3 p-3 sm:p-4 rounded-xl bg-slate-50 border border-slate-200/80 min-w-0">
-                    <div className="flex flex-wrap items-center gap-2 min-w-0">
+                <div className="flex flex-col gap-2 sm:gap-3 p-2.5 sm:p-4 rounded-xl bg-slate-50 border border-slate-200/80 min-w-0">
+                    <div className="flex items-center gap-2 min-w-0">
                         <div className="flex items-center gap-0.5 rounded-lg border border-slate-200 bg-white p-0.5 shadow-sm shrink-0">
                             <Button
                                 variant="ghost"
                                 size="icon"
                                 onClick={handlePrevMonth}
                                 disabled={isAtPlanHistoryMinMonth(currentMonth, minReportingMonth)}
-                                className="h-9 w-9 text-slate-600 hover:bg-slate-100 disabled:opacity-50"
+                                className="h-8 w-8 sm:h-9 sm:w-9 text-slate-600 hover:bg-slate-100 disabled:opacity-50"
                                 aria-label={t('financialHealth.controls.prevMonth')}
                             >
                                 <ChevronRight className="h-4 w-4 rotate-180" />
                             </Button>
-                            <Button variant="ghost" onClick={handleToday} className="h-9 px-2.5 sm:px-3 text-sm font-medium text-slate-800 capitalize min-w-[5rem] sm:min-w-[100px]">
+                            <Button variant="ghost" onClick={handleToday} className="h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm font-medium text-slate-800 capitalize min-w-[4.75rem] sm:min-w-[100px]">
                                 {format(currentMonth, 'MMM yyyy', { locale: dateLocale })}
                             </Button>
                             {minReportingMonth != null && (
                                 <span className="text-xs text-slate-500 hidden sm:inline">{t('financialHealth.controls.starterPlan', 'Plan Starter: mes actual y anterior')}</span>
                             )}
-                            <Button variant="ghost" size="icon" onClick={handleNextMonth} className="h-9 w-9 text-slate-600 hover:bg-slate-100" aria-label={t('financialHealth.controls.nextMonth')}>
+                            <Button variant="ghost" size="icon" onClick={handleNextMonth} className="h-8 w-8 sm:h-9 sm:w-9 text-slate-600 hover:bg-slate-100" aria-label={t('financialHealth.controls.nextMonth')}>
                                 <ChevronRight className="h-4 w-4" />
                             </Button>
                         </div>
@@ -1128,11 +1131,11 @@ export default function FinancialHealthPage() {
                             <Loader2 className="h-4 w-4 animate-spin text-slate-400 shrink-0" aria-label={t('common.loading', 'Cargando')} />
                         )}
                         {isViewingCurrentMonth ? (
-                            <Badge className="bg-indigo-500 hover:bg-indigo-600 text-white border-0 animate-pulse shrink-0 text-[11px] sm:text-xs">
+                            <Badge className="bg-indigo-500 hover:bg-indigo-600 text-white border-0 animate-pulse shrink-0 text-[10px] sm:text-xs px-1.5">
                                 {t('financialHealth.controls.currentMonth', 'Mes en curso')}
                             </Badge>
                         ) : (
-                            <Badge variant="secondary" className="bg-slate-200 text-slate-600 border-0 shrink-0 text-[11px] sm:text-xs">
+                            <Badge variant="secondary" className="bg-slate-200 text-slate-600 border-0 shrink-0 text-[10px] sm:text-xs px-1.5">
                                 {t('financialHealth.controls.closedMonth', 'Mes cerrado')}
                             </Badge>
                         )}
@@ -1144,7 +1147,7 @@ export default function FinancialHealthPage() {
                             placeholder={t('financialHealth.search', 'Buscar proyecto o cliente...')}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="pl-9 h-10 bg-white border-slate-200 w-full"
+                            className="pl-9 h-9 sm:h-10 bg-white border-slate-200 w-full"
                             aria-label={t('financialHealth.searchAria')}
                         />
                     </div>
@@ -1476,27 +1479,29 @@ export default function FinancialHealthPage() {
             </Dialog>
 
             <TooltipProvider delayDuration={300}>
-                <Tabs defaultValue="resumen" className="space-y-6 min-w-0">
+                <Tabs defaultValue="resumen" className="space-y-3 sm:space-y-6 min-w-0">
                     <div className="space-y-1">
-                        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto sm:h-11 bg-slate-100 p-1 rounded-lg gap-1">
-                            <TabsTrigger value="resumen" className="gap-1.5 text-xs sm:text-sm data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md">
-                                <LayoutDashboard className="h-4 w-4 shrink-0" />
-                                {t('financialHealth.tabs.summary')}
+                        <TabsList className="grid w-full grid-cols-4 h-10 sm:h-11 bg-slate-100 p-1 rounded-lg gap-1">
+                            <TabsTrigger value="resumen" className="gap-1 sm:gap-1.5 text-[11px] sm:text-sm data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md px-1 sm:px-3">
+                                <LayoutDashboard className="hidden sm:block h-4 w-4 shrink-0" />
+                                <span>{t('financialHealth.tabs.summaryShort', 'Resumen')}</span>
                             </TabsTrigger>
-                            <TabsTrigger value="proyectos" className="gap-1.5 text-xs sm:text-sm data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md">
-                                <FolderKanban className="h-4 w-4 shrink-0" />
-                                {t('financialHealth.tabs.projects')}
+                            <TabsTrigger value="proyectos" className="gap-1 sm:gap-1.5 text-[11px] sm:text-sm data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md px-1 sm:px-3">
+                                <FolderKanban className="hidden sm:block h-4 w-4 shrink-0" />
+                                <span className="sm:hidden">{t('financialHealth.tabs.projectsShort', 'Proy.')}</span>
+                                <span className="hidden sm:inline">{t('financialHealth.tabs.projects')}</span>
                             </TabsTrigger>
-                            <TabsTrigger value="deliverables-lifecycle" className="gap-1.5 text-xs sm:text-sm data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md leading-tight">
-                                <Layers className="h-4 w-4 shrink-0" />
-                                <span className="sm:hidden">{t('financialHealth.tabs.deliverablesShort', 'Entregables')}</span>
-                                <span className="hidden sm:inline text-left sm:text-center">
+                            <TabsTrigger value="deliverables-lifecycle" className="gap-1 sm:gap-1.5 text-[11px] sm:text-sm data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md px-1 sm:px-3">
+                                <Layers className="hidden sm:block h-4 w-4 shrink-0" />
+                                <span className="sm:hidden">{t('financialHealth.tabs.deliverablesTiny', 'Entreg.')}</span>
+                                <span className="hidden sm:inline">
                                     {t('financialHealth.tabs.deliverablesLifecycle', 'Entregables (vida)')}
                                 </span>
                             </TabsTrigger>
-                            <TabsTrigger value="empleados" className="gap-1.5 text-xs sm:text-sm data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md">
-                                <UserCircle className="h-4 w-4 shrink-0" />
-                                {t('financialHealth.tabs.employees')}
+                            <TabsTrigger value="empleados" className="gap-1 sm:gap-1.5 text-[11px] sm:text-sm data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md px-1 sm:px-3">
+                                <UserCircle className="hidden sm:block h-4 w-4 shrink-0" />
+                                <span className="sm:hidden">{t('financialHealth.tabs.employeesShort', 'Empl.')}</span>
+                                <span className="hidden sm:inline">{t('financialHealth.tabs.employees')}</span>
                             </TabsTrigger>
                         </TabsList>
                         <p className="text-xs text-slate-500 px-0.5 hidden sm:block">
@@ -1507,9 +1512,46 @@ export default function FinancialHealthPage() {
                         </p>
                     </div>
 
-                    <TabsContent value="resumen" className="space-y-8 mt-0">
-                        {/* KPIs */}
-                        <section className="grid gap-4 sm:gap-6 md:grid-cols-2 xl:grid-cols-3 min-w-0" aria-label={t('financialHealth.kpis.sectionAria')}>
+                    <TabsContent value="resumen" className="flex flex-col gap-3 sm:gap-6 md:gap-8 mt-0">
+                        {/* KPIs: tira compacta en móvil; cards completas desde md */}
+                        <section className="order-1 min-w-0" aria-label={t('financialHealth.kpis.sectionAria')}>
+                            <div className="md:hidden grid grid-cols-3 gap-1.5">
+                                <div className="rounded-xl border border-emerald-200 bg-white px-1.5 py-2 border-l-4 border-l-emerald-500 min-w-0">
+                                    <p className="text-[10px] font-medium text-slate-500">{t('financialHealth.kpis.ehr.titleShort', 'EHR')}</p>
+                                    <p className={cn(
+                                        'text-sm font-bold tabular-nums leading-snug mt-0.5 break-words',
+                                        totalHoursForView === 0 ? 'text-slate-400' : ehrIsHealthy ? 'text-emerald-700' : 'text-red-600'
+                                    )}>
+                                        {totalHoursForView > 0 ? formatPerHour(effectiveHourlyRate, 0) : '–'}
+                                    </p>
+                                    <p className="text-[10px] text-slate-500 tabular-nums mt-0.5">
+                                        {t('financialHealth.kpis.ehr.targetShort', 'Obj.')} {formatEhrTargetForDisplay(ehrTarget)}
+                                    </p>
+                                </div>
+                                <div className={cn(
+                                    'rounded-xl border bg-white px-1.5 py-2 border-l-4 min-w-0',
+                                    marginIsPositive ? 'border-emerald-200 border-l-emerald-500' : 'border-red-200 border-l-red-500'
+                                )}>
+                                    <p className="text-[10px] font-medium text-slate-500">{t('financialHealth.kpis.netMargin.titleShort', 'Margen')}</p>
+                                    <p className={cn(
+                                        'text-sm font-bold tabular-nums leading-snug mt-0.5 break-words',
+                                        marginIsPositive ? 'text-emerald-700' : 'text-red-600'
+                                    )}>
+                                        {formatMoney(Math.round(netMargin))}
+                                    </p>
+                                    <p className="text-[10px] text-slate-500 tabular-nums mt-0.5">
+                                        {marginPercent != null ? `${marginPercent.toFixed(0)}%` : '–'}
+                                    </p>
+                                </div>
+                                <div className="rounded-xl border border-indigo-200 bg-white px-1.5 py-2 border-l-4 border-l-indigo-500 min-w-0">
+                                    <p className="text-[10px] font-medium text-slate-500">{t('financialHealth.kpis.monthlyOverheadKpi.titleShort', 'Gastos')}</p>
+                                    <p className="text-sm font-bold tabular-nums leading-snug mt-0.5 text-slate-800 break-words">
+                                        {formatMoney(Math.round(commonExpensesBreakdown.total))}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="hidden md:grid gap-4 sm:gap-6 md:grid-cols-2 xl:grid-cols-3 min-w-0">
                             <Card className="border-l-4 border-emerald-500 shadow-sm bg-white overflow-hidden min-w-0">
                                 <CardHeader className="pb-2 min-w-0">
                                     <CardTitle className="text-base font-semibold text-slate-800 flex items-center gap-2 min-w-0">
@@ -1660,6 +1702,7 @@ export default function FinancialHealthPage() {
                                     )}
                                 </CardContent>
                             </Card>
+                            </div>
                         </section>
 
                         {(commonExpensesAllocError ||
@@ -1667,19 +1710,44 @@ export default function FinancialHealthPage() {
                             commonExpensesZeroHourWarningNames.length > 0 ||
                             (commonExpensesAlloc.ok &&
                                 commonExpensesAlloc.unallocatedAmount > 0.009)) && (
-                            <section aria-label={t('financialHealth.commonExpenses.title')}>
+                            <section className="order-3 md:order-2 min-w-0" aria-label={t('financialHealth.commonExpenses.title')}>
                                 <Card className="shadow-sm border border-slate-200 bg-white border-l-4 border-l-indigo-500 overflow-hidden min-w-0">
+                                    <Collapsible
+                                        open={!isMobile || commonExpensesMobileOpen}
+                                        onOpenChange={setCommonExpensesMobileOpen}
+                                    >
                                     <CardHeader className="pb-2">
-                                        <CardTitle className="text-base font-semibold text-slate-800 flex items-center gap-2">
-                                            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
-                                                <Landmark className="h-4 w-4" />
-                                            </span>
-                                            {t('financialHealth.commonExpenses.title')}
-                                        </CardTitle>
-                                        <CardDescription className="text-xs text-slate-500">
-                                            {t('financialHealth.commonExpenses.description')}
-                                        </CardDescription>
+                                        <div className="flex items-start justify-between gap-2">
+                                            <div className="min-w-0">
+                                                <CardTitle className="text-sm sm:text-base font-semibold text-slate-800 flex items-center gap-2">
+                                                    <span className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 shrink-0">
+                                                        <Landmark className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                                                    </span>
+                                                    <span className="truncate">{t('financialHealth.commonExpenses.title')}</span>
+                                                </CardTitle>
+                                                <p className="md:hidden mt-1 text-sm font-mono font-semibold tabular-nums text-slate-800">
+                                                    {formatMoney(agencyTotalOverheadApplied || commonExpensesBreakdown.total)}
+                                                </p>
+                                                <CardDescription className="text-xs text-slate-500 hidden md:block">
+                                                    {t('financialHealth.commonExpenses.description')}
+                                                </CardDescription>
+                                            </div>
+                                            <CollapsibleTrigger asChild>
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="md:hidden h-8 shrink-0 text-xs gap-1"
+                                                >
+                                                    {commonExpensesMobileOpen ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+                                                    {commonExpensesMobileOpen
+                                                        ? t('financialHealth.mobile.closeBreakdown', 'Cerrar')
+                                                        : t('financialHealth.mobile.openBreakdown', 'Detalle')}
+                                                </Button>
+                                            </CollapsibleTrigger>
+                                        </div>
                                     </CardHeader>
+                                    <CollapsibleContent>
                                     <CardContent className="space-y-3 text-sm">
                                         {commonExpensesAllocError && (
                                             <p className="text-red-600 text-sm">
@@ -1749,21 +1817,23 @@ export default function FinancialHealthPage() {
                                             </p>
                                         )}
                                     </CardContent>
+                                    </CollapsibleContent>
+                                    </Collapsible>
                                 </Card>
                             </section>
                         )}
 
-                        {/* Radar de hemorragias */}
-                        <section aria-label={t('financialHealth.bleedingRadar.ariaLabel')}>
+                        {/* Radar de hemorragias: en móvil antes que el detalle de gastos */}
+                        <section className="order-2 md:order-3 min-w-0" aria-label={t('financialHealth.bleedingRadar.ariaLabel')}>
                             <Card className="shadow-sm border border-slate-200 bg-white overflow-hidden min-w-0">
-                                <CardHeader className="pb-3">
-                                    <CardTitle className="text-base font-semibold text-slate-800 flex items-center gap-2">
-                                        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-50 text-red-600">
-                                            <ArrowDownRight className="h-4 w-4" />
+                                <CardHeader className="pb-2 sm:pb-3">
+                                    <CardTitle className="text-sm sm:text-base font-semibold text-slate-800 flex items-center gap-2">
+                                        <span className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-lg bg-red-50 text-red-600">
+                                            <ArrowDownRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                                         </span>
                                         {t('financialHealth.bleedingRadar.title')}
                                     </CardTitle>
-                                    <CardDescription className="text-xs text-slate-500">
+                                    <CardDescription className="text-xs text-slate-500 hidden sm:block">
                                         {t('financialHealth.bleedingRadar.description')}
                                     </CardDescription>
                                 </CardHeader>
@@ -1778,7 +1848,86 @@ export default function FinancialHealthPage() {
                                         </div>
                                     ) : (
                                         <>
-                                                                            <div className="max-w-full min-w-0 overflow-x-auto overscroll-x-contain">
+                                            {/* Móvil: cards (sin tabla ni scroll horizontal) */}
+                                            <p className="md:hidden text-xs text-slate-500 mb-2">
+                                                {t('financialHealth.mobile.mobileTapHint', 'Toca una fila para ver el desglose')}
+                                            </p>
+                                            <ul className="md:hidden space-y-2 mb-2">
+                                                {projectsToShow.map(({ metric: p, clientName, ehr, ehrLabel }) => {
+                                                    const cm = projectCostAndMarginMap.get(p.projectId) ?? { cost: 0, payrollCost: 0, overheadCost: 0, margin: 0 };
+                                                    const displayFeeRadar = projectDisplayFeeMap.get(p.projectId) ?? p.monthlyFee ?? 0;
+                                                    const displayMarginRadar = displayFeeRadar - cm.cost;
+                                                    const marginPctRadar = displayFeeRadar > 0 ? (displayMarginRadar / displayFeeRadar) * 100 : 0;
+                                                    const semaphoreRadar = getMarginSemaphore(marginPctRadar);
+                                                    const attributionRows = projectEmployeeAttributionMap.get(p.projectId) || [];
+                                                    const projectHours = hoursMode === 'computed' ? p.computed : p.actual;
+                                                    const isExpanded = expandedProjects.has(p.projectId);
+                                                    const ehrBelowTarget = isFinite(ehr) && projectHours > 0 && ehr < ehrTarget;
+                                                    return (
+                                                        <li key={`radar-m-${p.projectId}`} className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+                                                            <button
+                                                                type="button"
+                                                                className="w-full text-left p-3 flex items-start gap-3"
+                                                                onClick={() => toggleProject(p.projectId)}
+                                                            >
+                                                                <div className="min-w-0 flex-1 space-y-1">
+                                                                    <p className="font-semibold text-slate-900 text-sm leading-snug">
+                                                                        <SensitiveText kind="project" id={p.projectId}>{p.projectName}</SensitiveText>
+                                                                    </p>
+                                                                    <p className="text-[11px] text-slate-500 leading-snug">
+                                                                        <SensitiveText kind="account" id={p.clientId ?? 'unknown-client'}>{clientName}</SensitiveText>
+                                                                    </p>
+                                                                    <p className="text-[11px] text-slate-600 font-mono tabular-nums">
+                                                                        {formatMoney(displayFeeRadar)} · {projectHours.toFixed(1)}h / {p.budget.toFixed(1)}h
+                                                                    </p>
+                                                                </div>
+                                                                <div className="shrink-0 flex flex-col items-end gap-1.5">
+                                                                    <span className={cn('font-mono text-sm font-semibold tabular-nums inline-flex items-center gap-1', semaphoreRadar.className)}>
+                                                                        {semaphoreRadar.showAlert && <AlertTriangle className="h-3.5 w-3.5" aria-hidden />}
+                                                                        {formatMoney(displayMarginRadar)}
+                                                                    </span>
+                                                                    {projectHours > 0 ? (
+                                                                        <Badge
+                                                                            variant={ehrBelowTarget ? 'destructive' : 'outline'}
+                                                                            className={cn(
+                                                                                'text-[10px] font-semibold tabular-nums',
+                                                                                ehrBelowTarget
+                                                                                    ? 'bg-red-600 text-white border-red-600'
+                                                                                    : 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                                                                            )}
+                                                                        >
+                                                                            {ehrLabel}
+                                                                        </Badge>
+                                                                    ) : (
+                                                                        <Badge variant="outline" className="text-[10px] text-slate-500 border-slate-300 bg-slate-50">
+                                                                            {t('financialHealth.kpis.ehr.notStarted')}
+                                                                        </Badge>
+                                                                    )}
+                                                                    <span className="text-[11px] text-slate-500 inline-flex items-center gap-0.5">
+                                                                        {isExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+                                                                        {isExpanded
+                                                                            ? t('financialHealth.mobile.closeBreakdown', 'Cerrar desglose')
+                                                                            : t('financialHealth.mobile.openBreakdown', 'Ver desglose')}
+                                                                    </span>
+                                                                </div>
+                                                            </button>
+                                                            {isExpanded && (
+                                                                <div className="border-t border-slate-100 bg-slate-50/80 px-3 py-3">
+                                                                    <ProfitabilityAttributionMobileList
+                                                                        rows={attributionRows}
+                                                                        employeeNameById={(id) => employees.find(e => e.id === id)?.name || t('financialHealth.unknownEmployee')}
+                                                                        formatMoney={formatMoney}
+                                                                        formatPerHour={formatPerHour}
+                                                                        hoursModeLabel={hoursMode === 'computed' ? t('financialHealth.expand.hoursComputed') : t('financialHealth.expand.hoursActual')}
+                                                                    />
+                                                                </div>
+                                                            )}
+                                                        </li>
+                                                    );
+                                                })}
+                                            </ul>
+
+                                            <div className="hidden md:block max-w-full min-w-0 overflow-x-auto overscroll-x-contain">
                                                                                 <table className="w-full text-xs sm:text-sm">
                                                     <thead className="text-xs text-slate-500 uppercase bg-slate-50/80">
                                                         <tr>
@@ -2178,7 +2327,7 @@ export default function FinancialHealthPage() {
 
                         {/* Inversión interna */}
                         {internalWithActivity.length > 0 && (
-                            <section aria-label={t('financialHealth.internalInvestment.ariaLabel')}>
+                            <section className="order-4 min-w-0" aria-label={t('financialHealth.internalInvestment.ariaLabel')}>
                                 <Card className="shadow-sm border border-slate-200 bg-white border-l-4 border-l-slate-400 overflow-hidden min-w-0">
                                     <CardHeader className="pb-3">
                                         <CardTitle className="text-base font-semibold text-slate-800 flex items-center gap-2">
@@ -2192,7 +2341,36 @@ export default function FinancialHealthPage() {
                                         </CardDescription>
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="max-w-full min-w-0 overflow-x-auto overscroll-x-contain">
+                                        <ul className="md:hidden space-y-2">
+                                            {internalWithActivity.map((p) => {
+                                                const clientName = clientById.get(p.clientId) || p.clientName || t('financialHealth.internalInvestment.unknownClient');
+                                                const pcm = projectCostAndMarginMap.get(p.projectId) ?? {
+                                                    cost: 0,
+                                                    payrollCost: 0,
+                                                    overheadCost: 0,
+                                                    margin: 0,
+                                                };
+                                                const hours = hoursMode === 'computed' ? p.computed : p.actual;
+                                                return (
+                                                    <li key={`int-m-${p.projectId}`} className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+                                                        <p className="font-semibold text-slate-900 text-sm leading-snug">
+                                                            <SensitiveText kind="project" id={p.projectId}>{p.projectName}</SensitiveText>
+                                                        </p>
+                                                        <p className="text-[11px] text-slate-500 mt-0.5">
+                                                            <SensitiveText kind="account" id={p.clientId ?? 'unknown-client'}>{clientName}</SensitiveText>
+                                                        </p>
+                                                        <div className="mt-2 flex items-end justify-between gap-3">
+                                                            <span className="text-[11px] text-slate-600 font-mono tabular-nums">{hours.toFixed(1)} h</span>
+                                                            <span className="font-mono text-sm font-semibold tabular-nums text-slate-800">{formatMoney(pcm.cost)}</span>
+                                                        </div>
+                                                        <p className="mt-1 text-[10px] text-slate-500 font-mono tabular-nums">
+                                                            {t('financialHealth.columns.payrollImputed')}: {formatMoney(pcm.payrollCost)} · {t('financialHealth.columns.commonOverhead')}: {formatMoney(pcm.overheadCost)}
+                                                        </p>
+                                                    </li>
+                                                );
+                                            })}
+                                        </ul>
+                                        <div className="hidden md:block max-w-full min-w-0 overflow-x-auto overscroll-x-contain">
                                             <table className="w-full text-sm">
                                                 <thead className="text-xs text-slate-500 uppercase bg-slate-50/80">
                                                     <tr>
@@ -2271,7 +2449,7 @@ export default function FinancialHealthPage() {
                         )}
 
                         {/* Rentabilidad por departamento y por empleado */}
-                        <section aria-label={t('financialHealth.departmentProfitability.sectionAria')}>
+                        <section className="order-4 min-w-0" aria-label={t('financialHealth.departmentProfitability.sectionAria')}>
                             <div className="grid gap-6 grid-cols-1 xl:grid-cols-2 min-w-0">
                                 <Card className="shadow-sm border border-slate-200 bg-white overflow-hidden min-w-0">
                                     <CardHeader className="pb-3">
@@ -2304,7 +2482,35 @@ export default function FinancialHealthPage() {
                                                 <p className="text-xs text-slate-500 mt-1">{t('financialHealth.departmentProfitability.emptyDesc')}</p>
                                             </div>
                                         ) : (
-                                            <div className="max-w-full min-w-0 overflow-x-auto overscroll-x-contain">
+                                            <>
+                                            <ul className="md:hidden space-y-2">
+                                                {departmentProfitability.items.map((dept) => {
+                                                    const isBelowTarget = dept.ehr < ehrTarget;
+                                                    const marginPctDept = dept.revenue > 0 ? (dept.margin / dept.revenue) * 100 : (dept.margin < 0 ? -1 : 0);
+                                                    const semDept = getMarginSemaphore(marginPctDept);
+                                                    return (
+                                                        <li key={`dept-m-${dept.id}`} className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+                                                            <div className="flex items-start justify-between gap-3">
+                                                                <div className="min-w-0">
+                                                                    <p className="font-semibold text-slate-900 text-sm truncate">{dept.name}</p>
+                                                                    <p className="text-[11px] text-slate-600 font-mono tabular-nums mt-1">
+                                                                        {formatMoney(dept.revenue)} · {dept.hours.toFixed(1)} h
+                                                                    </p>
+                                                                </div>
+                                                                <div className="shrink-0 flex flex-col items-end gap-1">
+                                                                    <span className={cn('font-mono text-sm font-semibold tabular-nums', semDept.className)}>
+                                                                        {formatMoney(dept.margin)}
+                                                                    </span>
+                                                                    <span className={cn('text-[11px] font-semibold tabular-nums', isBelowTarget ? 'text-red-600' : 'text-emerald-700')}>
+                                                                        {formatPerHour(dept.ehr, 0)}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        </li>
+                                                    );
+                                                })}
+                                            </ul>
+                                            <div className="hidden md:block max-w-full min-w-0 overflow-x-auto overscroll-x-contain">
                                                 <table className="w-full text-xs sm:text-sm">
                                                     <thead className="text-xs text-slate-500 uppercase bg-slate-50/80">
                                                         <tr>
@@ -2354,6 +2560,7 @@ export default function FinancialHealthPage() {
                                                     </tbody>
                                                 </table>
                                             </div>
+                                            </>
                                         )}
                                     </CardContent>
                                 </Card>
@@ -2381,7 +2588,40 @@ export default function FinancialHealthPage() {
                                                 <p className="text-xs text-slate-500 mt-1">{t('financialHealth.employeeProfitability.emptyDesc')}</p>
                                             </div>
                                         ) : (
-                                            <div className="max-w-full min-w-0 overflow-x-auto overscroll-x-contain">
+                                          <>
+                                            <ul className="md:hidden space-y-2 mb-2">
+                                                {[...employeeProfitabilityFilteredBySearch]
+                                                    .sort((a, b) => {
+                                                        const marginA = employeeDisplayTotalsWhenSearch ? (employeeDisplayTotalsWhenSearch.get(a.employeeId)?.margin ?? a.margin) : a.margin;
+                                                        const marginB = employeeDisplayTotalsWhenSearch ? (employeeDisplayTotalsWhenSearch.get(b.employeeId)?.margin ?? b.margin) : b.margin;
+                                                        return marginB - marginA;
+                                                    })
+                                                    .map((ep) => {
+                                                        const display = employeeDisplayTotalsWhenSearch?.get(ep.employeeId);
+                                                        const h = display ? display.hours : (hoursMode === 'computed' ? ep.totalComputed : ep.totalActual);
+                                                        const attr = display ? display.attr : ep.attributedRevenue;
+                                                        const margin = display ? display.margin : ep.margin;
+                                                        const marginPct = attr > 0 ? (margin / attr) * 100 : (margin < 0 ? -1 : 0);
+                                                        const semaphore = getMarginSemaphore(marginPct);
+                                                        return (
+                                                            <li key={`resumen-emp-m-${ep.employeeId}`} className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+                                                                <div className="flex items-start justify-between gap-3">
+                                                                    <div className="min-w-0">
+                                                                        <p className="font-semibold text-slate-900 text-sm truncate">{ep.employeeName}</p>
+                                                                        <p className="text-[11px] text-slate-600 font-mono tabular-nums mt-1">
+                                                                            {h.toFixed(1)} h · {formatMoney(attr)}
+                                                                        </p>
+                                                                    </div>
+                                                                    <span className={cn('shrink-0 font-mono text-sm font-semibold tabular-nums inline-flex items-center gap-1', semaphore.className)}>
+                                                                        {semaphore.showAlert && <AlertTriangle className="h-3.5 w-3.5" aria-hidden />}
+                                                                        {formatMoney(margin)}
+                                                                    </span>
+                                                                </div>
+                                                            </li>
+                                                        );
+                                                    })}
+                                            </ul>
+                                            <div className="hidden md:block max-w-full min-w-0 overflow-x-auto overscroll-x-contain">
                                                 <table className="w-full max-w-full text-xs sm:text-sm [table-layout:fixed]">
                                                     <thead className="text-xs text-slate-500 uppercase bg-slate-50/80">
                                                         <tr>
@@ -2588,6 +2828,7 @@ export default function FinancialHealthPage() {
                                                     </tfoot>
                                                 </table>
                                             </div>
+                                          </>
                                         )}
                                     </CardContent>
                                 </Card>
@@ -3069,7 +3310,33 @@ export default function FinancialHealthPage() {
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="max-w-full min-w-0 overflow-x-auto overscroll-x-contain">
+                                    <ul className="md:hidden space-y-2">
+                                        {internalWithActivity.map((p) => {
+                                            const clientName = clientById.get(p.clientId) || p.clientName || 'Cliente desconocido';
+                                            const pcm = projectCostAndMarginMap.get(p.projectId) ?? {
+                                                cost: 0,
+                                                payrollCost: 0,
+                                                overheadCost: 0,
+                                                margin: 0,
+                                            };
+                                            const hours = hoursMode === 'computed' ? p.computed : p.actual;
+                                            return (
+                                                <li key={`int-tab-m-${p.projectId}`} className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+                                                    <p className="font-semibold text-slate-900 text-sm leading-snug">
+                                                        <SensitiveText kind="project" id={p.projectId}>{p.projectName}</SensitiveText>
+                                                    </p>
+                                                    <p className="text-[11px] text-slate-500 mt-0.5">
+                                                        <SensitiveText kind="account" id={p.clientId ?? 'unknown-client'}>{clientName}</SensitiveText>
+                                                    </p>
+                                                    <div className="mt-2 flex items-end justify-between gap-3">
+                                                        <span className="text-[11px] text-slate-600 font-mono tabular-nums">{hours.toFixed(1)} h</span>
+                                                        <span className="font-mono text-sm font-semibold tabular-nums text-slate-800">{formatMoney(pcm.cost)}</span>
+                                                    </div>
+                                                </li>
+                                            );
+                                        })}
+                                    </ul>
+                                    <div className="hidden md:block max-w-full min-w-0 overflow-x-auto overscroll-x-contain">
                                         <table className="w-full text-sm">
                                             <thead className="text-xs text-slate-500 uppercase bg-slate-50/80">
                                                 <tr>
