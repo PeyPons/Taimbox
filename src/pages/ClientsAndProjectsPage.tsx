@@ -1009,34 +1009,34 @@ export default function ClientsAndProjectsPage() {
           <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/80 shadow-lg shadow-primary/20">
             <Building2 className="h-5 w-5 text-white" />
           </div>
-          <div>
+          <div className="min-w-0">
             <h1 className="text-xl sm:text-2xl font-bold text-foreground">{t('clientsAndProjects.title')}</h1>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground hidden sm:block">
               {t('clientsAndProjects.subtitle')}
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap min-w-0 w-full lg:w-auto">
           {/* Selector de mes */}
-          <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
+          <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1 min-w-0">
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8"
+              className="h-8 w-8 shrink-0"
               disabled={prevMonthDisabled}
               onClick={goToPrevMonth}
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <span className="text-sm font-medium px-2 min-w-[120px] text-center capitalize flex items-center justify-center gap-1.5">
+            <span className="text-sm font-medium px-1.5 sm:px-2 min-w-[5.5rem] sm:min-w-[120px] text-center capitalize flex items-center justify-center gap-1.5">
               {isLoadingMonth && <Loader2 className="h-3.5 w-3.5 animate-spin text-slate-400" />}
-              {format(currentMonth, 'MMMM yyyy', { locale: dateLocale })}
+              {format(currentMonth, 'MMM yyyy', { locale: dateLocale })}
             </span>
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8"
+              className="h-8 w-8 shrink-0"
               onClick={goToNextMonth}
             >
               <ChevronRight className="h-4 w-4" />
@@ -1044,21 +1044,23 @@ export default function ClientsAndProjectsPage() {
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 text-xs"
+              className="h-8 text-xs shrink-0"
               onClick={goToToday}
               aria-label={t('clientsAndProjects.controls.currentMonth')}
             >
-              {t('clientsAndProjects.controls.currentMonth')}
+              <span className="sm:hidden">{t('clientsAndProjects.controls.currentMonthShort', 'Hoy')}</span>
+              <span className="hidden sm:inline">{t('clientsAndProjects.controls.currentMonth')}</span>
             </Button>
           </div>
 
           {/* Botón añadir proyecto */}
           <Button
-            className="gap-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 shadow-md"
+            className="gap-1.5 sm:gap-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 shadow-md text-xs sm:text-sm px-2.5 sm:px-4"
             onClick={openNewProject}
           >
             <Plus className="h-4 w-4" />
-            {t('clientsAndProjects.actions.newProject', 'Nuevo proyecto')}
+            <span className="sm:hidden">{t('clientsAndProjects.actions.newProjectShort', 'Proyecto')}</span>
+            <span className="hidden sm:inline">{t('clientsAndProjects.actions.newProject', 'Nuevo proyecto')}</span>
           </Button>
 
           <ProjectMutateDialog
@@ -1082,9 +1084,10 @@ export default function ClientsAndProjectsPage() {
           {/* Botón añadir cliente */}
           <Dialog open={isAddingClient} onOpenChange={setIsAddingClient}>
             <DialogTrigger asChild>
-              <Button className="gap-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 shadow-md">
+              <Button className="gap-1.5 sm:gap-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 shadow-md text-xs sm:text-sm px-2.5 sm:px-4">
                 <Plus className="h-4 w-4" />
-                {t('clientsAndProjects.actions.newClient')}
+                <span className="sm:hidden">{t('clientsAndProjects.actions.newClientShort', 'Cliente')}</span>
+                <span className="hidden sm:inline">{t('clientsAndProjects.actions.newClient')}</span>
               </Button>
             </DialogTrigger>
             <DialogContent>

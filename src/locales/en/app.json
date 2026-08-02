@@ -1662,8 +1662,12 @@
         "behindSchedule": "Behind schedule",
         "behindScheduleTooltip": "Execution below the month's progress",
         "overBudget": "Over budget",
-        "overBudgetTooltip": "Projects with more planned hours than assigned"
-      }
+        "overBudgetTooltip": "Projects with more planned hours than assigned",
+        "needsPlanningShort": "Plan",
+        "overBudgetShort": "Over"
+      },
+      "hideFilters": "Hide filters",
+      "summary": "{{summary}}"
     },
     "actions": {
       "newProject": "New project",
@@ -1672,10 +1676,13 @@
       "collapseAll": "Collapse all",
       "edit": "Edit",
       "showProject": "Show project",
-      "hideProject": "Hide project"
+      "hideProject": "Hide project",
+      "newProjectShort": "Project",
+      "newClientShort": "Client"
     },
     "controls": {
-      "currentMonth": "Current month"
+      "currentMonth": "Current month",
+      "currentMonthShort": "Today"
     },
     "clientList": {
       "count_one": "{{count}} client",

@@ -3191,7 +3191,96 @@ export default function FinancialHealthPage() {
                                         <p className="text-xs text-slate-500 mt-1 max-w-sm">{t('financialHealth.employeeProfitability.emptyDesc')}</p>
                                     </div>
                                 ) : (
-                                    <div className="max-w-full min-w-0 overflow-x-auto overscroll-x-contain">
+                                  <>
+                                    <p className="md:hidden text-xs text-slate-500 mb-3">
+                                        {t('financialHealth.mobile.mobileTapHint', 'Toca una fila para ver el desglose')}
+                                    </p>
+                                    <ul className="md:hidden space-y-2 mb-2">
+                                        {[...employeeProfitabilityFilteredBySearch].sort((a, b) => {
+                                            const marginA = employeeDisplayTotalsWhenSearch ? (employeeDisplayTotalsWhenSearch.get(a.employeeId)?.margin ?? a.margin) : a.margin;
+                                            const marginB = employeeDisplayTotalsWhenSearch ? (employeeDisplayTotalsWhenSearch.get(b.employeeId)?.margin ?? b.margin) : b.margin;
+                                            return marginB - marginA;
+                                        }).map((ep) => {
+                                            const isExpanded = expandedProjects.has(`emp-${ep.employeeId}`);
+                                            const display = employeeDisplayTotalsWhenSearch?.get(ep.employeeId);
+                                            const displayHours = display ? display.hours : (hoursMode === 'computed' ? ep.totalComputed : ep.totalActual);
+                                            const displayAttr = display ? display.attr : ep.attributedRevenue;
+                                            const displayCost = display ? display.cost : ep.cost;
+                                            const displayMargin = display ? display.margin : ep.margin;
+                                            const displayMarginPct = displayAttr > 0 ? (displayMargin / displayAttr) * 100 : (displayMargin < 0 ? -1 : 0);
+                                            const semaphoreEmp = getMarginSemaphore(displayMarginPct);
+                                            const q = searchQuery.trim().toLowerCase();
+                                            const byProjectFiltered = q ? ep.byProject.filter(bp => bp.projectName.toLowerCase().includes(q)) : ep.byProject;
+                                            return (
+                                                <li key={`m-emp-${ep.employeeId}`} className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+                                                    <button
+                                                        type="button"
+                                                        className="w-full text-left p-3 flex items-start gap-3"
+                                                        onClick={() => toggleProject(`emp-${ep.employeeId}`)}
+                                                    >
+                                                        <Avatar className="h-9 w-9 border shrink-0">
+                                                            <AvatarFallback className="bg-slate-100 text-slate-600 text-xs font-bold">
+                                                                {ep.employeeName.substring(0, 2).toUpperCase()}
+                                                            </AvatarFallback>
+                                                        </Avatar>
+                                                        <div className="min-w-0 flex-1 space-y-1">
+                                                            <p className="font-semibold text-slate-900 text-sm leading-snug truncate">{ep.employeeName}</p>
+                                                            <p className="text-[11px] text-slate-600 font-mono tabular-nums">
+                                                                {displayHours.toFixed(1)} h · {formatMoney(displayAttr)} · {formatMoney(displayCost)}
+                                                            </p>
+                                                        </div>
+                                                        <div className="shrink-0 flex flex-col items-end gap-1.5">
+                                                            <span className={cn('font-mono text-sm font-semibold tabular-nums inline-flex items-center gap-1', semaphoreEmp.className)}>
+                                                                {semaphoreEmp.showAlert && <AlertTriangle className="h-3.5 w-3.5" aria-hidden />}
+                                                                {formatMoney(displayMargin)}
+                                                            </span>
+                                                            {displayAttr > 0 && (
+                                                                <span className={cn('text-[10px] font-mono tabular-nums', semaphoreEmp.className)}>
+                                                                    {displayMarginPct.toFixed(1)}%
+                                                                </span>
+                                                            )}
+                                                            <span className="text-[11px] text-slate-500 inline-flex items-center gap-0.5">
+                                                                {isExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+                                                                {isExpanded
+                                                                    ? t('financialHealth.mobile.closeBreakdown', 'Cerrar desglose')
+                                                                    : t('financialHealth.mobile.openBreakdown', 'Ver desglose')}
+                                                            </span>
+                                                        </div>
+                                                    </button>
+                                                    {isExpanded && (
+                                                        <div className="border-t border-slate-100 bg-slate-50/80 px-3 py-3 space-y-2">
+                                                            {byProjectFiltered.length === 0 ? (
+                                                                <p className="text-sm italic text-slate-500">{t('financialHealth.expand.noEmployeeBreakdown')}</p>
+                                                            ) : (
+                                                                <ul className="space-y-2">
+                                                                    {byProjectFiltered.map((bp) => {
+                                                                        const pct = bp.attributedRevenue > 0 ? (bp.margin / bp.attributedRevenue) * 100 : (bp.margin < 0 ? -1 : 0);
+                                                                        const sem = getMarginSemaphore(pct);
+                                                                        return (
+                                                                            <li key={bp.projectId} className="rounded-lg border border-slate-200 bg-white p-2.5">
+                                                                                <div className="flex items-start justify-between gap-2">
+                                                                                    <p className="text-sm font-medium text-slate-900 leading-snug min-w-0">
+                                                                                        <SensitiveText kind="project" id={bp.projectId}>{bp.projectName}</SensitiveText>
+                                                                                    </p>
+                                                                                    <span className={cn('font-mono text-xs font-semibold tabular-nums shrink-0', sem.className)}>
+                                                                                        {formatMoney(bp.margin)}
+                                                                                    </span>
+                                                                                </div>
+                                                                                <p className="mt-1 text-[11px] text-slate-600 font-mono tabular-nums">
+                                                                                    {bp.hoursDisplay.toFixed(1)} h · {formatMoney(bp.attributedRevenue)} · {formatMoney(bp.cost)}
+                                                                                </p>
+                                                                            </li>
+                                                                        );
+                                                                    })}
+                                                                </ul>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </li>
+                                            );
+                                        })}
+                                    </ul>
+                                    <div className="hidden md:block max-w-full min-w-0 overflow-x-auto overscroll-x-contain">
                                         <table className="w-full text-sm">
                                             <thead className="text-xs text-slate-500 uppercase bg-slate-50/80">
                                                 <tr>
@@ -3705,6 +3794,7 @@ export default function FinancialHealthPage() {
                                             </tfoot>
                                         </table>
                                     </div>
+                                  </>
                                 )}
                             </CardContent>
                         </Card>

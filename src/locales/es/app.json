@@ -1662,8 +1662,12 @@
         "behindSchedule": "Retrasados",
         "behindScheduleTooltip": "Ejecución por debajo del progreso del mes",
         "overBudget": "Exceso horas",
-        "overBudgetTooltip": "Proyectos con más horas planificadas que asignadas"
-      }
+        "overBudgetTooltip": "Proyectos con más horas planificadas que asignadas",
+        "needsPlanningShort": "Planificar",
+        "overBudgetShort": "Exceso"
+      },
+      "hideFilters": "Ocultar filtros",
+      "summary": "{{summary}}"
     },
     "actions": {
       "newProject": "Nuevo proyecto",
@@ -1672,10 +1676,13 @@
       "collapseAll": "Colapsar todos",
       "edit": "Editar",
       "showProject": "Mostrar proyecto",
-      "hideProject": "Ocultar proyecto"
+      "hideProject": "Ocultar proyecto",
+      "newProjectShort": "Proyecto",
+      "newClientShort": "Cliente"
     },
     "controls": {
-      "currentMonth": "Mes actual"
+      "currentMonth": "Mes actual",
+      "currentMonthShort": "Hoy"
     },
     "clientList": {
       "count_one": "{{count}} cliente",
