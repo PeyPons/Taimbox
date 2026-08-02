@@ -78,7 +78,8 @@ Aplica sobre todo a `/finanzas` y pantallas con KPIs + tablas + desgloses:
 - [ ] **Primero lo importante**: margen / semáforo / totales antes que controles secundarios.
 - [ ] Controles (Horas reales/computadas, Coste operativo/dinámico, Objetivo y gastos) agrupados y secundarios respecto a los KPIs.
 - [ ] Filas expandibles: el desglose se entiende (quién, horas, coste, margen) sin tabla anidada ilegible.
-- [ ] En móvil: preferir ** Tarjetas o filas resumidas + detalle al expandir** frente a tablas de muchas columnas comprimidas.
+- [ ] En móvil: preferir **tarjetas o filas resumidas + detalle al expandir** frente a tablas de muchas columnas comprimidas.
+- [ ] Cada número en card móvil lleva **etiqueta visible** (Horas, Ingreso, Coste, Margen). Prohibido `A € · B € · C €` sin leyenda.
 - [ ] No ocultar métricas críticas solo para “que quepa”; reestructurar (resumen → detalle), no eliminar datos clave.
 - [ ] Copy de columnas/tooltips en el idioma de la UI (`react-i18next`); no hardcodear solo ES si la clave ya existe.
 

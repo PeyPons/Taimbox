@@ -1611,6 +1611,7 @@
       "mobileTapHint": "Tap a row to see the breakdown",
       "hoursBudgetShort": "{{hours}}h / {{budget}}h",
       "revenueShort": "Revenue",
+      "budgetShort": "Budget",
       "openBreakdown": "View breakdown",
       "closeBreakdown": "Close breakdown",
       "costShort": "Cost"

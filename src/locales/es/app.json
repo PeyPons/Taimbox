@@ -1611,6 +1611,7 @@
       "mobileTapHint": "Toca una fila para ver el desglose",
       "hoursBudgetShort": "{{hours}}h / {{budget}}h",
       "revenueShort": "Ingreso",
+      "budgetShort": "Presupuesto",
       "openBreakdown": "Ver desglose",
       "closeBreakdown": "Cerrar desglose",
       "costShort": "Coste"
