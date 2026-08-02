@@ -3,18 +3,11 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Margen superior del main en móvil: header fijo (4rem) */
-@media (max-width: 1023px) {
-  .main-content-area {
-    margin-top: 4rem;
-  }
-}
-@media (min-width: 1024px) {
-  .main-content-area {
-    margin-top: 0;
-  }
-}
-
+/*
+  El offset del header fijo en móvil vive en AppLayout (`pt-16 lg:pt-0`
+  envolviendo banners + contenido). No usar `.main-content-area` con
+  margin-top: deja hueco y tapa el texto de los banners.
+*/
 
 @keyframes gradient {
   0%, 100% {

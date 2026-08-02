@@ -1778,7 +1778,86 @@ export default function FinancialHealthPage() {
                                         </div>
                                     ) : (
                                         <>
-                                                                            <div className="max-w-full min-w-0 overflow-x-auto overscroll-x-contain">
+                                            {/* Móvil: cards (sin tabla ni scroll horizontal) */}
+                                            <p className="md:hidden text-xs text-slate-500 mb-2">
+                                                {t('financialHealth.mobile.mobileTapHint', 'Toca una fila para ver el desglose')}
+                                            </p>
+                                            <ul className="md:hidden space-y-2 mb-2">
+                                                {projectsToShow.map(({ metric: p, clientName, ehr, ehrLabel }) => {
+                                                    const cm = projectCostAndMarginMap.get(p.projectId) ?? { cost: 0, payrollCost: 0, overheadCost: 0, margin: 0 };
+                                                    const displayFeeRadar = projectDisplayFeeMap.get(p.projectId) ?? p.monthlyFee ?? 0;
+                                                    const displayMarginRadar = displayFeeRadar - cm.cost;
+                                                    const marginPctRadar = displayFeeRadar > 0 ? (displayMarginRadar / displayFeeRadar) * 100 : 0;
+                                                    const semaphoreRadar = getMarginSemaphore(marginPctRadar);
+                                                    const attributionRows = projectEmployeeAttributionMap.get(p.projectId) || [];
+                                                    const projectHours = hoursMode === 'computed' ? p.computed : p.actual;
+                                                    const isExpanded = expandedProjects.has(p.projectId);
+                                                    const ehrBelowTarget = isFinite(ehr) && projectHours > 0 && ehr < ehrTarget;
+                                                    return (
+                                                        <li key={`radar-m-${p.projectId}`} className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+                                                            <button
+                                                                type="button"
+                                                                className="w-full text-left p-3 flex items-start gap-3"
+                                                                onClick={() => toggleProject(p.projectId)}
+                                                            >
+                                                                <div className="min-w-0 flex-1 space-y-1">
+                                                                    <p className="font-semibold text-slate-900 text-sm leading-snug">
+                                                                        <SensitiveText kind="project" id={p.projectId}>{p.projectName}</SensitiveText>
+                                                                    </p>
+                                                                    <p className="text-[11px] text-slate-500 leading-snug">
+                                                                        <SensitiveText kind="account" id={p.clientId ?? 'unknown-client'}>{clientName}</SensitiveText>
+                                                                    </p>
+                                                                    <p className="text-[11px] text-slate-600 font-mono tabular-nums">
+                                                                        {formatMoney(displayFeeRadar)} · {projectHours.toFixed(1)}h / {p.budget.toFixed(1)}h
+                                                                    </p>
+                                                                </div>
+                                                                <div className="shrink-0 flex flex-col items-end gap-1.5">
+                                                                    <span className={cn('font-mono text-sm font-semibold tabular-nums inline-flex items-center gap-1', semaphoreRadar.className)}>
+                                                                        {semaphoreRadar.showAlert && <AlertTriangle className="h-3.5 w-3.5" aria-hidden />}
+                                                                        {formatMoney(displayMarginRadar)}
+                                                                    </span>
+                                                                    {projectHours > 0 ? (
+                                                                        <Badge
+                                                                            variant={ehrBelowTarget ? 'destructive' : 'outline'}
+                                                                            className={cn(
+                                                                                'text-[10px] font-semibold tabular-nums',
+                                                                                ehrBelowTarget
+                                                                                    ? 'bg-red-600 text-white border-red-600'
+                                                                                    : 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                                                                            )}
+                                                                        >
+                                                                            {ehrLabel}
+                                                                        </Badge>
+                                                                    ) : (
+                                                                        <Badge variant="outline" className="text-[10px] text-slate-500 border-slate-300 bg-slate-50">
+                                                                            {t('financialHealth.kpis.ehr.notStarted')}
+                                                                        </Badge>
+                                                                    )}
+                                                                    <span className="text-[11px] text-slate-500 inline-flex items-center gap-0.5">
+                                                                        {isExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+                                                                        {isExpanded
+                                                                            ? t('financialHealth.mobile.closeBreakdown', 'Cerrar desglose')
+                                                                            : t('financialHealth.mobile.openBreakdown', 'Ver desglose')}
+                                                                    </span>
+                                                                </div>
+                                                            </button>
+                                                            {isExpanded && (
+                                                                <div className="border-t border-slate-100 bg-slate-50/80 px-3 py-3">
+                                                                    <ProfitabilityAttributionMobileList
+                                                                        rows={attributionRows}
+                                                                        employeeNameById={(id) => employees.find(e => e.id === id)?.name || t('financialHealth.unknownEmployee')}
+                                                                        formatMoney={formatMoney}
+                                                                        formatPerHour={formatPerHour}
+                                                                        hoursModeLabel={hoursMode === 'computed' ? t('financialHealth.expand.hoursComputed') : t('financialHealth.expand.hoursActual')}
+                                                                    />
+                                                                </div>
+                                                            )}
+                                                        </li>
+                                                    );
+                                                })}
+                                            </ul>
+
+                                            <div className="hidden md:block max-w-full min-w-0 overflow-x-auto overscroll-x-contain">
                                                                                 <table className="w-full text-xs sm:text-sm">
                                                     <thead className="text-xs text-slate-500 uppercase bg-slate-50/80">
                                                         <tr>
@@ -2192,7 +2271,36 @@ export default function FinancialHealthPage() {
                                         </CardDescription>
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="max-w-full min-w-0 overflow-x-auto overscroll-x-contain">
+                                        <ul className="md:hidden space-y-2">
+                                            {internalWithActivity.map((p) => {
+                                                const clientName = clientById.get(p.clientId) || p.clientName || t('financialHealth.internalInvestment.unknownClient');
+                                                const pcm = projectCostAndMarginMap.get(p.projectId) ?? {
+                                                    cost: 0,
+                                                    payrollCost: 0,
+                                                    overheadCost: 0,
+                                                    margin: 0,
+                                                };
+                                                const hours = hoursMode === 'computed' ? p.computed : p.actual;
+                                                return (
+                                                    <li key={`int-m-${p.projectId}`} className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+                                                        <p className="font-semibold text-slate-900 text-sm leading-snug">
+                                                            <SensitiveText kind="project" id={p.projectId}>{p.projectName}</SensitiveText>
+                                                        </p>
+                                                        <p className="text-[11px] text-slate-500 mt-0.5">
+                                                            <SensitiveText kind="account" id={p.clientId ?? 'unknown-client'}>{clientName}</SensitiveText>
+                                                        </p>
+                                                        <div className="mt-2 flex items-end justify-between gap-3">
+                                                            <span className="text-[11px] text-slate-600 font-mono tabular-nums">{hours.toFixed(1)} h</span>
+                                                            <span className="font-mono text-sm font-semibold tabular-nums text-slate-800">{formatMoney(pcm.cost)}</span>
+                                                        </div>
+                                                        <p className="mt-1 text-[10px] text-slate-500 font-mono tabular-nums">
+                                                            {t('financialHealth.columns.payrollImputed')}: {formatMoney(pcm.payrollCost)} · {t('financialHealth.columns.commonOverhead')}: {formatMoney(pcm.overheadCost)}
+                                                        </p>
+                                                    </li>
+                                                );
+                                            })}
+                                        </ul>
+                                        <div className="hidden md:block max-w-full min-w-0 overflow-x-auto overscroll-x-contain">
                                             <table className="w-full text-sm">
                                                 <thead className="text-xs text-slate-500 uppercase bg-slate-50/80">
                                                     <tr>
@@ -2304,7 +2412,35 @@ export default function FinancialHealthPage() {
                                                 <p className="text-xs text-slate-500 mt-1">{t('financialHealth.departmentProfitability.emptyDesc')}</p>
                                             </div>
                                         ) : (
-                                            <div className="max-w-full min-w-0 overflow-x-auto overscroll-x-contain">
+                                            <>
+                                            <ul className="md:hidden space-y-2">
+                                                {departmentProfitability.items.map((dept) => {
+                                                    const isBelowTarget = dept.ehr < ehrTarget;
+                                                    const marginPctDept = dept.revenue > 0 ? (dept.margin / dept.revenue) * 100 : (dept.margin < 0 ? -1 : 0);
+                                                    const semDept = getMarginSemaphore(marginPctDept);
+                                                    return (
+                                                        <li key={`dept-m-${dept.id}`} className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+                                                            <div className="flex items-start justify-between gap-3">
+                                                                <div className="min-w-0">
+                                                                    <p className="font-semibold text-slate-900 text-sm truncate">{dept.name}</p>
+                                                                    <p className="text-[11px] text-slate-600 font-mono tabular-nums mt-1">
+                                                                        {formatMoney(dept.revenue)} · {dept.hours.toFixed(1)} h
+                                                                    </p>
+                                                                </div>
+                                                                <div className="shrink-0 flex flex-col items-end gap-1">
+                                                                    <span className={cn('font-mono text-sm font-semibold tabular-nums', semDept.className)}>
+                                                                        {formatMoney(dept.margin)}
+                                                                    </span>
+                                                                    <span className={cn('text-[11px] font-semibold tabular-nums', isBelowTarget ? 'text-red-600' : 'text-emerald-700')}>
+                                                                        {formatPerHour(dept.ehr, 0)}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        </li>
+                                                    );
+                                                })}
+                                            </ul>
+                                            <div className="hidden md:block max-w-full min-w-0 overflow-x-auto overscroll-x-contain">
                                                 <table className="w-full text-xs sm:text-sm">
                                                     <thead className="text-xs text-slate-500 uppercase bg-slate-50/80">
                                                         <tr>
@@ -2354,6 +2490,7 @@ export default function FinancialHealthPage() {
                                                     </tbody>
                                                 </table>
                                             </div>
+                                            </>
                                         )}
                                     </CardContent>
                                 </Card>
@@ -2381,7 +2518,40 @@ export default function FinancialHealthPage() {
                                                 <p className="text-xs text-slate-500 mt-1">{t('financialHealth.employeeProfitability.emptyDesc')}</p>
                                             </div>
                                         ) : (
-                                            <div className="max-w-full min-w-0 overflow-x-auto overscroll-x-contain">
+                                          <>
+                                            <ul className="md:hidden space-y-2 mb-2">
+                                                {[...employeeProfitabilityFilteredBySearch]
+                                                    .sort((a, b) => {
+                                                        const marginA = employeeDisplayTotalsWhenSearch ? (employeeDisplayTotalsWhenSearch.get(a.employeeId)?.margin ?? a.margin) : a.margin;
+                                                        const marginB = employeeDisplayTotalsWhenSearch ? (employeeDisplayTotalsWhenSearch.get(b.employeeId)?.margin ?? b.margin) : b.margin;
+                                                        return marginB - marginA;
+                                                    })
+                                                    .map((ep) => {
+                                                        const display = employeeDisplayTotalsWhenSearch?.get(ep.employeeId);
+                                                        const h = display ? display.hours : (hoursMode === 'computed' ? ep.totalComputed : ep.totalActual);
+                                                        const attr = display ? display.attr : ep.attributedRevenue;
+                                                        const margin = display ? display.margin : ep.margin;
+                                                        const marginPct = attr > 0 ? (margin / attr) * 100 : (margin < 0 ? -1 : 0);
+                                                        const semaphore = getMarginSemaphore(marginPct);
+                                                        return (
+                                                            <li key={`resumen-emp-m-${ep.employeeId}`} className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+                                                                <div className="flex items-start justify-between gap-3">
+                                                                    <div className="min-w-0">
+                                                                        <p className="font-semibold text-slate-900 text-sm truncate">{ep.employeeName}</p>
+                                                                        <p className="text-[11px] text-slate-600 font-mono tabular-nums mt-1">
+                                                                            {h.toFixed(1)} h · {formatMoney(attr)}
+                                                                        </p>
+                                                                    </div>
+                                                                    <span className={cn('shrink-0 font-mono text-sm font-semibold tabular-nums inline-flex items-center gap-1', semaphore.className)}>
+                                                                        {semaphore.showAlert && <AlertTriangle className="h-3.5 w-3.5" aria-hidden />}
+                                                                        {formatMoney(margin)}
+                                                                    </span>
+                                                                </div>
+                                                            </li>
+                                                        );
+                                                    })}
+                                            </ul>
+                                            <div className="hidden md:block max-w-full min-w-0 overflow-x-auto overscroll-x-contain">
                                                 <table className="w-full max-w-full text-xs sm:text-sm [table-layout:fixed]">
                                                     <thead className="text-xs text-slate-500 uppercase bg-slate-50/80">
                                                         <tr>
@@ -2588,6 +2758,7 @@ export default function FinancialHealthPage() {
                                                     </tfoot>
                                                 </table>
                                             </div>
+                                          </>
                                         )}
                                     </CardContent>
                                 </Card>
@@ -3069,7 +3240,33 @@ export default function FinancialHealthPage() {
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="max-w-full min-w-0 overflow-x-auto overscroll-x-contain">
+                                    <ul className="md:hidden space-y-2">
+                                        {internalWithActivity.map((p) => {
+                                            const clientName = clientById.get(p.clientId) || p.clientName || 'Cliente desconocido';
+                                            const pcm = projectCostAndMarginMap.get(p.projectId) ?? {
+                                                cost: 0,
+                                                payrollCost: 0,
+                                                overheadCost: 0,
+                                                margin: 0,
+                                            };
+                                            const hours = hoursMode === 'computed' ? p.computed : p.actual;
+                                            return (
+                                                <li key={`int-tab-m-${p.projectId}`} className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+                                                    <p className="font-semibold text-slate-900 text-sm leading-snug">
+                                                        <SensitiveText kind="project" id={p.projectId}>{p.projectName}</SensitiveText>
+                                                    </p>
+                                                    <p className="text-[11px] text-slate-500 mt-0.5">
+                                                        <SensitiveText kind="account" id={p.clientId ?? 'unknown-client'}>{clientName}</SensitiveText>
+                                                    </p>
+                                                    <div className="mt-2 flex items-end justify-between gap-3">
+                                                        <span className="text-[11px] text-slate-600 font-mono tabular-nums">{hours.toFixed(1)} h</span>
+                                                        <span className="font-mono text-sm font-semibold tabular-nums text-slate-800">{formatMoney(pcm.cost)}</span>
+                                                    </div>
+                                                </li>
+                                            );
+                                        })}
+                                    </ul>
+                                    <div className="hidden md:block max-w-full min-w-0 overflow-x-auto overscroll-x-contain">
                                         <table className="w-full text-sm">
                                             <thead className="text-xs text-slate-500 uppercase bg-slate-50/80">
                                                 <tr>
