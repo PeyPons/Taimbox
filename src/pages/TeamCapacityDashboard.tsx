@@ -267,13 +267,19 @@ export default function TeamCapacityDashboard() {
                                 <p>{t('teamCapacityDashboard.heatmap.emptyState', 'No hay datos para mostrar')}</p>
                             </div>
                         ) : (
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-sm">
+                            <div className="space-y-2 min-w-0">
+                                <p className="text-[11px] text-slate-500 sm:hidden">
+                                    {t('teamCapacityDashboard.heatmap.scrollHint', 'Desliza horizontalmente para ver todas las semanas')}
+                                </p>
+                                <div className="max-w-full min-w-0 overflow-x-auto overscroll-x-contain">
+                                <table className="w-full text-sm min-w-[520px]">
                                     <thead>
                                         <tr className="border-b">
-                                            <th className="text-left py-2 px-3 font-medium text-muted-foreground w-28 sm:w-40">{t('teamCapacityDashboard.heatmap.columns.employee', 'Empleado')}</th>
+                                            <th className="text-left py-2 px-2 sm:px-3 font-medium text-muted-foreground w-24 sm:w-40 sticky left-0 z-10 bg-white border-r border-slate-100">
+                                                {t('teamCapacityDashboard.heatmap.columns.employee', 'Empleado')}
+                                            </th>
                                             {heatmapData[0]?.weeklyLoad.map(week => (
-                                                <th key={week.week} className="text-center py-2 px-2 font-medium text-muted-foreground min-w-[70px] sm:min-w-[90px]">
+                                                <th key={week.week} className="text-center py-2 px-1.5 sm:px-2 font-medium text-muted-foreground min-w-[56px] sm:min-w-[90px]">
                                                     {week.weekLabel}
                                                 </th>
                                             ))}
@@ -282,7 +288,7 @@ export default function TeamCapacityDashboard() {
                                     <tbody>
                                         {heatmapData.map(row => (
                                             <tr key={row.employeeId} className="border-b hover:bg-slate-50 transition-colors">
-                                                <td className="py-2 px-3 font-medium">
+                                                <td className="py-2 px-2 sm:px-3 font-medium sticky left-0 z-10 bg-white border-r border-slate-100 max-w-[7.5rem] truncate">
                                                     <SensitiveText kind="employee" id={row.employeeId}>{row.employeeName}</SensitiveText>
                                                 </td>
                                                 {row.weeklyLoad.map(week => (
@@ -350,6 +356,7 @@ export default function TeamCapacityDashboard() {
                                         ))}
                                     </tbody>
                                 </table>
+                                </div>
                             </div>
                         )}
                     </CardContent>

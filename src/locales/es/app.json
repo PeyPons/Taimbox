@@ -1342,7 +1342,8 @@
         "highLoad": "Carga alta - Cerca del límite",
         "moderateOverload": "⚠️ Sobrecarga moderada",
         "criticalOverload": "🚨 Sobrecarga crítica"
-      }
+      },
+      "scrollHint": "Desliza horizontalmente para ver todas las semanas"
     },
     "blockedTasks": {
       "title": "Tareas bloqueadas por dependencias",

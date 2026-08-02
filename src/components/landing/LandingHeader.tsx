@@ -113,7 +113,7 @@ export function LandingHeader({ variant = "dark" }: LandingHeaderProps) {
             </Link>
           </div>
 
-          <div className={cn(`flex ${navBp}:hidden items-center shrink-0`, light ? "gap-3" : "gap-2")}>
+          <div className={cn(`flex ${navBp}:hidden items-center shrink-0`, light ? "gap-2" : "gap-1.5")}>
             <Link to="/login" className="group">
               <Button
                 size="sm"
@@ -126,7 +126,6 @@ export function LandingHeader({ variant = "dark" }: LandingHeaderProps) {
                 {t("header.login")}
               </Button>
             </Link>
-            <LanguageSelector surface={light ? "light" : "dark"} />
             <button
               type="button"
               onClick={() => setMobileOpen(!mobileOpen)}
@@ -235,12 +234,22 @@ export function LandingHeader({ variant = "dark" }: LandingHeaderProps) {
             </div>
           </div>
 
-          {light && (
-            <div className="flex shrink-0 items-center justify-between border-t border-slate-100 px-4 py-3">
-              <span className="text-[11px] font-mono uppercase tracking-[0.18em] text-slate-400">Idioma</span>
-              <LanguageSelector surface="light" />
-            </div>
-          )}
+          <div
+            className={cn(
+              "flex shrink-0 items-center justify-between border-t px-4 py-3",
+              light ? "border-slate-100" : "border-white/10",
+            )}
+          >
+            <span
+              className={cn(
+                "text-[11px] font-mono uppercase tracking-[0.18em]",
+                light ? "text-slate-400" : "text-indigo-300/80",
+              )}
+            >
+              {t("header.language", "Idioma")}
+            </span>
+            <LanguageSelector surface={light ? "light" : "dark"} />
+          </div>
         </div>
       </div>
     </>

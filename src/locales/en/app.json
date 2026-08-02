@@ -1342,7 +1342,8 @@
         "highLoad": "High load - Near limit",
         "moderateOverload": "⚠️ Moderate overload",
         "criticalOverload": "🚨 Critical overload"
-      }
+      },
+      "scrollHint": "Swipe horizontally to see all weeks"
     },
     "blockedTasks": {
       "title": "Tasks blocked by dependencies",
