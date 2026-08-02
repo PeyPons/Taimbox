@@ -32,37 +32,39 @@ export function PlannerMonthBanner() {
   if (isSameMonth(viewMonth, todayMonth)) return null;
 
   const locale = i18n.language.startsWith('en') ? enUS : es;
-  const viewingLabel = format(viewMonth, 'MMMM yyyy', { locale });
-  const currentLabel = format(todayMonth, 'MMMM yyyy', { locale });
+  const viewingLabel = format(viewMonth, 'MMM yyyy', { locale });
+  const currentLabel = format(todayMonth, 'MMM yyyy', { locale });
 
   return (
     <div
-      className="text-xs sm:text-sm font-medium px-3 sm:px-4 py-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2 sm:gap-4 lg:pl-64 bg-amber-50 text-amber-900 border-b border-amber-200"
+      className="text-xs sm:text-sm font-medium px-3 sm:px-4 py-1.5 sm:py-2 flex items-center justify-between sm:justify-center gap-2 sm:gap-4 lg:pl-64 bg-amber-50 text-amber-900 border-b border-amber-200"
       role="status"
       aria-live="polite"
     >
-      <span className="inline-flex items-start sm:items-center gap-2 min-w-0 text-center sm:text-left">
-        <CalendarRange className="h-4 w-4 shrink-0 mt-0.5 sm:mt-0" aria-hidden />
-        <span className="min-w-0 leading-snug">
-          {t('layout.monthBanner.viewing', 'Estás viendo')}{' '}
-          <strong className="capitalize">{viewingLabel}</strong>
-          <span className="hidden sm:inline">
-            . {t('layout.monthBanner.todayIs', 'Hoy estamos en')}{' '}
-            <strong className="capitalize">{currentLabel}</strong>.
-          </span>
-          <span className="sm:hidden block text-[11px] font-normal text-amber-800/90 mt-0.5">
-            {t('layout.monthBanner.todayIs', 'Hoy estamos en')}{' '}
+      <span className="inline-flex items-center gap-1.5 min-w-0">
+        <CalendarRange className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" aria-hidden />
+        <span className="min-w-0 leading-snug truncate sm:whitespace-normal">
+          <span className="sm:hidden">
+            {t('layout.monthBanner.viewingShort', 'Viendo')}{' '}
+            <strong className="capitalize">{viewingLabel}</strong>
+            <span className="text-amber-800/80"> · {t('layout.monthBanner.todayShort', 'hoy')} </span>
             <strong className="capitalize">{currentLabel}</strong>
+          </span>
+          <span className="hidden sm:inline">
+            {t('layout.monthBanner.viewing', 'Estás viendo')}{' '}
+            <strong className="capitalize">{format(viewMonth, 'MMMM yyyy', { locale })}</strong>
+            . {t('layout.monthBanner.todayIs', 'Hoy estamos en')}{' '}
+            <strong className="capitalize">{format(todayMonth, 'MMMM yyyy', { locale })}</strong>.
           </span>
         </span>
       </span>
       <Button
         size="sm"
         variant="outline"
-        className="h-8 sm:h-7 gap-1 border-amber-400 text-amber-900 hover:bg-amber-100 shrink-0 w-full sm:w-auto"
+        className="h-7 gap-1 border-amber-400 text-amber-900 hover:bg-amber-100 shrink-0 px-2 sm:px-3 text-[11px] sm:text-xs"
         onClick={() => writeStoredPlannerMonth(todayMonth)}
       >
-        {t('layout.monthBanner.goCurrent', 'Ir al mes actual')}
+        {t('layout.monthBanner.goCurrentShort', 'Mes actual')}
       </Button>
     </div>
   );

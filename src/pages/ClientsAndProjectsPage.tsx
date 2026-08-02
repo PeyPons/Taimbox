@@ -97,16 +97,16 @@ function StatCard({
   };
 
   return (
-    <div className={cn("rounded-xl border p-4 transition-all hover:shadow-md", colorClasses[color])}>
+    <div className={cn("rounded-xl border p-2.5 sm:p-4 transition-all hover:shadow-md", colorClasses[color])}>
       <div className="flex items-center justify-between">
         <div className={cn(
-          "p-2 rounded-lg",
+          "p-1.5 sm:p-2 rounded-lg",
           color === 'slate' && "bg-slate-200/50",
           color === 'emerald' && "bg-emerald-200/50",
           color === 'amber' && "bg-amber-200/50",
           color === 'red' && "bg-red-200/50",
         )}>
-          <Icon className="h-4 w-4" />
+          <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
         </div>
         {trend && (
           <div className={cn(
@@ -121,10 +121,10 @@ function StatCard({
           </div>
         )}
       </div>
-      <div className="mt-3">
-        <p className="text-2xl font-bold">{value}</p>
-        <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
-        {subValue && <p className="text-[10px] text-muted-foreground/70 mt-1">{subValue}</p>}
+      <div className="mt-1.5 sm:mt-3">
+        <p className="text-lg sm:text-2xl font-bold tabular-nums leading-tight">{value}</p>
+        <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 leading-snug">{label}</p>
+        {subValue && <p className="hidden sm:block text-[10px] text-muted-foreground/70 mt-1">{subValue}</p>}
       </div>
     </div>
   );
@@ -1002,24 +1002,24 @@ export default function ClientsAndProjectsPage() {
   };
 
   return (
-    <div className="p-4 sm:p-6 space-y-6">
+    <div className="p-3 sm:p-6 space-y-3 sm:space-y-6">
       {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/80 shadow-lg shadow-primary/20">
-            <Building2 className="h-5 w-5 text-white" />
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5 sm:gap-4">
+        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+          <div className="flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/80 shadow-lg shadow-primary/20 shrink-0">
+            <Building2 className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
           </div>
           <div className="min-w-0">
-            <h1 className="text-xl sm:text-2xl font-bold text-foreground">{t('clientsAndProjects.title')}</h1>
+            <h1 className="text-lg sm:text-2xl font-bold text-foreground truncate">{t('clientsAndProjects.title')}</h1>
             <p className="text-sm text-muted-foreground hidden sm:block">
               {t('clientsAndProjects.subtitle')}
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap min-w-0 w-full lg:w-auto">
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-nowrap min-w-0 w-full lg:w-auto">
           {/* Selector de mes */}
-          <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1 min-w-0">
+          <div className="flex items-center gap-0.5 sm:gap-1 bg-slate-100 rounded-lg p-0.5 sm:p-1 min-w-0 flex-1 lg:flex-none">
             <Button
               variant="ghost"
               size="icon"
@@ -1029,8 +1029,8 @@ export default function ClientsAndProjectsPage() {
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <span className="text-sm font-medium px-1.5 sm:px-2 min-w-[5.5rem] sm:min-w-[120px] text-center capitalize flex items-center justify-center gap-1.5">
-              {isLoadingMonth && <Loader2 className="h-3.5 w-3.5 animate-spin text-slate-400" />}
+            <span className="text-xs sm:text-sm font-medium px-1 sm:px-2 min-w-0 flex-1 sm:min-w-[120px] text-center capitalize flex items-center justify-center gap-1.5 truncate">
+              {isLoadingMonth && <Loader2 className="h-3.5 w-3.5 animate-spin text-slate-400 shrink-0" />}
               {format(currentMonth, 'MMM yyyy', { locale: dateLocale })}
             </span>
             <Button
@@ -1044,7 +1044,7 @@ export default function ClientsAndProjectsPage() {
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 text-xs shrink-0"
+              className="h-8 text-xs shrink-0 px-1.5 sm:px-3"
               onClick={goToToday}
               aria-label={t('clientsAndProjects.controls.currentMonth')}
             >
@@ -1053,13 +1053,13 @@ export default function ClientsAndProjectsPage() {
             </Button>
           </div>
 
-          {/* Botón añadir proyecto */}
+          {/* Botón añadir proyecto: icono en móvil para no romper la fila */}
           <Button
-            className="gap-1.5 sm:gap-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 shadow-md text-xs sm:text-sm px-2.5 sm:px-4"
+            className="h-8 w-8 sm:h-9 sm:w-auto sm:gap-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 shadow-md sm:text-sm px-0 sm:px-4 shrink-0"
             onClick={openNewProject}
+            aria-label={t('clientsAndProjects.actions.newProject', 'Nuevo proyecto')}
           >
             <Plus className="h-4 w-4" />
-            <span className="sm:hidden">{t('clientsAndProjects.actions.newProjectShort', 'Proyecto')}</span>
             <span className="hidden sm:inline">{t('clientsAndProjects.actions.newProject', 'Nuevo proyecto')}</span>
           </Button>
 
@@ -1084,9 +1084,11 @@ export default function ClientsAndProjectsPage() {
           {/* Botón añadir cliente */}
           <Dialog open={isAddingClient} onOpenChange={setIsAddingClient}>
             <DialogTrigger asChild>
-              <Button className="gap-1.5 sm:gap-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 shadow-md text-xs sm:text-sm px-2.5 sm:px-4">
+              <Button
+                className="h-8 w-8 sm:h-9 sm:w-auto sm:gap-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 shadow-md sm:text-sm px-0 sm:px-4 shrink-0"
+                aria-label={t('clientsAndProjects.actions.newClient')}
+              >
                 <Plus className="h-4 w-4" />
-                <span className="sm:hidden">{t('clientsAndProjects.actions.newClientShort', 'Cliente')}</span>
                 <span className="hidden sm:inline">{t('clientsAndProjects.actions.newClient')}</span>
               </Button>
             </DialogTrigger>
@@ -1149,8 +1151,28 @@ export default function ClientsAndProjectsPage() {
         </div>
       </div>
 
-      {/* Estadísticas globales */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      {/* Estadísticas: tira compacta en móvil; grid completo desde sm */}
+      <div className="sm:hidden rounded-xl border border-slate-200 bg-white px-3 py-2.5">
+        <div className="grid grid-cols-4 gap-2 text-center">
+          <div className="min-w-0">
+            <p className="text-base font-bold tabular-nums text-slate-800 leading-tight">{globalStats.totalClients}</p>
+            <p className="text-[10px] text-slate-500 truncate">{t('clientsAndProjects.stats.clientsShort', 'Clientes')}</p>
+          </div>
+          <div className="min-w-0">
+            <p className="text-base font-bold tabular-nums text-emerald-700 leading-tight">{globalStats.totalHours.toFixed(0)}h</p>
+            <p className="text-[10px] text-slate-500 truncate">{t('clientsAndProjects.stats.hoursShort', 'Horas')}</p>
+          </div>
+          <div className="min-w-0">
+            <p className={cn('text-base font-bold tabular-nums leading-tight', globalStats.atRisk > 0 ? 'text-amber-600' : 'text-slate-800')}>{globalStats.atRisk}</p>
+            <p className="text-[10px] text-slate-500 truncate">{t('clientsAndProjects.stats.atRisk', 'En riesgo')}</p>
+          </div>
+          <div className="min-w-0">
+            <p className={cn('text-base font-bold tabular-nums leading-tight', globalStats.overBudget > 0 ? 'text-red-600' : 'text-slate-800')}>{globalStats.overBudget}</p>
+            <p className="text-[10px] text-slate-500 truncate">{t('clientsAndProjects.stats.overBudgetShort', 'Exceso')}</p>
+          </div>
+        </div>
+      </div>
+      <div className="hidden sm:grid grid-cols-2 md:grid-cols-4 gap-3">
         <StatCard
           icon={Building2}
           label={t('clientsAndProjects.stats.totalClients', 'Total clientes')}
@@ -1189,18 +1211,20 @@ export default function ClientsAndProjectsPage() {
       />
 
       {/* Acciones de lista */}
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-slate-500">
+      <div className="flex items-center justify-between gap-2 min-w-0">
+        <p className="text-xs sm:text-sm text-slate-500 truncate min-w-0">
           {t('clientsAndProjects.clientList.count', { count: filteredClients.length, defaultValue: `${filteredClients.length} cliente${filteredClients.length !== 1 ? 's' : ''}` })}
           {' • '}
           {t('clientsAndProjects.clientList.projects', { count: filteredClients.reduce((sum, c) => sum + c.stats.projects.length, 0), defaultValue: `${filteredClients.reduce((sum, c) => sum + c.stats.projects.length, 0)} proyecto${filteredClients.reduce((sum, c) => sum + c.stats.projects.length, 0) !== 1 ? 's' : ''}` })}
         </p>
-        <div className="flex gap-2">
-          <Button variant="ghost" size="sm" onClick={expandAll} className="text-xs h-7">
-            {t('clientsAndProjects.actions.expandAll', 'Expandir todos')}
+        <div className="flex gap-1 sm:gap-2 shrink-0">
+          <Button variant="ghost" size="sm" onClick={expandAll} className="text-[11px] sm:text-xs h-7 px-2">
+            <span className="sm:hidden">{t('clientsAndProjects.actions.expandAllShort', 'Expandir')}</span>
+            <span className="hidden sm:inline">{t('clientsAndProjects.actions.expandAll', 'Expandir todos')}</span>
           </Button>
-          <Button variant="ghost" size="sm" onClick={collapseAll} className="text-xs h-7">
-            {t('clientsAndProjects.actions.collapseAll', 'Colapsar todos')}
+          <Button variant="ghost" size="sm" onClick={collapseAll} className="text-[11px] sm:text-xs h-7 px-2">
+            <span className="sm:hidden">{t('clientsAndProjects.actions.collapseAllShort', 'Colapsar')}</span>
+            <span className="hidden sm:inline">{t('clientsAndProjects.actions.collapseAll', 'Colapsar todos')}</span>
           </Button>
         </div>
       </div>

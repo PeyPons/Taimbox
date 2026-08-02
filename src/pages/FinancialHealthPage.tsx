@@ -84,15 +84,18 @@ import { usePlanMonthNavigation } from '@/hooks/usePlanMonthNavigation';
 import { useEnsureMonthWithLoading } from '@/hooks/useEnsureMonthWithLoading';
 import { isAtPlanHistoryMinMonth } from '@/utils/planHistoryUtils';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export default function FinancialHealthPage() {
     const { t } = useTranslation('app');
     const dateLocale = useDateLocale();
+    const isMobile = useIsMobile();
     const [searchQuery, setSearchQuery] = useState('');
     const [hoursMode, setHoursMode] = useState<'actual' | 'computed'>('computed');
     const [costMode, setCostMode] = useState<'standard' | 'dynamic'>('standard');
     const [lifecycleCostMode, setLifecycleCostMode] = useState<'standard' | 'dynamic'>('standard');
     const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+    const [commonExpensesMobileOpen, setCommonExpensesMobileOpen] = useState(false);
     const [costHelpOpen, setCostHelpOpen] = useState(false);
     const [profitSettingsOpen, setProfitSettingsOpen] = useState(false);
     const [profitSettingsSaving, setProfitSettingsSaving] = useState(false);
@@ -1077,11 +1080,11 @@ export default function FinancialHealthPage() {
     }, [dynamicCostFallbackActive, costMode, agencyTotalOverheadApplied, t]);
 
     return (
-        <div className="p-4 sm:p-6 md:p-8 max-w-[1600px] mx-auto space-y-6 min-w-0 w-full">
+        <div className="p-3 sm:p-6 md:p-8 max-w-[1600px] mx-auto space-y-3 sm:space-y-6 min-w-0 w-full">
             {/* Cabecera: en móvil solo título para dejar sitio a KPIs/tablas */}
             <header className="space-y-1 sm:space-y-3">
-                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-                    <DollarSign className="h-6 w-6 sm:h-7 sm:w-7 text-emerald-600 shrink-0" aria-hidden />
+                <h1 className="text-lg sm:text-2xl md:text-3xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                    <DollarSign className="h-5 w-5 sm:h-7 sm:w-7 text-emerald-600 shrink-0" aria-hidden />
                     {t('financialHealth.title', 'Rentabilidad')}
                 </h1>
                 <p className="text-slate-600 text-sm max-w-xl hidden sm:block">
@@ -1101,26 +1104,26 @@ export default function FinancialHealthPage() {
 
             {/* Controles: mes siempre visible; filtros/modos colapsables en móvil */}
             <TooltipProvider delayDuration={300}>
-                <div className="flex flex-col gap-2.5 sm:gap-3 p-3 sm:p-4 rounded-xl bg-slate-50 border border-slate-200/80 min-w-0">
-                    <div className="flex flex-wrap items-center gap-2 min-w-0">
+                <div className="flex flex-col gap-2 sm:gap-3 p-2.5 sm:p-4 rounded-xl bg-slate-50 border border-slate-200/80 min-w-0">
+                    <div className="flex items-center gap-2 min-w-0">
                         <div className="flex items-center gap-0.5 rounded-lg border border-slate-200 bg-white p-0.5 shadow-sm shrink-0">
                             <Button
                                 variant="ghost"
                                 size="icon"
                                 onClick={handlePrevMonth}
                                 disabled={isAtPlanHistoryMinMonth(currentMonth, minReportingMonth)}
-                                className="h-9 w-9 text-slate-600 hover:bg-slate-100 disabled:opacity-50"
+                                className="h-8 w-8 sm:h-9 sm:w-9 text-slate-600 hover:bg-slate-100 disabled:opacity-50"
                                 aria-label={t('financialHealth.controls.prevMonth')}
                             >
                                 <ChevronRight className="h-4 w-4 rotate-180" />
                             </Button>
-                            <Button variant="ghost" onClick={handleToday} className="h-9 px-2.5 sm:px-3 text-sm font-medium text-slate-800 capitalize min-w-[5rem] sm:min-w-[100px]">
+                            <Button variant="ghost" onClick={handleToday} className="h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm font-medium text-slate-800 capitalize min-w-[4.75rem] sm:min-w-[100px]">
                                 {format(currentMonth, 'MMM yyyy', { locale: dateLocale })}
                             </Button>
                             {minReportingMonth != null && (
                                 <span className="text-xs text-slate-500 hidden sm:inline">{t('financialHealth.controls.starterPlan', 'Plan Starter: mes actual y anterior')}</span>
                             )}
-                            <Button variant="ghost" size="icon" onClick={handleNextMonth} className="h-9 w-9 text-slate-600 hover:bg-slate-100" aria-label={t('financialHealth.controls.nextMonth')}>
+                            <Button variant="ghost" size="icon" onClick={handleNextMonth} className="h-8 w-8 sm:h-9 sm:w-9 text-slate-600 hover:bg-slate-100" aria-label={t('financialHealth.controls.nextMonth')}>
                                 <ChevronRight className="h-4 w-4" />
                             </Button>
                         </div>
@@ -1128,11 +1131,11 @@ export default function FinancialHealthPage() {
                             <Loader2 className="h-4 w-4 animate-spin text-slate-400 shrink-0" aria-label={t('common.loading', 'Cargando')} />
                         )}
                         {isViewingCurrentMonth ? (
-                            <Badge className="bg-indigo-500 hover:bg-indigo-600 text-white border-0 animate-pulse shrink-0 text-[11px] sm:text-xs">
+                            <Badge className="bg-indigo-500 hover:bg-indigo-600 text-white border-0 animate-pulse shrink-0 text-[10px] sm:text-xs px-1.5">
                                 {t('financialHealth.controls.currentMonth', 'Mes en curso')}
                             </Badge>
                         ) : (
-                            <Badge variant="secondary" className="bg-slate-200 text-slate-600 border-0 shrink-0 text-[11px] sm:text-xs">
+                            <Badge variant="secondary" className="bg-slate-200 text-slate-600 border-0 shrink-0 text-[10px] sm:text-xs px-1.5">
                                 {t('financialHealth.controls.closedMonth', 'Mes cerrado')}
                             </Badge>
                         )}
@@ -1144,7 +1147,7 @@ export default function FinancialHealthPage() {
                             placeholder={t('financialHealth.search', 'Buscar proyecto o cliente...')}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="pl-9 h-10 bg-white border-slate-200 w-full"
+                            className="pl-9 h-9 sm:h-10 bg-white border-slate-200 w-full"
                             aria-label={t('financialHealth.searchAria')}
                         />
                     </div>
@@ -1476,27 +1479,29 @@ export default function FinancialHealthPage() {
             </Dialog>
 
             <TooltipProvider delayDuration={300}>
-                <Tabs defaultValue="resumen" className="space-y-6 min-w-0">
+                <Tabs defaultValue="resumen" className="space-y-3 sm:space-y-6 min-w-0">
                     <div className="space-y-1">
-                        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto sm:h-11 bg-slate-100 p-1 rounded-lg gap-1">
-                            <TabsTrigger value="resumen" className="gap-1.5 text-xs sm:text-sm data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md">
-                                <LayoutDashboard className="h-4 w-4 shrink-0" />
-                                {t('financialHealth.tabs.summary')}
+                        <TabsList className="grid w-full grid-cols-4 h-10 sm:h-11 bg-slate-100 p-1 rounded-lg gap-1">
+                            <TabsTrigger value="resumen" className="gap-1 sm:gap-1.5 text-[11px] sm:text-sm data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md px-1 sm:px-3">
+                                <LayoutDashboard className="hidden sm:block h-4 w-4 shrink-0" />
+                                <span>{t('financialHealth.tabs.summaryShort', 'Resumen')}</span>
                             </TabsTrigger>
-                            <TabsTrigger value="proyectos" className="gap-1.5 text-xs sm:text-sm data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md">
-                                <FolderKanban className="h-4 w-4 shrink-0" />
-                                {t('financialHealth.tabs.projects')}
+                            <TabsTrigger value="proyectos" className="gap-1 sm:gap-1.5 text-[11px] sm:text-sm data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md px-1 sm:px-3">
+                                <FolderKanban className="hidden sm:block h-4 w-4 shrink-0" />
+                                <span className="sm:hidden">{t('financialHealth.tabs.projectsShort', 'Proy.')}</span>
+                                <span className="hidden sm:inline">{t('financialHealth.tabs.projects')}</span>
                             </TabsTrigger>
-                            <TabsTrigger value="deliverables-lifecycle" className="gap-1.5 text-xs sm:text-sm data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md leading-tight">
-                                <Layers className="h-4 w-4 shrink-0" />
-                                <span className="sm:hidden">{t('financialHealth.tabs.deliverablesShort', 'Entregables')}</span>
-                                <span className="hidden sm:inline text-left sm:text-center">
+                            <TabsTrigger value="deliverables-lifecycle" className="gap-1 sm:gap-1.5 text-[11px] sm:text-sm data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md px-1 sm:px-3">
+                                <Layers className="hidden sm:block h-4 w-4 shrink-0" />
+                                <span className="sm:hidden">{t('financialHealth.tabs.deliverablesTiny', 'Entreg.')}</span>
+                                <span className="hidden sm:inline">
                                     {t('financialHealth.tabs.deliverablesLifecycle', 'Entregables (vida)')}
                                 </span>
                             </TabsTrigger>
-                            <TabsTrigger value="empleados" className="gap-1.5 text-xs sm:text-sm data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md">
-                                <UserCircle className="h-4 w-4 shrink-0" />
-                                {t('financialHealth.tabs.employees')}
+                            <TabsTrigger value="empleados" className="gap-1 sm:gap-1.5 text-[11px] sm:text-sm data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md px-1 sm:px-3">
+                                <UserCircle className="hidden sm:block h-4 w-4 shrink-0" />
+                                <span className="sm:hidden">{t('financialHealth.tabs.employeesShort', 'Empl.')}</span>
+                                <span className="hidden sm:inline">{t('financialHealth.tabs.employees')}</span>
                             </TabsTrigger>
                         </TabsList>
                         <p className="text-xs text-slate-500 px-0.5 hidden sm:block">
@@ -1507,9 +1512,46 @@ export default function FinancialHealthPage() {
                         </p>
                     </div>
 
-                    <TabsContent value="resumen" className="space-y-8 mt-0">
-                        {/* KPIs */}
-                        <section className="grid gap-4 sm:gap-6 md:grid-cols-2 xl:grid-cols-3 min-w-0" aria-label={t('financialHealth.kpis.sectionAria')}>
+                    <TabsContent value="resumen" className="flex flex-col gap-3 sm:gap-6 md:gap-8 mt-0">
+                        {/* KPIs: tira compacta en móvil; cards completas desde md */}
+                        <section className="order-1 min-w-0" aria-label={t('financialHealth.kpis.sectionAria')}>
+                            <div className="md:hidden grid grid-cols-3 gap-1.5">
+                                <div className="rounded-xl border border-emerald-200 bg-white px-1.5 py-2 border-l-4 border-l-emerald-500 min-w-0">
+                                    <p className="text-[10px] font-medium text-slate-500">{t('financialHealth.kpis.ehr.titleShort', 'EHR')}</p>
+                                    <p className={cn(
+                                        'text-sm font-bold tabular-nums leading-snug mt-0.5 break-words',
+                                        totalHoursForView === 0 ? 'text-slate-400' : ehrIsHealthy ? 'text-emerald-700' : 'text-red-600'
+                                    )}>
+                                        {totalHoursForView > 0 ? formatPerHour(effectiveHourlyRate, 0) : '–'}
+                                    </p>
+                                    <p className="text-[10px] text-slate-500 tabular-nums mt-0.5">
+                                        {t('financialHealth.kpis.ehr.targetShort', 'Obj.')} {formatEhrTargetForDisplay(ehrTarget)}
+                                    </p>
+                                </div>
+                                <div className={cn(
+                                    'rounded-xl border bg-white px-1.5 py-2 border-l-4 min-w-0',
+                                    marginIsPositive ? 'border-emerald-200 border-l-emerald-500' : 'border-red-200 border-l-red-500'
+                                )}>
+                                    <p className="text-[10px] font-medium text-slate-500">{t('financialHealth.kpis.netMargin.titleShort', 'Margen')}</p>
+                                    <p className={cn(
+                                        'text-sm font-bold tabular-nums leading-snug mt-0.5 break-words',
+                                        marginIsPositive ? 'text-emerald-700' : 'text-red-600'
+                                    )}>
+                                        {formatMoney(Math.round(netMargin))}
+                                    </p>
+                                    <p className="text-[10px] text-slate-500 tabular-nums mt-0.5">
+                                        {marginPercent != null ? `${marginPercent.toFixed(0)}%` : '–'}
+                                    </p>
+                                </div>
+                                <div className="rounded-xl border border-indigo-200 bg-white px-1.5 py-2 border-l-4 border-l-indigo-500 min-w-0">
+                                    <p className="text-[10px] font-medium text-slate-500">{t('financialHealth.kpis.monthlyOverheadKpi.titleShort', 'Gastos')}</p>
+                                    <p className="text-sm font-bold tabular-nums leading-snug mt-0.5 text-slate-800 break-words">
+                                        {formatMoney(Math.round(commonExpensesBreakdown.total))}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="hidden md:grid gap-4 sm:gap-6 md:grid-cols-2 xl:grid-cols-3 min-w-0">
                             <Card className="border-l-4 border-emerald-500 shadow-sm bg-white overflow-hidden min-w-0">
                                 <CardHeader className="pb-2 min-w-0">
                                     <CardTitle className="text-base font-semibold text-slate-800 flex items-center gap-2 min-w-0">
@@ -1660,6 +1702,7 @@ export default function FinancialHealthPage() {
                                     )}
                                 </CardContent>
                             </Card>
+                            </div>
                         </section>
 
                         {(commonExpensesAllocError ||
@@ -1667,19 +1710,44 @@ export default function FinancialHealthPage() {
                             commonExpensesZeroHourWarningNames.length > 0 ||
                             (commonExpensesAlloc.ok &&
                                 commonExpensesAlloc.unallocatedAmount > 0.009)) && (
-                            <section aria-label={t('financialHealth.commonExpenses.title')}>
+                            <section className="order-3 md:order-2 min-w-0" aria-label={t('financialHealth.commonExpenses.title')}>
                                 <Card className="shadow-sm border border-slate-200 bg-white border-l-4 border-l-indigo-500 overflow-hidden min-w-0">
+                                    <Collapsible
+                                        open={!isMobile || commonExpensesMobileOpen}
+                                        onOpenChange={setCommonExpensesMobileOpen}
+                                    >
                                     <CardHeader className="pb-2">
-                                        <CardTitle className="text-base font-semibold text-slate-800 flex items-center gap-2">
-                                            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
-                                                <Landmark className="h-4 w-4" />
-                                            </span>
-                                            {t('financialHealth.commonExpenses.title')}
-                                        </CardTitle>
-                                        <CardDescription className="text-xs text-slate-500">
-                                            {t('financialHealth.commonExpenses.description')}
-                                        </CardDescription>
+                                        <div className="flex items-start justify-between gap-2">
+                                            <div className="min-w-0">
+                                                <CardTitle className="text-sm sm:text-base font-semibold text-slate-800 flex items-center gap-2">
+                                                    <span className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 shrink-0">
+                                                        <Landmark className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                                                    </span>
+                                                    <span className="truncate">{t('financialHealth.commonExpenses.title')}</span>
+                                                </CardTitle>
+                                                <p className="md:hidden mt-1 text-sm font-mono font-semibold tabular-nums text-slate-800">
+                                                    {formatMoney(agencyTotalOverheadApplied || commonExpensesBreakdown.total)}
+                                                </p>
+                                                <CardDescription className="text-xs text-slate-500 hidden md:block">
+                                                    {t('financialHealth.commonExpenses.description')}
+                                                </CardDescription>
+                                            </div>
+                                            <CollapsibleTrigger asChild>
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="md:hidden h-8 shrink-0 text-xs gap-1"
+                                                >
+                                                    {commonExpensesMobileOpen ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+                                                    {commonExpensesMobileOpen
+                                                        ? t('financialHealth.mobile.closeBreakdown', 'Cerrar')
+                                                        : t('financialHealth.mobile.openBreakdown', 'Detalle')}
+                                                </Button>
+                                            </CollapsibleTrigger>
+                                        </div>
                                     </CardHeader>
+                                    <CollapsibleContent>
                                     <CardContent className="space-y-3 text-sm">
                                         {commonExpensesAllocError && (
                                             <p className="text-red-600 text-sm">
@@ -1749,21 +1817,23 @@ export default function FinancialHealthPage() {
                                             </p>
                                         )}
                                     </CardContent>
+                                    </CollapsibleContent>
+                                    </Collapsible>
                                 </Card>
                             </section>
                         )}
 
-                        {/* Radar de hemorragias */}
-                        <section aria-label={t('financialHealth.bleedingRadar.ariaLabel')}>
+                        {/* Radar de hemorragias: en móvil antes que el detalle de gastos */}
+                        <section className="order-2 md:order-3 min-w-0" aria-label={t('financialHealth.bleedingRadar.ariaLabel')}>
                             <Card className="shadow-sm border border-slate-200 bg-white overflow-hidden min-w-0">
-                                <CardHeader className="pb-3">
-                                    <CardTitle className="text-base font-semibold text-slate-800 flex items-center gap-2">
-                                        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-50 text-red-600">
-                                            <ArrowDownRight className="h-4 w-4" />
+                                <CardHeader className="pb-2 sm:pb-3">
+                                    <CardTitle className="text-sm sm:text-base font-semibold text-slate-800 flex items-center gap-2">
+                                        <span className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-lg bg-red-50 text-red-600">
+                                            <ArrowDownRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                                         </span>
                                         {t('financialHealth.bleedingRadar.title')}
                                     </CardTitle>
-                                    <CardDescription className="text-xs text-slate-500">
+                                    <CardDescription className="text-xs text-slate-500 hidden sm:block">
                                         {t('financialHealth.bleedingRadar.description')}
                                     </CardDescription>
                                 </CardHeader>
@@ -2257,7 +2327,7 @@ export default function FinancialHealthPage() {
 
                         {/* Inversión interna */}
                         {internalWithActivity.length > 0 && (
-                            <section aria-label={t('financialHealth.internalInvestment.ariaLabel')}>
+                            <section className="order-4 min-w-0" aria-label={t('financialHealth.internalInvestment.ariaLabel')}>
                                 <Card className="shadow-sm border border-slate-200 bg-white border-l-4 border-l-slate-400 overflow-hidden min-w-0">
                                     <CardHeader className="pb-3">
                                         <CardTitle className="text-base font-semibold text-slate-800 flex items-center gap-2">
@@ -2379,7 +2449,7 @@ export default function FinancialHealthPage() {
                         )}
 
                         {/* Rentabilidad por departamento y por empleado */}
-                        <section aria-label={t('financialHealth.departmentProfitability.sectionAria')}>
+                        <section className="order-4 min-w-0" aria-label={t('financialHealth.departmentProfitability.sectionAria')}>
                             <div className="grid gap-6 grid-cols-1 xl:grid-cols-2 min-w-0">
                                 <Card className="shadow-sm border border-slate-200 bg-white overflow-hidden min-w-0">
                                     <CardHeader className="pb-3">
