@@ -1364,7 +1364,10 @@
       "nextMonth": "Mes siguiente",
       "starterPlan": "Plan Starter: mes actual y anterior",
       "currentMonth": "Mes en curso",
-      "closedMonth": "Mes cerrado"
+      "closedMonth": "Mes cerrado",
+      "showFilters": "Filtros y modos",
+      "hideFilters": "Ocultar filtros",
+      "filtersSummary": "Horas {{hours}} · Coste {{cost}}"
     },
     "filters": {
       "hours": "Horas:",
@@ -1434,7 +1437,8 @@
       "projects": "Proyectos",
       "employees": "Empleados",
       "deliverablesLifecycle": "Entregables (vida)",
-      "subtitle": "Resumen · Proyectos (mes) · Entregables (ciclo de vida) · Empleados"
+      "subtitle": "Resumen · Proyectos (mes) · Entregables (ciclo de vida) · Empleados",
+      "deliverablesShort": "Entregables"
     },
     "deliverablesLifecycle": {
       "heading": "Entregables — ciclo de vida",
@@ -1601,7 +1605,15 @@
       "commonOverhead": "Gastos comunes"
     },
     "unknownClient": "Cliente desconocido",
-    "unknownEmployee": "Empleado"
+    "unknownEmployee": "Empleado",
+    "mobile": {
+      "mobileTapHint": "Toca una fila para ver el desglose",
+      "hoursBudgetShort": "{{hours}}h / {{budget}}h",
+      "revenueShort": "Ingreso",
+      "openBreakdown": "Ver desglose",
+      "closeBreakdown": "Cerrar desglose",
+      "costShort": "Coste"
+    }
   },
   "clientsAndProjects": {
     "title": "Clientes y Proyectos",

@@ -76,12 +76,14 @@ import {
 } from '@/utils/profitabilityCost';
 import { getMarginSemaphore } from '@/utils/marginSemaphore';
 import { DeliverableLifecycleTable } from '@/components/financial/DeliverableLifecycleTable';
+import { ProfitabilityAttributionMobileList } from '@/components/financial/ProfitabilityAttributionMobileList';
 import { deliverablePhaseOverlapsMonth, getDeliverablePhase } from '@/utils/deliverableLifecycle';
 import { PROJECT_TYPE_ENTREGABLE } from '@/config/projectTypePresets';
 import { useFormatMoney } from '@/hooks/useFormatMoney';
 import { usePlanMonthNavigation } from '@/hooks/usePlanMonthNavigation';
 import { useEnsureMonthWithLoading } from '@/hooks/useEnsureMonthWithLoading';
 import { isAtPlanHistoryMinMonth } from '@/utils/planHistoryUtils';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 export default function FinancialHealthPage() {
     const { t } = useTranslation('app');
@@ -90,6 +92,7 @@ export default function FinancialHealthPage() {
     const [hoursMode, setHoursMode] = useState<'actual' | 'computed'>('computed');
     const [costMode, setCostMode] = useState<'standard' | 'dynamic'>('standard');
     const [lifecycleCostMode, setLifecycleCostMode] = useState<'standard' | 'dynamic'>('standard');
+    const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
     const [costHelpOpen, setCostHelpOpen] = useState(false);
     const [profitSettingsOpen, setProfitSettingsOpen] = useState(false);
     const [profitSettingsSaving, setProfitSettingsSaving] = useState(false);
@@ -1075,13 +1078,13 @@ export default function FinancialHealthPage() {
 
     return (
         <div className="p-4 sm:p-6 md:p-8 max-w-[1600px] mx-auto space-y-6 min-w-0 w-full">
-            {/* Cabecera con título y contexto */}
-            <header className="space-y-3">
-                <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-                    <DollarSign className="h-7 w-7 text-emerald-600 shrink-0" aria-hidden />
+            {/* Cabecera: en móvil solo título para dejar sitio a KPIs/tablas */}
+            <header className="space-y-1 sm:space-y-3">
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                    <DollarSign className="h-6 w-6 sm:h-7 sm:w-7 text-emerald-600 shrink-0" aria-hidden />
                     {t('financialHealth.title', 'Rentabilidad')}
                 </h1>
-                <p className="text-slate-600 text-sm max-w-xl">
+                <p className="text-slate-600 text-sm max-w-xl hidden sm:block">
                     {t('financialHealth.subtitle', 'Precio hora efectivo, margen neto y rentabilidad por proyecto y empleado.')}
                     {departmentNameForView && (
                         <span className="block mt-1 text-emerald-700 font-medium">
@@ -1089,11 +1092,52 @@ export default function FinancialHealthPage() {
                         </span>
                     )}
                 </p>
+                {departmentNameForView && (
+                    <p className="sm:hidden text-xs text-emerald-700 font-medium">
+                        {t('financialHealth.view', 'Vista:')} {departmentNameForView}
+                    </p>
+                )}
             </header>
 
-            {/* Barra de filtros y navegación */}
+            {/* Controles: mes siempre visible; filtros/modos colapsables en móvil */}
             <TooltipProvider delayDuration={300}>
-                <div className="flex flex-col gap-3 p-3 sm:p-4 rounded-xl bg-slate-50 border border-slate-200/80 min-w-0">
+                <div className="flex flex-col gap-2.5 sm:gap-3 p-3 sm:p-4 rounded-xl bg-slate-50 border border-slate-200/80 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2 min-w-0">
+                        <div className="flex items-center gap-0.5 rounded-lg border border-slate-200 bg-white p-0.5 shadow-sm shrink-0">
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={handlePrevMonth}
+                                disabled={isAtPlanHistoryMinMonth(currentMonth, minReportingMonth)}
+                                className="h-9 w-9 text-slate-600 hover:bg-slate-100 disabled:opacity-50"
+                                aria-label={t('financialHealth.controls.prevMonth')}
+                            >
+                                <ChevronRight className="h-4 w-4 rotate-180" />
+                            </Button>
+                            <Button variant="ghost" onClick={handleToday} className="h-9 px-2.5 sm:px-3 text-sm font-medium text-slate-800 capitalize min-w-[5rem] sm:min-w-[100px]">
+                                {format(currentMonth, 'MMM yyyy', { locale: dateLocale })}
+                            </Button>
+                            {minReportingMonth != null && (
+                                <span className="text-xs text-slate-500 hidden sm:inline">{t('financialHealth.controls.starterPlan', 'Plan Starter: mes actual y anterior')}</span>
+                            )}
+                            <Button variant="ghost" size="icon" onClick={handleNextMonth} className="h-9 w-9 text-slate-600 hover:bg-slate-100" aria-label={t('financialHealth.controls.nextMonth')}>
+                                <ChevronRight className="h-4 w-4" />
+                            </Button>
+                        </div>
+                        {isLoadingMonth && (
+                            <Loader2 className="h-4 w-4 animate-spin text-slate-400 shrink-0" aria-label={t('common.loading', 'Cargando')} />
+                        )}
+                        {isViewingCurrentMonth ? (
+                            <Badge className="bg-indigo-500 hover:bg-indigo-600 text-white border-0 animate-pulse shrink-0 text-[11px] sm:text-xs">
+                                {t('financialHealth.controls.currentMonth', 'Mes en curso')}
+                            </Badge>
+                        ) : (
+                            <Badge variant="secondary" className="bg-slate-200 text-slate-600 border-0 shrink-0 text-[11px] sm:text-xs">
+                                {t('financialHealth.controls.closedMonth', 'Mes cerrado')}
+                            </Badge>
+                        )}
+                    </div>
+
                     <div className="relative w-full min-w-0">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" aria-hidden />
                         <Input
@@ -1104,42 +1148,101 @@ export default function FinancialHealthPage() {
                             aria-label={t('financialHealth.searchAria')}
                         />
                     </div>
-                    <div className="flex flex-col gap-2.5 min-w-0 w-full">
-                        <div className="flex flex-wrap items-center gap-2">
-                            <div className="flex items-center gap-0.5 rounded-lg border border-slate-200 bg-white p-0.5 shadow-sm shrink-0">
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={handlePrevMonth}
-                                    disabled={isAtPlanHistoryMinMonth(currentMonth, minReportingMonth)}
-                                    className="h-9 w-9 text-slate-600 hover:bg-slate-100 disabled:opacity-50"
-                                    aria-label={t('financialHealth.controls.prevMonth')}
-                                >
-                                    <ChevronRight className="h-4 w-4 rotate-180" />
-                                </Button>
-                                <Button variant="ghost" onClick={handleToday} className="h-9 px-3 text-sm font-medium text-slate-800 capitalize min-w-[5.5rem] sm:min-w-[100px]">
-                                    {format(currentMonth, 'MMM yyyy', { locale: dateLocale })}
-                                </Button>
-                                {minReportingMonth != null && (
-                                    <span className="text-xs text-slate-500 hidden sm:inline">{t('financialHealth.controls.starterPlan', 'Plan Starter: mes actual y anterior')}</span>
-                                )}
-                                <Button variant="ghost" size="icon" onClick={handleNextMonth} className="h-9 w-9 text-slate-600 hover:bg-slate-100" aria-label={t('financialHealth.controls.nextMonth')}>
-                                    <ChevronRight className="h-4 w-4" />
+
+                    <Collapsible open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen} className="sm:hidden">
+                        <CollapsibleTrigger asChild>
+                            <Button type="button" variant="outline" size="sm" className="h-9 w-full justify-between gap-2 bg-white">
+                                <span className="text-xs font-medium text-slate-700 truncate">
+                                    {mobileFiltersOpen
+                                        ? t('financialHealth.controls.hideFilters', 'Ocultar filtros')
+                                        : t('financialHealth.controls.filtersSummary', {
+                                            hours: hoursMode === 'actual'
+                                                ? t('financialHealth.filters.actual', 'Reales')
+                                                : t('financialHealth.filters.computed', 'Computadas'),
+                                            cost: costMode === 'standard'
+                                                ? t('financialHealth.filters.operational', 'Operativo')
+                                                : t('financialHealth.filters.dynamic', 'Dinámico'),
+                                            defaultValue: `Horas ${hoursMode === 'actual' ? 'Reales' : 'Computadas'} · Coste ${costMode === 'standard' ? 'Operativo' : 'Dinámico'}`,
+                                        })}
+                                </span>
+                                {mobileFiltersOpen ? <ChevronDown className="h-4 w-4 shrink-0" /> : <ChevronRight className="h-4 w-4 shrink-0" />}
+                            </Button>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="space-y-2.5 pt-2.5">
+                            {(canAccess('/agency')) && (
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-9 gap-1.5 shrink-0"
+                                        onClick={() => setProfitSettingsOpen(true)}
+                                    >
+                                        <Settings2 className="h-4 w-4" />
+                                        {t('financialHealth.settings.openButtonShort', 'Objetivo')}
+                                    </Button>
+                                    <Button type="button" variant="ghost" size="sm" className="h-9 shrink-0 text-xs" asChild>
+                                        <Link to="/exportacion-informes">{t('financialHealth.exportHubLink', 'Más exportaciones')}</Link>
+                                    </Button>
+                                </div>
+                            )}
+                            <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2 py-1.5 min-w-0">
+                                <span className="text-xs font-medium text-slate-600 whitespace-nowrap">{t('financialHealth.filters.hours', 'Horas:')}</span>
+                                <div className="flex rounded-md border border-slate-200 overflow-hidden flex-1">
+                                    <button
+                                        type="button"
+                                        onClick={() => setHoursMode('actual')}
+                                        className={cn(
+                                            "flex-1 px-3 py-1.5 text-xs font-medium transition-colors",
+                                            hoursMode === 'actual' ? "bg-indigo-600 text-white" : "bg-white text-slate-600 hover:bg-slate-50"
+                                        )}
+                                    >
+                                        {t('financialHealth.filters.actual', 'Reales')}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setHoursMode('computed')}
+                                        className={cn(
+                                            "flex-1 px-3 py-1.5 text-xs font-medium transition-colors border-l border-slate-200",
+                                            hoursMode === 'computed' ? "bg-fuchsia-600 text-white" : "bg-white text-slate-600 hover:bg-slate-50"
+                                        )}
+                                    >
+                                        {t('financialHealth.filters.computed', 'Computadas')}
+                                    </button>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2 py-1.5 min-w-0">
+                                <span className="text-xs font-medium text-slate-600 whitespace-nowrap">{t('financialHealth.filters.cost', 'Coste:')}</span>
+                                <div className="flex rounded-md border border-slate-200 overflow-hidden flex-1">
+                                    <button
+                                        type="button"
+                                        onClick={() => setCostMode('standard')}
+                                        className={cn(
+                                            "flex-1 px-3 py-1.5 text-xs font-medium transition-colors",
+                                            costMode === 'standard' ? "bg-emerald-600 text-white" : "bg-white text-slate-600 hover:bg-slate-50"
+                                        )}
+                                    >
+                                        {t('financialHealth.filters.operational', 'Operativo')}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setCostMode('dynamic')}
+                                        className={cn(
+                                            "flex-1 px-3 py-1.5 text-xs font-medium transition-colors border-l border-slate-200",
+                                            costMode === 'dynamic' ? "bg-amber-600 text-white" : "bg-white text-slate-600 hover:bg-slate-50"
+                                        )}
+                                    >
+                                        {t('financialHealth.filters.dynamic', 'Dinámico')}
+                                    </button>
+                                </div>
+                                <Button variant="ghost" size="icon" className="h-9 w-9 text-slate-500 hover:text-slate-700 shrink-0" onClick={() => setCostHelpOpen(true)} aria-label={t('financialHealth.costHelpAria')}>
+                                    <Info className="h-4 w-4" />
                                 </Button>
                             </div>
-                            {isLoadingMonth && (
-                                <Loader2 className="h-4 w-4 animate-spin text-slate-400 shrink-0" aria-label={t('common.loading', 'Cargando')} />
-                            )}
-                            {isViewingCurrentMonth ? (
-                                <Badge className="bg-indigo-500 hover:bg-indigo-600 text-white border-0 animate-pulse shrink-0">
-                                    {t('financialHealth.controls.currentMonth', 'Mes en curso')}
-                                </Badge>
-                            ) : (
-                                <Badge variant="secondary" className="bg-slate-200 text-slate-600 border-0 shrink-0">
-                                    {t('financialHealth.controls.closedMonth', 'Mes cerrado')}
-                                </Badge>
-                            )}
-                        </div>
+                        </CollapsibleContent>
+                    </Collapsible>
+
+                    <div className="hidden sm:flex sm:flex-col gap-2.5 min-w-0 w-full">
                         {(canAccess('/agency')) && (
                             <div className="flex flex-wrap items-center gap-2">
                                 <Button
@@ -1150,8 +1253,7 @@ export default function FinancialHealthPage() {
                                     onClick={() => setProfitSettingsOpen(true)}
                                 >
                                     <Settings2 className="h-4 w-4" />
-                                    <span className="hidden sm:inline">{t('financialHealth.settings.openButton', 'Objetivo y gastos')}</span>
-                                    <span className="sm:hidden">{t('financialHealth.settings.openButtonShort', 'Objetivo')}</span>
+                                    {t('financialHealth.settings.openButton', 'Objetivo y gastos')}
                                 </Button>
                                 <Button type="button" variant="ghost" size="sm" className="h-9 shrink-0 text-xs" asChild>
                                     <Link to="/exportacion-informes">{t('financialHealth.exportHubLink', 'Más exportaciones')}</Link>
@@ -1159,73 +1261,73 @@ export default function FinancialHealthPage() {
                             </div>
                         )}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full min-w-0">
-                        <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2 py-1.5 min-w-0">
-                            <span className="text-xs font-medium text-slate-600 whitespace-nowrap">{t('financialHealth.filters.hours', 'Horas:')}</span>
-                            <div className="flex rounded-md border border-slate-200 overflow-hidden">
-                                <button
-                                    type="button"
-                                    onClick={() => setHoursMode('actual')}
-                                    className={cn(
-                                        "px-3 py-1.5 text-xs font-medium transition-colors",
-                                        hoursMode === 'actual' ? "bg-indigo-600 text-white" : "bg-white text-slate-600 hover:bg-slate-50"
-                                    )}
-                                >
-                                    {t('financialHealth.filters.actual', 'Reales')}
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setHoursMode('computed')}
-                                    className={cn(
-                                        "px-3 py-1.5 text-xs font-medium transition-colors border-l border-slate-200",
-                                        hoursMode === 'computed' ? "bg-fuchsia-600 text-white" : "bg-white text-slate-600 hover:bg-slate-50"
-                                    )}
-                                >
-                                    {t('financialHealth.filters.computed', 'Computadas')}
-                                </button>
+                            <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2 py-1.5 min-w-0">
+                                <span className="text-xs font-medium text-slate-600 whitespace-nowrap">{t('financialHealth.filters.hours', 'Horas:')}</span>
+                                <div className="flex rounded-md border border-slate-200 overflow-hidden">
+                                    <button
+                                        type="button"
+                                        onClick={() => setHoursMode('actual')}
+                                        className={cn(
+                                            "px-3 py-1.5 text-xs font-medium transition-colors",
+                                            hoursMode === 'actual' ? "bg-indigo-600 text-white" : "bg-white text-slate-600 hover:bg-slate-50"
+                                        )}
+                                    >
+                                        {t('financialHealth.filters.actual', 'Reales')}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setHoursMode('computed')}
+                                        className={cn(
+                                            "px-3 py-1.5 text-xs font-medium transition-colors border-l border-slate-200",
+                                            hoursMode === 'computed' ? "bg-fuchsia-600 text-white" : "bg-white text-slate-600 hover:bg-slate-50"
+                                        )}
+                                    >
+                                        {t('financialHealth.filters.computed', 'Computadas')}
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-                        <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2 py-1.5 min-w-0">
-                            <span className="text-xs font-medium text-slate-600 whitespace-nowrap">{t('financialHealth.filters.cost', 'Coste:')}</span>
-                            <div className="flex rounded-md border border-slate-200 overflow-hidden">
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <button
-                                            type="button"
-                                            onClick={() => setCostMode('standard')}
-                                            className={cn(
-                                                "px-3 py-1.5 text-xs font-medium transition-colors",
-                                                costMode === 'standard' ? "bg-emerald-600 text-white" : "bg-white text-slate-600 hover:bg-slate-50"
-                                            )}
-                                        >
-                                            {t('financialHealth.filters.operational', 'Operativo')}
-                                        </button>
-                                    </TooltipTrigger>
-                                    <TooltipContent side="bottom" className="text-xs">
-                                        {t('financialHealth.filters.operationalHelp', 'Aísla el coste del proyecto de vacaciones y tiempos muertos.')}
-                                    </TooltipContent>
-                                </Tooltip>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <button
-                                            type="button"
-                                            onClick={() => setCostMode('dynamic')}
-                                            className={cn(
-                                                "px-3 py-1.5 text-xs font-medium transition-colors border-l border-slate-200",
-                                                costMode === 'dynamic' ? "bg-amber-600 text-white" : "bg-white text-slate-600 hover:bg-slate-50"
-                                            )}
-                                        >
-                                            {t('financialHealth.filters.dynamic', 'Dinámico')}
-                                        </button>
-                                    </TooltipTrigger>
-                                    <TooltipContent side="bottom" className="text-xs">
-                                        {t('financialHealth.filters.dynamicHelp', 'Reparte la nómina entre las horas reales del mes (el total coincide con la nómina).')}
-                                    </TooltipContent>
-                                </Tooltip>
+                            <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2 py-1.5 min-w-0">
+                                <span className="text-xs font-medium text-slate-600 whitespace-nowrap">{t('financialHealth.filters.cost', 'Coste:')}</span>
+                                <div className="flex rounded-md border border-slate-200 overflow-hidden">
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <button
+                                                type="button"
+                                                onClick={() => setCostMode('standard')}
+                                                className={cn(
+                                                    "px-3 py-1.5 text-xs font-medium transition-colors",
+                                                    costMode === 'standard' ? "bg-emerald-600 text-white" : "bg-white text-slate-600 hover:bg-slate-50"
+                                                )}
+                                            >
+                                                {t('financialHealth.filters.operational', 'Operativo')}
+                                            </button>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="bottom" className="text-xs">
+                                            {t('financialHealth.filters.operationalHelp', 'Aísla el coste del proyecto de vacaciones y tiempos muertos.')}
+                                        </TooltipContent>
+                                    </Tooltip>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <button
+                                                type="button"
+                                                onClick={() => setCostMode('dynamic')}
+                                                className={cn(
+                                                    "px-3 py-1.5 text-xs font-medium transition-colors border-l border-slate-200",
+                                                    costMode === 'dynamic' ? "bg-amber-600 text-white" : "bg-white text-slate-600 hover:bg-slate-50"
+                                                )}
+                                            >
+                                                {t('financialHealth.filters.dynamic', 'Dinámico')}
+                                            </button>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="bottom" className="text-xs">
+                                            {t('financialHealth.filters.dynamicHelp', 'Reparte la nómina entre las horas reales del mes (el total coincide con la nómina).')}
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </div>
+                                <Button variant="ghost" size="icon" className="h-9 w-9 text-slate-500 hover:text-slate-700 shrink-0" onClick={() => setCostHelpOpen(true)} aria-label={t('financialHealth.costHelpAria')}>
+                                    <Info className="h-4 w-4" />
+                                </Button>
                             </div>
-                            <Button variant="ghost" size="icon" className="h-9 w-9 text-slate-500 hover:text-slate-700 shrink-0" onClick={() => setCostHelpOpen(true)} aria-label={t('financialHealth.costHelpAria')}>
-                                <Info className="h-4 w-4" />
-                            </Button>
-                        </div>
                         </div>
                     </div>
                 </div>
@@ -1387,7 +1489,8 @@ export default function FinancialHealthPage() {
                             </TabsTrigger>
                             <TabsTrigger value="deliverables-lifecycle" className="gap-1.5 text-xs sm:text-sm data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md leading-tight">
                                 <Layers className="h-4 w-4 shrink-0" />
-                                <span className="text-left sm:text-center">
+                                <span className="sm:hidden">{t('financialHealth.tabs.deliverablesShort', 'Entregables')}</span>
+                                <span className="hidden sm:inline text-left sm:text-center">
                                     {t('financialHealth.tabs.deliverablesLifecycle', 'Entregables (vida)')}
                                 </span>
                             </TabsTrigger>
@@ -1675,12 +1778,12 @@ export default function FinancialHealthPage() {
                                         </div>
                                     ) : (
                                         <>
-                                            <div className="max-w-full min-w-0 overflow-x-auto overscroll-x-contain">
-                                                <table className="w-full text-xs sm:text-sm">
+                                                                            <div className="max-w-full min-w-0 overflow-x-auto overscroll-x-contain">
+                                                                                <table className="w-full text-xs sm:text-sm">
                                                     <thead className="text-xs text-slate-500 uppercase bg-slate-50/80">
                                                         <tr>
-                                                            <th className="px-4 py-3 text-left font-medium rounded-tl-lg">{t('financialHealth.columns.clientProject')}</th>
-                                                            <th className="px-4 py-3 text-right font-medium">
+                                                            <th className="px-3 sm:px-4 py-3 text-left font-medium rounded-tl-lg">{t('financialHealth.columns.clientProject')}</th>
+                                                            <th className="px-4 py-3 text-right font-medium hidden sm:table-cell">
                                                                 <span className="inline-flex items-center gap-1">
                                                                     {isViewingCurrentMonth
                                                                         ? t('financialHealth.bleedingRadar.accruedRevenue', currencyLabels)
@@ -1699,8 +1802,8 @@ export default function FinancialHealthPage() {
                                                                     )}
                                                                 </span>
                                                             </th>
-                                                            <th className="px-4 py-3 text-right font-medium">{hoursHeaderLabel} / Budget</th>
-                                                            <th className="px-4 py-3 text-right font-medium">{t('financialHealth.columns.ehr')}</th>
+                                                            <th className="px-4 py-3 text-right font-medium hidden sm:table-cell">{hoursHeaderLabel} / Budget</th>
+                                                            <th className="px-2 sm:px-4 py-3 text-right font-medium">{t('financialHealth.columns.ehr')}</th>
                                                             <th className="px-2 py-2 sm:px-4 sm:py-3 text-right font-medium whitespace-nowrap hidden lg:table-cell">
                                                                 <Tooltip>
                                                                     <TooltipTrigger asChild>
@@ -1731,8 +1834,8 @@ export default function FinancialHealthPage() {
                                                                     </TooltipContent>
                                                                 </Tooltip>
                                                             </th>
-                                                            <th className="px-4 py-3 text-right font-medium">{t('financialHealth.columns.margin', currencyLabels)}</th>
-                                                            <th className="px-4 py-3 text-right font-medium rounded-tr-lg">{t('financialHealth.columns.action')}</th>
+                                                            <th className="px-3 sm:px-4 py-3 text-right font-medium">{t('financialHealth.columns.margin', currencyLabels)}</th>
+                                                            <th className="px-4 py-3 text-right font-medium rounded-tr-lg hidden sm:table-cell">{t('financialHealth.columns.action')}</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody className="divide-y divide-slate-100">
@@ -1768,9 +1871,9 @@ export default function FinancialHealthPage() {
                                                                         onClick={() => toggleProject(p.projectId)}
                                                                         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleProject(p.projectId); } }}
                                                                     >
-                                                                        <td className="px-4 py-3 align-top min-w-0 max-w-[14rem] sm:max-w-[18rem]">
-                                                                            <div className="flex items-start gap-3">
-                                                                                <Avatar className="h-8 w-8 border shrink-0 mt-0.5">
+                                                                        <td className="px-3 sm:px-4 py-3 align-top min-w-0 max-w-[14rem] sm:max-w-[18rem]">
+                                                                            <div className="flex items-start gap-2 sm:gap-3">
+                                                                                <Avatar className="h-8 w-8 border shrink-0 mt-0.5 hidden sm:flex">
                                                                                     <AvatarFallback
                                                                                         className="bg-slate-900 text-white text-xs font-bold flex items-center justify-center"
                                                                                         style={client?.color ? { backgroundColor: client.color, color: 'white' } : undefined}
@@ -1785,10 +1888,13 @@ export default function FinancialHealthPage() {
                                                                                     <div className="text-[11px] text-slate-500 break-words whitespace-normal leading-snug mt-0.5">
                                                                                         <SensitiveText kind="account" id={p.clientId ?? 'unknown-client'}>{clientName}</SensitiveText>
                                                                                     </div>
+                                                                                    <div className="sm:hidden mt-1 text-[11px] text-slate-600 font-mono tabular-nums">
+                                                                                        {formatMoney(displayFeeRadar)} · {projectHours.toFixed(1)}h / {p.budget.toFixed(1)}h
+                                                                                    </div>
                                                                                 </div>
                                                                             </div>
                                                                         </td>
-                                                                        <td className="px-4 py-3 text-right align-middle">
+                                                                        <td className="px-4 py-3 text-right align-middle hidden sm:table-cell">
                                                                             <div className="font-mono text-xs tabular-nums">
                                                                                 {formatMoney((projectDisplayFeeMap.get(p.projectId) ?? p.monthlyFee))}
                                                                                 {isViewingCurrentMonth && (p.monthlyFee ?? 0) > 0 && (
@@ -1796,7 +1902,7 @@ export default function FinancialHealthPage() {
                                                                                 )}
                                                                             </div>
                                                                         </td>
-                                                                        <td className="px-4 py-3 text-right align-middle">
+                                                                        <td className="px-4 py-3 text-right align-middle hidden sm:table-cell">
                                                                             <div className="flex flex-col items-end gap-1">
                                                                                 <span className="font-mono text-[11px] text-slate-600 tabular-nums">
                                                                                     {projectHours.toFixed(1)}h / {p.budget.toFixed(1)}h
@@ -1814,13 +1920,13 @@ export default function FinancialHealthPage() {
                                                                                 </div>
                                                                             </div>
                                                                         </td>
-                                                                        <td className="px-4 py-3 text-right align-middle">
+                                                                        <td className="px-2 sm:px-4 py-3 text-right align-middle">
                                                                             <div className="flex items-center justify-end gap-1">
                                                                                 {projectHours > 0 ? (
                                                                                     <Badge
                                                                                         variant={ehrBelowTarget ? 'destructive' : 'outline'}
                                                                                         className={cn(
-                                                                                            "text-[11px] font-semibold tabular-nums",
+                                                                                            "text-[10px] sm:text-[11px] font-semibold tabular-nums",
                                                                                             ehrBelowTarget
                                                                                                 ? "bg-red-600 text-white border-red-600"
                                                                                                 : "bg-emerald-50 text-emerald-700 border-emerald-300"
@@ -1829,7 +1935,7 @@ export default function FinancialHealthPage() {
                                                                                         {ehrLabel}
                                                                                     </Badge>
                                                                                 ) : (
-                                                                                    <Badge variant="outline" className="text-[11px] text-slate-500 border-slate-300 bg-slate-50">
+                                                                                    <Badge variant="outline" className="text-[10px] sm:text-[11px] text-slate-500 border-slate-300 bg-slate-50">
                                                                                         {t('financialHealth.kpis.ehr.notStarted')}
                                                                                     </Badge>
                                                                                 )}
@@ -1867,13 +1973,13 @@ export default function FinancialHealthPage() {
                                                                                 );
                                                                             })()}
                                                                         </td>
-                                                                        <td className={cn("px-4 py-3 text-right align-middle font-mono text-xs tabular-nums font-semibold", semaphoreRadar.className)}>
+                                                                        <td className={cn("px-3 sm:px-4 py-3 text-right align-middle font-mono text-xs tabular-nums font-semibold", semaphoreRadar.className)}>
                                                                             <span className="inline-flex items-center justify-end gap-1">
                                                                                 {semaphoreRadar.showAlert && <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden />}
                                                                                 {formatMoney(displayMarginRadar)}
                                                                             </span>
                                                                         </td>
-                                                                        <td className="px-4 py-3 text-right align-middle" onClick={(e) => e.stopPropagation()}>
+                                                                        <td className="px-4 py-3 text-right align-middle hidden sm:table-cell" onClick={(e) => e.stopPropagation()}>
                                                                             <Button size="sm" variant="ghost" className="h-8 text-xs gap-1 text-slate-600 hover:text-slate-900" onClick={(e) => { e.stopPropagation(); toggleProject(p.projectId); }}>
                                                                                 {isExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
                                                                                 {t('financialHealth.expand.breakdown')}
@@ -1883,13 +1989,20 @@ export default function FinancialHealthPage() {
                                                                     {isExpanded && (
                                                                         <tr>
                                                                             <td colSpan={9} className="p-0 align-top bg-slate-50/50">
-                                                                                <div className="px-4 py-4">
+                                                                                <div className="px-3 sm:px-4 py-4">
                                                                                     {attributionRows.length === 0 ? (
                                                                                         <p className="text-sm italic text-slate-500 py-4">{t('financialHealth.expand.noEmployeeBreakdown')}</p>
                                                                                     ) : (
                                                                                         <div className="flex flex-col lg:flex-row gap-4">
-                                                                                            <div className="flex-1 min-w-0 rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm">
-                                                                                                <div className="max-w-full min-w-0 overflow-x-auto overscroll-x-contain">
+                                                                                            <ProfitabilityAttributionMobileList
+                                                                                                rows={attributionRows}
+                                                                                                employeeNameById={(id) => employees.find(e => e.id === id)?.name || t('financialHealth.unknownEmployee')}
+                                                                                                formatMoney={formatMoney}
+                                                                                                formatPerHour={formatPerHour}
+                                                                                                hoursModeLabel={hoursMode === 'computed' ? t('financialHealth.expand.hoursComputed') : t('financialHealth.expand.hoursActual')}
+                                                                                            />
+                                                                                            <div className="hidden md:flex flex-1 min-w-0 rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm">
+                                                                                                <div className="max-w-full min-w-0 overflow-x-auto overscroll-x-contain w-full">
                                                                                                     <table className="w-full text-sm min-w-[320px]">
                                                                                                         <colgroup>
                                                                                                             <col className="min-w-[112px] w-[32%]" />
@@ -2010,7 +2123,7 @@ export default function FinancialHealthPage() {
                                                                                                     </table>
                                                                                                 </div>
                                                                                             </div>
-                                                                                            <div className="lg:w-52 shrink-0 flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                                                                                            <div className="hidden md:flex lg:w-52 shrink-0 flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
                                                                                                 <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{t('financialHealth.expand.summary')}</p>
                                                                                                 <dl className="space-y-3 text-sm">
                                                                                                     <div>
@@ -2505,7 +2618,68 @@ export default function FinancialHealthPage() {
                                         <p className="text-xs text-slate-500 mt-1 max-w-sm">{t('financialHealth.employeeProfitability.emptyBillableDesc')}</p>
                                     </div>
                                 ) : (
-                                    <div className="max-w-full min-w-0 overflow-x-auto overscroll-x-contain">
+                                  <>
+                                    <p className="md:hidden text-xs text-slate-500 mb-3">
+                                        {t('financialHealth.mobile.mobileTapHint', 'Toca una fila para ver el desglose')}
+                                    </p>
+                                    <ul className="md:hidden space-y-2 mb-2">
+                                        {[...enrichedProjects].sort((a, b) => a.ehr - b.ehr).map(({ metric: p, clientName, ehrLabel }) => {
+                                            const cm = projectCostAndMarginMap.get(p.projectId) ?? { cost: 0, payrollCost: 0, overheadCost: 0, margin: 0 };
+                                            const displayFeeProj = projectDisplayFeeMap.get(p.projectId) ?? p.monthlyFee ?? 0;
+                                            const displayMarginProj = displayFeeProj - cm.cost;
+                                            const marginPctProj = displayFeeProj > 0 ? (displayMarginProj / displayFeeProj) * 100 : 0;
+                                            const semaphoreProj = getMarginSemaphore(marginPctProj);
+                                            const isExpanded = expandedProjects.has(p.projectId);
+                                            const attributionRows = projectEmployeeAttributionMap.get(p.projectId) || [];
+                                            const projectHours = hoursMode === 'computed' ? p.computed : p.actual;
+                                            return (
+                                                <li key={`m-${p.projectId}`} className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+                                                    <button
+                                                        type="button"
+                                                        className="w-full text-left p-3 flex items-start gap-3"
+                                                        onClick={() => toggleProject(p.projectId)}
+                                                    >
+                                                        <div className="min-w-0 flex-1 space-y-1">
+                                                            <p className="font-semibold text-slate-900 text-sm leading-snug">
+                                                                <SensitiveText kind="project" id={p.projectId}>{p.projectName}</SensitiveText>
+                                                            </p>
+                                                            <p className="text-[11px] text-slate-500 leading-snug">
+                                                                <SensitiveText kind="account" id={p.clientId ?? 'unknown-client'}>{clientName}</SensitiveText>
+                                                            </p>
+                                                            <p className="text-[11px] text-slate-600 font-mono tabular-nums">
+                                                                {formatMoney(displayFeeProj)} · {projectHours.toFixed(1)}h / {p.budget.toFixed(1)}h
+                                                            </p>
+                                                        </div>
+                                                        <div className="shrink-0 flex flex-col items-end gap-1.5">
+                                                            <span className={cn('font-mono text-sm font-semibold tabular-nums inline-flex items-center gap-1', semaphoreProj.className)}>
+                                                                {semaphoreProj.showAlert && <AlertTriangle className="h-3.5 w-3.5" aria-hidden />}
+                                                                {formatMoney(displayMarginProj)}
+                                                            </span>
+                                                            <Badge variant="outline" className="text-[10px] font-semibold tabular-nums">{ehrLabel}</Badge>
+                                                            <span className="text-[11px] text-slate-500 inline-flex items-center gap-0.5">
+                                                                {isExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+                                                                {isExpanded
+                                                                    ? t('financialHealth.mobile.closeBreakdown', 'Cerrar desglose')
+                                                                    : t('financialHealth.mobile.openBreakdown', 'Ver desglose')}
+                                                            </span>
+                                                        </div>
+                                                    </button>
+                                                    {isExpanded && (
+                                                        <div className="border-t border-slate-100 bg-slate-50/80 px-3 py-3">
+                                                            <ProfitabilityAttributionMobileList
+                                                                rows={attributionRows}
+                                                                employeeNameById={(id) => employees.find(e => e.id === id)?.name || t('financialHealth.unknownEmployee')}
+                                                                formatMoney={formatMoney}
+                                                                formatPerHour={formatPerHour}
+                                                                hoursModeLabel={hoursMode === 'computed' ? t('financialHealth.expand.hoursComputed') : t('financialHealth.expand.hoursActual')}
+                                                            />
+                                                        </div>
+                                                    )}
+                                                </li>
+                                            );
+                                        })}
+                                    </ul>
+                                    <div className="hidden md:block max-w-full min-w-0 overflow-x-auto overscroll-x-contain">
                                         <table className="w-full text-sm">
                                             <thead className="text-xs text-slate-500 uppercase bg-slate-50/80">
                                                 <tr>
@@ -2875,6 +3049,7 @@ export default function FinancialHealthPage() {
                                             </tfoot>
                                         </table>
                                     </div>
+                                  </>
                                 )}
                             </CardContent>
                         </Card>

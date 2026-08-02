@@ -1364,7 +1364,10 @@
       "nextMonth": "Next month",
       "starterPlan": "Starter Plan: current and previous month",
       "currentMonth": "Current month",
-      "closedMonth": "Closed month"
+      "closedMonth": "Closed month",
+      "showFilters": "Filters and modes",
+      "hideFilters": "Hide filters",
+      "filtersSummary": "Hours {{hours}} · Cost {{cost}}"
     },
     "filters": {
       "hours": "Hours:",
@@ -1434,7 +1437,8 @@
       "projects": "Projects",
       "employees": "Employees",
       "deliverablesLifecycle": "Deliverables (lifecycle)",
-      "subtitle": "Summary · Projects (month) · Deliverables (lifecycle) · Employees"
+      "subtitle": "Summary · Projects (month) · Deliverables (lifecycle) · Employees",
+      "deliverablesShort": "Deliverables"
     },
     "deliverablesLifecycle": {
       "heading": "Deliverables — lifecycle",
@@ -1601,7 +1605,15 @@
       "commonOverhead": "Common costs"
     },
     "unknownClient": "Unknown client",
-    "unknownEmployee": "Employee"
+    "unknownEmployee": "Employee",
+    "mobile": {
+      "mobileTapHint": "Tap a row to see the breakdown",
+      "hoursBudgetShort": "{{hours}}h / {{budget}}h",
+      "revenueShort": "Revenue",
+      "openBreakdown": "View breakdown",
+      "closeBreakdown": "Close breakdown",
+      "costShort": "Cost"
+    }
   },
   "clientsAndProjects": {
     "title": "Clients and Projects",
