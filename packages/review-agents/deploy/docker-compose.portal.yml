@@ -1,6 +1,7 @@
 services:
   review-portal:
-    image: nginx:alpine
+    # Pin ≥ 1.30.6 por advisories nginx oct 2026 (CVE-2026-15176 et al.)
+    image: nginx:1.30.6-alpine
     container_name: review-portal
     restart: unless-stopped
     ports:
