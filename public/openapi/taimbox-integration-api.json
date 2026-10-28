@@ -2066,7 +2066,7 @@
           "Integration resources"
         ],
         "summary": "List client_settings",
-        "description": "Ajustes avanzados por cliente: limite de presupuesto, agrupacion, visibilidad. Requiere autenticacion.",
+        "description": "Ajustes avanzados por cliente: limite de presupuesto, agrupacion, visibilidad. Requiere autenticacion. Monthly Ads target is budget_limit; client_id is the ad account, virtual account, or holding name.",
         "operationId": "list_client_settings",
         "parameters": [
           {
@@ -2947,6 +2947,738 @@
         ],
         "summary": "Delete project_editing_locks",
         "operationId": "delete_project_editing_locks",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter: id=eq.{uuid}"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted."
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-write": "readwrite"
+      }
+    },
+    "/rest/v1/ad_accounts_config": {
+      "get": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "List ad_accounts_config",
+        "description": "Cuentas publicitarias de Google o Meta vinculadas a la agencia. Scope ad_accounts_config. El objetivo mensual no vive aqui: esta en client_settings.budget_limit, con client_id = account_id (o el id virtual / el nombre del holding). Scope ad_accounts_config. Lectura con el token; escritura solo si permissions=readwrite. Filtra por agency_id.",
+        "operationId": "list_ad_accounts_config",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/select"
+          },
+          {
+            "$ref": "#/components/parameters/order"
+          },
+          {
+            "$ref": "#/components/parameters/limit"
+          },
+          {
+            "$ref": "#/components/parameters/offset"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of rows (may be empty when RLS filters all results).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ad_accounts_config"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-read": true
+      },
+      "post": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "Create ad_accounts_config",
+        "description": "Cuentas publicitarias de Google o Meta vinculadas a la agencia. Scope ad_accounts_config. El objetivo mensual no vive aqui: esta en client_settings.budget_limit, con client_id = account_id (o el id virtual / el nombre del holding). Requires readwrite token where RLS allows INSERT.",
+        "operationId": "create_ad_accounts_config",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/preferReturn"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ad_accounts_config"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created row (with Prefer: return=representation).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ad_accounts_config"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-write": "readwrite"
+      },
+      "patch": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "Update ad_accounts_config",
+        "operationId": "update_ad_accounts_config",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter: id=eq.{uuid}"
+          },
+          {
+            "$ref": "#/components/parameters/preferReturn"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ad_accounts_config"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated row.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ad_accounts_config"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-write": "readwrite"
+      },
+      "delete": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "Delete ad_accounts_config",
+        "operationId": "delete_ad_accounts_config",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter: id=eq.{uuid}"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted."
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-write": "readwrite"
+      }
+    },
+    "/rest/v1/google_ads_campaigns": {
+      "get": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "List google_ads_campaigns",
+        "description": "Metricas mensuales por campana de Google Ads. Scope google_ads_campaigns. La sincronizacion vuelve a escribir el mes en curso; un PATCH manual puede pisarse en la siguiente sync. Scope google_ads_campaigns. Clave (campaign_id, date). date es el primer dia del mes. Escritura con permissions=readwrite. Monthly rows. date is the first day of the month. Sync may overwrite the current month.",
+        "operationId": "list_google_ads_campaigns",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/select"
+          },
+          {
+            "$ref": "#/components/parameters/order"
+          },
+          {
+            "$ref": "#/components/parameters/limit"
+          },
+          {
+            "$ref": "#/components/parameters/offset"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of rows (may be empty when RLS filters all results).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/google_ads_campaigns"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-read": true
+      },
+      "post": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "Create google_ads_campaigns",
+        "description": "Metricas mensuales por campana de Google Ads. Scope google_ads_campaigns. La sincronizacion vuelve a escribir el mes en curso; un PATCH manual puede pisarse en la siguiente sync. Requires readwrite token where RLS allows INSERT.",
+        "operationId": "create_google_ads_campaigns",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/preferReturn"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/google_ads_campaigns"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created row (with Prefer: return=representation).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/google_ads_campaigns"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-write": "readwrite"
+      },
+      "patch": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "Update google_ads_campaigns",
+        "operationId": "update_google_ads_campaigns",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter: id=eq.{uuid}"
+          },
+          {
+            "$ref": "#/components/parameters/preferReturn"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/google_ads_campaigns"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated row.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/google_ads_campaigns"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-write": "readwrite"
+      },
+      "delete": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "Delete google_ads_campaigns",
+        "operationId": "delete_google_ads_campaigns",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter: id=eq.{uuid}"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted."
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-write": "readwrite"
+      }
+    },
+    "/rest/v1/meta_ads_campaigns": {
+      "get": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "List meta_ads_campaigns",
+        "description": "Metricas mensuales por campana de Meta Ads. Scope meta_ads_campaigns. status usa ACTIVE o PAUSED. Scope meta_ads_campaigns. Unico (campaign_id, date). Escritura con permissions=readwrite. La siguiente sincronizacion puede reemplazar el mes. Monthly rows. status is ACTIVE or PAUSED. Sync may overwrite the current month.",
+        "operationId": "list_meta_ads_campaigns",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/select"
+          },
+          {
+            "$ref": "#/components/parameters/order"
+          },
+          {
+            "$ref": "#/components/parameters/limit"
+          },
+          {
+            "$ref": "#/components/parameters/offset"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of rows (may be empty when RLS filters all results).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/meta_ads_campaigns"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-read": true
+      },
+      "post": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "Create meta_ads_campaigns",
+        "description": "Metricas mensuales por campana de Meta Ads. Scope meta_ads_campaigns. status usa ACTIVE o PAUSED. Requires readwrite token where RLS allows INSERT.",
+        "operationId": "create_meta_ads_campaigns",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/preferReturn"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/meta_ads_campaigns"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created row (with Prefer: return=representation).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/meta_ads_campaigns"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-write": "readwrite"
+      },
+      "patch": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "Update meta_ads_campaigns",
+        "operationId": "update_meta_ads_campaigns",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter: id=eq.{uuid}"
+          },
+          {
+            "$ref": "#/components/parameters/preferReturn"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/meta_ads_campaigns"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated row.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/meta_ads_campaigns"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-write": "readwrite"
+      },
+      "delete": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "Delete meta_ads_campaigns",
+        "operationId": "delete_meta_ads_campaigns",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter: id=eq.{uuid}"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted."
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-write": "readwrite"
+      }
+    },
+    "/rest/v1/segmentation_rules": {
+      "get": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "List segmentation_rules",
+        "description": "Cuentas virtuales: si el nombre de la campana contiene keyword, se agrupa como virtual_name. Scope segmentation_rules. Scope segmentation_rules. platform es google o meta. Escritura con permissions=readwrite.",
+        "operationId": "list_segmentation_rules",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/select"
+          },
+          {
+            "$ref": "#/components/parameters/order"
+          },
+          {
+            "$ref": "#/components/parameters/limit"
+          },
+          {
+            "$ref": "#/components/parameters/offset"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of rows (may be empty when RLS filters all results).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/segmentation_rules"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-read": true
+      },
+      "post": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "Create segmentation_rules",
+        "description": "Cuentas virtuales: si el nombre de la campana contiene keyword, se agrupa como virtual_name. Scope segmentation_rules. Requires readwrite token where RLS allows INSERT.",
+        "operationId": "create_segmentation_rules",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/preferReturn"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/segmentation_rules"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created row (with Prefer: return=representation).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/segmentation_rules"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-write": "readwrite"
+      },
+      "patch": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "Update segmentation_rules",
+        "operationId": "update_segmentation_rules",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter: id=eq.{uuid}"
+          },
+          {
+            "$ref": "#/components/parameters/preferReturn"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/segmentation_rules"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated row.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/segmentation_rules"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-write": "readwrite"
+      },
+      "delete": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "Delete segmentation_rules",
+        "operationId": "delete_segmentation_rules",
         "parameters": [
           {
             "name": "id",
@@ -4236,6 +4968,225 @@
           "project_id",
           "employee_id",
           "month"
+        ]
+      },
+      "ad_accounts_config": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Identificador interno."
+          },
+          "platform": {
+            "type": "string",
+            "description": "google o meta."
+          },
+          "account_id": {
+            "type": "string",
+            "description": "Id de la cuenta en la plataforma. En Meta suele ir con prefijo act_."
+          },
+          "account_name": {
+            "type": "string",
+            "description": "Nombre visible."
+          },
+          "is_active": {
+            "type": "boolean",
+            "description": "Si la sincronizacion incluye la cuenta."
+          },
+          "currency": {
+            "type": "string",
+            "description": "Codigo ISO de la moneda."
+          },
+          "agency_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Agencia."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Alta."
+          }
+        },
+        "required": [
+          "platform",
+          "account_id",
+          "agency_id"
+        ]
+      },
+      "google_ads_campaigns": {
+        "type": "object",
+        "properties": {
+          "campaign_id": {
+            "type": "string",
+            "description": "Id de campana en Google Ads."
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "description": "Primer dia del mes de las metricas."
+          },
+          "campaign_name": {
+            "type": "string",
+            "description": "Nombre de la campana."
+          },
+          "client_id": {
+            "type": "string",
+            "description": "Id de la cuenta publicitaria."
+          },
+          "client_name": {
+            "type": "string",
+            "description": "Nombre de la cuenta."
+          },
+          "status": {
+            "type": "string",
+            "description": "ENABLED, PAUSED u otro estado de Google."
+          },
+          "cost": {
+            "type": "number",
+            "description": "Gasto del mes en la moneda de la cuenta."
+          },
+          "clicks": {
+            "type": "integer",
+            "description": "Clics."
+          },
+          "impressions": {
+            "type": "integer",
+            "description": "Impresiones."
+          },
+          "conversions": {
+            "type": "number",
+            "description": "Conversiones."
+          },
+          "conversions_value": {
+            "type": "number",
+            "description": "Valor de conversion. Sin este valor el ROAS no aplica."
+          },
+          "daily_budget": {
+            "type": "number",
+            "description": "Limite diario en Google. No es el objetivo mensual."
+          },
+          "budget_id": {
+            "type": "string",
+            "description": "Id de la cartera de presupuesto, si se comparte."
+          },
+          "agency_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Agencia."
+          }
+        },
+        "required": [
+          "agency_id"
+        ]
+      },
+      "meta_ads_campaigns": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Id interno."
+          },
+          "campaign_id": {
+            "type": "string",
+            "description": "Id de campana en Meta."
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "description": "Primer dia del mes."
+          },
+          "campaign_name": {
+            "type": "string",
+            "description": "Nombre."
+          },
+          "client_id": {
+            "type": "string",
+            "description": "Id de la cuenta (act_...)."
+          },
+          "client_name": {
+            "type": "string",
+            "description": "Nombre de la cuenta."
+          },
+          "status": {
+            "type": "string",
+            "description": "ACTIVE o PAUSED."
+          },
+          "cost": {
+            "type": "number",
+            "description": "Gasto del mes."
+          },
+          "clicks": {
+            "type": "integer",
+            "description": "Clics."
+          },
+          "impressions": {
+            "type": "integer",
+            "description": "Impresiones."
+          },
+          "conversions": {
+            "type": "number",
+            "description": "Conversiones."
+          },
+          "conversions_value": {
+            "type": "number",
+            "description": "Valor de conversion."
+          },
+          "agency_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Agencia."
+          }
+        },
+        "required": [
+          "campaign_id",
+          "date",
+          "client_id",
+          "agency_id"
+        ]
+      },
+      "segmentation_rules": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Id de la regla."
+          },
+          "platform": {
+            "type": "string",
+            "description": "google o meta."
+          },
+          "account_id": {
+            "type": "string",
+            "description": "Cuenta origen."
+          },
+          "keyword": {
+            "type": "string",
+            "description": "Texto que debe contener el nombre de la campana."
+          },
+          "virtual_name": {
+            "type": "string",
+            "description": "Nombre de la cuenta virtual."
+          },
+          "agency_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Agencia."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Alta."
+          }
+        },
+        "required": [
+          "platform",
+          "account_id",
+          "keyword",
+          "virtual_name",
+          "agency_id"
         ]
       }
     }

@@ -29,6 +29,10 @@ const KNOWN_TABLES = [
   'professional_goals',
   'user_routines',
   'project_editing_locks',
+  'ad_accounts_config',
+  'google_ads_campaigns',
+  'meta_ads_campaigns',
+  'segmentation_rules',
 ];
 
 function unescapeSingleQuoted(str) {

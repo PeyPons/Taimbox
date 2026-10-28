@@ -99,7 +99,7 @@ serve(async (req) => {
 
     const validPermissions = permissions === 'readonly' ? 'readonly' : 'readwrite'
 
-    const DEFAULT_SCOPES = [
+    const LEGACY_FULL_SCOPES = [
       'employees',
       'clients',
       'projects',
@@ -117,6 +117,13 @@ serve(async (req) => {
       'project_editing_locks',
       'task_transfers',
     ] as const
+    const ADS_SCOPES = [
+      'ad_accounts_config',
+      'google_ads_campaigns',
+      'meta_ads_campaigns',
+      'segmentation_rules',
+    ] as const
+    const DEFAULT_SCOPES = [...LEGACY_FULL_SCOPES, ...ADS_SCOPES] as const
 
     const allowedScopeSet = new Set<string>(DEFAULT_SCOPES)
     let validScopes: string[] = [...DEFAULT_SCOPES]
@@ -126,6 +133,14 @@ serve(async (req) => {
         if (typeof item === 'string' && allowedScopeSet.has(item)) {
           unique.add(item)
         }
+      }
+      const requestedAllowed = new Set(
+        scopes.filter((item: unknown) => typeof item === 'string' && allowedScopeSet.has(item as string)) as string[],
+      )
+      const requestedLegacyFull = LEGACY_FULL_SCOPES.every((scope) => requestedAllowed.has(scope))
+        && requestedAllowed.size === LEGACY_FULL_SCOPES.length
+      if (requestedLegacyFull) {
+        for (const scope of ADS_SCOPES) unique.add(scope)
       }
       if (unique.size === 0) {
         throw new Error('Debes seleccionar al menos un scope de recurso válido.')

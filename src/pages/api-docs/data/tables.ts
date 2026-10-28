@@ -6,6 +6,7 @@ import {
   Shield,
   Zap,
   Lock,
+  Megaphone,
 } from 'lucide-react';
 import type { TableGroup, ErrorCode } from './types';
 
@@ -1264,6 +1265,234 @@ const { data, error } = await taimbox
   "month": "2026-02",
   "locked_at": "2026-02-17T12:00:00Z",
   "expires_at": "2026-02-17T12:05:00Z"
+}`,
+        },
+      },
+    ],
+  },
+  {
+    anchorId: 'res-ads',
+    group: 'Ads',
+    icon: Megaphone,
+    tables: [
+      {
+        name: 'ad_accounts_config',
+        description: 'Cuentas publicitarias de Google o Meta vinculadas a la agencia. Scope ad_accounts_config. El objetivo mensual no vive aqui: esta en client_settings.budget_limit, con client_id = account_id (o el id virtual / el nombre del holding).',
+        authNote: 'Scope ad_accounts_config. Lectura con el token; escritura solo si permissions=readwrite. Filtra por agency_id.',
+        columns: [
+          { name: 'id', type: 'uuid', required: false, default: 'gen_random_uuid()', pk: true, description: 'Identificador interno.' },
+          { name: 'platform', type: 'text', required: true, description: 'google o meta.' },
+          { name: 'account_id', type: 'text', required: true, description: 'Id de la cuenta en la plataforma. En Meta suele ir con prefijo act_.' },
+          { name: 'account_name', type: 'text', required: false, description: 'Nombre visible.' },
+          { name: 'is_active', type: 'boolean', required: false, default: 'true', description: 'Si la sincronizacion incluye la cuenta.' },
+          { name: 'currency', type: 'text', required: false, description: 'Codigo ISO de la moneda.' },
+          { name: 'agency_id', type: 'uuid', required: true, fk: 'agencies(id)', description: 'Agencia.' },
+          { name: 'created_at', type: 'timestamptz', required: false, default: 'now()', description: 'Alta.' },
+        ],
+        examples: {
+          select: `const { data } = await taimbox
+  .from('ad_accounts_config')
+  .select('account_id, account_name, platform, currency, is_active')
+  .eq('agency_id', agencyId)
+  .eq('is_active', true)`,
+          insert: `const { data } = await taimbox
+  .from('ad_accounts_config')
+  .upsert({
+    agency_id: agencyId,
+    platform: 'google',
+    account_id: '1234567890',
+    account_name: 'Cuenta principal',
+    is_active: true,
+    currency: 'EUR'
+  }, { onConflict: 'account_id,agency_id,platform' })
+  .select()`,
+        },
+        responses: {
+          getList: `[
+  { "account_id": "1234567890", "account_name": "Cuenta principal", "platform": "google", "currency": "EUR", "is_active": true }
+]`,
+          getOne: `{
+  "id": "aac-...",
+  "platform": "google",
+  "account_id": "1234567890",
+  "account_name": "Cuenta principal",
+  "is_active": true,
+  "currency": "EUR",
+  "agency_id": "a1b2c3d4-..."
+}`,
+          post: `{
+  "id": "aac-...",
+  "platform": "google",
+  "account_id": "1234567890",
+  "account_name": "Cuenta principal",
+  "is_active": true
+}`,
+        },
+      },
+      {
+        name: 'google_ads_campaigns',
+        description: 'Metricas mensuales por campana de Google Ads. Scope google_ads_campaigns. La sincronizacion vuelve a escribir el mes en curso; un PATCH manual puede pisarse en la siguiente sync.',
+        authNote: 'Scope google_ads_campaigns. Clave (campaign_id, date). date es el primer dia del mes. Escritura con permissions=readwrite.',
+        columns: [
+          { name: 'campaign_id', type: 'text', required: true, pk: true, description: 'Id de campana en Google Ads.' },
+          { name: 'date', type: 'date', required: true, pk: true, description: 'Primer dia del mes de las metricas.' },
+          { name: 'campaign_name', type: 'text', required: false, description: 'Nombre de la campana.' },
+          { name: 'client_id', type: 'text', required: false, description: 'Id de la cuenta publicitaria.' },
+          { name: 'client_name', type: 'text', required: false, description: 'Nombre de la cuenta.' },
+          { name: 'status', type: 'text', required: false, description: 'ENABLED, PAUSED u otro estado de Google.' },
+          { name: 'cost', type: 'numeric', required: false, description: 'Gasto del mes en la moneda de la cuenta.' },
+          { name: 'clicks', type: 'integer', required: false, description: 'Clics.' },
+          { name: 'impressions', type: 'integer', required: false, description: 'Impresiones.' },
+          { name: 'conversions', type: 'numeric', required: false, default: '0', description: 'Conversiones.' },
+          { name: 'conversions_value', type: 'numeric', required: false, default: '0', description: 'Valor de conversion. Sin este valor el ROAS no aplica.' },
+          { name: 'daily_budget', type: 'numeric', required: false, default: '0', description: 'Limite diario en Google. No es el objetivo mensual.' },
+          { name: 'budget_id', type: 'text', required: false, description: 'Id de la cartera de presupuesto, si se comparte.' },
+          { name: 'agency_id', type: 'uuid', required: true, fk: 'agencies(id)', description: 'Agencia.' },
+        ],
+        examples: {
+          select: `const { data } = await taimbox
+  .from('google_ads_campaigns')
+  .select('campaign_id, campaign_name, status, cost, clicks, conversions, conversions_value, daily_budget')
+  .eq('agency_id', agencyId)
+  .eq('date', '2026-10-01')
+  .order('cost', { ascending: false })`,
+          insert: `const { data } = await taimbox
+  .from('google_ads_campaigns')
+  .upsert({
+    agency_id: agencyId,
+    campaign_id: '111',
+    date: '2026-10-01',
+    campaign_name: 'Marca',
+    client_id: '1234567890',
+    status: 'ENABLED',
+    cost: 120.5
+  }, { onConflict: 'campaign_id,date' })
+  .select()`,
+        },
+        responses: {
+          getList: `[
+  { "campaign_id": "111", "campaign_name": "Marca", "status": "ENABLED", "cost": 120.5, "date": "2026-10-01" }
+]`,
+          getOne: `{
+  "campaign_id": "111",
+  "date": "2026-10-01",
+  "campaign_name": "Marca",
+  "status": "ENABLED",
+  "cost": 120.5,
+  "agency_id": "a1b2c3d4-..."
+}`,
+          post: `{
+  "campaign_id": "111",
+  "date": "2026-10-01",
+  "campaign_name": "Marca",
+  "cost": 120.5
+}`,
+        },
+      },
+      {
+        name: 'meta_ads_campaigns',
+        description: 'Metricas mensuales por campana de Meta Ads. Scope meta_ads_campaigns. status usa ACTIVE o PAUSED.',
+        authNote: 'Scope meta_ads_campaigns. Unico (campaign_id, date). Escritura con permissions=readwrite. La siguiente sincronizacion puede reemplazar el mes.',
+        columns: [
+          { name: 'id', type: 'bigint', required: false, pk: true, description: 'Id interno.' },
+          { name: 'campaign_id', type: 'text', required: true, description: 'Id de campana en Meta.' },
+          { name: 'date', type: 'date', required: true, description: 'Primer dia del mes.' },
+          { name: 'campaign_name', type: 'text', required: false, description: 'Nombre.' },
+          { name: 'client_id', type: 'text', required: true, description: 'Id de la cuenta (act_...).' },
+          { name: 'client_name', type: 'text', required: false, description: 'Nombre de la cuenta.' },
+          { name: 'status', type: 'text', required: false, description: 'ACTIVE o PAUSED.' },
+          { name: 'cost', type: 'numeric', required: false, default: '0', description: 'Gasto del mes.' },
+          { name: 'clicks', type: 'integer', required: false, default: '0', description: 'Clics.' },
+          { name: 'impressions', type: 'integer', required: false, default: '0', description: 'Impresiones.' },
+          { name: 'conversions', type: 'numeric', required: false, default: '0', description: 'Conversiones.' },
+          { name: 'conversions_value', type: 'numeric', required: false, default: '0', description: 'Valor de conversion.' },
+          { name: 'agency_id', type: 'uuid', required: true, fk: 'agencies(id)', description: 'Agencia.' },
+        ],
+        examples: {
+          select: `const { data } = await taimbox
+  .from('meta_ads_campaigns')
+  .select('campaign_id, campaign_name, status, cost, clicks, impressions, conversions, conversions_value')
+  .eq('agency_id', agencyId)
+  .eq('date', '2026-10-01')`,
+          insert: `const { data } = await taimbox
+  .from('meta_ads_campaigns')
+  .upsert({
+    agency_id: agencyId,
+    campaign_id: '222',
+    date: '2026-10-01',
+    client_id: 'act_999',
+    campaign_name: 'Alcance',
+    status: 'PAUSED',
+    cost: 40
+  }, { onConflict: 'campaign_id,date' })
+  .select()`,
+        },
+        responses: {
+          getList: `[
+  { "campaign_id": "222", "campaign_name": "Alcance", "status": "PAUSED", "cost": 40, "date": "2026-10-01" }
+]`,
+          getOne: `{
+  "campaign_id": "222",
+  "date": "2026-10-01",
+  "status": "PAUSED",
+  "cost": 40,
+  "agency_id": "a1b2c3d4-..."
+}`,
+          post: `{
+  "campaign_id": "222",
+  "date": "2026-10-01",
+  "campaign_name": "Alcance",
+  "cost": 40
+}`,
+        },
+      },
+      {
+        name: 'segmentation_rules',
+        description: 'Cuentas virtuales: si el nombre de la campana contiene keyword, se agrupa como virtual_name. Scope segmentation_rules.',
+        authNote: 'Scope segmentation_rules. platform es google o meta. Escritura con permissions=readwrite.',
+        columns: [
+          { name: 'id', type: 'uuid', required: false, default: 'gen_random_uuid()', pk: true, description: 'Id de la regla.' },
+          { name: 'platform', type: 'text', required: true, description: 'google o meta.' },
+          { name: 'account_id', type: 'text', required: true, description: 'Cuenta origen.' },
+          { name: 'keyword', type: 'text', required: true, description: 'Texto que debe contener el nombre de la campana.' },
+          { name: 'virtual_name', type: 'text', required: true, description: 'Nombre de la cuenta virtual.' },
+          { name: 'agency_id', type: 'uuid', required: true, fk: 'agencies(id)', description: 'Agencia.' },
+          { name: 'created_at', type: 'timestamptz', required: false, default: 'now()', description: 'Alta.' },
+        ],
+        examples: {
+          select: `const { data } = await taimbox
+  .from('segmentation_rules')
+  .select('id, platform, account_id, keyword, virtual_name')
+  .eq('agency_id', agencyId)`,
+          insert: `const { data } = await taimbox
+  .from('segmentation_rules')
+  .insert({
+    agency_id: agencyId,
+    platform: 'meta',
+    account_id: 'act_999',
+    keyword: 'Organico',
+    virtual_name: 'Organico'
+  })
+  .select()
+  .single()`,
+        },
+        responses: {
+          getList: `[
+  { "id": "sr1-...", "platform": "meta", "account_id": "act_999", "keyword": "Organico", "virtual_name": "Organico" }
+]`,
+          getOne: `{
+  "id": "sr1-...",
+  "platform": "meta",
+  "account_id": "act_999",
+  "keyword": "Organico",
+  "virtual_name": "Organico",
+  "agency_id": "a1b2c3d4-..."
+}`,
+          post: `{
+  "id": "sr1-...",
+  "platform": "meta",
+  "keyword": "Organico",
+  "virtual_name": "Organico"
 }`,
         },
       },

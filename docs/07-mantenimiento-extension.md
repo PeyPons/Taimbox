@@ -44,8 +44,9 @@
   **Superficie de integración (allowlist + scopes)** — migración `20260726120000_api_token_scopes_restrictive_rls.sql`:
   - Helpers: `is_api_token()`, `api_default_scopes()`, `api_effective_scopes()`, `api_scope_allows(resource, mode)`.
   - Columna / claim JWT `scopes` (text[]): allowlist de recursos (`employees`, `allocations`, …). Catálogo TS: `src/lib/apiTokenScopes.ts`.
-  - Políticas **`AS RESTRICTIVE`**: niegan el issuer API en tablas fuera de integración (blog, Ads, audit, support, review, `api_tokens`, cronómetro, `agencies`, …) y exigen scope en las tablas documentadas.
-  - Tokens legacy sin scopes → `api_default_scopes()` (compatibilidad; no reabren blog/Ads).
+  - Políticas **`AS RESTRICTIVE`**: niegan el issuer API en tablas fuera de integración (blog, logs de sync de Ads, audit, support, review, `api_tokens`, cronómetro, `agencies`, …) y exigen scope en las tablas documentadas. Las tablas operativas de Ads (`ad_accounts_config`, `google_ads_campaigns`, `meta_ads_campaigns`, `segmentation_rules`) están en la allowlist desde `20261028120000_api_ads_scopes.sql`. El objetivo mensual sigue en `client_settings`.
+  - `api_effective_scopes()` lee `api_tokens.scopes` (filtrado a la allowlist) antes que el claim del JWT, para que un recurso nuevo valga en tokens ya emitidos tras el backfill.
+  - Tokens legacy sin scopes → `api_default_scopes()` (compatibilidad; no reabren blog ni logs de sync).
   - `can_assign_tasks_for_employee`: con JWT API exige `api_scope_allows('allocations','write')` (readwrite + scope).
   - `api_tokens`: `authenticated` solo puede **SELECT** metadatos (sin `token_hash`); create/revoke solo Edge con `service_role`.
 

@@ -20,6 +20,10 @@ export const API_TOKEN_SCOPE_CATALOG = [
   'user_routines',
   'project_editing_locks',
   'task_transfers',
+  'ad_accounts_config',
+  'google_ads_campaigns',
+  'meta_ads_campaigns',
+  'segmentation_rules',
 ] as const;
 
 export type ApiTokenScope = (typeof API_TOKEN_SCOPE_CATALOG)[number];
@@ -41,6 +45,10 @@ export const API_TOKEN_SCOPE_LABELS: Record<ApiTokenScope, { es: string; en: str
   user_routines: { es: 'Rutinas', en: 'Routines' },
   project_editing_locks: { es: 'Bloqueos de edición', en: 'Editing locks' },
   task_transfers: { es: 'Transferencias', en: 'Task transfers' },
+  ad_accounts_config: { es: 'Cuentas publicitarias', en: 'Ad accounts' },
+  google_ads_campaigns: { es: 'Campañas Google Ads', en: 'Google Ads campaigns' },
+  meta_ads_campaigns: { es: 'Campañas Meta Ads', en: 'Meta Ads campaigns' },
+  segmentation_rules: { es: 'Cuentas virtuales Ads', en: 'Ads virtual accounts' },
 };
 
 /** Recursos fuera de la API de integración (denegados al issuer `timeboxing-api`). */
@@ -49,13 +57,9 @@ export const API_TOKEN_BLOCKED_RESOURCES = [
   'api_tokens',
   'audit_logs',
   'blog_posts',
-  'ad_accounts_config',
   'ads_sync_logs',
-  'google_ads_campaigns',
   'google_ads_changes',
-  'meta_ads_campaigns',
   'meta_sync_logs',
-  'segmentation_rules',
   'notification_rules',
   'notification_deliveries',
   'platform_admins',
