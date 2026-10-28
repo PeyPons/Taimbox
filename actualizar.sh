@@ -94,21 +94,4 @@ else
     echo "[$(date +'%H:%M:%S')] ⚠️  Advertencia: No se pudo reiniciar el contenedor Docker"
 fi
 
-# 8. Review Agents (API + worker en el mismo servidor)
-if [ -d "packages/review-agents" ]; then
-    echo "[$(date +'%H:%M:%S')] 📦 Actualizando review-agents..."
-    cd packages/review-agents
-    npm install > /dev/null 2>&1
-    npm run build -w @taimbox/review-shared > /dev/null 2>&1
-    npm run build -w @taimbox/review-api > /dev/null 2>&1
-    npm run build -w @taimbox/review-worker > /dev/null 2>&1
-    cd ../..
-    if systemctl is-active review-api > /dev/null 2>&1; then
-        echo "[$(date +'%H:%M:%S')] 🔄 Reiniciando review-api y review-worker..."
-        run_root systemctl restart review-api review-worker
-    fi
-else
-    echo "[$(date +'%H:%M:%S')] ℹ️  Sin packages/review-agents (solo tras git pull con el monorepo)"
-fi
-
 echo "[$(date +'%H:%M:%S')] ✨ ¡Actualización completada!"

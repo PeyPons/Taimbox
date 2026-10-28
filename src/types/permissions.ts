@@ -22,7 +22,6 @@ export interface UserPermissions {
   can_access_api_keys?: boolean;
   can_access_support?: boolean;
   can_assign_tasks_to_others?: boolean;
-  can_access_review_agents?: boolean;
 }
 
 /**
@@ -74,7 +73,6 @@ export const DEFAULT_PERMISSIONS: UserPermissions = {
   can_access_api_keys: true,
   can_access_support: true,
   can_assign_tasks_to_others: true,
-  can_access_review_agents: true,
 };
 
 /** Platform admin impersonando agencia sin perfil de empleado: vista operativa de soporte. */
@@ -106,5 +104,4 @@ export const PERMISSION_LABELS: Record<keyof UserPermissions, string> = {
   can_access_api_keys: 'API e integraciones',
   can_access_support: 'Contactar soporte',
   can_assign_tasks_to_others: 'Asignar tareas a otros',
-  can_access_review_agents: 'Agentes de revisión (IA)',
 };

@@ -47,25 +47,24 @@ Si el código o una migración **contradice** el snapshot, **prevalece el códig
 
 - **`support_tickets`**, **`support_ticket_replies`**.
 
-## 13.6b. Review Agents (Ollama)
+## 13.6b. Tablas `review_*`
 
-Migración: `20260526120000_review_agents.sql`. Procesamiento en **ia-srv** (`packages/review-agents/`); Postgres/Auth/Storage/Realtime en Supabase.
+Migración: `20260526120000_review_agents.sql`. Las tablas y el bucket siguen en Postgres. La API y el worker que las procesaban ya no están en el repo.
 
-| Tabla | Uso |
+| Tabla | Uso histórico |
 |-------|-----|
 | `review_profiles` | Perfil por `user_id` + `agency_id` (`role_key`, email aviso) |
 | `review_skills` / `review_skill_versions` | Skills de revisión (plantillas globales `agency_id` NULL) |
 | `review_jobs` | Trabajo async (`queued` → … → `completed`) |
 | `review_job_inputs` | Archivos, URLs, texto |
 | `review_job_chunks` | Map-reduce parcial |
-| `review_job_events` | Timeline UI |
+| `review_job_events` | Timeline del trabajo |
 
-- **RLS:** patrón `user_agencies`; visibilidad de skills vía `review_skill_visible_to_user(skill_id)`.
+- **RLS:** patrón `user_agencies`; visibilidad de skills vía `review_skill_visible_to_user(skill_id)`. La función `can_manage_review_skills` sigue consultando el permiso `can_access_review_agents` guardado en el JSON del rol.
 - **Storage:** bucket privado `review-documents` (`{agency_id}/{job_id}/…`).
 - **Realtime:** `review_jobs`, `review_job_events` en `supabase_realtime`.
-- **Taimbox:** permiso `can_access_review_agents` (RLS de skills). El informe terminado se envía por email.
 
-Baseline MCP: [`docs/review-agents-mcp-baseline.md`](review-agents-mcp-baseline.md).
+Baseline MCP de cuando se crearon: [`docs/review-agents-mcp-baseline.md`](review-agents-mcp-baseline.md).
 
 ## 13.7. Tipos y matices del snapshot
 
