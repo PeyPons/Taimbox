@@ -49,7 +49,6 @@ export const ROUTE_PERMISSIONS: Record<string, keyof UserPermissions> = {
   '/exportacion-informes': 'can_access_agency_settings',
   '/api-keys': 'can_access_api_keys',
   '/soporte': 'can_access_support',
-  '/review-agents': 'can_access_review_agents',
 };
 
 /**

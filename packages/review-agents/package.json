@@ -6,14 +6,12 @@
   "workspaces": [
     "shared",
     "api",
-    "worker",
-    "portal"
+    "worker"
   ],
   "scripts": {
-    "build": "npm run build -w @taimbox/review-shared && npm run build -w @taimbox/review-api && npm run build -w @taimbox/review-worker && npm run build -w @taimbox/review-portal",
+    "build": "npm run build -w @taimbox/review-shared && npm run build -w @taimbox/review-api && npm run build -w @taimbox/review-worker",
     "dev:api": "npm run dev -w @taimbox/review-api",
     "dev:worker": "npm run dev -w @taimbox/review-worker",
-    "dev:portal": "npm run dev -w @taimbox/review-portal",
     "start:api": "npm run start -w @taimbox/review-api",
     "start:worker": "npm run start -w @taimbox/review-worker"
   }

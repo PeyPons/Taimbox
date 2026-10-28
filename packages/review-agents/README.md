@@ -1,6 +1,6 @@
 # Review Agents (Ollama)
 
-Portal de revisión con skills personalizables, cola BullMQ/Redis y worker en **ia-srv** que llama a Ollama local.
+API y worker de revisión con skills personalizables, cola BullMQ/Redis y Ollama. El informe terminado se envía por email.
 
 ## Estructura
 
@@ -9,7 +9,6 @@ Portal de revisión con skills personalizables, cola BullMQ/Redis y worker en **
 | `shared` | Tipos y constantes |
 | `api` | REST Express (puerto 3001) |
 | `worker` | Pipeline map-reduce + Ollama |
-| `portal` | SPA React (Vite) |
 
 ## Base de datos
 
@@ -37,10 +36,6 @@ npm run dev:api
 
 # Terminal 3 — Worker
 npm run dev:worker
-
-# Terminal 4 — Portal
-cp portal/.env.example portal/.env
-npm run dev:portal
 ```
 
 ## Arquitectura: ia-srv solo expone Ollama
@@ -50,7 +45,7 @@ Si **no puedes instalar nada en ia-srv** (88.30.74.159), solo necesitas la API q
 | Dónde corre | Qué |
 |-------------|-----|
 | **ia-srv** | Solo Ollama detrás de Apache (`/ollama-api` + token Bearer). **Sin cambios** si ya funciona. |
-| **Otro host** (PC, VPS, mismo servidor que Supabase) | `review-api`, `review-worker`, Redis, portal |
+| **Otro host** (PC, VPS, mismo servidor que Supabase) | `review-api`, `review-worker`, Redis |
 
 Variables del worker (en el host donde corre el worker, **no** en ia-srv):
 
@@ -62,12 +57,14 @@ OLLAMA_MODEL_MAP=llama3.2:3b
 OLLAMA_MODEL_REDUCE=qwen2.5:7b-instruct
 ```
 
-## Producción (api + worker + portal)
+## Producción (api + worker)
 
 1. `deploy/docker-compose.redis.yml` en el host elegido
 2. Build (`npm run build` en `packages/review-agents`)
 3. `deploy/env.example` → archivo env con Supabase + Ollama remoto + Resend
-4. Opcional: `systemd` en `deploy/systemd/`, Apache para el portal
+4. Opcional: `systemd` en `deploy/systemd/`
+
+`actualizar.sh` recompila API y worker y, si están activos, reinicia `review-api` y `review-worker`.
 
 ## Documentación
 

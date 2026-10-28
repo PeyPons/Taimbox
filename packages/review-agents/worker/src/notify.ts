@@ -12,7 +12,6 @@ function escapeHtml(input: string): string {
 
 export interface ReviewCompletionEmailParams {
   to: string;
-  jobId: string;
   skillName: string;
   sourceLabels: string;
   resultMarkdown: string;
@@ -21,8 +20,7 @@ export interface ReviewCompletionEmailParams {
 export async function sendCompletionEmail(params: ReviewCompletionEmailParams): Promise<void> {
   if (!env.resendApiKey) return;
 
-  const { to, jobId, skillName, sourceLabels, resultMarkdown } = params;
-  const link = `${env.portalPublicUrl}/jobs/${jobId}`;
+  const { to, skillName, sourceLabels, resultMarkdown } = params;
   const safeSkill = escapeHtml(skillName);
   const safeSources = escapeHtml(sourceLabels);
   const reportHtml = markdownToEmailHtml(resultMarkdown);
@@ -46,11 +44,6 @@ export async function sendCompletionEmail(params: ReviewCompletionEmailParams): 
   <div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:20px;margin:16px 0;">
     ${reportHtml}
   </div>
-  <p style="margin-top:24px;">
-    <a href="${link}" style="display:inline-block;padding:10px 16px;background:#4f46e5;color:#fff;text-decoration:none;border-radius:6px;font-size:14px;">
-      Abrir en el portal
-    </a>
-  </p>
   <p style="color:#64748b;font-size:12px;margin-top:32px;">— Taimbox</p>
 </body>
 </html>`;
@@ -60,8 +53,6 @@ export async function sendCompletionEmail(params: ReviewCompletionEmailParams): 
     `Material: ${sourceLabels}`,
     '',
     resultMarkdown,
-    '',
-    `Ver en el portal: ${link}`,
   ].join('\n');
 
   const res = await fetch('https://api.resend.com/emails', {

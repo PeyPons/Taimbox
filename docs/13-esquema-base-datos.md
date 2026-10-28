@@ -63,7 +63,7 @@ Migración: `20260526120000_review_agents.sql`. Procesamiento en **ia-srv** (`pa
 - **RLS:** patrón `user_agencies`; visibilidad de skills vía `review_skill_visible_to_user(skill_id)`.
 - **Storage:** bucket privado `review-documents` (`{agency_id}/{job_id}/…`).
 - **Realtime:** `review_jobs`, `review_job_events` en `supabase_realtime`.
-- **Taimbox:** permiso `can_access_review_agents`, ruta `/review-agents` (enlace al portal).
+- **Taimbox:** permiso `can_access_review_agents` (RLS de skills). El informe terminado se envía por email.
 
 Baseline MCP: [`docs/review-agents-mcp-baseline.md`](review-agents-mcp-baseline.md).
 

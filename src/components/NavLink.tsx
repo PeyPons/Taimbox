@@ -11,7 +11,7 @@ interface NavLinkProps {
   className?: string;
   /** Si false, no añade ?agency= en vista de soporte (p. ej. /admin). */
   preserveAgency?: boolean;
-  /** Enlace externo (p. ej. review.taimbox.com). */
+  /** Enlace externo (URL absoluta http/https). */
   external?: boolean;
 }
 

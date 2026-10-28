@@ -370,7 +370,6 @@ Reglas técnicas obligatorias:
 
       await sendCompletionEmail({
         to: email,
-        jobId,
         skillName: skill.name,
         sourceLabels,
         resultMarkdown,

@@ -382,10 +382,9 @@ Sistema de revisión de documentos/URLs con **skills** configurables, cola **Bul
 | Migración SQL | `supabase/migrations/20260526120000_review_agents.sql` |
 | API REST | `packages/review-agents/api` (puerto 3001) |
 | Worker | `packages/review-agents/worker` |
-| Portal SPA | `packages/review-agents/portal` |
-| Deploy ia-srv | `packages/review-agents/deploy/` (Redis, systemd, Apache, `hardening.sh`) |
+| Deploy | `packages/review-agents/deploy/` (Redis, systemd, `hardening.sh`) |
 
-Variables: ver `packages/review-agents/deploy/env.example`. Esquema y RLS: [13-esquema-base-datos.md](13-esquema-base-datos.md) (§ 13.6b). Integración Taimbox: permiso `can_access_review_agents`, `/review-agents` → portal externo (`VITE_REVIEW_PORTAL_URL`).
+Variables: ver `packages/review-agents/deploy/env.example`. Esquema y RLS: [13-esquema-base-datos.md](13-esquema-base-datos.md) (§ 13.6b). Integración Taimbox: permiso `can_access_review_agents` en la RLS de skills. El informe terminado llega por email.
 
 #### Despliegue de Edge Functions (self-hosted)
 

@@ -17,6 +17,5 @@ export const env = {
   ollamaModelReduce: process.env.OLLAMA_MODEL_REDUCE ?? process.env.OLLAMA_MODEL ?? 'qwen2.5:7b-instruct',
   resendApiKey: process.env.RESEND_API_KEY ?? '',
   resendFrom: process.env.RESEND_FROM_EMAIL ?? 'Taimbox <noreply@send.taimbox.com>',
-  portalPublicUrl: process.env.REVIEW_PORTAL_URL ?? 'http://localhost:5174',
   workerConcurrency: Number(process.env.WORKER_CONCURRENCY ?? 1),
 };

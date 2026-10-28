@@ -38,7 +38,6 @@ const PROTECTED_PATH_PREFIXES = [
   "/meta-ads",
   "/api-keys",
   "/soporte",
-  "/review-agents",
 ] as const;
 
 function isProtectedAppPath(pathname: string): boolean {

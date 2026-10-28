@@ -89,7 +89,6 @@ const TeamPulsePage = lazyWithRetry(() => import("./pages/TeamPulsePage"));
 const TiemposPage = lazyWithRetry(() => import("./pages/TiemposPage"));
 const ApiKeysPage = lazyWithRetry(() => import("./pages/ApiKeysPage"));
 const ContactSupportPage = lazyWithRetry(() => import("./pages/ContactSupportPage"));
-const ReviewAgentsPage = lazyWithRetry(() => import("./pages/ReviewAgentsPage"));
 const GoogleCallbackPage = lazyWithRetry(() => import("./pages/GoogleCallbackPage"));
 const MetaCallbackPage = lazyWithRetry(() => import("./pages/MetaCallbackPage"));
 const ResetPasswordPage = lazyWithRetry(() => import("./pages/ResetPasswordPage"));
@@ -262,7 +261,6 @@ const App = () => (
                             <Route path="/meta-ads" element={<PlanGuard><PermissionProtectedRoute requiredPermission="/meta-ads"><ModuleGuard module="ppc"><MetaAdsPage /></ModuleGuard></PermissionProtectedRoute></PlanGuard>} />
                             <Route path="/api-keys" element={<PlanGuard><PermissionProtectedRoute requiredPermission="/api-keys"><ApiKeysPage /></PermissionProtectedRoute></PlanGuard>} />
                             <Route path="/soporte" element={<PermissionProtectedRoute requiredPermission="/soporte"><ContactSupportPage /></PermissionProtectedRoute>} />
-                            <Route path="/review-agents" element={<PermissionProtectedRoute requiredPermission="/review-agents"><ReviewAgentsPage /></PermissionProtectedRoute>} />
                           </Route>
                         </Route>
 
