@@ -3113,6 +3113,7 @@
         "selectAccountDesc": "Selecciona la cuenta principal o MCC para sincronizar.",
         "loading": "Cargando...",
         "loadingAccounts": "Cargando cuentas...",
+        "loadAccountsError": "No se pudo cargar el listado de cuentas de Google Ads.",
         "openTabToLoad": "Abre la pestaña Integraciones para cargar cuentas",
         "connectFirst": "Conecta primero con Google para ver tus cuentas disponibles.",
         "configError": "Error de configuración: Falta el ID de cliente de la agencia.",

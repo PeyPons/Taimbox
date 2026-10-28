@@ -642,7 +642,10 @@ curl -s https://api.taimbox.com/functions/v1/hello -H "Authorization: Bearer ANO
 - **"Google devolvió una página HTML" / "Unexpected token '<', \"<!DOCTYPE\"..."**  
   La llamada a Google (intercambio de token o Google Ads API) está devolviendo una página de error HTML en lugar de JSON. Posibles causas:
   - **Intercambio de token**: mismo origen que `unauthorized_client`; desvincular y vincular de nuevo.
-  - **Google Ads API**: comprueba que `GOOGLE_DEVELOPER_TOKEN` sea el token de **cuenta de desarrollador de Google Ads** (aprobado o en modo test). Con cuenta MCC, la sync usa `login-customer-id` y obtiene MCC + subcuentas vía `customer_client`; si no ves datos, revisa los logs de la sync (cada cuenta muestra "X campañas" o "0 campañas con datos en el rango").
+  - **Google Ads API**: comprueba que `GOOGLE_DEVELOPER_TOKEN` sea el token de **cuenta de desarrollador de Google Ads** (aprobado o en modo test). Desde el 9 de septiembre de 2026 Google ignora esa cabecera y el acceso depende del proyecto de Cloud del OAuth client; se sigue enviando por compatibilidad. Con cuenta MCC, la sync usa `login-customer-id` y obtiene MCC + subcuentas vía `customer_client`.
+
+- **`list-google-accounts` responde 400 al elegir cuenta, pero el vínculo OAuth sale en verde**  
+  OAuth no usa la versión de la Google Ads API. Listar cuentas y leer campañas sí: la versión está en [`supabase/functions/_shared/google-ads.ts`](../supabase/functions/_shared/google-ads.ts) (`GOOGLE_ADS_API_VERSION`). **v22 hizo sunset el 7 de octubre de 2026**; a partir de esa fecha `listAccessibleCustomers` y `searchStream` fallan. La versión vigente en código es **v26** (sunset noviembre 2027). Tras cambiarla hay que redesplegar las Edge Functions. Si la API falla, la sync **no sustituye** el mes por filas a 0 €: el log de `ads_sync_logs` muestra `Google Ads API <status>`. Un mes lleno de placeholders `__no_campaigns_*` con coste 0 indica syncs anteriores a ese cambio; la siguiente sync correcta reescribe el mes en curso.
 
 #### Crear una nueva Edge Function
 

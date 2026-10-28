@@ -8,7 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/lib/supabase';
-import { invokeEdgeFunctionWithRetry } from '@/lib/invokeEdgeFunction';
+import { invokeEdgeFunctionWithRetry, readFunctionsErrorMessage } from '@/lib/invokeEdgeFunction';
 import { cn } from '@/lib/utils';
 import { useAgency } from '@/contexts/AgencyContext';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -123,7 +123,7 @@ function GoogleAdsAccountSelect({
     setLoading(true);
     let cancelled = false;
     const debounceMs = 400;
-    const t = window.setTimeout(() => {
+    const debounceTimer = window.setTimeout(() => {
       const fetchAccounts = async () => {
         setLoading(true);
         setError(null);
@@ -134,7 +134,11 @@ function GoogleAdsAccountSelect({
         } catch (e: unknown) {
           if (cancelled) return;
           console.error('Error fetching Google accounts:', e);
-          setError('No se pudo cargar el listado (servidor 503 o red). Revisa Edge Functions en el host.');
+          const message = await readFunctionsErrorMessage(
+            e,
+            t('agency.integrations.googleAds.loadAccountsError'),
+          );
+          if (!cancelled) setError(message);
         } finally {
           if (!cancelled) setLoading(false);
         }
@@ -144,9 +148,9 @@ function GoogleAdsAccountSelect({
 
     return () => {
       cancelled = true;
-      window.clearTimeout(t);
+      window.clearTimeout(debounceTimer);
     };
-  }, [agencyId, fetchEnabled, retryTick]);
+  }, [agencyId, fetchEnabled, retryTick, t]);
 
   if (!fetchEnabled) {
     return (

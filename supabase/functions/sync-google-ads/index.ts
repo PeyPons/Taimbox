@@ -7,6 +7,21 @@ import {
 } from '../_shared/agency-access.ts'
 import { completeAdsSyncLog } from '../_shared/complete-ads-sync-log.ts'
 import { assertPlanIncludesAds } from '../_shared/plan-entitlements.ts'
+import { GOOGLE_ADS_API_VERSION } from '../_shared/google-ads.ts'
+
+/** La API respondió con error. No hay que interpretar el resultado como «0 campañas». */
+class GoogleAdsRequestError extends Error {
+    constructor(status: number, body: string) {
+        const detail = body.replace(/\s+/g, ' ').trim().slice(0, 280);
+        super(`Google Ads API ${status}${detail ? `: ${detail}` : ''}`);
+        this.name = 'GoogleAdsRequestError';
+    }
+}
+
+async function assertGoogleAdsOk(response: Response): Promise<void> {
+    if (response.ok) return;
+    throw new GoogleAdsRequestError(response.status, await response.text());
+}
 
 // Configuración de CORS
 const corsHeaders = {
@@ -96,7 +111,7 @@ Deno.serve(async (req) => {
         // 4. Lógica de Negocio (Ported from ads-worker.js)
 
         // --- HELPERS ---
-        const API_VERSION = 'v22'; // Google Ads API Version
+        const API_VERSION = GOOGLE_ADS_API_VERSION;
 
         function getDateRange() {
             const now = new Date();
@@ -136,8 +151,8 @@ Deno.serve(async (req) => {
                 },
                 body: JSON.stringify({ query }),
             });
+            await assertGoogleAdsOk(response);
             const rows: CustomerClientRow[] = [];
-            if (!response.ok) return rows;
             const data = await response.json();
             const processBatch = (batch: any) => {
                 if (!batch?.results) return;
@@ -262,9 +277,9 @@ Deno.serve(async (req) => {
                 body: JSON.stringify({ query }),
             });
 
-            const results: any[] = [];
-            if (!response.ok) return results;
+            await assertGoogleAdsOk(response);
 
+            const results: any[] = [];
             const data = await response.json();
             const processBatch = (batch: any) => {
                 if (!batch?.results) return;
@@ -586,7 +601,16 @@ Deno.serve(async (req) => {
                         accountCurrency ? String(accountCurrency) : null,
                     );
 
-                    const campaigns = await fetchCampaigns(accessToken, client.account_id, clientSecret, clientId, developerToken, refreshToken, loginCustomerId);
+                    let campaigns: GoogleCampaignRow[];
+                    try {
+                        campaigns = await fetchCampaigns(accessToken, client.account_id, clientSecret, clientId, developerToken, refreshToken, loginCustomerId);
+                    } catch (campaignErr: unknown) {
+                        if (campaignErr instanceof GoogleAdsRequestError) {
+                            await log(`    ❌ ${client.account_name}: ${campaignErr.message}. Se conservan los datos ya guardados de este mes.`);
+                            continue;
+                        }
+                        throw campaignErr;
+                    }
 
                     const dateRange = getDateRange();
                     if (campaigns.length > 0) {
@@ -651,7 +675,7 @@ Deno.serve(async (req) => {
                         .from('google_ads_campaigns')
                         .delete()
                         .eq('agency_id', agency.id)
-                        .not('client_id', 'in', syncedClientIds);
+                        .not('client_id', 'in', `(${syncedClientIds.join(',')})`);
                     if (delErr) await log(`    ⚠️ Aviso limpieza cuentas antiguas: ${delErr.message}`);
                 }
 
