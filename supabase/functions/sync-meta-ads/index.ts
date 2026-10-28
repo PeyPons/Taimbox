@@ -7,6 +7,7 @@ import {
 } from '../_shared/agency-access.ts'
 import { completeAdsSyncLog } from '../_shared/complete-ads-sync-log.ts'
 import { assertPlanIncludesAds } from '../_shared/plan-entitlements.ts'
+import { repairUtf8Mojibake } from '../_shared/repair-utf8-mojibake.ts'
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -243,7 +244,7 @@ Deno.serve(async (req) => {
                 if (metaAccounts.length > 0) {
                     const upsertConfigs = metaAccounts.map((acc: { account_id: string; name?: string; currency?: string }) => ({
                         account_id: `act_${acc.account_id}`,
-                        account_name: acc.name || `Cuenta ${acc.account_id}`,
+                        account_name: repairUtf8Mojibake(acc.name || `Cuenta ${acc.account_id}`),
                         platform: 'meta',
                         is_active: true,
                         agency_id: agency.id,
@@ -292,9 +293,9 @@ Deno.serve(async (req) => {
 
                             return {
                                 client_id: id,
-                                client_name: account.account_name,
+                                client_name: repairUtf8Mojibake(account.account_name),
                                 campaign_id: String(camp.id),
-                                campaign_name: camp.name || row?.campaign_name || `Campaña ${camp.id}`,
+                                campaign_name: repairUtf8Mojibake(camp.name || row?.campaign_name || `Campaña ${camp.id}`),
                                 status: camp.effective_status || camp.status || 'UNKNOWN',
                                 date: start,
                                 cost: row ? parseFloat(row.spend || '0') : 0,

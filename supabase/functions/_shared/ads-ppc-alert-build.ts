@@ -281,8 +281,6 @@ function buildPlatformAlerts(
       if (groupSettings && groupSettings.budget > 0) {
         monthlyBudgetMax = groupSettings.budget;
         isManualBudget = true;
-      } else {
-        monthlyBudgetMax = value.autoDailyBudgetSum * 30.4;
       }
     } else {
       const memberBudget = value.realIdsNames.reduce((max, ref) => {
@@ -292,8 +290,6 @@ function buildPlatformAlerts(
       if (memberBudget > 0) {
         monthlyBudgetMax = memberBudget;
         isManualBudget = true;
-      } else {
-        monthlyBudgetMax = value.autoDailyBudgetSum * 30.4;
       }
     }
 

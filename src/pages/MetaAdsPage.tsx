@@ -22,7 +22,11 @@ import { useAnonymizeAds } from '@/hooks/useAnonymizeAds';
 import { AnonymizedContent } from '@/components/ads/AnonymizedContent';
 import { AdsStatCard } from '@/components/ads/AdsStatCard';
 import { AdsSyncStatusLine } from '@/components/ads/AdsSyncStatusLine';
+import { CampaignPerformanceList, type CampaignMetricRow } from '@/components/ads/CampaignPerformanceList';
+import { RoasValue } from '@/components/ads/RoasValue';
 import { useAdsLastSync } from '@/hooks/useAdsLastSync';
+import { presentRoas } from '@/utils/adsPerformance';
+import { repairUtf8Mojibake } from '@/utils/repairUtf8Mojibake';
 
 interface MetaCampaignData { campaign_id: string; campaign_name: string; status: string; cost: number; conversions_value?: number; conversions?: number; clicks?: number; impressions?: number; daily_budget?: number; original_client_name?: string; original_client_id?: string; date?: string; client_id?: string; client_name?: string; created_at?: string; }
 interface SegmentationRule { id: string; account_id: string; keyword: string; virtual_name: string; platform: string; }
@@ -30,7 +34,6 @@ interface ClientPacing { client_id: string; client_name: string; is_group: boole
 
 const formatProjectName = (name: string) => (name || '').replace(/^(Cliente|Client|Cuenta|Account)\s*[-:]?\s*/i, '');
 const normalizeId = (id: string) => id ? id.replace(/^act_/, '').trim() : '';
-const getRoasColor = (roas: number) => { if (roas >= 4) return "text-emerald-600 bg-emerald-50 border-emerald-200"; if (roas >= 2) return "text-blue-600 bg-blue-50 border-blue-200"; if (roas >= 1) return "text-amber-600 bg-amber-50 border-amber-200"; return "text-red-600 bg-red-50 border-red-200"; };
 const getStatusConfig = (status: string, t: any) => {
   switch (status) {
     case 'over': return { color: 'bg-red-500', text: t('ads.status.exceeded', 'Excedido'), badgeClass: 'bg-red-100 text-red-700 border-red-200' };
@@ -105,7 +108,11 @@ export default function MetaAdsPage() {
       ]);
       const settingsMap: ClientSettingsMap = {};
       settingsRes.data?.forEach((s: { client_id: string; budget_limit?: number; group_name?: string; is_hidden?: boolean; is_sales_account?: boolean }) => { settingsMap[s.client_id] = { budget: Number(s.budget_limit) || 0, group_name: s.group_name || '', is_hidden: s.is_hidden || false, is_sales_account: s.is_sales_account !== false }; });
-      setRawData(adsRes.data || []);
+      setRawData((adsRes.data || []).map((row: MetaCampaignData) => ({
+        ...row,
+        campaign_name: repairUtf8Mojibake(row.campaign_name),
+        client_name: repairUtf8Mojibake(row.client_name),
+      })));
       setClientSettings(settingsMap);
       setRegisteredAccounts(accountsRes.data || []);
       setSegmentationRules(rulesRes.data || []);
@@ -295,11 +302,23 @@ export default function MetaAdsPage() {
   }, [rawData, clientSettings, registeredAccounts, searchTerm, showHidden, showZeroSpend, segmentationRules, currentDay, daysInMonth, daysRemaining]);
 
   const globalStats = useMemo(() => {
-    const totalBudget = reportData.reduce((acc, r) => acc + r.budget, 0), totalSpent = reportData.reduce((acc, r) => acc + r.spent, 0);
-    const totalRevenue = reportData.reduce((acc, r) => acc + r.total_conversions_val, 0);
-    const totalRecommendedDaily = reportData.reduce((acc, r) => acc + r.recommendedDaily, 0);
-    const atRisk = reportData.filter(r => r.status === 'risk' || r.status === 'over').length, globalRoas = totalSpent > 0 ? totalRevenue / totalSpent : 0;
-    return { totalBudget, totalSpent, totalRevenue, totalRecommendedDaily, atRisk, globalRoas };
+    const totalBudget = reportData.reduce((acc, r) => acc + r.budget, 0);
+    const totalSpent = reportData.reduce((acc, r) => acc + r.spent, 0);
+    const salesRows = reportData.filter((r) => r.isSalesAccount);
+    const salesSpent = salesRows.reduce((acc, r) => acc + r.spent, 0);
+    const totalRevenue = salesRows.reduce((acc, r) => acc + r.total_conversions_val, 0);
+    const totalRecommendedDaily = reportData.reduce((acc, r) => acc + (r.budget > 0 ? r.recommendedDaily : 0), 0);
+    const atRisk = reportData.filter(r => r.status === 'risk' || r.status === 'over').length;
+    const salesRoas = presentRoas({ isSales: true, cost: salesSpent, conversionValue: totalRevenue });
+    return {
+      totalBudget,
+      totalSpent,
+      totalRevenue,
+      totalRecommendedDaily,
+      atRisk,
+      globalRoas: salesRoas.kind === 'value' ? salesRoas.roas : 0,
+      hasConversionValue: salesRoas.kind === 'value',
+    };
   }, [reportData]);
 
   const uniqueAccountsForSelector = useMemo(() => {
@@ -345,9 +364,9 @@ export default function MetaAdsPage() {
 
         {/* Ritmo vs objetivo: el presupuesto mensual lo define el usuario en Taimbox; la API de Meta no aporta un “presupuesto diario” equivalente al de Google Ads en esta integración */}
         <div className="grid grid-cols-1 min-[400px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-2 sm:gap-3 min-w-0">
-          <AdsStatCard icon={Target} label={t('ads.stats.investment', 'Inversión')} value={formatGlobalMoney(globalStats.totalSpent)} subValue={t('ads.stats.ofBudget', { amount: formatGlobalMoney(globalStats.totalBudget), defaultValue: `de ${formatGlobalMoney(globalStats.totalBudget)}` })} color="blue" />
+          <AdsStatCard icon={Target} label={t('ads.stats.investment', 'Inversión')} value={formatGlobalMoney(globalStats.totalSpent)} subValue={globalStats.totalBudget > 0 ? t('ads.stats.ofBudget', { amount: formatGlobalMoney(globalStats.totalBudget), defaultValue: `de ${formatGlobalMoney(globalStats.totalBudget)}` }) : t('ads.stats.noMonthlyTarget', 'Sin objetivo mensual')} color="blue" />
           <AdsStatCard icon={TrendingUp} label={t('ads.stats.conversions', 'Conversiones')} value={reportData.reduce((acc, r) => acc + r.campaigns.reduce((a, c) => a + (c.conversions || 0), 0), 0).toFixed(0)} subValue={t('ads.stats.value', { amount: formatGlobalMoney(globalStats.totalRevenue), defaultValue: `Valor ${formatGlobalMoney(globalStats.totalRevenue)}` })} color="emerald" />
-          <AdsStatCard icon={Target} label={t('ads.table.roas', 'ROAS')} value={`${globalStats.globalRoas.toFixed(2)}x`} subValue={globalStats.globalRoas >= 2 ? `✓ ${t('ads.status.goal', 'Objetivo')}` : globalStats.globalRoas >= 1 ? t('ads.status.acceptable', 'Aceptable') : t('ads.status.below', 'Por debajo')} color={globalStats.globalRoas >= 2 ? 'emerald' : globalStats.globalRoas >= 1 ? 'amber' : 'red'} />
+          <AdsStatCard icon={Target} label={t('ads.table.roas', 'ROAS')} value={globalStats.hasConversionValue ? `${globalStats.globalRoas.toFixed(2)}x` : '—'} subValue={globalStats.hasConversionValue ? (globalStats.globalRoas >= 2 ? `✓ ${t('ads.status.goal', 'Objetivo')}` : globalStats.globalRoas >= 1 ? t('ads.status.acceptable', 'Aceptable') : t('ads.status.below', 'Por debajo')) : t('ads.stats.noConversionValue', 'Sin valor de conversión')} color={!globalStats.hasConversionValue ? 'slate' : globalStats.globalRoas >= 2 ? 'emerald' : globalStats.globalRoas >= 1 ? 'amber' : 'red'} />
           <AdsStatCard icon={Calendar} label={t('ads.stats.daysRemaining', 'Días restantes')} value={daysRemaining.toString()} subValue={t('ads.stats.monthProgress', { percent: Math.round((currentDay / daysInMonth) * 100), defaultValue: `${Math.round((currentDay / daysInMonth) * 100)}% del mes` })} color="slate" />
           <AdsStatCard icon={AlertTriangle} label={t('ads.stats.atRisk', 'En riesgo')} value={globalStats.atRisk.toString()} subValue={t('ads.stats.accountsCount', { count: globalStats.atRisk, defaultValue: 'cuentas' })} color={globalStats.atRisk > 0 ? 'red' : 'slate'} />
         </div>
@@ -397,10 +416,10 @@ export default function MetaAdsPage() {
                               <div className="text-[10px] font-mono text-slate-400 mt-0.5">ID: {client.realIdsList[0]?.id || client.client_id}</div>
                             )}
                           </div>
-                          {client.is_group && <Badge variant="secondary" className="text-[10px] gap-1"><Layers className="w-3 h-3" /> GRUPO</Badge>}
-                          <Badge variant="outline" className={cn("text-[10px]", statusConfig.badgeClass)}>{statusConfig.text}</Badge>
+                          {client.is_group && <Badge variant="secondary" className="text-[10px] gap-1"><Layers className="w-3 h-3" /> {t('ads.status.group', 'GRUPO')}</Badge>}
+                          {client.budget > 0 && <Badge variant="outline" className={cn("text-[10px]", statusConfig.badgeClass)}>{statusConfig.text}</Badge>}
                         </div>
-                        <div className="flex items-center gap-2 mt-1 flex-wrap">{client.isSalesAccount && client.globalRoas > 0 && <Badge variant="outline" className={cn("text-[10px] h-5", getRoasColor(client.globalRoas))}>ROAS {client.globalRoas.toFixed(2)}</Badge>}{client.isHidden && <Badge variant="outline" className="text-[10px] h-5 gap-1"><EyeOff className="w-3 h-3" /> Oculto</Badge>}</div>
+                        <div className="flex items-center gap-2 mt-1 flex-wrap"><RoasValue isSales={client.isSalesAccount} cost={client.spent} conversionValue={client.total_conversions_val} className="h-5" />{client.isHidden && <Badge variant="outline" className="text-[10px] h-5 gap-1"><EyeOff className="w-3 h-3" /> {t('ads.status.hidden', 'Oculto')}</Badge>}</div>
                       </div>
                     </div>
                     {client.budget > 0 && <div className="hidden lg:flex flex-col flex-1 max-w-xs mx-4"><div className="flex justify-between text-[10px] text-slate-500 mb-1"><span>{client.progress.toFixed(0)}% gastado</span><span>Proy: {formatMoney(client.forecast, client.client_id)}</span></div><Progress value={Math.min(client.progress, 100)} className={cn("h-2", client.status === 'over' && "[&>div]:bg-red-500", client.status === 'risk' && "[&>div]:bg-amber-500", client.status === 'ok' && "[&>div]:bg-blue-500")} /></div>}
@@ -444,11 +463,16 @@ export default function MetaAdsPage() {
                               defaultValue={clientSettings[client.client_id]?.budget > 0 ? clientSettings[client.client_id]?.budget : ''}
                               onBlur={(e) => handleSaveBudget(client.client_id, e.target.value)}
                               className="h-8 w-28 text-right"
-                              placeholder={client.budget.toFixed(0)}
+                              placeholder={t('ads.pacing.noTarget', 'Sin objetivo')}
                             />
                           </div>
                         </div>
-                        <div className="space-y-2">
+                        {client.budget <= 0 && (
+                          <p className="text-xs text-slate-500 leading-snug">
+                            {t('ads.pacing.setTargetHintMeta', 'Escribe el presupuesto del mes para ver el ritmo. Meta no trae un objetivo mensual: lo defines aquí.')}
+                          </p>
+                        )}
+                        {client.budget > 0 && <div className="space-y-2">
                           <div className="flex justify-between text-xs text-slate-500">
                             <span>{t('common.consumption', 'Consumo')} ({client.progress.toFixed(1)}%)</span>
                             <span className={client.remainingBudget <= 0 ? 'text-red-500 font-bold' : ''}>
@@ -456,8 +480,8 @@ export default function MetaAdsPage() {
                             </span>
                           </div>
                           <Progress value={Math.min(client.progress, 100)} className={cn("h-2.5", client.status === 'over' && "[&>div]:bg-red-500", client.status === 'risk' && "[&>div]:bg-amber-500", client.status === 'ok' && "[&>div]:bg-blue-500")} />
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
+                        </div>}
+                        {client.budget > 0 ? <div className="grid grid-cols-2 gap-3">
                           <div className={cn("p-3 rounded-lg border-2 text-center", isPaceTooHigh ? "bg-amber-50 border-amber-200" : "bg-slate-50 border-slate-200")}>
                             <div className="text-[10px] uppercase text-slate-500 font-medium mb-1">{t('common.actualDaily', 'Gasto medio diario')}</div>
                             <div className={cn("text-xl font-bold", isPaceTooHigh ? "text-amber-600" : "text-slate-700")}>{formatMoney(client.avgDailySpend, client.client_id)}</div>
@@ -468,15 +492,21 @@ export default function MetaAdsPage() {
                             <div className="text-xl font-bold text-emerald-600">{formatMoney(client.recommendedDaily, client.client_id)}</div>
                             <div className="text-[10px] text-slate-400 mt-1">{t('ads.pacing.recommendedDailySub', 'para cerrar el mes en el presupuesto')}</div>
                           </div>
-                        </div>
-                        <p className="text-[11px] text-slate-500 leading-snug">
+                        </div> : (
+                          <div className="p-3 rounded-lg border bg-slate-50 text-center">
+                            <div className="text-[10px] uppercase text-slate-500 font-medium mb-1">{t('ads.pacing.avgDaily', 'Gasto medio diario')}</div>
+                            <div className="text-xl font-bold text-slate-700">{formatMoney(client.avgDailySpend, client.client_id)}</div>
+                            <div className="text-[10px] text-slate-400 mt-1">{t('ads.status.soFarThisMonth', 'en lo que va de mes')}</div>
+                          </div>
+                        )}
+                        {client.budget > 0 && <p className="text-[11px] text-slate-500 leading-snug">
                           <Trans
                             i18nKey="ads.pacing.metaNote"
                             t={t}
                             components={{ strong: <strong className="text-slate-600" /> }}
                           />
-                        </p>
-                        {isPaceTooHigh && paceDiff > 1 && (
+                        </p>}
+                        {client.budget > 0 && isPaceTooHigh && paceDiff > 1 && (
                           <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
                             <AlertTriangle className="w-4 h-4 shrink-0" />
                             <span>
@@ -495,66 +525,32 @@ export default function MetaAdsPage() {
                               {t('ads.pacing.forecastTooltip', 'Usa el gasto medio diario del mes (invertido ÷ días transcurridos) proyectado al calendario completo. Si cambiaste el ritmo recientemente, puede no coincidir con el objetivo medio diario; ese valor es el ritmo para cerrar en el presupuesto objetivo de Taimbox.')}
                             </TooltipContent>
                           </Tooltip>
-                          <span className={cn("font-bold shrink-0", client.forecast > client.budget ? "text-red-600" : "text-slate-700")}>{formatMoney(client.forecast, client.client_id)}</span>
+                          <span className={cn("font-bold shrink-0", client.budget > 0 && client.forecast > client.budget ? "text-red-600" : "text-slate-700")}>{formatMoney(client.forecast, client.client_id)}</span>
                         </div>
                       </div>
-                      <div className="bg-white rounded-lg border overflow-hidden">
-                        <div className="max-h-[350px] overflow-y-auto">
-                          <table className="w-full text-xs">
-                            <thead className="bg-slate-50 text-slate-500 font-medium sticky top-0 border-b">
-                              <tr>
-                                <th className="px-3 py-2.5 text-left">{t('ads.table.campaign', 'Campaña')}</th>
-                                <th className="px-2 py-2.5 text-right">{t('ads.table.spent', 'Gasto')}</th>
-                                <th className="px-2 py-2.5 text-right">{t('ads.stats.valueLabel', 'Valor')}</th>
-                                {client.isSalesAccount && <th className="px-2 py-2.5 text-center">{t('ads.table.roas', 'ROAS')}</th>}
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100">
-                              {client.campaigns.map((camp, idx) => {
-                                const roas = camp.cost > 0 ? (camp.conversions_value || 0) / camp.cost : 0;
-                                return (
-                                  <tr key={idx} className="hover:bg-slate-50">
-                                    <td className="px-3 py-2.5">
-                                      <div className="space-y-1">
-                                        <AnonymizedContent isActive={isAnonymized} className="font-medium text-slate-700 line-clamp-2" placeholder={anonymizer.campaign(camp.campaign_id)}>
-                                          {camp.campaign_name}
-                                        </AnonymizedContent>
-                                        <div className="flex items-center gap-2 text-[10px] text-slate-400">
-                                          <span className="flex items-center gap-1">
-                                            <span className={cn("w-1.5 h-1.5 rounded-full", camp.status === 'ENABLED' ? 'bg-emerald-400' : 'bg-slate-300')} />
-                                            {camp.status === 'ENABLED' ? t('ads.table.active', 'Activa') : t('ads.table.paused', 'Pausada')}
-                                          </span>
-                                          {client.is_group && (camp.original_client_name || camp.original_client_id) && (
-                                            <AnonymizedContent isActive={isAnonymized} className="truncate max-w-[100px]" placeholder={anonymizer.account(camp.original_client_id || camp.client_id || '')}>
-                                              | {formatProjectName(camp.original_client_name || '')}
-                                            </AnonymizedContent>
-                                          )}
-                                        </div>
-                                      </div>
-                                    </td>
-                                    <td className="px-2 py-2.5 text-right font-medium text-slate-900">{formatMoney(camp.cost, camp.original_client_id || camp.client_id || client.client_id)}</td>
-                                    <td className="px-2 py-2.5 text-right text-emerald-600">{formatMoney(camp.conversions_value || 0, camp.original_client_id || camp.client_id || client.client_id)}</td>
-                                    {client.isSalesAccount && (
-                                      <td className="px-2 py-2.5 text-center">
-                                        <Badge variant="outline" className={cn("text-[10px]", getRoasColor(roas))}>
-                                          {roas.toFixed(2)}
-                                        </Badge>
-                                      </td>
-                                    )}
-                                  </tr>
-                                );
-                              })}
-                              {client.campaigns.length === 0 && (
-                                <tr>
-                                  <td colSpan={4} className="px-3 py-8 text-center text-slate-400">
-                                    {t('ads.table.noCampaigns', 'Sin campañas')}
-                                  </td>
-                                </tr>
-                              )}
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
+                      <CampaignPerformanceList
+                        isSales={client.isSalesAccount}
+                        formatMoney={(amount) => formatMoney(amount, client.client_id)}
+                        rows={client.campaigns.map((camp, idx): CampaignMetricRow => ({
+                          key: `${camp.campaign_id}-${camp.date || idx}`,
+                          name: (
+                            <AnonymizedContent isActive={isAnonymized} className="font-medium text-slate-800" placeholder={anonymizer.campaign(camp.campaign_id)}>
+                              {camp.campaign_name}
+                            </AnonymizedContent>
+                          ),
+                          status: camp.status,
+                          cost: Number(camp.cost) || 0,
+                          clicks: Number(camp.clicks) || 0,
+                          impressions: Number(camp.impressions) || 0,
+                          conversions: Number(camp.conversions) || 0,
+                          conversionValue: Number(camp.conversions_value) || 0,
+                          subtitle: client.is_group && (camp.original_client_name || camp.original_client_id) ? (
+                            <AnonymizedContent isActive={isAnonymized} className="truncate max-w-[140px]" placeholder={anonymizer.account(camp.original_client_id || camp.client_id || '')}>
+                              | {formatProjectName(camp.original_client_name || '')}
+                            </AnonymizedContent>
+                          ) : undefined,
+                        }))}
+                      />
                     </div>
 
                     {/* Cuentas vinculadas - Tabla de desglose */}
@@ -582,7 +578,6 @@ export default function MetaAdsPage() {
                                 const subSpent = subCampaigns.reduce((a, c) => a + c.cost, 0);
                                 const subConv = subCampaigns.reduce((a, c) => a + (c.conversions || 0), 0);
                                 const subValue = subCampaigns.reduce((a, c) => a + (c.conversions_value || 0), 0);
-                                const subRoas = subSpent > 0 ? subValue / subSpent : 0;
                                 const pctOfGroup = client.spent > 0 ? (subSpent / client.spent) * 100 : 0;
 
                                 const isExpanded = expandedSubAccounts[sub.id];
@@ -602,7 +597,7 @@ export default function MetaAdsPage() {
                                       <td className="px-2 py-2.5 text-right font-medium text-slate-900">{formatMoney(subSpent, sub.id)}</td>
                                       <td className="px-2 py-2.5 text-right text-slate-500">{pctOfGroup.toFixed(1)}%</td>
                                       <td className="px-2 py-2.5 text-right text-emerald-600">{subConv.toFixed(0)}</td>
-                                      <td className="px-2 py-2.5 text-center"><Badge variant="outline" className={cn("text-[10px]", getRoasColor(subRoas))}>{subRoas.toFixed(2)}</Badge></td>
+                                      <td className="px-2 py-2.5 text-center"><RoasValue isSales={client.isSalesAccount} cost={subSpent} conversionValue={subValue} /></td>
                                       <td className="px-2 py-2.5 text-center">
                                         <button onClick={(e) => {
                                           e.stopPropagation();
@@ -615,44 +610,24 @@ export default function MetaAdsPage() {
                                     {isExpanded && (
                                       <tr className="bg-slate-50">
                                         <td colSpan={7} className="p-3">
-                                          <div className="bg-white rounded border overflow-hidden">
-                                            <table className="w-full text-xs">
-                                              <thead className="bg-slate-50/50 text-slate-400 border-b">
-                                                <tr>
-                                                  <th className="px-3 py-2 text-left">{t('ads.table.campaign', 'Campaña')}</th>
-                                                  <th className="px-2 py-2 text-right">{t('ads.table.spent', 'Gasto')}</th>
-                                                  <th className="px-2 py-2 text-right">{t('ads.table.conv', 'Conv')}</th>
-                                                  <th className="px-2 py-2 text-center">{t('ads.table.roas', 'ROAS')}</th>
-                                                </tr>
-                                              </thead>
-                                              <tbody>
-                                                {subCampaigns.sort((a, b) => b.cost - a.cost).map(camp => {
-                                                  const campRoas = camp.cost > 0 ? (camp.conversions_value || 0) / camp.cost : 0;
-                                                  return (
-                                                    <tr key={camp.campaign_id} className="border-b last:border-0 hover:bg-slate-50">
-                                                      <td className="px-3 py-2 font-medium text-slate-600 truncate max-w-[200px]">
-                                                        <AnonymizedContent isActive={isAnonymized} placeholder={anonymizer.campaign(camp.campaign_id)}>
-                                                          {camp.campaign_name}
-                                                        </AnonymizedContent>
-                                                      </td>
-                                                      <td className="px-2 py-2 text-right font-medium text-slate-700">
-                                                        {formatMoney(camp.cost, sub.id)}
-                                                      </td>
-                                                      <td className="px-2 py-2 text-right text-emerald-600">
-                                                        {(camp.conversions || 0).toFixed(0)}
-                                                      </td>
-                                                      <td className="px-2 py-2 text-center">
-                                                        <span className={cn("text-[10px] px-1.5 py-0.5 rounded", getRoasColor(campRoas))}>
-                                                          {campRoas.toFixed(2)}
-                                                        </span>
-                                                      </td>
-                                                    </tr>
-                                                  );
-                                                })}
-                                                {subCampaigns.length === 0 && <tr><td colSpan={5} className="p-3 text-center text-slate-400">{t('ads.table.noCampaigns', 'Sin campañas')}</td></tr>}
-                                              </tbody>
-                                            </table>
-                                          </div>
+                                          <CampaignPerformanceList
+                                            isSales={client.isSalesAccount}
+                                            formatMoney={(amount) => formatMoney(amount, sub.id)}
+                                            rows={[...subCampaigns].sort((a, b) => b.cost - a.cost).map((camp, idx): CampaignMetricRow => ({
+                                              key: `${camp.campaign_id}-${idx}`,
+                                              name: (
+                                                <AnonymizedContent isActive={isAnonymized} placeholder={anonymizer.campaign(camp.campaign_id)}>
+                                                  {camp.campaign_name}
+                                                </AnonymizedContent>
+                                              ),
+                                              status: camp.status,
+                                              cost: Number(camp.cost) || 0,
+                                              clicks: Number(camp.clicks) || 0,
+                                              impressions: Number(camp.impressions) || 0,
+                                              conversions: Number(camp.conversions) || 0,
+                                              conversionValue: Number(camp.conversions_value) || 0,
+                                            }))}
+                                          />
                                         </td>
                                       </tr>
                                     )}

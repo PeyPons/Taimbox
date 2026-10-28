@@ -7,6 +7,7 @@ import {
 } from '../_shared/agency-access.ts'
 import { completeAdsSyncLog } from '../_shared/complete-ads-sync-log.ts'
 import { assertPlanIncludesAds } from '../_shared/plan-entitlements.ts'
+import { repairUtf8Mojibake } from '../_shared/repair-utf8-mojibake.ts'
 
 // Configuración de CORS
 const corsHeaders = {
@@ -305,7 +306,7 @@ Deno.serve(async (req) => {
                 catalog.set(campaignId, {
                     client_id: customerId,
                     campaign_id: campaignId,
-                    campaign_name: row.campaign?.name ?? '',
+                    campaign_name: repairUtf8Mojibake(row.campaign?.name ?? ''),
                     status: row.campaign?.status ?? '',
                     date: dateRange.firstDay,
                     cost: 0,
@@ -358,7 +359,7 @@ Deno.serve(async (req) => {
                     metrics.set(campaignId, {
                         client_id: customerId,
                         campaign_id: campaignId,
-                        campaign_name: row.campaign?.name ?? '',
+                        campaign_name: repairUtf8Mojibake(row.campaign?.name ?? ''),
                         status: row.campaign?.status ?? '',
                         date: dateRange.firstDay,
                         cost: 0,
@@ -592,9 +593,9 @@ Deno.serve(async (req) => {
                     if (campaigns.length > 0) {
                         const upsertData = campaigns.map(c => ({
                             client_id: c.client_id,
-                            client_name: client.account_name,
+                            client_name: repairUtf8Mojibake(client.account_name),
                             campaign_id: c.campaign_id,
-                            campaign_name: c.campaign_name,
+                            campaign_name: repairUtf8Mojibake(c.campaign_name),
                             status: c.status,
                             date: c.date,
                             cost: c.cost,

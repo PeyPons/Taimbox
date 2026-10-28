@@ -1776,7 +1776,11 @@
           "recommendedDaily": "Avg daily target",
           "avgDailySub": "so far this month",
           "recommendedDailySub": "to close the month on budget",
-          "googleNote": "Taimbox calculates the monthly budget by summing the daily limits (x30.4) of your active campaigns in Google Ads. You can <strong>override this budget</strong> manually here to compare against a different target.",
+          "googleNote": "You type the monthly target. Google's daily limit is shown separately and is not turned into the month's budget.",
+      "noTarget": "No target",
+      "setTargetHint": "Enter the month's budget to see pacing. It is not filled in from Google's daily limit.",
+      "setTargetHintMeta": "Enter the month's budget to see pacing. Meta does not send a monthly target: you set it here.",
+      "googleDailyInfo": "Daily limit in Google",
           "metaNote": "The spending limit in Meta Ads is configured in Facebook (campaign, set or shared budget). Here you define the <strong>monthly target budget</strong> in Taimbox to compare real pace vs. target.",
           "paceWarningGoogle": "Spending pace is above the target to not exceed the monthly budget. Review campaigns in Google Ads, this usually happens if daily budgets sum more than the monthly target divided by 30.",
           "paceWarningMeta": "Spending pace is above the target to not exceed the monthly budget. Review and adjust limits in Meta Ads according to your structure (campaign, set or ad account).",
@@ -3463,6 +3467,8 @@
       "revenue": "Value",
       "daysRemaining": "Days remaining",
       "of": "of",
+      "noMonthlyTarget": "No monthly target",
+      "noConversionValue": "No conversion value",
       "target": "Target",
       "acceptable": "Acceptable",
       "below": "Below",
@@ -3491,7 +3497,9 @@
       "breakdown": "Account Breakdown ({{count}})",
       "active": "Active",
       "paused": "Paused",
-      "sharedBudgetTooltip": "Shared budget: {{total}} daily in total across multiple campaigns."
+      "sharedBudgetTooltip": "Shared budget: {{total}} daily in total across multiple campaigns.",
+      "impressions": "Impressions",
+      "campaignSummary": "{{active}} active of {{total}}"
     },
     "pacing": {
       "spentPct": "{{percent}}% spent",
@@ -3504,7 +3512,11 @@
       "recommendedDaily": "Avg daily target",
       "avgDailySub": "so far this month",
       "recommendedDailySub": "to close the month on budget",
-      "googleNote": "Taimbox calculates the monthly budget by summing the daily limits (x30.4) of your active campaigns in Google Ads. You can <strong>override this budget</strong> manually here to compare against a different target.",
+      "googleNote": "You type the monthly target. Google's daily limit is shown separately and is not turned into the month's budget.",
+      "noTarget": "No target",
+      "setTargetHint": "Enter the month's budget to see pacing. It is not filled in from Google's daily limit.",
+      "setTargetHintMeta": "Enter the month's budget to see pacing. Meta does not send a monthly target: you set it here.",
+      "googleDailyInfo": "Daily limit in Google",
       "metaNote": "The spending limit in Meta Ads is configured in Facebook (campaign, set or shared budget). Here you define the <strong>monthly target budget</strong> in Taimbox to compare real pace vs. target.",
       "paceWarningGoogle": "Spending pace is above the target to not exceed the monthly budget. Review campaigns in Google Ads, this usually happens if daily budgets sum more than the monthly target divided by 30.",
       "paceWarningMeta": "Spending pace is above the target to not exceed the monthly budget. Review and adjust limits in Meta Ads according to your structure (campaign, set or ad account).",
@@ -3517,7 +3529,7 @@
         "groupPlaceholder": "E.g.: Group ABC",
         "groupNote": "Accounts from the same group are consolidated.",
         "salesAccount": "Sales Account (ROAS)",
-        "salesAccountNote": "Show conversions",
+        "salesAccountNote": "Turn on if the account sells. Leave it off for reach or traffic so ROAS stays hidden.",
         "hideAccount": "Hide account",
         "hideAccountNote": "Will not appear in the list"
       },
@@ -3541,6 +3553,9 @@
         "initGoogle": "🚀 Starting connection with Google Ads...",
         "initMeta": "🚀 Connecting with Meta API..."
       }
+    },
+    "roas": {
+      "emptyHint": "No conversion value this month. ROAS does not apply."
     },
     "status": {
       "exceeded": "Exceeded",

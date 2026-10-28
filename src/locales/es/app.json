@@ -1819,7 +1819,11 @@
           "recommendedDaily": "Objetivo medio diario",
           "avgDailySub": "en lo que va de mes",
           "recommendedDailySub": "para cerrar el mes en el presupuesto",
-          "googleNote": "Taimbox calcula el presupuesto mensual sumando los límites diarios (x30.4) de tus campañas activas en Google Ads. Puedes <strong>sobrescribir este presupuesto</strong> manualmente aquí para comparar con un objetivo distinto al de Google.",
+          "googleNote": "El objetivo mensual lo escribes tú. El límite diario de Google se muestra aparte y no se convierte en presupuesto del mes.",
+      "noTarget": "Sin objetivo",
+      "setTargetHint": "Escribe el presupuesto del mes para ver el ritmo. No se rellena solo a partir del límite diario de Google.",
+      "setTargetHintMeta": "Escribe el presupuesto del mes para ver el ritmo. Meta no trae un objetivo mensual: lo defines aquí.",
+      "googleDailyInfo": "Límite diario en Google",
           "metaNote": "El límite de gasto en Meta Ads se configura en Facebook (campaña, conjunto o presupuesto compartido). Aquí defines el <strong>presupuesto mensual objetivo</strong> en Taimbox para comparar ritmo real vs. objetivo.",
           "paceWarningGoogle": "El ritmo de gasto va por encima del objetivo para no superar el presupuesto mensual. Revisa las campañas en Google Ads, esto suele ocurrir si los presupuestos diarios suman más que el objetivo mensual dividido por 30.",
           "paceWarningMeta": "El ritmo de gasto va por encima del objetivo para no superar el presupuesto mensual. Revisa y ajusta los límites en Meta Ads según tu estructura (campaña, conjunto o cuenta publicitaria).",
@@ -1832,7 +1836,7 @@
             "groupPlaceholder": "Ej: Grupo ABC",
             "groupNote": "Las cuentas del mismo grupo se consolidan.",
             "salesAccount": "Cuenta de ventas (ROAS)",
-            "salesAccountNote": "Mostrar conversiones",
+            "salesAccountNote": "Actívala si la cuenta vende. En alcance o tráfico, déjala apagada para no mostrar ROAS.",
             "hideAccount": "Ocultar cuenta",
             "hideAccountNote": "No aparecerá en la lista"
           },
@@ -2300,6 +2304,8 @@
       "revenue": "Valor",
       "daysRemaining": "Días restantes",
       "of": "de",
+      "noMonthlyTarget": "Sin objetivo mensual",
+      "noConversionValue": "Sin valor de conversión",
       "target": "Objetivo",
       "acceptable": "Aceptable",
       "below": "Por debajo",
@@ -2328,7 +2334,9 @@
       "breakdown": "Desglose por Cuenta ({{count}})",
       "active": "Activa",
       "paused": "Pausada",
-      "sharedBudgetTooltip": "Cartera compartida: {{total}} diarios en total entre varias campañas."
+      "sharedBudgetTooltip": "Cartera compartida: {{total}} diarios en total entre varias campañas.",
+      "impressions": "Impresiones",
+      "campaignSummary": "{{active}} activas de {{total}}"
     },
     "pacing": {
       "spentPct": "{{percent}}% gastado",
@@ -2341,7 +2349,11 @@
       "recommendedDaily": "Objetivo medio diario",
       "avgDailySub": "en lo que va de mes",
       "recommendedDailySub": "para cerrar el mes en el presupuesto",
-      "googleNote": "Taimbox calcula el presupuesto mensual sumando los límites diarios (x30.4) de tus campañas activas en Google Ads. Puedes <strong>sobrescribir este presupuesto</strong> manualmente aquí para comparar con un objetivo distinto al de Google.",
+      "googleNote": "El objetivo mensual lo escribes tú. El límite diario de Google se muestra aparte y no se convierte en presupuesto del mes.",
+      "noTarget": "Sin objetivo",
+      "setTargetHint": "Escribe el presupuesto del mes para ver el ritmo. No se rellena solo a partir del límite diario de Google.",
+      "setTargetHintMeta": "Escribe el presupuesto del mes para ver el ritmo. Meta no trae un objetivo mensual: lo defines aquí.",
+      "googleDailyInfo": "Límite diario en Google",
       "metaNote": "El límite de gasto en Meta Ads se configura en Facebook (campaña, conjunto o presupuesto compartido). Aquí defines el <strong>presupuesto mensual objetivo</strong> en Taimbox para comparar ritmo real vs. objetivo.",
       "paceWarningGoogle": "El ritmo de gasto va por encima del objetivo para no superar el presupuesto mensual. Revisa las campañas en Google Ads, esto suele ocurrir si los presupuestos diarios suman más que el objetivo mensual dividido por 30.",
       "paceWarningMeta": "El ritmo de gasto va por encima del objetivo para no superar el presupuesto mensual. Revisa y ajusta los límites en Meta Ads según tu estructura (campaña, conjunto o cuenta publicitaria).",
@@ -2354,7 +2366,7 @@
         "groupPlaceholder": "Ej: Grupo ABC",
         "groupNote": "Las cuentas del mismo grupo se consolidan.",
         "salesAccount": "Cuenta de ventas (ROAS)",
-        "salesAccountNote": "Mostrar conversiones",
+        "salesAccountNote": "Actívala si la cuenta vende. En alcance o tráfico, déjala apagada para no mostrar ROAS.",
         "hideAccount": "Ocultar cuenta",
         "hideAccountNote": "No aparecerá en la lista"
       },
@@ -2378,6 +2390,9 @@
         "initGoogle": "🚀 Iniciando conexión con Google Ads...",
         "initMeta": "🚀 Conectando con Meta API..."
       }
+    },
+    "roas": {
+      "emptyHint": "Sin valor de conversión este mes. El ROAS no aplica."
     },
     "status": {
       "exceeded": "Excedido",

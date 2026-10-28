@@ -29,6 +29,10 @@ import { cn } from '@/lib/utils';
 import { useAdsFormatMoney } from '@/hooks/useAdsFormatMoney';
 import { useRefreshMissingAdCurrencies } from '@/hooks/useRefreshMissingAdCurrencies';
 import { addCampaignDailyBudget, countSharedBudgetCampaigns, getCampaignDisplayDailyBudget, isSharedPortfolioBudget } from '@/utils/adsBudgetUtils';
+import { presentRoas } from '@/utils/adsPerformance';
+import { repairUtf8Mojibake } from '@/utils/repairUtf8Mojibake';
+import { CampaignPerformanceList, type CampaignMetricRow } from '@/components/ads/CampaignPerformanceList';
+import { RoasValue } from '@/components/ads/RoasValue';
 import { toast } from '@/lib/notify';
 import { useAnonymizeAds } from '@/hooks/useAnonymizeAds';
 import { AnonymizedContent } from '@/components/ads/AnonymizedContent';
@@ -111,12 +115,6 @@ interface ClientPacing {
 const formatProjectName = (name: string) => (name || '').replace(/^(Cliente|Client)\s*[-:]?\s*/i, '');
 const normalizeId = (id: string) => id ? id.trim() : '';
 
-const getRoasColor = (roas: number) => {
-  if (roas >= 4) return "text-emerald-600 bg-emerald-50 border-emerald-200";
-  if (roas >= 2) return "text-blue-600 bg-blue-50 border-blue-200";
-  if (roas >= 1) return "text-amber-600 bg-amber-50 border-amber-200";
-  return "text-red-600 bg-red-50 border-red-200";
-};
 
 const getStatusConfig = (status: string, t: any) => {
   switch (status) {
@@ -203,7 +201,11 @@ export default function AdsPage() {
         };
       });
 
-      setRawData(adsRes.data || []);
+      setRawData((adsRes.data || []).map((row: CampaignData) => ({
+        ...row,
+        campaign_name: repairUtf8Mojibake(row.campaign_name),
+        client_name: repairUtf8Mojibake(row.client_name),
+      })));
       setClientSettings(settingsMap);
       setRegisteredAccounts(accountsRes.data || []);
       setSegmentationRules(rulesRes.data || []);
@@ -513,10 +515,8 @@ export default function AdsPage() {
       if (value.is_group) {
         const groupSettings = clientSettings[key.replace('GROUP-', '')] || clientSettings[key];
         if (groupSettings?.budget > 0) finalBudget = groupSettings.budget;
-        else finalBudget = value.autoDailyBudgetSum * 30.4;
-      } else {
-        if (value.budget > 0) finalBudget = value.budget;
-        else finalBudget = value.autoDailyBudgetSum * 30.4;
+      } else if (value.budget > 0) {
+        finalBudget = value.budget;
       }
 
       const spent = value.spent;
@@ -578,11 +578,14 @@ export default function AdsPage() {
   const globalStats = useMemo(() => {
     const totalBudget = reportData.reduce((acc, r) => acc + r.budget, 0);
     const totalSpent = reportData.reduce((acc, r) => acc + r.spent, 0);
-    const totalRevenue = reportData.reduce((acc, r) => acc + r.total_conversions_val, 0);
-    const totalRecommendedDaily = reportData.reduce((acc, r) => acc + r.recommendedDaily, 0);
+    const salesRows = reportData.filter((r) => r.isSalesAccount);
+    const salesSpent = salesRows.reduce((acc, r) => acc + r.spent, 0);
+    const totalRevenue = salesRows.reduce((acc, r) => acc + r.total_conversions_val, 0);
+    const totalRecommendedDaily = reportData.reduce((acc, r) => acc + (r.budget > 0 ? r.recommendedDaily : 0), 0);
     const totalCurrentDaily = reportData.reduce((acc, r) => acc + r.currentDailyBudget, 0);
     const atRisk = reportData.filter(r => r.status === 'risk' || r.status === 'over').length;
-    const globalRoas = totalSpent > 0 ? totalRevenue / totalSpent : 0;
+    const salesRoas = presentRoas({ isSales: true, cost: salesSpent, conversionValue: totalRevenue });
+    const globalRoas = salesRoas.kind === 'value' ? salesRoas.roas : 0;
 
     // Nuevas estadísticas agregadas
     const totalClicks = reportData.reduce((acc, r) => acc + r.total_clicks, 0);
@@ -594,6 +597,7 @@ export default function AdsPage() {
 
     return {
       totalBudget, totalSpent, totalRevenue, totalRecommendedDaily, totalCurrentDaily, atRisk, globalRoas,
+      hasConversionValue: salesRoas.kind === 'value',
       totalClicks, totalImpressions, totalConversions, globalCtr, globalCpc, globalCpa
     };
   }, [reportData]);
@@ -675,7 +679,9 @@ export default function AdsPage() {
             icon={Target}
             label={t('ads.stats.investment', 'Inversión')}
             value={formatGlobalMoney(globalStats.totalSpent)}
-            subValue={`${t('ads.stats.of', 'de')} ${formatGlobalMoney(globalStats.totalBudget)}`}
+            subValue={globalStats.totalBudget > 0
+              ? `${t('ads.stats.of', 'de')} ${formatGlobalMoney(globalStats.totalBudget)}`
+              : t('ads.stats.noMonthlyTarget', 'Sin objetivo mensual')}
             color="blue"
           />
           <AdsStatCard
@@ -695,9 +701,11 @@ export default function AdsPage() {
           <AdsStatCard
             icon={Target}
             label={t('ads.stats.roas', 'ROAS')}
-            value={`${globalStats.globalRoas.toFixed(2)}x`}
-            subValue={`CPC ${formatGlobalMoney(globalStats.globalCpc)}`}
-            color={globalStats.globalRoas >= 2 ? 'emerald' : globalStats.globalRoas >= 1 ? 'amber' : 'red'}
+            value={globalStats.hasConversionValue ? `${globalStats.globalRoas.toFixed(2)}x` : '—'}
+            subValue={globalStats.hasConversionValue
+              ? `CPC ${formatGlobalMoney(globalStats.globalCpc)}`
+              : t('ads.stats.noConversionValue', 'Sin valor de conversión')}
+            color={!globalStats.hasConversionValue ? 'slate' : globalStats.globalRoas >= 2 ? 'emerald' : globalStats.globalRoas >= 1 ? 'amber' : 'red'}
           />
           <AdsStatCard
             icon={ArrowDownRight}
@@ -790,16 +798,19 @@ export default function AdsPage() {
                               <Layers className="w-3 h-3" /> {t('ads.status.group', 'GRUPO')}
                             </Badge>
                           )}
-                          <Badge variant="outline" className={cn("text-[10px]", statusConfig.badgeClass)}>
-                            {statusConfig.text}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center gap-2 mt-1 flex-wrap">
-                          {client.isSalesAccount && client.globalRoas > 0 && (
-                            <Badge variant="outline" className={cn("text-[10px] h-5", getRoasColor(client.globalRoas))}>
-                              ROAS {client.globalRoas.toFixed(2)}
+                          {client.budget > 0 && (
+                            <Badge variant="outline" className={cn("text-[10px]", statusConfig.badgeClass)}>
+                              {statusConfig.text}
                             </Badge>
                           )}
+                        </div>
+                        <div className="flex items-center gap-2 mt-1 flex-wrap">
+                          <RoasValue
+                            isSales={client.isSalesAccount}
+                            cost={client.spent}
+                            conversionValue={client.total_conversions_val}
+                            className="h-5"
+                          />
                           {client.isHidden && (
                             <Badge variant="outline" className="text-[10px] h-5 gap-1">
                               <EyeOff className="w-3 h-3" /> {t('ads.status.hidden', 'Oculto')}
@@ -880,11 +891,6 @@ export default function AdsPage() {
                             <Label className="text-sm font-medium text-slate-700">
                               {t('ads.pacing.monthlyBudget', { type: client.is_group ? t('ads.status.total', 'Total') : t('ads.status.monthly', 'Mensual'), defaultValue: `Presupuesto ${client.is_group ? 'Total' : 'Mensual'}` })}
                             </Label>
-                            {!client.isManualGroupBudget && !clientSettings[client.client_id]?.budget && (
-                              <Badge variant="outline" className="text-[10px] bg-blue-50 text-blue-600 border-blue-200">
-                                Auto
-                              </Badge>
-                            )}
                           </div>
                           <div className="flex items-center gap-2">
                             <span className="text-slate-400">{currencySymbolForClient(client.client_id, client.realIdsList.map((r) => r.id))}</span>
@@ -894,12 +900,17 @@ export default function AdsPage() {
                               defaultValue={clientSettings[client.client_id]?.budget > 0 ? clientSettings[client.client_id]?.budget : ''}
                               onBlur={(e) => handleSaveBudget(client.client_id, e.target.value)}
                               className="h-8 w-28 text-right"
-                              placeholder={client.budget.toFixed(0)}
+                              placeholder={t('ads.pacing.noTarget', 'Sin objetivo')}
                             />
                           </div>
                         </div>
+                        {client.budget <= 0 && (
+                          <p className="text-xs text-slate-500 leading-snug">
+                            {t('ads.pacing.setTargetHint', 'Escribe el presupuesto del mes para ver el ritmo. No se rellena solo a partir del límite diario de Google.')}
+                          </p>
+                        )}
 
-                        <div className="space-y-2">
+                        {client.budget > 0 && <div className="space-y-2">
                           <div className="flex justify-between text-xs text-slate-500">
                             <span>{t('common.consumption', 'Consumo')} ({client.progress.toFixed(1)}%)</span>
                             <span className={client.remainingBudget <= 0 ? 'text-red-500 font-bold' : ''}>
@@ -914,9 +925,9 @@ export default function AdsPage() {
                               client.status === 'ok' && "[&>div]:bg-blue-500"
                             )}
                           />
-                        </div>
+                        </div>}
 
-                        {/* Comparativa diario actual vs recomendado */}
+                        {client.budget > 0 ? (
                         <div className="grid grid-cols-2 gap-3">
                           <div className={cn(
                             "p-3 rounded-lg border-2 text-center",
@@ -950,9 +961,18 @@ export default function AdsPage() {
                             </div>
                           </div>
                         </div>
+                        ) : client.currentDailyBudget > 0 ? (
+                          <div className="p-3 rounded-lg border bg-slate-50 text-center">
+                            <div className="text-[10px] uppercase text-slate-500 font-medium mb-1">
+                              {t('ads.pacing.googleDailyInfo', 'Límite diario en Google')}
+                            </div>
+                            <div className="text-xl font-bold text-slate-700">
+                              {formatMoney(client.currentDailyBudget, client.client_id)}
+                            </div>
+                          </div>
+                        ) : null}
 
-                        {/* Alerta si hay diferencia significativa */}
-                        {isOverspending && dailyDiff > 5 && (
+                        {client.budget > 0 && isOverspending && dailyDiff > 5 && (
                           <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
                             <AlertTriangle className="w-4 h-4 shrink-0" />
                             <span>
@@ -975,104 +995,41 @@ export default function AdsPage() {
                           </Tooltip>
                           <span className={cn(
                             "font-bold shrink-0",
-                            client.forecast > client.budget ? "text-red-600" : "text-slate-700"
+                            client.budget > 0 && client.forecast > client.budget ? "text-red-600" : "text-slate-700"
                           )}>
                             {formatMoney(client.forecast, client.client_id)}
                           </span>
                         </div>
                       </div>
 
-                      {/* Tabla de campañas - Mejorada con métricas PPC */}
-                      <div className="bg-white rounded-lg border overflow-hidden">
-                        <div className="max-h-[350px] overflow-y-auto">
-                          <table className="w-full text-xs">
-                            <thead className="bg-slate-50 text-slate-500 font-medium sticky top-0 border-b">
-                              <tr>
-                                <th className="px-3 py-2.5 text-left">{t('ads.table.campaign', 'Campaña')}</th>
-                                <th className="px-2 py-2.5 text-right w-24">{t('common.dailyBudget', 'P. Diario')}</th>
-                                <th className="px-2 py-2.5 text-right">{t('ads.table.spent', 'Gasto')}</th>
-                                <th className="px-2 py-2.5 text-right hidden md:table-cell">{t('ads.stats.clicks', 'Clicks')}</th>
-                                <th className="px-2 py-2.5 text-right hidden lg:table-cell">CTR</th>
-                                <th className="px-2 py-2.5 text-right hidden lg:table-cell">CPC</th>
-                                <th className="px-2 py-2.5 text-right">{t('ads.table.conv', 'Conv')}</th>
-                                {client.isSalesAccount && <th className="px-2 py-2.5 text-center">{t('ads.table.roas', 'ROAS')}</th>}
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100">
-                              {client.campaigns.map((camp, idx) => {
-                                const roas = camp.cost > 0 ? (camp.conversions_value || 0) / camp.cost : 0;
-                                const campCtr = (camp.impressions || 0) > 0 ? ((camp.clicks || 0) / (camp.impressions || 1)) * 100 : 0;
-                                const campCpc = (camp.clicks || 0) > 0 ? camp.cost / (camp.clicks || 1) : 0;
-                                const displayDaily =
-                                  getCampaignDisplayDailyBudget(camp, sharedBudgetCounts) ?? (Number(camp.daily_budget) || 0);
-                                const isHighBudget =
-                                  displayDaily > 0 && (camp.cost / (currentDay || 1)) > displayDaily;
-                                return (
-                                  <tr key={idx} className="hover:bg-slate-50">
-                                    <td className="px-3 py-2.5">
-                                      <div className="space-y-1">
-                                        <AnonymizedContent isActive={isAnonymized} className="font-medium text-slate-700 line-clamp-2" placeholder={anonymizer.campaign(camp.campaign_id)}>
-                                          {camp.campaign_name}
-                                        </AnonymizedContent>
-                                        <div className="flex items-center gap-2 text-[10px] text-slate-400">
-                                          <span className="flex items-center gap-1">
-                                            <span className={cn(
-                                              "w-1.5 h-1.5 rounded-full",
-                                              camp.status === 'ENABLED' ? 'bg-emerald-400' : 'bg-slate-300'
-                                            )} />
-                                            {camp.status === 'ENABLED' ? t('ads.table.active', 'Activa') : t('ads.table.paused', 'Pausada')}
-                                          </span>
-                                          {client.is_group && (camp.original_client_name || camp.original_client_id) && (
-                                            <AnonymizedContent isActive={isAnonymized} className="truncate max-w-[100px]" placeholder={anonymizer.account(camp.original_client_id || camp.client_id)}>
-                                              | {formatProjectName(camp.original_client_name || '')}
-                                            </AnonymizedContent>
-                                          )}
-                                        </div>
-                                      </div>
-                                    </td>
-                                    <td className="px-2 py-2.5 text-right font-mono text-slate-500">
-                                      {renderCampaignDailyBudget(
-                                        camp,
-                                        sharedBudgetCounts,
-                                        camp.original_client_id || camp.client_id || client.client_id,
-                                      )}
-                                    </td>
-                                    <td className={cn("px-2 py-2.5 text-right font-medium", isHighBudget ? "text-amber-600" : "text-slate-900")}>
-                                      {formatMoney(camp.cost, camp.original_client_id || camp.client_id || client.client_id)}
-                                    </td>
-                                    <td className="px-2 py-2.5 text-right hidden md:table-cell text-slate-600">
-                                      {(camp.clicks || 0).toLocaleString('es-ES')}
-                                    </td>
-                                    <td className="px-2 py-2.5 text-right hidden lg:table-cell text-slate-500">
-                                      {campCtr.toFixed(2)}%
-                                    </td>
-                                    <td className="px-2 py-2.5 text-right hidden lg:table-cell text-slate-500">
-                                      {formatMoney(campCpc, camp.original_client_id || camp.client_id || client.client_id)}
-                                    </td>
-                                    <td className="px-2 py-2.5 text-right text-emerald-600">
-                                      {(camp.conversions || 0).toFixed(0)}
-                                    </td>
-                                    {client.isSalesAccount && (
-                                      <td className="px-2 py-2.5 text-center">
-                                        <Badge variant="outline" className={cn("text-[10px]", getRoasColor(roas))}>
-                                          {roas.toFixed(2)}
-                                        </Badge>
-                                      </td>
-                                    )}
-                                  </tr>
-                                );
-                              })}
-                              {client.campaigns.length === 0 && (
-                                <tr>
-                                  <td colSpan={7} className="px-3 py-8 text-center text-slate-400">
-                                    {t('ads.table.noCampaigns', 'Sin campañas')}
-                                  </td>
-                                </tr>
-                              )}
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
+                      <CampaignPerformanceList
+                        isSales={client.isSalesAccount}
+                        formatMoney={(amount) => formatMoney(amount, client.client_id)}
+                        rows={client.campaigns.map((camp, idx): CampaignMetricRow => ({
+                          key: `${camp.campaign_id}-${camp.date || idx}`,
+                          name: (
+                            <AnonymizedContent isActive={isAnonymized} className="font-medium text-slate-800" placeholder={anonymizer.campaign(camp.campaign_id)}>
+                              {camp.campaign_name}
+                            </AnonymizedContent>
+                          ),
+                          status: camp.status,
+                          cost: Number(camp.cost) || 0,
+                          clicks: Number(camp.clicks) || 0,
+                          impressions: Number(camp.impressions) || 0,
+                          conversions: Number(camp.conversions) || 0,
+                          conversionValue: Number(camp.conversions_value) || 0,
+                          dailyBudget: renderCampaignDailyBudget(
+                            camp,
+                            sharedBudgetCounts,
+                            camp.original_client_id || camp.client_id || client.client_id,
+                          ),
+                          subtitle: client.is_group && (camp.original_client_name || camp.original_client_id) ? (
+                            <AnonymizedContent isActive={isAnonymized} className="truncate max-w-[140px]" placeholder={anonymizer.account(camp.original_client_id || camp.client_id)}>
+                              | {formatProjectName(camp.original_client_name || '')}
+                            </AnonymizedContent>
+                          ) : undefined,
+                        }))}
+                      />
                     </div>
 
                     {/* Cuentas vinculadas (grupos) - Tabla de desglose interactiva */}
@@ -1103,7 +1060,6 @@ export default function AdsPage() {
                                 const subClicks = subCampaigns.reduce((a, c) => a + (c.clicks || 0), 0);
                                 const subConv = subCampaigns.reduce((a, c) => a + (c.conversions || 0), 0);
                                 const subValue = subCampaigns.reduce((a, c) => a + (c.conversions_value || 0), 0);
-                                const subRoas = subSpent > 0 ? subValue / subSpent : 0;
                                 const pctOfGroup = client.spent > 0 ? (subSpent / client.spent) * 100 : 0;
 
                                 const isExpanded = expandedSubAccounts[sub.id];
@@ -1137,9 +1093,7 @@ export default function AdsPage() {
                                         {subConv.toFixed(0)}
                                       </td>
                                       <td className="px-2 py-2.5 text-center">
-                                        <Badge variant="outline" className={cn("text-[10px]", getRoasColor(subRoas))}>
-                                          {subRoas.toFixed(2)}
-                                        </Badge>
+                                        <RoasValue isSales={client.isSalesAccount} cost={subSpent} conversionValue={subValue} />
                                       </td>
                                       <td className="px-2 py-2.5 text-center">
                                         <button
@@ -1156,54 +1110,25 @@ export default function AdsPage() {
                                     {isExpanded && (
                                       <tr className="bg-slate-50">
                                         <td colSpan={8} className="p-3">
-                                          <div className="bg-white rounded border overflow-hidden">
-                                            <table className="w-full text-xs">
-                                              <thead className="bg-slate-50/50 text-slate-400 border-b">
-                                                <tr>
-                                                  <th className="px-3 py-2 text-left">{t('ads.table.campaign', 'Campaña')}</th>
-                                                  <th className="px-2 py-2 text-right">{t('common.dailyBudget', 'P. Diario')}</th>
-                                                  <th className="px-2 py-2 text-right">{t('ads.table.spent', 'Gasto')}</th>
-                                                  <th className="px-2 py-2 text-right">{t('ads.table.conv', 'Conv')}</th>
-                                                  <th className="px-2 py-2 text-center">{t('ads.table.roas', 'ROAS')}</th>
-                                                </tr>
-                                              </thead>
-                                              <tbody>
-                                                {subCampaigns.sort((a, b) => b.cost - a.cost).map(camp => {
-                                                  const campRoas = camp.cost > 0 ? (camp.conversions_value || 0) / camp.cost : 0;
-                                                  const displayDaily =
-                                                    getCampaignDisplayDailyBudget(camp, subSharedBudgetCounts) ??
-                                                    (Number(camp.daily_budget) || 0);
-                                                  const isHighBudget =
-                                                    displayDaily > 0 && (camp.cost / (currentDay || 1)) > displayDaily;
-
-                                                  return (
-                                                    <tr key={camp.campaign_id} className="border-b last:border-0 hover:bg-slate-50">
-                                                      <td className="px-3 py-2 font-medium text-slate-600 truncate max-w-[200px]">
-                                                        <AnonymizedContent isActive={isAnonymized} placeholder={anonymizer.campaign(camp.campaign_id)}>
-                                                          {camp.campaign_name}
-                                                        </AnonymizedContent>
-                                                      </td>
-                                                      <td className="px-2 py-2 text-right text-slate-500 font-mono">
-                                                        {renderCampaignDailyBudget(camp, subSharedBudgetCounts, sub.id)}
-                                                      </td>
-                                                      <td className={cn("px-2 py-2.5 text-right font-medium", isHighBudget ? "text-amber-600" : "text-slate-900")}>
-                                                        {formatMoney(camp.cost, sub.id)}
-                                                      </td>
-                                                      <td className="px-2 py-2 text-right text-emerald-600">
-                                                        {(camp.conversions || 0).toFixed(0)}
-                                                      </td>
-                                                      <td className="px-2 py-2 text-center">
-                                                        <span className={cn("text-[10px] px-1.5 py-0.5 rounded", getRoasColor(campRoas))}>
-                                                          {campRoas.toFixed(2)}
-                                                        </span>
-                                                      </td>
-                                                    </tr>
-                                                  );
-                                                })}
-                                                {subCampaigns.length === 0 && <tr><td colSpan={5} className="p-3 text-center text-slate-400">{t('ads.table.noCampaigns', 'Sin campañas')}</td></tr>}
-                                              </tbody>
-                                            </table>
-                                          </div>
+                                          <CampaignPerformanceList
+                                            isSales={client.isSalesAccount}
+                                            formatMoney={(amount) => formatMoney(amount, sub.id)}
+                                            rows={[...subCampaigns].sort((a, b) => b.cost - a.cost).map((camp, idx): CampaignMetricRow => ({
+                                              key: `${camp.campaign_id}-${idx}`,
+                                              name: (
+                                                <AnonymizedContent isActive={isAnonymized} placeholder={anonymizer.campaign(camp.campaign_id)}>
+                                                  {camp.campaign_name}
+                                                </AnonymizedContent>
+                                              ),
+                                              status: camp.status,
+                                              cost: Number(camp.cost) || 0,
+                                              clicks: Number(camp.clicks) || 0,
+                                              impressions: Number(camp.impressions) || 0,
+                                              conversions: Number(camp.conversions) || 0,
+                                              conversionValue: Number(camp.conversions_value) || 0,
+                                              dailyBudget: renderCampaignDailyBudget(camp, subSharedBudgetCounts, sub.id),
+                                            }))}
+                                          />
                                         </td>
                                       </tr>
                                     )}
