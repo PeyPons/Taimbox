@@ -2593,6 +2593,7 @@
         "selectAccountDesc": "Select the main or MCC account to sync.",
         "loading": "Loading...",
         "loadingAccounts": "Loading accounts...",
+        "loadAccountsError": "Could not load the Google Ads account list.",
         "openTabToLoad": "Open the Connections tab to load accounts",
         "connectFirst": "Connect with Google first to see your available accounts.",
         "configError": "Configuration error: Agency customer ID missing.",

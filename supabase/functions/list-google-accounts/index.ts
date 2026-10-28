@@ -4,6 +4,7 @@ import {
     assertAgencyPermissionAny,
     getBearerToken,
 } from '../_shared/agency-access.ts'
+import { GOOGLE_ADS_API_VERSION } from '../_shared/google-ads.ts'
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -137,8 +138,8 @@ Deno.serve(async (req) => {
             throw new Error('Error de configuración: Falta GOOGLE_DEVELOPER_TOKEN en variables de entorno.')
         }
 
-        // 4. Listar clientes accesibles (Google Ads API v22)
-        const listResponse = await fetch(`https://googleads.googleapis.com/v22/customers:listAccessibleCustomers`, {
+        // 4. Listar clientes accesibles
+        const listResponse = await fetch(`https://googleads.googleapis.com/${GOOGLE_ADS_API_VERSION}/customers:listAccessibleCustomers`, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${accessToken}`,
@@ -170,12 +171,11 @@ Deno.serve(async (req) => {
         const customers = listData.resourceNames || []
         const customerIds = customers.map((r: string) => r.replace('customers/', ''))
 
-        // 6. Obtener nombre descriptivo de cada cuenta (Search en v22)
-        const API_VERSION = 'v22'
+        // 6. Obtener nombre descriptivo de cada cuenta
         type CustomerSearchResult = { descriptiveName: string | null; currencyCode: string | null };
 
         const runSearch = async (customerId: string, loginCustomerId: string): Promise<CustomerSearchResult> => {
-            const searchUrl = `https://googleads.googleapis.com/${API_VERSION}/customers/${customerId}/googleAds:search`
+            const searchUrl = `https://googleads.googleapis.com/${GOOGLE_ADS_API_VERSION}/customers/${customerId}/googleAds:search`
             const searchRes = await fetch(searchUrl, {
                 method: 'POST',
                 headers: {

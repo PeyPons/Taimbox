@@ -17,6 +17,44 @@ function getHttpStatus(error: unknown): number | undefined {
     return undefined;
 }
 
+/**
+ * El cliente de Supabase solo dice "non-2xx". El mensaje real va en el body
+ * (`error.context` como Response o como `{ body }`).
+ */
+export async function readFunctionsErrorMessage(error: unknown, fallback: string): Promise<string> {
+    if (error && typeof error === 'object') {
+        const ctx = (error as {
+            context?: { body?: unknown; json?: () => Promise<unknown> };
+        }).context;
+        const fromPayload = (payload: unknown): string | null => {
+            if (!payload || typeof payload !== 'object') return null;
+            const message = (payload as { error?: unknown }).error;
+            return typeof message === 'string' && message.trim() ? message : null;
+        };
+        if (ctx?.body != null) {
+            try {
+                const body = typeof ctx.body === 'string' ? JSON.parse(ctx.body) : ctx.body;
+                const message = fromPayload(body);
+                if (message) return message;
+            } catch {
+                /* body no JSON */
+            }
+        }
+        if (ctx && typeof ctx.json === 'function') {
+            try {
+                const message = fromPayload(await ctx.json());
+                if (message) return message;
+            } catch {
+                /* body ya consumido */
+            }
+        }
+    }
+    if (error instanceof Error && error.message && !/non-2xx/i.test(error.message)) {
+        return error.message;
+    }
+    return fallback;
+}
+
 function isLikelyTransient(error: unknown): boolean {
     const status = getHttpStatus(error);
     if (status != null && RETRYABLE_STATUS.has(status)) return true;
