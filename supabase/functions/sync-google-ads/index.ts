@@ -8,6 +8,27 @@ import {
 import { completeAdsSyncLog } from '../_shared/complete-ads-sync-log.ts'
 import { assertPlanIncludesAds } from '../_shared/plan-entitlements.ts'
 import { repairUtf8Mojibake } from '../_shared/repair-utf8-mojibake.ts'
+import { GOOGLE_ADS_API_VERSION } from '../_shared/google-ads.ts'
+import {
+    collectMccClients,
+    mergeGoogleSyncAccounts,
+    normalizeGoogleCustomerId,
+    type CustomerClientNode,
+} from '../_shared/google-ads-accounts.ts'
+
+/** La API respondió con error. No hay que interpretar el resultado como «0 campañas». */
+class GoogleAdsRequestError extends Error {
+    constructor(status: number, body: string) {
+        const detail = body.replace(/\s+/g, ' ').trim().slice(0, 280);
+        super(`Google Ads API ${status}${detail ? `: ${detail}` : ''}`);
+        this.name = 'GoogleAdsRequestError';
+    }
+}
+
+async function assertGoogleAdsOk(response: Response): Promise<void> {
+    if (response.ok) return;
+    throw new GoogleAdsRequestError(response.status, await response.text());
+}
 
 // Configuración de CORS
 const corsHeaders = {
@@ -97,7 +118,7 @@ Deno.serve(async (req) => {
         // 4. Lógica de Negocio (Ported from ads-worker.js)
 
         // --- HELPERS ---
-        const API_VERSION = 'v22'; // Google Ads API Version
+        const API_VERSION = GOOGLE_ADS_API_VERSION;
 
         function getDateRange() {
             const now = new Date();
@@ -114,16 +135,14 @@ Deno.serve(async (req) => {
             return { firstDay, today };
         }
 
-        // --- Obtener todas las cuentas (MCC + sub-MCCs + subcuentas) recursivamente ---
-        type CustomerClientRow = { id: string; descriptive_name: string; level: number; manager: boolean };
         async function runCustomerClientQuery(
             accessToken: string,
             loginMccId: string,
             customerId: string,
             developerToken: string
-        ): Promise<CustomerClientRow[]> {
+        ): Promise<CustomerClientNode[]> {
             const query = `
-                SELECT customer_client.id, customer_client.descriptive_name, customer_client.level, customer_client.manager
+                SELECT customer_client.id, customer_client.descriptive_name, customer_client.level, customer_client.manager, customer_client.status
                 FROM customer_client
                 WHERE customer_client.level <= 1`;
             const url = `https://googleads.googleapis.com/${API_VERSION}/customers/${customerId}/googleAds:searchStream`;
@@ -137,8 +156,8 @@ Deno.serve(async (req) => {
                 },
                 body: JSON.stringify({ query }),
             });
-            const rows: CustomerClientRow[] = [];
-            if (!response.ok) return rows;
+            await assertGoogleAdsOk(response);
+            const rows: CustomerClientNode[] = [];
             const data = await response.json();
             const processBatch = (batch: any) => {
                 if (!batch?.results) return;
@@ -152,29 +171,13 @@ Deno.serve(async (req) => {
                         descriptive_name: cc.descriptiveName || cc.descriptive_name || `Cuenta ${id}`,
                         level: Number(cc.level ?? 0),
                         manager: !!(cc.manager ?? false),
+                        status: String(cc.status ?? 'ENABLED'),
                     });
                 });
             };
             if (Array.isArray(data)) data.forEach(processBatch);
             else if (data && typeof data === 'object') processBatch(data);
             return rows;
-        }
-
-        async function fetchChildAccounts(accessToken: string, mccId: string, developerToken: string): Promise<{ account_id: string; account_name: string }[]> {
-            const clientsMap = new Map<string, { account_id: string; account_name: string }>();
-            const seenIds = new Set<string>();
-            const queue: string[] = [mccId];
-            while (queue.length > 0) {
-                const customerId = queue.shift()!;
-                if (seenIds.has(customerId)) continue;
-                seenIds.add(customerId);
-                const rows = await runCustomerClientQuery(accessToken, mccId, customerId, developerToken);
-                for (const row of rows) {
-                    clientsMap.set(row.id, { account_id: row.id, account_name: row.descriptive_name });
-                    if (row.manager && row.level === 1) queue.push(row.id);
-                }
-            }
-            return Array.from(clientsMap.values());
         }
 
         function parseBudgetId(raw: unknown): string {
@@ -263,9 +266,9 @@ Deno.serve(async (req) => {
                 body: JSON.stringify({ query }),
             });
 
-            const results: any[] = [];
-            if (!response.ok) return results;
+            await assertGoogleAdsOk(response);
 
+            const results: any[] = [];
             const data = await response.json();
             const processBatch = (batch: any) => {
                 if (!batch?.results) return;
@@ -556,26 +559,79 @@ Deno.serve(async (req) => {
                     return;
                 }
 
-                let clients = accountsRaw || [];
-                await log(`    🔍 Encontradas ${clients.length} cuentas ACTIVAS en configuración.`);
+                const configured = accountsRaw || [];
+                await log(`    🔍 Encontradas ${configured.length} cuentas ACTIVAS en configuración.`);
 
-                if (clients.length === 0 && loginCustomerId) {
-                    await log(`    ℹ️ Sin filas en ad_accounts_config; obteniendo MCC y subcuentas (${loginCustomerId})...`);
-                    const childAccounts = await fetchChildAccounts(accessToken, loginCustomerId, developerToken);
-                    if (childAccounts.length > 0) {
-                        clients = childAccounts;
-                        await log(`    ✅ Encontradas ${clients.length} cuentas (MCC + sub-MCCs + subcuentas).`);
-                    } else {
-                        await log(`    ℹ️ No se obtuvieron subcuentas; usando solo cuenta MCC (${loginCustomerId}).`);
-                        clients = [{ account_id: loginCustomerId, account_name: `Cuenta ${loginCustomerId}` }];
+                const { data: inactiveRows } = await supabase
+                    .from('ad_accounts_config')
+                    .select('account_id')
+                    .eq('agency_id', agency.id)
+                    .eq('platform', 'google')
+                    .eq('is_active', false);
+
+                let hierarchyLeaves: { account_id: string; account_name: string }[] = [];
+                let managerIds: string[] = [];
+                let skippedIds: string[] = [];
+
+                if (loginCustomerId) {
+                    await log(`    ℹ️ Releyendo clientes del MCC ${loginCustomerId} (incluye cuentas vinculadas después de la última sync)...`);
+                    try {
+                        const hierarchy = await collectMccClients(loginCustomerId, async (customerId) => {
+                            try {
+                                return await runCustomerClientQuery(accessToken, loginCustomerId, customerId, developerToken);
+                            } catch (err: unknown) {
+                                const root = normalizeGoogleCustomerId(loginCustomerId);
+                                if (normalizeGoogleCustomerId(customerId) === root) throw err;
+                                const message = err instanceof Error ? err.message : String(err);
+                                await log(`    ⚠️ No se pudo leer el sub-MCC ${customerId}: ${message}`);
+                                return [];
+                            }
+                        });
+                        hierarchyLeaves = hierarchy.leaves;
+                        managerIds = hierarchy.managerIds;
+                        skippedIds = hierarchy.skipped.map((row) => row.account_id);
+                        if (hierarchy.skipped.length > 0) {
+                            await log(`    ℹ️ Omitidas ${hierarchy.skipped.length} cuentas canceladas o cerradas. No se consultan métricas.`);
+                        }
+                        if (hierarchy.managerIds.length > 0) {
+                            await log(`    ℹ️ Omitidas ${hierarchy.managerIds.length} cuentas gestor (MCC). No tienen campañas propias.`);
+                        }
+                    } catch (err: unknown) {
+                        const message = err instanceof Error ? err.message : String(err);
+                        await log(`    ⚠️ No se pudo leer la jerarquía del MCC (${message}). Se sincronizan las cuentas ya guardadas.`);
                     }
                 }
+
+                const merged = mergeGoogleSyncAccounts({
+                    configured,
+                    hierarchyLeaves,
+                    inactiveIds: (inactiveRows || []).map((row: { account_id: string }) => row.account_id),
+                    managerIds,
+                    skippedIds,
+                });
+                const clients = merged.clients;
+                if (merged.addedIds.length > 0) {
+                    const names = merged.addedIds.map((id) => {
+                        const found = hierarchyLeaves.find((row) => row.account_id === id);
+                        return found ? `${found.account_name} (${id})` : id;
+                    });
+                    await log(`    ✅ ${merged.addedIds.length} cuentas nuevas en el MCC: ${names.join(', ')}.`);
+                } else if (loginCustomerId) {
+                    await log(`    ℹ️ El MCC no tiene cuentas de cliente nuevas respecto a la configuración.`);
+                }
+
                 if (clients.length === 0) {
-                    await log(`    ℹ️ Sin cuentas en ad_accounts_config ni cuenta seleccionada en la agencia.`);
+                    await log(`    ℹ️ Sin cuentas de cliente que sincronizar.`);
                     return;
                 }
 
                 await log(`    ⏳ Consultando métricas para ${clients.length} cuentas...`);
+
+                const preserveIds = new Set<string>([
+                    ...clients.map((client) => client.account_id),
+                    ...skippedIds.map(normalizeGoogleCustomerId),
+                    ...managerIds.map(normalizeGoogleCustomerId),
+                ]);
 
                 for (const client of clients) {
                     const customerDetails = await fetchCustomerDetails(accessToken, developerToken, client.account_id, loginCustomerId);
@@ -587,7 +643,16 @@ Deno.serve(async (req) => {
                         accountCurrency ? String(accountCurrency) : null,
                     );
 
-                    const campaigns = await fetchCampaigns(accessToken, client.account_id, clientSecret, clientId, developerToken, refreshToken, loginCustomerId);
+                    let campaigns: GoogleCampaignRow[];
+                    try {
+                        campaigns = await fetchCampaigns(accessToken, client.account_id, clientSecret, clientId, developerToken, refreshToken, loginCustomerId);
+                    } catch (campaignErr: unknown) {
+                        if (campaignErr instanceof GoogleAdsRequestError) {
+                            await log(`    ❌ ${client.account_name}: ${campaignErr.message}. Se conservan los datos ya guardados de este mes.`);
+                            continue;
+                        }
+                        throw campaignErr;
+                    }
 
                     const dateRange = getDateRange();
                     if (campaigns.length > 0) {
@@ -646,13 +711,13 @@ Deno.serve(async (req) => {
                     }
                 }
 
-                const syncedClientIds = clients.map((c: { account_id: string }) => c.account_id);
-                if (syncedClientIds.length > 0) {
+                const preservedClientIds = Array.from(preserveIds).filter(Boolean);
+                if (preservedClientIds.length > 0) {
                     const { error: delErr } = await supabase
                         .from('google_ads_campaigns')
                         .delete()
                         .eq('agency_id', agency.id)
-                        .not('client_id', 'in', syncedClientIds);
+                        .not('client_id', 'in', `(${preservedClientIds.join(',')})`);
                     if (delErr) await log(`    ⚠️ Aviso limpieza cuentas antiguas: ${delErr.message}`);
                 }
 
