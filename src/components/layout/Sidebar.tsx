@@ -4,6 +4,7 @@ import { NavLink } from '@/components/NavLink';
 import { useApp } from '@/contexts/AppContext';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
+import { effectivePlanId, visibleAgencyModules } from '@/utils/effectivePlanModules';
 import { useAgency } from '@/contexts/AgencyContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePlatformAdmin } from '@/hooks/usePlatformAdmin';
@@ -157,13 +158,14 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     }
   };
 
-  const modules = currentAgency?.settings?.modules || {
-    ppc: true,
-    weeklyFeedback: true,
-    professionalGoals: true,
-    deadlines: true,
-    timeTracker: false,
-  };
+  const modules = visibleAgencyModules(
+    currentAgency?.settings,
+    effectivePlanId({
+      planId: currentAgency?.planId,
+      subscriptionStatus: currentAgency?.subscriptionStatus,
+      trialEndsAt: currentAgency?.trialEndsAt,
+    }),
+  );
 
   const isTimeTrackerEnabled = modules.timeTracker === true;
   const activeTimer = useActiveTimerForSidebar(isTimeTrackerEnabled ? currentUser?.id : undefined);

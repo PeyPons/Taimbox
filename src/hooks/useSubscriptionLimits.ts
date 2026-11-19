@@ -18,6 +18,7 @@ import {
   type PlanId,
 } from '@/config/plans';
 import { countManagedUsers } from '@/utils/managedUsers';
+import { effectivePlanId as resolveEffectivePlanId, trialHasLapsed } from '@/utils/effectivePlanModules';
 
 function daysUntil(isoDate: string | null | undefined): number | null {
   if (!isoDate) return null;
@@ -33,11 +34,12 @@ export function useSubscriptionLimits() {
 
   const rawPlanId: PlanId = currentAgency?.planId ?? 'starter';
   const rawStatus = currentAgency?.subscriptionStatus;
-  const isTrialExpired =
-    rawStatus === 'trialing' &&
-    currentAgency?.trialEndsAt &&
-    new Date(currentAgency.trialEndsAt).getTime() <= Date.now();
-  const planId: PlanId = isTrialExpired ? 'starter' : rawPlanId;
+  const isTrialExpired = trialHasLapsed(rawStatus, currentAgency?.trialEndsAt);
+  const planId: PlanId = resolveEffectivePlanId({
+    planId: rawPlanId,
+    subscriptionStatus: rawStatus,
+    trialEndsAt: currentAgency?.trialEndsAt,
+  });
   const limits = getPlanLimit(planId);
   const managedCount = useMemo(() => countManagedUsers(employees), [employees]);
   const maxManaged = limits.maxManagedUsers;

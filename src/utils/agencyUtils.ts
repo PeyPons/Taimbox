@@ -22,6 +22,7 @@ interface SupabaseAgency {
   stripe_customer_id?: string | null;
   stripe_subscription_id?: string | null;
   trial_ends_at?: string | null;
+  trial_expired_at?: string | null;
   subscription_period_ends_at?: string | null;
   subscription_cancel_at_period_end?: boolean | null;
   trial_used_at?: string | null;
@@ -204,6 +205,7 @@ export async function mapSupabaseAgency(data: SupabaseAgency): Promise<Agency> {
     stripeCustomerId: data.stripe_customer_id ?? undefined,
     stripeSubscriptionId: data.stripe_subscription_id ?? undefined,
     trialEndsAt: data.trial_ends_at ?? undefined,
+    trialExpiredAt: data.trial_expired_at ?? undefined,
     subscriptionPeriodEndsAt: data.subscription_period_ends_at ?? undefined,
     subscriptionCancelAtPeriodEnd: data.subscription_cancel_at_period_end ?? false,
     trialUsedAt: data.trial_used_at ?? undefined,

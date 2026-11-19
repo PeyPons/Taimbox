@@ -73,6 +73,8 @@ Checkout Stripe puede añadir línea `extra_managed_users` (`create-checkout-ses
 
 Tras cambio de plan, `stripe-webhook` y `expire-trials` llaman `syncAgencyModulesForPlan` (fusiona flags en `agencies.settings.modules`).
 
+Al vencer la prueba, `expire_agency_trials()` (migración `supabase/migrations/20261119140000_trial_expired_at.sql`) pasa a Free, guarda `trial_expired_at` y vacía `trial_ends_at`. El navegador no espera a ese cron: si el estado sigue en `trialing` y la fecha ya pasó, trata el plan como Free y oculta weekly, OKR y PPC. El aviso «La prueba de Agency ha terminado» se cierra en el navegador (`localStorage`) y no vuelve en el resto de pantallas. Free no tiene tope de proyectos.
+
 | Módulo | Free | Team | Agency+ |
 |--------|------|------|---------|
 | `deadlines` | Sí | Sí | Sí |
