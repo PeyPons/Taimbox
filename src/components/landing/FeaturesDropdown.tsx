@@ -163,7 +163,7 @@ export function FeaturesDropdown({ variant = "dark" }: FeaturesDropdownProps) {
             <p
               className={cn(
                 "font-mono text-[10px] font-semibold uppercase tracking-[0.22em]",
-                light ? "text-[#9a3412]" : "text-xs tracking-wider text-indigo-300/90",
+                light ? "text-[#7C3AED]" : "text-xs tracking-wider text-indigo-300/90",
               )}
             >
               {t("features.exploreByRole")}
@@ -204,7 +204,7 @@ export function FeaturesDropdown({ variant = "dark" }: FeaturesDropdownProps) {
                         className={cn(
                           "text-[13.5px] font-semibold truncate transition-colors",
                           light
-                            ? "text-slate-900 group-hover:text-[#9a3412]"
+                            ? "text-slate-900 group-hover:text-[#7C3AED]"
                             : "text-sm text-white group-hover:text-indigo-200",
                         )}
                       >
@@ -244,7 +244,7 @@ export function FeaturesDropdown({ variant = "dark" }: FeaturesDropdownProps) {
               onClick={() => setIsOpen(false)}
               className={cn(
                 "text-[12px] font-medium flex items-center gap-1 transition-colors",
-                light ? "text-[#9a3412] hover:text-[#1c1915]" : "text-xs text-indigo-300 hover:text-white",
+                light ? "text-[#7C3AED] hover:text-[#14123B]" : "text-xs text-indigo-300 hover:text-white",
               )}
             >
               {t("features.guideFull")}

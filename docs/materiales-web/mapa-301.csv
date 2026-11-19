@@ -1,0 +1,79 @@
+url_actual,idioma,tipo,url_nueva,accion,notas
+https://taimbox.com/,es,home,https://taimbox.com/,mantener,Recomendado mantener. Canónica sin variante con barra distinta: hoy / y (para otras rutas) la barra final también devuelven 200.
+https://taimbox.com/en,en,home,https://taimbox.com/en,mantener,Recomendado mantener. En el HTML inicial lang=es (index.html); el hreflang se inyecta en cliente.
+https://taimbox.com/por-que-timeboxing,es,articulo,https://taimbox.com/por-que-timeboxing,mantener,Recomendado mantener. Par EN: /en/why-taimbox.
+https://taimbox.com/en/why-taimbox,en,articulo,https://taimbox.com/en/why-taimbox,mantener,Recomendado mantener.
+https://taimbox.com/que-es-timeboxing,es,redireccion,https://taimbox.com/blog/que-es-timeboxing,301,"En App.tsx es Navigate de React Router (comentario «301»), pero en vivo HTTP 200 sin Location (curl --max-redirs 0). Conviene 301 de servidor, un solo salto. No está en el sitemap."
+https://taimbox.com/blog,es,blog-indice,https://taimbox.com/blog,mantener,Recomendado mantener. Posts del sitemap regenerables con npm run sitemap:blog.
+https://taimbox.com/en/blog,en,blog-indice,https://taimbox.com/en/blog,mantener,Recomendado mantener.
+https://taimbox.com/blog/estimacion-proyectos-agencia-como-acertar,es,blog-articulo,https://taimbox.com/blog/estimacion-proyectos-agencia-como-acertar,mantener,Recomendado mantener. JSON-LD Article previsto en cliente (BlogArticleSeo / BlogArticleDynamicPage).
+https://taimbox.com/en/blog/agency-project-estimation-how-to-get-it-right,en,blog-articulo,https://taimbox.com/en/blog/agency-project-estimation-how-to-get-it-right,mantener,Recomendado mantener.
+https://taimbox.com/blog/capacidad-calendario-vs-capacidad-productiva-equipo,es,blog-articulo,https://taimbox.com/blog/capacidad-calendario-vs-capacidad-productiva-equipo,mantener,Recomendado mantener. JSON-LD Article previsto en cliente (BlogArticleSeo / BlogArticleDynamicPage).
+https://taimbox.com/en/blog/calendar-capacity-vs-shippable-team-capacity,en,blog-articulo,https://taimbox.com/en/blog/calendar-capacity-vs-shippable-team-capacity,mantener,Recomendado mantener.
+https://taimbox.com/blog/por-que-tu-agencia-pierde-rentabilidad-equipo-ocupado,es,blog-articulo,https://taimbox.com/blog/por-que-tu-agencia-pierde-rentabilidad-equipo-ocupado,mantener,Recomendado mantener. JSON-LD Article previsto en cliente (BlogArticleSeo / BlogArticleDynamicPage).
+https://taimbox.com/en/blog/why-agency-loses-profitability-busy-team,en,blog-articulo,https://taimbox.com/en/blog/why-agency-loses-profitability-busy-team,mantener,Recomendado mantener.
+https://taimbox.com/blog/como-medir-rentabilidad-proyecto-agencia-dejar-vender-horas,es,blog-articulo,https://taimbox.com/blog/como-medir-rentabilidad-proyecto-agencia-dejar-vender-horas,mantener,Recomendado mantener. JSON-LD Article previsto en cliente (BlogArticleSeo / BlogArticleDynamicPage).
+https://taimbox.com/en/blog/measure-project-profitability-stop-selling-hours,en,blog-articulo,https://taimbox.com/en/blog/measure-project-profitability-stop-selling-hours,mantener,Recomendado mantener.
+https://taimbox.com/blog/gestion-carga-trabajo-equipo-sin-burnout,es,blog-articulo,https://taimbox.com/blog/gestion-carga-trabajo-equipo-sin-burnout,mantener,Recomendado mantener. JSON-LD Article previsto en cliente (BlogArticleSeo / BlogArticleDynamicPage).
+https://taimbox.com/en/blog/workload-management-without-burnout,en,blog-articulo,https://taimbox.com/en/blog/workload-management-without-burnout,mantener,Recomendado mantener.
+https://taimbox.com/blog/plantilla-planificacion-recursos-agencia,es,blog-articulo,https://taimbox.com/blog/plantilla-planificacion-recursos-agencia,mantener,Recomendado mantener. JSON-LD Article previsto en cliente (BlogArticleSeo / BlogArticleDynamicPage).
+https://taimbox.com/en/blog/agency-resource-planning-template,en,blog-articulo,https://taimbox.com/en/blog/agency-resource-planning-template,mantener,Recomendado mantener.
+https://taimbox.com/blog/kpis-agencias-marketing-2026,es,blog-articulo,https://taimbox.com/blog/kpis-agencias-marketing-2026,mantener,Recomendado mantener. JSON-LD Article previsto en cliente (BlogArticleSeo / BlogArticleDynamicPage).
+https://taimbox.com/en/blog/marketing-agency-kpis-2026,en,blog-articulo,https://taimbox.com/en/blog/marketing-agency-kpis-2026,mantener,Recomendado mantener.
+https://taimbox.com/blog/planificacion-proyectos-cronograma-recursos,es,blog-articulo,https://taimbox.com/blog/planificacion-proyectos-cronograma-recursos,mantener,Recomendado mantener. JSON-LD Article previsto en cliente (BlogArticleSeo / BlogArticleDynamicPage).
+https://taimbox.com/en/blog/project-planning-schedule-resources,en,blog-articulo,https://taimbox.com/en/blog/project-planning-schedule-resources,mantener,Recomendado mantener.
+https://taimbox.com/blog/ley-parkinson,es,blog-articulo,https://taimbox.com/blog/ley-parkinson,mantener,Recomendado mantener. JSON-LD Article previsto en cliente (BlogArticleSeo / BlogArticleDynamicPage).
+https://taimbox.com/en/blog/parkinsons-law,en,blog-articulo,https://taimbox.com/en/blog/parkinsons-law,mantener,Recomendado mantener.
+https://taimbox.com/blog/que-es-timeboxing,es,blog-articulo,https://taimbox.com/blog/que-es-timeboxing,mantener,Recomendado mantener. JSON-LD Article previsto en cliente (BlogArticleSeo / BlogArticleDynamicPage).
+https://taimbox.com/en/blog/what-is-timeboxing,en,blog-articulo,https://taimbox.com/en/blog/what-is-timeboxing,mantener,Recomendado mantener.
+https://taimbox.com/dashboard-empleado,es,landing,https://taimbox.com/dashboard-empleado,mantener,Landing pública de producto (no es el Dashboard autenticado). Recomendado mantener.
+https://taimbox.com/en/employee-dashboard,en,landing,https://taimbox.com/en/employee-dashboard,mantener,Recomendado mantener.
+https://taimbox.com/planificador-recursos,es,landing,https://taimbox.com/planificador-recursos,mantener,Recomendado mantener.
+https://taimbox.com/en/resource-planner,en,landing,https://taimbox.com/en/resource-planner,mantener,Recomendado mantener.
+https://taimbox.com/gestion-equipos,es,landing,https://taimbox.com/gestion-equipos,mantener,Recomendado mantener.
+https://taimbox.com/en/team-management,en,landing,https://taimbox.com/en/team-management,mantener,Recomendado mantener.
+https://taimbox.com/reportes-rentabilidad,es,landing,https://taimbox.com/reportes-rentabilidad,mantener,Recomendado mantener.
+https://taimbox.com/en/reports-profitability,en,landing,https://taimbox.com/en/reports-profitability,mantener,Recomendado mantener.
+https://taimbox.com/control-proyectos,es,landing,https://taimbox.com/control-proyectos,mantener,Recomendado mantener.
+https://taimbox.com/en/project-control,en,landing,https://taimbox.com/en/project-control,mantener,Recomendado mantener.
+https://taimbox.com/integraciones,es,landing,https://taimbox.com/integraciones,mantener,Recomendado mantener.
+https://taimbox.com/en/integrations,en,landing,https://taimbox.com/en/integrations,mantener,Recomendado mantener.
+https://taimbox.com/monitor-ppc,es,landing,https://taimbox.com/monitor-ppc,mantener,Recomendado mantener.
+https://taimbox.com/en/ppc-monitor,en,landing,https://taimbox.com/en/ppc-monitor,mantener,Recomendado mantener.
+https://taimbox.com/seguridad,es,landing,https://taimbox.com/seguridad,mantener,Recomendado mantener.
+https://taimbox.com/en/security,en,landing,https://taimbox.com/en/security,mantener,Recomendado mantener.
+https://taimbox.com/privacidad,es,legal,https://taimbox.com/privacidad,mantener,Recomendado mantener.
+https://taimbox.com/en/privacy,en,legal,https://taimbox.com/en/privacy,mantener,Recomendado mantener.
+https://taimbox.com/condiciones,es,legal,https://taimbox.com/condiciones,mantener,Recomendado mantener.
+https://taimbox.com/en/terms,en,legal,https://taimbox.com/en/terms,mantener,Recomendado mantener.
+https://taimbox.com/precios,es,precios,https://taimbox.com/precios,mantener,Recomendado mantener. /precios/ también responde 200; conviene 301 a la canónica sin barra final.
+https://taimbox.com/en/pricing,en,precios,https://taimbox.com/en/pricing,mantener,Recomendado mantener.
+https://taimbox.com/contacto,es,contacto,https://taimbox.com/contacto,mantener,Recomendado mantener.
+https://taimbox.com/en/contact,en,contacto,https://taimbox.com/en/contact,mantener,Recomendado mantener.
+https://taimbox.com/guia,es,guia,https://taimbox.com/guia,mantener,Recomendado mantener.
+https://taimbox.com/en/guide,en,guia,https://taimbox.com/en/guide,mantener,Recomendado mantener.
+https://taimbox.com/guia/planificador,es,guia-seccion,https://taimbox.com/guia/planificador,mantener,Recomendado mantener. Slugs en src/pages/GuiaPage.tsx (SECTION_META).
+https://taimbox.com/en/guide/planificador,en,guia-seccion,https://taimbox.com/en/guide/planificador,mantener,Recomendado mantener los slugs actuales (hoy coinciden con el ES) para no romper enlaces.
+https://taimbox.com/guia/mi-espacio,es,guia-seccion,https://taimbox.com/guia/mi-espacio,mantener,Recomendado mantener. Slugs en src/pages/GuiaPage.tsx (SECTION_META).
+https://taimbox.com/en/guide/mi-espacio,en,guia-seccion,https://taimbox.com/en/guide/mi-espacio,mantener,Recomendado mantener los slugs actuales (hoy coinciden con el ES) para no romper enlaces.
+https://taimbox.com/guia/deadlines,es,guia-seccion,https://taimbox.com/guia/deadlines,mantener,Recomendado mantener. Slugs en src/pages/GuiaPage.tsx (SECTION_META).
+https://taimbox.com/en/guide/deadlines,en,guia-seccion,https://taimbox.com/en/guide/deadlines,mantener,Recomendado mantener los slugs actuales (hoy coinciden con el ES) para no romper enlaces.
+https://taimbox.com/guia/informes,es,guia-seccion,https://taimbox.com/guia/informes,mantener,Recomendado mantener. Slugs en src/pages/GuiaPage.tsx (SECTION_META).
+https://taimbox.com/en/guide/informes,en,guia-seccion,https://taimbox.com/en/guide/informes,mantener,Recomendado mantener los slugs actuales (hoy coinciden con el ES) para no romper enlaces.
+https://taimbox.com/guia/weekly-forecast,es,guia-seccion,https://taimbox.com/guia/weekly-forecast,mantener,Recomendado mantener. Slugs en src/pages/GuiaPage.tsx (SECTION_META).
+https://taimbox.com/en/guide/weekly-forecast,en,guia-seccion,https://taimbox.com/en/guide/weekly-forecast,mantener,Recomendado mantener los slugs actuales (hoy coinciden con el ES) para no romper enlaces.
+https://taimbox.com/guia/equipo,es,guia-seccion,https://taimbox.com/guia/equipo,mantener,Recomendado mantener. Slugs en src/pages/GuiaPage.tsx (SECTION_META).
+https://taimbox.com/en/guide/equipo,en,guia-seccion,https://taimbox.com/en/guide/equipo,mantener,Recomendado mantener los slugs actuales (hoy coinciden con el ES) para no romper enlaces.
+https://taimbox.com/guia/tiempos,es,guia-seccion,https://taimbox.com/guia/tiempos,mantener,Recomendado mantener. Slugs en src/pages/GuiaPage.tsx (SECTION_META).
+https://taimbox.com/en/guide/tiempos,en,guia-seccion,https://taimbox.com/en/guide/tiempos,mantener,Recomendado mantener los slugs actuales (hoy coinciden con el ES) para no romper enlaces.
+https://taimbox.com/guia/clientes-proyectos,es,guia-seccion,https://taimbox.com/guia/clientes-proyectos,mantener,Recomendado mantener. Slugs en src/pages/GuiaPage.tsx (SECTION_META).
+https://taimbox.com/en/guide/clientes-proyectos,en,guia-seccion,https://taimbox.com/en/guide/clientes-proyectos,mantener,Recomendado mantener los slugs actuales (hoy coinciden con el ES) para no romper enlaces.
+https://taimbox.com/guia/configuracion,es,guia-seccion,https://taimbox.com/guia/configuracion,mantener,Recomendado mantener. Slugs en src/pages/GuiaPage.tsx (SECTION_META).
+https://taimbox.com/en/guide/configuracion,en,guia-seccion,https://taimbox.com/en/guide/configuracion,mantener,Recomendado mantener los slugs actuales (hoy coinciden con el ES) para no romper enlaces.
+https://taimbox.com/api-docs,es,api-docs,https://taimbox.com/api-docs,mantener,Recomendado mantener.
+https://taimbox.com/en/api-docs,en,api-docs,https://taimbox.com/en/api-docs,mantener,Recomendado mantener.
+https://taimbox.com/api-docs/openapi,es,api-docs,https://taimbox.com/api-docs/openapi,mantener,"Ruta pública en App.tsx y publicPaths.ts, con SeoTags. No está en el sitemap; conviene añadirla si se indexa."
+https://taimbox.com/en/api-docs/openapi,en,api-docs,https://taimbox.com/en/api-docs/openapi,mantener,Igual que la versión ES: mantener URL y añadir al sitemap si se indexa.
+https://taimbox.com/pitch,es,pitch,https://taimbox.com/pitch,mantener,"Entra como página pública en el alcance, pero robots.txt la Disallow y PresentationPage.tsx pone noindex,nofollow en cliente. Sacar del sitemap; la URL puede permanecer fuera del índice."
+https://taimbox.com/en/pitch,en,pitch,https://taimbox.com/en/pitch,mantener,Igual que /pitch: sacar del sitemap y conservar noindex si la página se mantiene.
+https://taimbox.com/login,es,acceso,https://taimbox.com/login,retirar,"Aparece en el sitemap y a la vez en Disallow de robots.txt. Fuera de alcance de indexación (pantalla de acceso, pendiente de confirmar en el alcance). Sacar del sitemap; noindex si la URL se conserva."

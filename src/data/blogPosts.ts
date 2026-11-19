@@ -3,6 +3,9 @@ export interface BlogPost {
   slugEn: string;
   title: string;
   titleEn: string;
+  /** Title de resultados, ya con la marca. Si falta, el SEO añade «| Taimbox» al H1. */
+  seoTitle?: string;
+  seoTitleEn?: string;
   description: string;
   descriptionEn: string;
   date: string;
@@ -16,14 +19,14 @@ export const blogPosts: BlogPost[] = [
   {
     slug: "capacidad-calendario-vs-capacidad-productiva-equipo",
     slugEn: "calendar-capacity-vs-shippable-team-capacity",
-    title:
-      "Capacidad calendario vs capacidad productiva: por qué un equipo ocupado no siempre entrega",
-    titleEn:
-      "Calendar capacity vs productive capacity: why a busy team still misses deliverables",
+    title: "Capacidad calendario frente a capacidad productiva",
+    titleEn: "Calendar capacity versus productive capacity",
+    seoTitle: "Capacidad calendario y capacidad útil | Taimbox",
+    seoTitleEn: "Calendar capacity versus useful capacity | Taimbox",
     description:
-      "Cómo distinguir horas visibles de capacidad útil en agencias: señales observables, checklist semanal, anti-patrones y reglas para evitar prometer fechas con un calendario engañoso.",
+      "Cómo distinguir horas visibles de capacidad útil: señales, una lista semanal y reglas para no prometer fechas con un calendario engañoso.",
     descriptionEn:
-      "How to separate visible hours from productive capacity in agency teams: observable signals, a weekly checklist, anti-patterns, and planning rules that avoid false delivery promises.",
+      "How to separate visible hours from useful capacity: signals, a weekly checklist and rules that avoid promising dates from a misleading calendar.",
     date: "2026-05-06",
     href: "/blog/capacidad-calendario-vs-capacidad-productiva-equipo",
     hrefEn: "/en/blog/calendar-capacity-vs-shippable-team-capacity",
@@ -33,12 +36,14 @@ export const blogPosts: BlogPost[] = [
   {
     slug: "por-que-tu-agencia-pierde-rentabilidad-equipo-ocupado",
     slugEn: "why-agency-loses-profitability-busy-team",
-    title: "Por qué tu agencia pierde rentabilidad aunque el equipo esté siempre ocupado",
-    titleEn: "Why your agency loses profitability even when the team is always busy",
+    title: "Por qué tu agencia pierde margen con el equipo ocupado",
+    titleEn: "Why your agency loses margin when the team is busy",
+    seoTitle: "Por qué un equipo ocupado no es rentable | Taimbox",
+    seoTitleEn: "A busy team can still miss the margin | Taimbox",
     description:
-      "Ocupación alta vs margen real: utilización, context switching, presencialismo digital, horas no facturables, scope creep y métricas que sí predicen rentabilidad. Sin venderte herramientas: datos, tablas y qué hacer esta semana.",
+      "Ocupación alta y margen no siempre van juntos. Utilización, cambios de contexto, horas no facturables y señales para mirar el margen de tu agencia.",
     descriptionEn:
-      "High utilization vs real margin: utilization, context switching, digital presenteeism, non-billable hours, scope creep, and metrics that actually predict profitability. Data, tables, and what to do this week.",
+      "High utilization and margin do not always move together. Utilization, context switching, non-billable hours and signals to review your agency margin.",
     date: "2026-03-26",
     href: "/blog/por-que-tu-agencia-pierde-rentabilidad-equipo-ocupado",
     hrefEn: "/en/blog/why-agency-loses-profitability-busy-team",
@@ -48,12 +53,14 @@ export const blogPosts: BlogPost[] = [
   {
     slug: "como-medir-rentabilidad-proyecto-agencia-dejar-vender-horas",
     slugEn: "measure-project-profitability-stop-selling-hours",
-    title: "Cómo medir la rentabilidad real por proyecto en tu agencia (y dejar de vender horas)",
-    titleEn: "How to measure real per-project profitability (and stop selling hours)",
+    title: "Cómo medir la rentabilidad por proyecto en tu agencia",
+    titleEn: "How to measure profitability per project in your agency",
+    seoTitle: "Rentabilidad real por proyecto en agencia | Taimbox",
+    seoTitleEn: "Per-project profitability in an agency | Taimbox",
     description:
-      "Modelos de pricing (horas, retainer, valor, híbrido), margen bruto por proyecto, protocolo de alcance en tres pasos y sprints para proteger márgenes. Enlace natural con planificación y timeboxing.",
+      "Modelos de precio, margen bruto por proyecto y un protocolo de alcance en tres pasos para ver el coste y el margen de cada trabajo.",
     descriptionEn:
-      "Pricing models (hourly, retainer, value, hybrid), gross margin per project, a three-step scope protocol, and sprints to protect margins. Ties naturally to planning and timeboxing.",
+      "Pricing models, gross margin per project and a three-step scope protocol to see the cost and margin of each piece of work.",
     date: "2026-03-26",
     href: "/blog/como-medir-rentabilidad-proyecto-agencia-dejar-vender-horas",
     hrefEn: "/en/blog/measure-project-profitability-stop-selling-hours",
@@ -63,12 +70,14 @@ export const blogPosts: BlogPost[] = [
   {
     slug: "gestion-carga-trabajo-equipo-sin-burnout",
     slugEn: "workload-management-without-burnout",
-    title: "Cómo gestionar la carga de trabajo de tu equipo sin burnout",
-    titleEn: "How to manage team workload without burnout",
+    title: "Cómo gestionar la carga de trabajo de tu equipo",
+    titleEn: "How to manage your team's workload",
+    seoTitle: "Carga de trabajo del equipo sin burnout | Taimbox",
+    seoTitleEn: "Team workload management without burnout | Taimbox",
     description:
-      "Guía 2026: workload management, señales de sobrecarga, framework en 6 pasos, métricas (utilización, plazos, criticidad) y herramientas por categorías. Cultura, límites y visibilidad para equipos y agencias.",
+      "Señales de sobrecarga, un marco en seis pasos y métricas de utilización, plazos y criticidad para repartir el trabajo del equipo con límites claros.",
     descriptionEn:
-      "2026 guide: workload management, overload signals, a 6-step framework, metrics (utilization, deadlines, criticality), and tools by category. Culture, boundaries, and visibility for teams and agencies.",
+      "Overload signals, a six-step framework and metrics for utilization, deadlines and criticality, so work is shared with clear limits.",
     date: "2026-03-26",
     href: "/blog/gestion-carga-trabajo-equipo-sin-burnout",
     hrefEn: "/en/blog/workload-management-without-burnout",
@@ -79,11 +88,13 @@ export const blogPosts: BlogPost[] = [
     slug: "plantilla-planificacion-recursos-agencia",
     slugEn: "agency-resource-planning-template",
     title: "Plantilla gratuita de planificación de recursos para agencias",
-    titleEn: "Free agency resource planning template",
+    titleEn: "Free resource planning template for agencies",
+    seoTitle: "Plantilla gratuita de recursos para agencias | Taimbox",
+    seoTitleEn: "Free resource planning template for agencies | Taimbox",
     description:
-      "Descarga gratis una plantilla de planificación de recursos para agencias en Excel o Google Sheets: 5 hojas con fórmulas, formato condicional, desplegables y protección de celdas. Calcula capacidad neta, utilización y margen.",
+      "Plantilla en Excel o Google Sheets, con cinco hojas (instrucciones, equipo, proyectos, asignación semanal e insights) para capacidad, utilización y margen.",
     descriptionEn:
-      "Download a free agency resource planning template for Excel or Google Sheets: 5 sheets with formulas, conditional formatting, dropdowns, and protected cells. Net capacity, utilization, and margin.",
+      "An Excel or Google Sheets template with five tabs (instructions, team, projects, weekly allocation and insights) for capacity, utilization and margin.",
     date: "2026-03-24",
     href: "/blog/plantilla-planificacion-recursos-agencia",
     hrefEn: "/en/blog/agency-resource-planning-template",
@@ -93,12 +104,14 @@ export const blogPosts: BlogPost[] = [
   {
     slug: "kpis-agencias-marketing-2026",
     slugEn: "marketing-agency-kpis-2026",
-    title: "KPIs para agencias de marketing: 5 métricas que sí importan en 2026",
-    titleEn: "Marketing agency KPIs: 5 metrics that matter in 2026",
+    title: "KPIs para agencias de marketing: 5 métricas para 2026",
+    titleEn: "Marketing agency KPIs: 5 metrics for 2026",
+    seoTitle: "5 KPIs para agencias de marketing en 2026 | Taimbox",
+    seoTitleEn: "5 marketing agency KPIs for 2026 | Taimbox",
     description:
-      "Utilización, rentabilidad y pacing, estimación vs real, capacidad por departamento y OKRs: métricas accionables, qué hacer si el número falla y por qué medir bien no debería ser arqueología en Excel.",
+      "Utilización, rentabilidad y ritmo, estimación frente a real, capacidad por departamento y OKR: qué mide cada cifra y qué decisión permite.",
     descriptionEn:
-      "Utilization, profitability and pacing, estimate vs actual, capacity by department, and OKRs: actionable metrics, what to do when a number fails, and why measuring well should not be Excel archaeology.",
+      "Utilization, profitability and pacing, estimate versus actual, capacity by department and OKRs: what each figure measures and which decision it supports.",
     date: "2026-03-23",
     href: "/blog/kpis-agencias-marketing-2026",
     hrefEn: "/en/blog/marketing-agency-kpis-2026",
@@ -109,11 +122,13 @@ export const blogPosts: BlogPost[] = [
     slug: "planificacion-proyectos-cronograma-recursos",
     slugEn: "project-planning-schedule-resources",
     title: "Planificación de proyectos: cronograma, presupuesto y recursos",
-    titleEn: "Project planning: schedule, budget, and resources",
+    titleEn: "Project planning: schedule, budget and resources",
+    seoTitle: "Planificar proyectos, plazos y recursos | Taimbox",
+    seoTitleEn: "Project planning, schedule and resources | Taimbox",
     description:
-      "Guía práctica para unir cronograma, presupuesto y capacidad del equipo. Incluye diagrama de Gantt, fases del proyecto, KPIs y herramientas.",
+      "Cómo alinear cronograma, presupuesto y capacidad del equipo: fases, un diagrama de Gantt y cifras para seguir el avance del proyecto.",
     descriptionEn:
-      "Practical guide to align schedule, budget, and team capacity. Gantt diagram, project phases, KPIs, and tools.",
+      "How to align schedule, budget and team capacity: phases, a Gantt view and figures to track project progress.",
     date: "2026-03-18",
     href: "/blog/planificacion-proyectos-cronograma-recursos",
     hrefEn: "/en/blog/project-planning-schedule-resources",
@@ -123,12 +138,14 @@ export const blogPosts: BlogPost[] = [
   {
     slug: "que-es-timeboxing",
     slugEn: "what-is-timeboxing",
-    title: "Qué es el timeboxing: guía definitiva de productividad",
-    titleEn: "What is timeboxing: the definitive productivity guide",
+    title: "Qué es el timeboxing y cómo llevarlo a tu equipo",
+    titleEn: "What timeboxing is and how to roll it out in your team",
+    seoTitle: "Timeboxing: qué es y cómo aplicarlo | Taimbox",
+    seoTitleEn: "What timeboxing is, with examples | Taimbox",
     description:
-      "Descubre la técnica de gestión del tiempo por cajas: qué es, cómo implementarla y cómo llevarla a todo el equipo para aumentar la rentabilidad.",
+      "El timeboxing fija un bloque de tiempo a una tarea. Diferencias con el time blocking, bloques rígidos o flexibles, y cómo llevarlo a tu equipo.",
     descriptionEn:
-      "Timeboxing explained: what it is, how to implement it, and how to roll it out across the team to improve profitability.",
+      "Timeboxing gives a task a fixed time box. See how it differs from time blocking, when to use a hard or soft box, and how to bring it to your team.",
     date: "2026-03-10",
     href: "/blog/que-es-timeboxing",
     hrefEn: "/en/blog/what-is-timeboxing",
@@ -138,12 +155,14 @@ export const blogPosts: BlogPost[] = [
   {
     slug: "ley-parkinson",
     slugEn: "parkinsons-law",
-    title: "Ley de Parkinson: qué es, ejemplos y cómo combatirla",
-    titleEn: "Parkinson's law: what it is, examples, and how to fight it",
+    title: "Ley de Parkinson: qué es, ejemplos y cómo acotarla",
+    titleEn: "Parkinson's law: what it is, examples and how to cap it",
+    seoTitle: "Ley de Parkinson en el trabajo de agencia | Taimbox",
+    seoTitleEn: "Parkinson's law in agency work | Taimbox",
     description:
-      "Ley del tiempo, origen burocrático (Marina británica), segunda ley de gastos e ingresos, ley de la trivialidad en reuniones, evidencia y antídotos (timeboxing, plazos).",
+      "El trabajo tiende a llenar el tiempo que le das. Origen, la trivialidad en las reuniones y antídotos con plazos y timeboxing.",
     descriptionEn:
-      "Work expands to fill the time available, bureaucratic origin, expenses vs revenue, triviality in meetings, evidence, and antidotes (timeboxing, deadlines).",
+      "Work tends to fill the time you give it. Origin, triviality in meetings, and antidotes with deadlines and timeboxing.",
     date: "2026-03-14",
     href: "/blog/ley-parkinson",
     hrefEn: "/en/blog/parkinsons-law",

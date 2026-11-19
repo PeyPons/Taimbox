@@ -17,11 +17,12 @@ export function BlogArticleSeo(props: BlogArticleSeoProps) {
   if (!post) return null;
   const loc = getBlogPostLocaleFields(post, i18n.language);
   const lang = i18n.language.startsWith("en") ? "en" : "es";
+  const seoTitle = lang === "en" ? post.seoTitleEn : post.seoTitle;
   return (
     <SeoTags
       pathEs={post.href}
       pathEn={post.hrefEn}
-      title={`${loc.title} | Taimbox`}
+      title={seoTitle ?? `${loc.title} | Taimbox`}
       description={loc.description}
       lang={lang}
       ogType="article"

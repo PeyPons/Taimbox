@@ -1,10 +1,10 @@
 {
   "index": {
-    "title": "Templates, KPIs & planning blog | Taimbox",
-    "metaDescription": "Explore the Taimbox blog: free templates, KPIs, and planning guides for agencies. Filter by topic and find practical resources in minutes.",
+    "title": "Agency planning guides and templates | Taimbox",
+    "metaDescription": "Practical guides on project planning, timeboxing and resource management for agencies. Templates, KPIs and frameworks, filtered by topic.",
     "badge": "Guides & resources",
-    "h1": "Blog",
-    "intro": "Practical guides on project planning, timeboxing, and resource management for agencies. Free templates, metrics, and frameworks you can apply right away.",
+    "h1": "Guides and resources for agencies",
+    "intro": "Practical guides on project planning, timeboxing and resource management for agencies. Templates, KPIs and frameworks, filtered by topic.",
     "statPublished": "Published",
     "statMinutes": "Reading minutes",
     "statTopics": "Topics",
@@ -162,10 +162,22 @@
       "durationHint": "From kick-off to approval",
       "step": "Step {{n}}",
       "steps": {
-        "design": { "title": "Initial design", "time": "6 h · 1 day" },
-        "wait": { "title": "Client wait", "time": "+4 days · 0 h" },
-        "changes": { "title": "Changes + other project", "time": "2 h · +2 days" },
-        "approval": { "title": "Final approval", "time": "Legal/review buffer" }
+        "design": {
+          "title": "Initial design",
+          "time": "6 h · 1 day"
+        },
+        "wait": {
+          "title": "Client wait",
+          "time": "+4 days · 0 h"
+        },
+        "changes": {
+          "title": "Changes + other project",
+          "time": "2 h · +2 days"
+        },
+        "approval": {
+          "title": "Final approval",
+          "time": "Legal/review buffer"
+        }
       },
       "caption": "Promising “Friday” from design hours alone ignores ~70% of the calendar."
     },
@@ -241,11 +253,26 @@
     },
     "ritualEstimacion": {
       "steps": {
-        "gate": { "title": "Brief gate", "body": "Goals, references, approvers, exclusions. Estimable yes/no?" },
-        "analogy": { "title": "Analogy", "body": "Median of 3–5 similar projects by role." },
-        "bottomUp": { "title": "Bottom-up", "body": "Net-new scope estimated separately + category buffers." },
-        "duration": { "title": "Duration", "body": "Cross with real capacity + client/legal waits." },
-        "committee": { "title": "30-min committee", "body": "Sales, ops, technical lead. Trim scope, not magic hours." }
+        "gate": {
+          "title": "Brief gate",
+          "body": "Goals, references, approvers, exclusions. Estimable yes/no?"
+        },
+        "analogy": {
+          "title": "Analogy",
+          "body": "Median of 3–5 similar projects by role."
+        },
+        "bottomUp": {
+          "title": "Bottom-up",
+          "body": "Net-new scope estimated separately + category buffers."
+        },
+        "duration": {
+          "title": "Duration",
+          "body": "Cross with real capacity + client/legal waits."
+        },
+        "committee": {
+          "title": "30-min committee",
+          "body": "Sales, ops, technical lead. Trim scope, not magic hours."
+        }
       },
       "quote": "“No date goes to the client without this filter — even when it hurts.”",
       "caption": "Five-step estimation ritual before promising date or fee."
@@ -254,7 +281,12 @@
       "title": "Variance by role (typical project)",
       "subtitle": "Web integration + creative — same SOW, different disciplines",
       "aria": "Bar chart comparing estimated and actual hours by role",
-      "roles": { "copy": "Copy", "design": "Design", "dev": "Development", "pm": "PM" },
+      "roles": {
+        "copy": "Copy",
+        "design": "Design",
+        "dev": "Development",
+        "pm": "PM"
+      },
       "estimated": "Estimated",
       "actual": "Actual",
       "legendEstimated": "Budgeted hours",
@@ -285,7 +317,7 @@
   "posts": {
     "whatIsTimeboxing": {
       "badge": "Definitive guide",
-      "title": "What is timeboxing? The definitive productivity guide for teams",
+      "title": "What timeboxing is and how to roll it out in your team",
       "intro": {
         "p1": "We have all dealt with that task that was supposed to take 30 minutes and somehow swallowed the whole day thanks to distractions or perfectionism. If we do not set rules or limits, work expands without control. There is even a law for this: <strong>Parkinson’s Law</strong>, which states that <em>“work expands so as to fill the time available for its completion”</em>.",
         "callout": "To fight this loss of time and resources, the most efficient companies and high‑performance professionals use a ruthless strategy: <strong>timeboxing</strong>.",
@@ -442,7 +474,7 @@
     },
     "porQueAgenciaPierdeRentabilidad": {
       "badge": "Management & profitability",
-      "title": "Why your agency loses profitability even when the team is always busy",
+      "title": "Why your agency loses margin when the team is busy",
       "tldr": {
         "title": "TL;DR — The essentials in 3 points",
         "item1": "Running your team at 100% utilisation does not mean being more profitable — above roughly 80%, every extra hour creates hidden costs that erode margin faster than revenue grows.",
@@ -812,7 +844,7 @@
     },
     "kpisAgenciasMarketing": {
       "badge": "KPIs & operations",
-      "title": "KPIs for marketing agencies: 5 metrics that really matter in 2026",
+      "title": "Marketing agency KPIs: 5 metrics for 2026",
       "intro": {
         "p1": "Measuring productivity in a factory is simple: you count units produced. In a creative or marketing agency, it is a minefield. Is being busy the same as being productive? Not necessarily. If your team is at full capacity but projects do not ship or margin disappears, the problem is usually visibility, not effort.",
         "p2": "In 2026, the question is no longer just which KPI to look at: it is how much time it will cost you to measure it properly every week. The hidden cost is not the formula; it is the friction: chasing data, reconciling spreadsheets, and convincing everyone to fill in the same template.",
@@ -1388,11 +1420,12 @@
       "meta": {
         "headline": "Free agency resource planning template",
         "description": "Download our Excel/Google Sheets template to manage your team's capacity, project pacing, and agency margin."
-      }
+      },
+      "title": "Free resource planning template for agencies"
     },
     "planificacionProyectos": {
       "badge": "Practical guide",
-      "title": "Project planning: schedule, budget, and resources",
+      "title": "Project planning: schedule, budget and resources",
       "intro": {
         "p1": "You have seen the pattern again and again: the schedule says the project ends in March, but in April people are still being reassigned. The budget was approved in January and by June you discover you have burned twice the planned hours. Project management stays in the task board and nobody connects those tasks with who does what, how many hours each person has, and what margin the project leaves.",
         "callout": "When schedule, budget, and resources are not aligned, projects get delayed, costs explode, or the team ends up overloaded. This guide walks through how to connect the three pieces: schedule, project budgets, and team capacity, with practical examples and a review of the tools that actually help."
@@ -1516,7 +1549,7 @@
     },
     "leyParkinson": {
       "badge": "Complete guide",
-      "title": "Parkinson’s Law: what it is, examples, and how to fight it",
+      "title": "Parkinson's law: what it is, examples and how to cap it",
       "intro": {
         "paragraph1": {
           "part1": "If you have ever had a full week to finish a report and delivered it on Friday at 6 pm, or a single day for the same task and closed it in a few hours, you have lived",
@@ -1775,7 +1808,7 @@
     },
     "gestionCargaTrabajoEquipo": {
       "badge": "Teams and workplace well-being",
-      "title": "How to manage your team's workload without burnout",
+      "title": "How to manage your team's workload",
       "intro": {
         "p1": "Reports from Gallup and Workhuman (2024) paint a tough picture: a large majority of people say they have felt symptoms of professional burnout at least once. In marketing and agencies, it's not uncommon to find teams where nearly half describe a constant tension, not just a one-off bad month. There, the problem stops being 'anecdotal' and becomes both an operations and a people issue.",
         "p2": "What fails is almost never that 'no work is being done'. What fails is that work is badly distributed, nobody sees at a glance who is carrying what, and clear limits are missing when a new request comes in. Below you will find definitions that clarify the mess between 'who does what' and 'with what means', signs to detect saturation before collapse, a six-step framework you can steal for your next meeting, and a table of metrics to stop guessing.",
@@ -1969,7 +2002,7 @@
     },
     "capacidadCalendarioVsProductiva": {
       "badge": "Planning and execution",
-      "title": "Calendar capacity vs productive capacity: why a busy team still misses deliverables",
+      "title": "Calendar capacity versus productive capacity",
       "intro": {
         "p1": "You have probably seen this in agency life: Monday looks tidy on the calendar, Tuesday brings two urgent requests, Wednesday gets swallowed by \"just 30-minute\" meetings, and by Friday you are renegotiating a date that looked safe three days earlier. This is not a commitment issue. It is a planning issue: <strong>calendar capacity is not the same as productive capacity</strong>.",
         "p2": "This guide breaks it down in practical terms: what part of your week is visible busyness, what part truly moves named deliverables, which early signals point to hidden overload, and which low-effort changes you can make this week to stop promising against a misleading picture.",
@@ -2185,7 +2218,7 @@
         "seoTitle": "How to measure per-project profitability in an agency and stop selling hours"
       },
       "badge": "Profitability and pricing",
-      "title": "How to measure real profitability per project in your agency (and stop selling hours)",
+      "title": "How to measure profitability per project in your agency",
       "tldr": {
         "title": "TL;DR — The essentials in 3 points",
         "item1": "Selling hours has a natural ceiling: there are only so many hours in a day per person. Agencies that gain margin without inflating headcount have usually changed **what they sell**, not how much they sweat.",

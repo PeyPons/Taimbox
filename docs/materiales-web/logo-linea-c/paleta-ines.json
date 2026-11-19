@@ -1,0 +1,199 @@
+{
+  "cliente": "Taimbox",
+  "fecha": "2026-11-18",
+  "linea_recomendada": "A Caja con sector",
+  "tokens": {
+    "tinta": "#14123B",
+    "indigo": "#4F46E5",
+    "indigo_on_dark": "#6366F1",
+    "violeta": "#7C3AED",
+    "ambar": "#FFB020",
+    "lavanda": "#EEF0FF",
+    "lavanda_sector": "#C4B5FD",
+    "niebla": "#F7F8FC",
+    "borde": "#E3E6F0",
+    "blanco": "#FFFFFF",
+    "sano": "#22C55E",
+    "aviso": "#FFB020",
+    "sobrecarga": "#F15B4A",
+    "mute": "#4A4868",
+    "mute_on_dark": "#C8C6DE"
+  },
+  "notas": {
+    "indigo_on_dark": "#4F46E5 sobre #14123B = 2,83:1 (por debajo de 3:1 en gráfico). Sobre oscuro la caja usa #6366F1 (3,99:1).",
+    "ambar": "Solo relleno y gráficos, no texto sobre claro (1,72:1 sobre niebla). Sobre tinta, 9,74:1.",
+    "semanticos": "Verde y ámbar de carga no se usan como texto sobre blanco."
+  },
+  "tipografia": {
+    "titulos": "Bricolage Grotesque 700, OFL 1.1, opsz alto, tracking -0.02em en ≥40 px",
+    "texto": "DM Sans 400/500, OFL 1.1 (se mantiene la actual)",
+    "cifras": "DM Sans tabular-nums, ceros sin tachar",
+    "mono_opcional": "JetBrains Mono, OFL 1.1",
+    "escala_px": [
+      14,
+      16,
+      18,
+      20,
+      24,
+      32,
+      44,
+      60,
+      76
+    ],
+    "interlineado": {
+      "titulos": 1.1,
+      "texto": 1.6
+    }
+  },
+  "rejilla": {
+    "columnas": 12,
+    "max": 1280,
+    "gutter": 24,
+    "margen": 32,
+    "margen_movil": 20,
+    "modulo": 8,
+    "aire_seccion": [
+      96,
+      128
+    ],
+    "radio_tarjeta": 12,
+    "radio_boton": 8
+  },
+  "contrastes": [
+    {
+      "pair": "tinta/niebla",
+      "fg": "#14123B",
+      "bg": "#F7F8FC",
+      "ratio": 16.78,
+      "aa_normal": true,
+      "aa_large_or_ui": true,
+      "uso": "texto sobre fondo"
+    },
+    {
+      "pair": "tinta/lavanda",
+      "fg": "#14123B",
+      "bg": "#EEF0FF",
+      "ratio": 15.72,
+      "aa_normal": true,
+      "aa_large_or_ui": true,
+      "uso": "texto sobre superficie"
+    },
+    {
+      "pair": "tinta/blanco",
+      "fg": "#14123B",
+      "bg": "#FFFFFF",
+      "ratio": 17.81,
+      "aa_normal": true,
+      "aa_large_or_ui": true,
+      "uso": "texto sobre blanco"
+    },
+    {
+      "pair": "blanco/indigo",
+      "fg": "#FFFFFF",
+      "bg": "#4F46E5",
+      "ratio": 6.29,
+      "aa_normal": true,
+      "aa_large_or_ui": true,
+      "uso": "CTA principal (texto sobre botón)"
+    },
+    {
+      "pair": "tinta/ambar",
+      "fg": "#14123B",
+      "bg": "#FFB020",
+      "ratio": 9.74,
+      "aa_normal": true,
+      "aa_large_or_ui": true,
+      "uso": "CTA sobre oscuro (texto sobre botón)"
+    },
+    {
+      "pair": "indigo/niebla",
+      "fg": "#4F46E5",
+      "bg": "#F7F8FC",
+      "ratio": 5.92,
+      "aa_normal": true,
+      "aa_large_or_ui": true,
+      "uso": "índigo como texto sobre fondo"
+    },
+    {
+      "pair": "violeta/niebla",
+      "fg": "#7C3AED",
+      "bg": "#F7F8FC",
+      "ratio": 5.37,
+      "aa_normal": true,
+      "aa_large_or_ui": true,
+      "uso": "violeta como texto sobre fondo"
+    },
+    {
+      "pair": "indigo/tinta",
+      "fg": "#4F46E5",
+      "bg": "#14123B",
+      "ratio": 2.83,
+      "aa_normal": false,
+      "aa_large_or_ui": false,
+      "uso": "índigo de marca sobre tinta (no usar: < 3:1)"
+    },
+    {
+      "pair": "indigo_oscuro/tinta",
+      "fg": "#6366F1",
+      "bg": "#14123B",
+      "ratio": 3.99,
+      "aa_normal": false,
+      "aa_large_or_ui": true,
+      "uso": "caja sobre fondo oscuro"
+    },
+    {
+      "pair": "ambar/niebla",
+      "fg": "#FFB020",
+      "bg": "#F7F8FC",
+      "ratio": 1.72,
+      "aa_normal": false,
+      "aa_large_or_ui": false,
+      "uso": "ámbar como texto sobre claro (no usar: < 4,5:1)"
+    },
+    {
+      "pair": "ambar/tinta",
+      "fg": "#FFB020",
+      "bg": "#14123B",
+      "ratio": 9.74,
+      "aa_normal": true,
+      "aa_large_or_ui": true,
+      "uso": "ámbar como gráfico sobre oscuro"
+    },
+    {
+      "pair": "verde/blanco",
+      "fg": "#22C55E",
+      "bg": "#FFFFFF",
+      "ratio": 2.28,
+      "aa_normal": false,
+      "aa_large_or_ui": false,
+      "uso": "verde como texto (no usar: < 3:1); solo relleno"
+    },
+    {
+      "pair": "coral/blanco",
+      "fg": "#F15B4A",
+      "bg": "#FFFFFF",
+      "ratio": 3.31,
+      "aa_normal": false,
+      "aa_large_or_ui": true,
+      "uso": "coral como texto (justo en gráfico); no como texto normal"
+    },
+    {
+      "pair": "lavanda_sector/tinta",
+      "fg": "#C4B5FD",
+      "bg": "#14123B",
+      "ratio": 9.64,
+      "aa_normal": true,
+      "aa_large_or_ui": true,
+      "uso": "sector C sobre oscuro"
+    },
+    {
+      "pair": "mute/niebla",
+      "fg": "#4A4868",
+      "bg": "#F7F8FC",
+      "ratio": 8.18,
+      "aa_normal": true,
+      "aa_large_or_ui": true,
+      "uso": "texto secundario"
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 {
   "seo": {
-    "title": "Documentación API | Taimbox",
-    "description": "Documentación de la API de integración de Taimbox. Conecta tus herramientas con datos de planificación, equipo y proyectos."
+    "title": "API de integración para tu agencia | Taimbox",
+    "description": "Cómo conectar tus herramientas con los datos de planificación, equipo y proyectos. Autenticación por token, límites por agencia y referencia de recursos."
   },
   "page": {
     "navSheetTitle": "Navegación",

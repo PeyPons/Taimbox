@@ -34,12 +34,12 @@ export function LandingFooter({ variant = 'dark' }: LandingFooterProps) {
 
   const linkClass = cn(
     'text-sm flex items-center gap-2 transition-colors',
-    light ? 'text-slate-600 hover:text-violet-700' : 'text-[#f3efe6]/75 hover:text-[#f3efe6]',
+    light ? 'text-slate-600 hover:text-violet-700' : 'text-[#F7F8FC]/75 hover:text-[#F7F8FC]',
   );
   return (
     <footer className={cn(
       'relative z-10 border-t backdrop-blur-xl',
-      light ? 'border-slate-200 bg-slate-50/95' : 'border-[#f3efe6]/10 bg-[#1c1915]',
+      light ? 'border-slate-200 bg-slate-50/95' : 'border-[#F7F8FC]/10 bg-[#14123B]',
     )}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
@@ -47,11 +47,11 @@ export function LandingFooter({ variant = 'dark' }: LandingFooterProps) {
           <div className="lg:col-span-1">
             <Link to={localizedPathFromEs('/', i18n.language)} className={cn(
               'inline-flex transition-colors',
-              light ? 'text-slate-900 hover:text-violet-700' : 'text-[#f3efe6] hover:text-white',
+              light ? 'text-slate-900 hover:text-violet-700' : 'text-[#F7F8FC] hover:text-white',
             )}>
               <PublicWordmark tone="paper" markClassName="h-5 w-5" />
             </Link>
-            <p className={cn('mt-3 text-xs max-w-xs leading-snug', light ? 'text-slate-600' : 'text-[#f3efe6]/70')}>
+            <p className={cn('mt-3 text-xs max-w-xs leading-snug', light ? 'text-slate-600' : 'text-[#F7F8FC]/70')}>
               {t('footer.tagline')}
             </p>
           </div>
@@ -131,14 +131,14 @@ export function LandingFooter({ variant = 'dark' }: LandingFooterProps) {
             <h4 className={cn('font-semibold text-sm mb-3', light ? 'text-slate-900' : 'text-white')}>{t('footer.ctaTitle')}</h4>
             <Link
               to="/login?tab=register"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-[#f3efe6] text-[#1c1915] text-sm font-medium hover:bg-white transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-[#F7F8FC] text-[#14123B] text-sm font-medium hover:bg-white transition-colors"
             >
               {t('footer.ctaButton')}
             </Link>
-            <p className={cn('mt-2 text-xs', light ? 'text-slate-500' : 'text-[#f3efe6]/55')}>
+            <p className={cn('mt-2 text-xs', light ? 'text-slate-500' : 'text-[#F7F8FC]/55')}>
               {t('footer.ctaTrial')}
             </p>
-            <p className={cn('mt-2 text-xs', light ? 'text-slate-600' : 'text-[#f3efe6]/65')}>
+            <p className={cn('mt-2 text-xs', light ? 'text-slate-600' : 'text-[#F7F8FC]/65')}>
               {t('footer.ctaPitchLead')}{' '}
               <Link to={localizedPathFromEs('/pitch', i18n.language)} className={cn('font-medium hover:underline underline-offset-2', light ? 'text-violet-700 hover:text-violet-900' : 'text-white')}>
                 {t('footer.ctaPitch')}
@@ -148,10 +148,10 @@ export function LandingFooter({ variant = 'dark' }: LandingFooterProps) {
         </div>
 
         <div className={cn('mt-6 pt-5 flex flex-col sm:flex-row justify-between items-center gap-3 border-t', light ? 'border-slate-200' : 'border-white/10')}>
-          <p className={cn('text-xs', light ? 'text-slate-500' : 'text-[#f3efe6]/55')}>
+          <p className={cn('text-xs', light ? 'text-slate-500' : 'text-[#F7F8FC]/55')}>
             {t('footer.copyright', { year: currentYear })}
           </p>
-          <div className={cn('flex flex-wrap gap-4 text-xs justify-center sm:justify-end', light ? 'text-slate-500' : 'text-[#f3efe6]/55')}>
+          <div className={cn('flex flex-wrap gap-4 text-xs justify-center sm:justify-end', light ? 'text-slate-500' : 'text-[#F7F8FC]/55')}>
             <Link to={localizedPathFromEs('/privacidad', i18n.language)} className={cn('flex items-center gap-1.5 transition-colors', light ? 'hover:text-violet-700' : 'hover:text-white')}>
               <Shield className="h-3.5 w-3.5" />
               {t('footer.privacy')}

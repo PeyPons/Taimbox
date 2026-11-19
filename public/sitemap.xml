@@ -149,12 +149,6 @@
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
-  <url>
-    <loc>https://taimbox.com/pitch</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-
   <!-- Documentación y Guías -->
   <url>
     <loc>https://taimbox.com/guia</loc>
@@ -361,11 +355,6 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://taimbox.com/en/pitch</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
     <loc>https://taimbox.com/en/guide</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
@@ -421,10 +410,4 @@
     <priority>0.8</priority>
   </url>
 
-  <!-- Login (No tan indexable pero público) -->
-  <url>
-    <loc>https://taimbox.com/login</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
 </urlset>

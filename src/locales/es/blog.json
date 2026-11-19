@@ -1,10 +1,10 @@
 {
   "index": {
-    "title": "Blog de plantillas, KPIs y planificación | Taimbox",
-    "metaDescription": "Explora el blog de Taimbox: plantillas gratuitas, KPIs y guías de planificación para agencias. Filtra por temática y encuentra recursos prácticos en minutos.",
+    "title": "Blog: plantillas, KPIs y planificación | Taimbox",
+    "metaDescription": "Guías de planificación, timeboxing y recursos para agencias: plantillas, KPIs y marcos de trabajo, filtrados por tema.",
     "badge": "Guías y recursos",
-    "h1": "Blog",
-    "intro": "Guías prácticas sobre planificación de proyectos, timeboxing y gestión de recursos para agencias. Encuentra plantillas gratuitas, métricas y marcos de trabajo listos para aplicar.",
+    "h1": "Guías de planificación y recursos para agencias",
+    "intro": "Guías de planificación, timeboxing y recursos para agencias. Plantillas, KPIs y marcos de trabajo, filtrados por tema.",
     "statPublished": "Publicados",
     "statMinutes": "Min de lectura",
     "statTopics": "Temáticas",
@@ -162,10 +162,22 @@
       "durationHint": "Desde kick-off hasta aprobación",
       "step": "Paso {{n}}",
       "steps": {
-        "design": { "title": "Diseño inicial", "time": "6 h · 1 día" },
-        "wait": { "title": "Espera cliente", "time": "+4 días · 0 h" },
-        "changes": { "title": "Cambios + otro proyecto", "time": "2 h · +2 días" },
-        "approval": { "title": "Aprobación final", "time": "Buffer legal/revisión" }
+        "design": {
+          "title": "Diseño inicial",
+          "time": "6 h · 1 día"
+        },
+        "wait": {
+          "title": "Espera cliente",
+          "time": "+4 días · 0 h"
+        },
+        "changes": {
+          "title": "Cambios + otro proyecto",
+          "time": "2 h · +2 días"
+        },
+        "approval": {
+          "title": "Aprobación final",
+          "time": "Buffer legal/revisión"
+        }
       },
       "caption": "Prometer «el viernes» mirando solo las horas de diseño ignora el 70% del calendario."
     },
@@ -241,11 +253,26 @@
     },
     "ritualEstimacion": {
       "steps": {
-        "gate": { "title": "Gate de brief", "body": "Objetivos, referencias, aprobadores, exclusiones. ¿Estimable sí/no?" },
-        "analogy": { "title": "Analogía", "body": "Mediana de 3–5 proyectos similares por rol." },
-        "bottomUp": { "title": "Bottom-up", "body": "Lo nuevo se estima aparte + buffers por categoría." },
-        "duration": { "title": "Duración", "body": "Cruce con capacidad real + esperas cliente/legal." },
-        "committee": { "title": "Comité 30 min", "body": "Comercial, ops y lead técnico. Recorta alcance, no horas mágicas." }
+        "gate": {
+          "title": "Gate de brief",
+          "body": "Objetivos, referencias, aprobadores, exclusiones. ¿Estimable sí/no?"
+        },
+        "analogy": {
+          "title": "Analogía",
+          "body": "Mediana de 3–5 proyectos similares por rol."
+        },
+        "bottomUp": {
+          "title": "Bottom-up",
+          "body": "Lo nuevo se estima aparte + buffers por categoría."
+        },
+        "duration": {
+          "title": "Duración",
+          "body": "Cruce con capacidad real + esperas cliente/legal."
+        },
+        "committee": {
+          "title": "Comité 30 min",
+          "body": "Comercial, ops y lead técnico. Recorta alcance, no horas mágicas."
+        }
       },
       "quote": "«Ninguna fecha sale al cliente sin pasar este filtro — aunque duela.»",
       "caption": "Ritual de estimación en cinco pasos antes de prometer fecha o fee."
@@ -254,7 +281,12 @@
       "title": "Desviación por rol (proyecto tipo)",
       "subtitle": "Integración web + creatividad — mismo SOW, distintas disciplinas",
       "aria": "Gráfico de barras comparando horas estimadas y reales por rol",
-      "roles": { "copy": "Copy", "design": "Diseño", "dev": "Desarrollo", "pm": "PM" },
+      "roles": {
+        "copy": "Copy",
+        "design": "Diseño",
+        "dev": "Desarrollo",
+        "pm": "PM"
+      },
       "estimated": "Estimado",
       "actual": "Real",
       "legendEstimated": "Horas presupuestadas",
@@ -285,7 +317,7 @@
   "posts": {
     "whatIsTimeboxing": {
       "badge": "Guía definitiva",
-      "title": "Qué es el Timeboxing: la guía definitiva de productividad para empresas",
+      "title": "Qué es el timeboxing y cómo llevarlo a tu equipo",
       "intro": {
         "p1": "Todos hemos lidiado con esa tarea que, en teoría, iba a tomar 30 minutos, pero que por distracciones o perfeccionismo terminó devorando nuestro día completo. Si no establecemos reglas o límites, el trabajo se expande sin control. De hecho, existe una ley para esto: <strong>la Ley de Parkinson</strong>, que postula que <em>«el trabajo se expande hasta llenar el tiempo disponible para su finalización»</em>.",
         "callout": "Para combatir esta pérdida de tiempo y recursos, las empresas más eficientes y los profesionales de alto rendimiento utilizan una estrategia implacable: el <strong>Timeboxing</strong>.",
@@ -442,7 +474,7 @@
     },
     "porQueAgenciaPierdeRentabilidad": {
       "badge": "Gestión y rentabilidad",
-      "title": "Por qué tu agencia pierde rentabilidad aunque el equipo esté siempre ocupado",
+      "title": "Por qué tu agencia pierde margen con el equipo ocupado",
       "tldr": {
         "title": "TL;DR — Lo esencial en 3 puntos",
         "item1": "Tener el equipo al 100% de ocupación no significa ser más rentable — por encima del 80%, cada hora extra genera costes ocultos que erosionan el margen más rápido de lo que crece el ingreso.",
@@ -812,7 +844,7 @@
     },
     "kpisAgenciasMarketing": {
       "badge": "KPIs y operaciones",
-      "title": "KPIs para agencias de marketing: 5 métricas que sí importan en 2026",
+      "title": "KPIs para agencias de marketing: 5 métricas para 2026",
       "intro": {
         "p1": "Medir la productividad en una fábrica es sencillo: cuentas unidades producidas. En una agencia creativa o de marketing, es un campo de minas. ¿Estar ocupado es ser productivo? No necesariamente. Si tu equipo está al límite de capacidad pero los proyectos no salen o el margen se esfuma, el problema suele ser de visibilidad, no de esfuerzo.",
         "p2": "En 2026, además, la pregunta ya no es solo qué KPI mirar: es cuánto tiempo te va a costar medirlo bien cada semana. El coste oculto no es la fórmula; es la fricción: perseguir datos, reconciliar hojas y convencer a todo el mundo de que rellene la misma plantilla.",
@@ -1388,7 +1420,8 @@
       "meta": {
         "headline": "Plantilla gratuita de planificación de recursos para agencias",
         "description": "Descarga nuestra plantilla de Excel/Google Sheets para gestionar la capacidad de tu equipo, el pacing de proyectos y el margen de tu agencia."
-      }
+      },
+      "title": "Plantilla gratuita de planificación de recursos para agencias"
     },
     "planificacionProyectos": {
       "badge": "Guía práctica",
@@ -1516,7 +1549,7 @@
     },
     "leyParkinson": {
       "badge": "Guía completa",
-      "title": "Ley de Parkinson: qué es, ejemplos y cómo combatirla",
+      "title": "Ley de Parkinson: qué es, ejemplos y cómo acotarla",
       "intro": {
         "paragraph1": {
           "part1": "Si alguna vez has tenido una semana entera para un informe y lo entregaste el viernes a las 18:00, o un día para la misma tarea y la cerraste en unas horas, has vivido en carne propia la",
@@ -1775,7 +1808,7 @@
     },
     "gestionCargaTrabajoEquipo": {
       "badge": "Equipos y bienestar laboral",
-      "title": "Cómo gestionar la carga de trabajo de tu equipo sin burnout",
+      "title": "Cómo gestionar la carga de trabajo de tu equipo",
       "intro": {
         "p1": "Los informes de Gallup y Workhuman (2024) dibujan un panorama duro: una gran mayoría de personas dice haber sentido al menos una vez síntomas de burnout profesional. En marketing y agencias no es raro encontrar equipos en los que casi la mitad describe una tensión constante, no solo un mes malo puntual. Ahí el problema deja de ser «anécdota» y se vuelve un asunto a la vez operativo y de personas.",
         "p2": "Lo que falla casi nunca es que «no se trabaje». Lo que falla es que el trabajo está mal repartido, nadie ve de un vistazo quién lleva qué, y faltan límites claros cuando entra una petición nueva. Abajo encontrarás definiciones que aclaran el lío entre «quién hace qué» y «con qué medios», señales para detectar la saturación antes del colapso, un marco en seis pasos que puedes llevar a tu próxima reunión y una tabla de métricas para dejar de adivinar.",
@@ -1969,7 +2002,7 @@
     },
     "capacidadCalendarioVsProductiva": {
       "badge": "Planificación y ejecución",
-      "title": "Capacidad calendario vs capacidad productiva: por qué un equipo ocupado no siempre entrega",
+      "title": "Capacidad calendario frente a capacidad productiva",
       "intro": {
         "p1": "La escena se repite en muchas agencias: el lunes todo parece encajar en el calendario, el martes aparecen dos urgencias, el miércoles se encadenan reuniones de «solo 30 minutos» y el viernes acabas negociando una fecha que el lunes dabas por cerrada. No es falta de compromiso; es que <strong>la capacidad que ves en el calendario no es la capacidad que realmente construye entregables</strong>.",
         "p2": "Aquí vamos a separar capas, sin humo: qué parte del tiempo es solo ocupación visible, qué parte sí mueve trabajo con nombre y apellidos, qué señales puedes observar antes de que el equipo se queme y qué decisiones prácticas puedes tomar esta misma semana para dejar de prometer con una foto engañosa.",
@@ -2185,7 +2218,7 @@
         "seoTitle": "Cómo medir la rentabilidad por proyecto en una agencia y dejar de vender horas"
       },
       "badge": "Rentabilidad y pricing",
-      "title": "Cómo medir la rentabilidad real por proyecto en tu agencia (y dejar de vender horas)",
+      "title": "Cómo medir la rentabilidad por proyecto en tu agencia",
       "tldr": {
         "title": "TL;DR — Lo esencial en 3 puntos",
         "item1": "Vender horas tiene un techo natural: solo hay tantas horas al día por persona. Las agencias que ganan margen sin inflar plantilla suelen haber cambiado **qué venden**, no cuánto sudan.",

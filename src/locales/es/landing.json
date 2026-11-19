@@ -313,12 +313,12 @@
     "ariaDialog": "Preferencias de cookies"
   },
   "home": {
-    "seoTitle": "Taimbox | Gestión de Recursos y Planificación de Equipos",
-    "seoDescription": "Optimiza la rentabilidad de tu empresa con Taimbox. Gestión de recursos, planificación inteligente y control de márgenes.",
-    "jsonLdDescription": "Optimiza la rentabilidad de tu empresa con Taimbox. Gestión de recursos, planificación inteligente y control de márgenes.",
+    "seoTitle": "Planificación de recursos y margen para agencias | Taimbox",
+    "seoDescription": "Ve la carga de tu equipo, los plazos y el margen de cada proyecto en un mismo sistema. Empieza gratis con el plan Free y compara el resto de planes.",
+    "jsonLdDescription": "Ve la carga de tu equipo, los plazos y el margen de cada proyecto en un mismo sistema. Empieza gratis con el plan Free y compara el resto de planes.",
     "heroBadge": "Tu equipo, tu tiempo, tu control",
-    "heroTitleLine1": "El tiempo de tu",
-    "heroTitleHighlight": "equipo visualizado",
+    "heroTitleLine1": "La carga, los plazos y el margen, en un mismo sistema",
+    "heroTitleHighlight": "",
     "heroSubtitleLine1": "No más hojas de cálculo. No más adivinanzas.",
     "heroSubtitleLine2Prefix": "Ve quién hace qué,",
     "heroSubtitleLine2When": "cuándo",
@@ -485,47 +485,20 @@
     ],
     "faqItems": [
       {
-        "question": "¿Cómo funciona la plataforma?",
-        "answer": "Nuestra plataforma te permite visualizar y gestionar la carga de trabajo de tu equipo en tiempo real. Puedes planificar tareas, establecer deadlines, gestionar dependencias y recibir alertas automáticas cuando detectamos sobrecargas o problemas. Todo desde una interfaz visual e intuitiva que no requiere instalación de software adicional."
+        "question": "¿Qué es Taimbox?",
+        "answer": "Un sistema para ver la carga del equipo, los plazos y el margen de cada proyecto en el mismo sitio."
       },
       {
-        "question": "¿Necesito instalar algo?",
-        "answer": "No, nuestra plataforma es completamente web. Solo necesitas un navegador moderno y acceso a internet. Funciona en cualquier dispositivo: ordenador, tablet o móvil. No requiere instalación de software ni configuraciones complicadas."
+        "question": "¿Hay un plan Free?",
+        "answer": "Sí. Los límites de personas y de histórico están publicados en la página de precios, no en esta respuesta."
       },
       {
-        "question": "¿Son seguros mis datos?",
-        "answer": "Sí. Tus datos viajan cifrados (TLS) y se almacenan cifrados en reposo, con aislamiento por agencia a nivel de base de datos (Row Level Security). Cumplimos con el RGPD: tienes control sobre tus datos y puedes solicitar su exportación o eliminación en cualquier momento."
+        "question": "¿Hay que instalar algo?",
+        "answer": "No. Se usa en el navegador, en el ordenador, la tablet o el móvil."
       },
       {
-        "question": "¿Puedo integrarlo con otras herramientas?",
-        "answerBefore": "Sí, ofrecemos una API REST completa que te permite integrar la plataforma con tus herramientas existentes. La ",
-        "answerLinkText": "documentación de la API",
-        "answerAfter": " incluye tutoriales paso a paso, autenticación por tokens, referencia de tablas con ejemplos de respuesta, SDK JavaScript y búsqueda rápida (Ctrl+K). También puedes exportar datos en múltiples formatos para trabajar con hojas de cálculo u otros sistemas.",
-        "answerLinkPath": "/api-docs"
-      },
-      {
-        "question": "¿Cuánto tiempo toma implementarlo?",
-        "answer": "La plataforma está lista para usar desde el primer día. Puedes empezar a añadir tu equipo y proyectos inmediatamente. La curva de aprendizaje es mínima gracias a nuestra interfaz intuitiva y a la guía paso a paso."
-      },
-      {
-        "question": "¿Hay soporte técnico?",
-        "answer": "Sí, ofrecemos soporte técnico completo. Puedes contactarnos por correo electrónico y nuestro equipo te ayudará con cualquier duda o problema. Además, tenemos documentación completa y tutoriales donde puedes encontrar respuestas."
-      },
-      {
-        "question": "¿Dónde se almacenan mis datos?",
-        "answer": "Tus datos se almacenan en infraestructura ubicada en la Unión Europea, bajo nuestro control operativo, con copias de seguridad diarias y cifrado en tránsito y en reposo. Publicamos nuestras prácticas reales y objetivos de recuperación en la página de Seguridad."
-      },
-      {
-        "question": "¿Quién puede acceder a mis datos?",
-        "answer": "Solo tú y las personas de tu equipo a las que otorgues permisos específicos pueden acceder a los datos. Utilizamos un sistema de permisos granulares que te permite controlar exactamente qué puede ver y hacer cada usuario. Nuestro equipo técnico solo accede a los datos cuando es estrictamente necesario para proporcionar soporte, y siempre con tu autorización previa. Todos los accesos quedan registrados en un log de auditoría."
-      },
-      {
-        "question": "¿Qué medidas de seguridad tienen las contraseñas?",
-        "answer": "Las contraseñas se almacenan utilizando algoritmos de hash seguros (bcrypt) que hacen imposible recuperar la contraseña original. Nunca almacenamos contraseñas en texto plano. Además, todas las conexiones utilizan encriptación TLS/SSL para proteger las credenciales durante el inicio de sesión. Te recomendamos usar contraseñas fuertes y únicas, y cambiarlas periódicamente."
-      },
-      {
-        "question": "¿Qué pasa si quiero eliminar todos mis datos?",
-        "answer": "Puedes eliminar todos tus datos en cualquier momento desde la configuración de tu cuenta. El proceso de eliminación es completo e irreversible: se eliminan todos los datos asociados a tu cuenta, incluyendo proyectos, asignaciones, historial y cualquier otra información. También puedes exportar todos tus datos antes de eliminarlos si lo deseas. Este proceso cumple con el derecho al olvido establecido en el GDPR."
+        "question": "¿Dónde están los datos?",
+        "answer": "El detalle de almacenamiento, aislamiento y terceros está en la página de seguridad."
       }
     ],
     "faqCta": "Empezar gratis",
@@ -614,11 +587,11 @@
     "heroSubtitleLine2And": "y"
   },
   "pricing": {
-    "seoTitle": "Precios y planes | Taimbox",
-    "seoDescription": "Planes Free, Team, Agency, Scale y Enterprise con Taimbox. Gestión operativa, financiera y de tiempos para agencias de todos los tamaños.",
+    "seoTitle": "Compara planes Free, Team, Agency y Scale | Taimbox",
+    "seoDescription": "Empiezas gratis con el plan Free y subes cuando necesitas forecast, API o Ads. Enterprise se habla a medida.",
     "heroKicker": "Para agencias y equipos creativos",
-    "heroLine1": "Precios diseñados para escalar con tu",
-    "heroHighlight": "rentabilidad",
+    "heroLine1": "Empiezas gratis y subes de plan cuando necesitas forecast, API o Ads",
+    "heroHighlight": "",
     "earlyAdopter": "Precios Early Adopter — 50% de descuento de por vida",
     "heroSub": "Empieza gratis. Sube de plan cuando requieras más inteligencia financiera, reportes avanzados o integraciones complejas para tu agencia.",
     "pill1": "Plan gratuito disponible",
@@ -785,13 +758,13 @@
     ]
   },
   "articleWhy": {
-    "seoTitle": "¿Por qué Taimbox? Metodología para Empresas | Taimbox",
-    "seoDescription": "Descubre cómo Taimbox puede mejorar la eficiencia de tu empresa. Aprende a gestionar el tiempo por bloques para maximizar el enfoque y resultados de tu equipo.",
+    "seoTitle": "Qué es el timeboxing y cómo usarlo en tu agencia | Taimbox",
+    "seoDescription": "El tiempo se fija de antemano y se ata a un coste. Así usa el timeboxing una agencia. Mira cómo queda en el planificador.",
     "jsonHeadline": "Taimbox: Por qué tu lista de tareas está matando la rentabilidad de tu agencia",
     "jsonArticleDesc": "Descubre cómo Taimbox puede mejorar la eficiencia de tu empresa. Aprende a gestionar el tiempo por bloques para maximizar el enfoque y resultados de tu equipo.",
     "jsonSoftwareDesc": "Descubre cómo Taimbox puede mejorar la eficiencia de tu empresa. Aprende a gestionar el tiempo por bloques para maximizar el enfoque y resultados de tu equipo.",
     "badge": "Para agencias",
-    "heroTitle": "Taimbox: por qué tu lista de tareas está matando la rentabilidad de tu agencia",
+    "heroTitle": "El tiempo se fija de antemano y se ata a un coste",
     "heroP1": "Si diriges una agencia de marketing, desarrollo o consultoría, conoces esta historia: vendes un proyecto por 5.000€ calculado a 50 horas. El equipo empieza a trabajar. Surgen reuniones, imprevistos, «pequeños cambios» y correcciones. Un mes después, miras los números: habéis invertido 90 horas. Has perdido dinero.",
     "heroP2": "El problema no es tu equipo. El problema no es el cliente. El problema es que gestionas tareas, cuando deberías estar gestionando cajas de tiempo vinculadas a dinero.",
     "heroHighlight": "Aquí es donde entra el timeboxing: una metodología que ha pasado de ser un truco de productividad personal a convertirse en el estándar operativo de las empresas de servicios más rentables del mundo.",
@@ -869,11 +842,11 @@
     "breadcrumbAria": "Ruta de navegación del artículo"
   },
   "guide": {
-    "seoTitleIndex": "Guía de funcionalidades | Taimbox",
-    "seoDescriptionIndex": "Todas las funcionalidades de Taimbox explicadas al detalle: planificador, informes, equipo, tiempos y más.",
+    "seoTitleIndex": "Guía de funciones: planificador y más | Taimbox",
+    "seoDescriptionIndex": "Cómo usar el planificador, Mi espacio, deadlines, informes, Weekly Forecast, equipo, tiempos, clientes y la configuración de tu agencia.",
     "sectionTitle": "{{section}} | Guía Taimbox",
-    "layoutTitleIndex": "Guía completa de Taimbox",
-    "layoutDescriptionIndex": "Todas las funcionalidades explicadas al detalle. Elige un apartado para leer la documentación.",
+    "layoutTitleIndex": "Guía de Taimbox",
+    "layoutDescriptionIndex": "Aquí está la guía de uso: planificador, Mi espacio, deadlines, informes, Weekly Forecast, equipo, tiempos, clientes y configuración.",
     "backHome": "Volver al inicio",
     "backToIndex": "Volver al índice",
     "guideIndex": "Índice de la guía",
@@ -883,39 +856,57 @@
     "sections": {
       "planificador": {
         "title": "Planificador",
-        "short": "Calendario visual del equipo y asignación de tareas"
+        "short": "Calendario visual del equipo y asignación de tareas",
+        "seoTitle": "Planificador: calendario del equipo | Taimbox",
+        "seoDescription": "Vista central del mes: qué tarea tiene cada persona en cada semana, colores por proyecto y avisos de sobrecarga. Vistas semanal y mensual."
       },
       "mi-espacio": {
         "title": "Mi espacio",
-        "short": "Tu dashboard personal: carga, dependencias y control de planificación"
+        "short": "Tu dashboard personal: carga, dependencias y control de planificación",
+        "seoTitle": "Mi espacio: tu panel de trabajo | Taimbox",
+        "seoDescription": "Tu panel personal en Taimbox: carga, proyectos, control de planificación y dependencias del día o de la semana."
       },
       "deadlines": {
         "title": "Deadlines",
-        "short": "Objetivos mensuales por proyecto y empleado"
+        "short": "Objetivos mensuales por proyecto y empleado",
+        "seoTitle": "Deadlines: objetivos de horas al mes | Taimbox",
+        "seoDescription": "Objetivos de horas por mes, por proyecto y por persona, para comparar lo previsto, lo planificado y lo computado."
       },
       "informes": {
         "title": "Informes",
-        "short": "Reportes, métricas y exportación de datos"
+        "short": "Reportes, métricas y exportación de datos",
+        "seoTitle": "Informes de seguimiento y margen | Taimbox",
+        "seoDescription": "Informes de seguimiento operativo, rentabilidad y capacidad del equipo, con datos históricos y exportación por API."
       },
       "weekly-forecast": {
         "title": "Weekly Forecast",
-        "short": "Cierre semanal y redistribución inteligente de horas"
+        "short": "Cierre semanal y redistribución inteligente de horas",
+        "seoTitle": "Weekly Forecast y cierre semanal | Taimbox",
+        "seoDescription": "Previsión y cierre de equipo: resumen por persona, ajustes y redistribución de horas. Se distingue de la revisión personal Weekly en Mi espacio."
       },
       "equipo": {
         "title": "Equipo",
-        "short": "Miembros, ausencias, horarios y capacidad"
+        "short": "Miembros, ausencias, horarios y capacidad",
+        "seoTitle": "Equipo: personas, horarios y bajas | Taimbox",
+        "seoDescription": "Alta y edición de miembros, horarios, ausencias y capacidad. También Team Capacity y Team Pulse, si tu agencia los tiene activos."
       },
       "tiempos": {
         "title": "Tiempos",
-        "short": "Cronómetro por tarea y vista en vivo del equipo"
+        "short": "Cronómetro por tarea y vista en vivo del equipo",
+        "seoTitle": "Tiempos: cronómetro por tarea | Taimbox",
+        "seoDescription": "Registra las horas reales de cada tarea con un cronómetro. Ves en qué está el equipo y puedes parar el tuyo desde la barra lateral o Tiempos."
       },
       "clientes-proyectos": {
         "title": "Clientes y proyectos",
-        "short": "Catálogo de clientes, proyectos y horas contratadas"
+        "short": "Catálogo de clientes, proyectos y horas contratadas",
+        "seoTitle": "Clientes, proyectos y horas | Taimbox",
+        "seoDescription": "Catálogo de cuentas y proyectos: presupuestos de horas, cuotas mensuales, estado y avance frente al presupuesto."
       },
       "configuracion": {
         "title": "Configuración",
-        "short": "Agencia, roles, permisos e integraciones"
+        "short": "Agencia, roles, permisos e integraciones",
+        "seoTitle": "Configuración de la agencia y roles | Taimbox",
+        "seoDescription": "Roles, permisos, módulos activos e integraciones de tu agencia. Desde aquí también se gestionan los tokens de la API."
       }
     },
     "content": {
@@ -1198,10 +1189,10 @@
   },
   "static": {
     "contact": {
-      "seoTitle": "Contacto | Taimbox",
-      "seoDescription": "Ponte en contacto con el equipo de Taimbox.",
-      "heroBefore": "¿En qué podemos ",
-      "heroHighlight": "ayudarte?",
+      "seoTitle": "Contacto para dudas y soporte | Taimbox",
+      "seoDescription": "Escríbenos por el formulario o a hello@taimbox.com. Si ya eres cliente, usa el panel de Soporte en tu área de Agencia.",
+      "heroBefore": "¿En qué podemos ayudarte?",
+      "heroHighlight": "",
       "heroSubtitle": "Estamos aquí para resolver tus dudas, escuchar tus sugerencias o ayudarte a dar el salto al siguiente nivel con Taimbox.",
       "sidebarTitle": "Ponte en contacto",
       "sidebarDesc": "Escríbenos directamente o utiliza el formulario. Te responderemos lo antes posible.",
@@ -1234,8 +1225,8 @@
       }
     },
     "pitch": {
-      "seoTitle": "Presentación Taimbox | ROI y Operaciones para Agencias",
-      "seoDescription": "Descubre cómo Taimbox transforma la rentabilidad de las agencias de servicios mediante el timeboxing y el control presupuestario en tiempo real.",
+      "seoTitle": "Presentación para agencias | Taimbox",
+      "seoDescription": "Presentación de Taimbox para una conversación comercial: timeboxing, planificación de recursos y seguimiento del presupuesto.",
       "heroTitle": "Presentación Taimbox"
     },
     "privacy": {
@@ -1449,15 +1440,15 @@
   },
   "commercial": {
     "employeeDashboard": {
-      "seoTitle": "Panel del Empleado y Cronómetro de Tareas | Taimbox",
-      "seoDescription": "Empodera a tu equipo con un panel diseñado para la ejecución. Cronómetro integrado y visualización de tareas para empresas eficientes y productivas.",
-      "jsonName": "Dashboard del Empleado — Taimbox",
-      "jsonDescription": "Empodera a tu equipo con un panel diseñado para la ejecución. Cronómetro integrado y visualización de tareas para empresas eficientes y productivas.",
+      "seoTitle": "Panel del empleado, tiempo y cierre semanal | Taimbox",
+      "seoDescription": "Cada persona ve qué tiene hoy, cuánto tiempo lleva y cómo cierra la semana. Sin convertir el panel en microgestión.",
+      "jsonName": "Panel del empleado, tiempo y cierre semanal",
+      "jsonDescription": "Qué tienes hoy, cuánto tiempo llevas y cómo cierras la semana.",
       "page": {
         "hero": {
           "badge": "Para empleados y equipos",
-          "title1": "Tu día, tus dependencias,",
-          "titleHighlight": "sin ruido",
+          "title1": "Qué tienes hoy, cuánto tiempo llevas y cómo cierras la semana",
+          "titleHighlight": "",
           "subtitle": "Cada empleado tiene su propio centro de control: sabe qué hacer hoy, cuánto tiempo le queda, cómo va su planificación y qué hacen sus compañeros. Todo sin preguntar a nadie.",
           "pills": [
             "Calendario personal",
@@ -1678,15 +1669,15 @@
       }
     },
     "planner": {
-      "seoTitle": "Planificador de Recursos y Capacidad para Empresas | Taimbox",
-      "seoDescription": "Gestiona la carga de trabajo de tu equipo de forma visual. Evita cuellos de botella y optimiza la capacidad de tu empresa con planificación inteligente.",
-      "jsonName": "Planificador de Recursos — Taimbox",
-      "jsonDescription": "Gestiona la carga de trabajo de tu equipo de forma visual. Evita cuellos de botella y optimiza la capacidad de tu empresa con planificación inteligente.",
+      "seoTitle": "Planificador de recursos y capacidad para agencias | Taimbox",
+      "seoDescription": "Ves quién hace qué y cuándo, y el impacto de cada asignación antes de guardar. Así trabaja el planificador de recursos de una agencia.",
+      "jsonName": "Planificador de recursos y capacidad para agencias",
+      "jsonDescription": "Ves quién hace qué y cuándo, y el impacto de cada asignación antes de guardar.",
       "page": {
         "hero": {
           "badge": "Para directores y managers",
-          "title1": "Cada hora cuenta.",
-          "titleHighlight": "Visualiza todas.",
+          "title1": "Ves quién hace qué, cuándo, y el impacto de cada asignación",
+          "titleHighlight": "",
           "subtitle": "El planificador central de Taimbox te muestra quién hace qué, cuándo y con qué impacto financiero. Asigna tareas, detecta sobrecargas y gestiona dependencias desde una sola vista.",
           "pills": [
             "Grid visual",
@@ -1858,10 +1849,10 @@
       }
     },
     "team": {
-      "seoTitle": "Gestión de Equipos y Colaboración Empresarial | Taimbox",
-      "seoDescription": "La herramienta definitiva para coordinar equipos en empresas de servicios. Control de ausencias, roles y asignación de tareas en una plataforma en la nube.",
-      "jsonName": "Gestión de Equipos — Taimbox",
-      "jsonDescription": "La herramienta definitiva para coordinar equipos en empresas de servicios. Control de ausencias, roles y asignación de tareas en una plataforma en la nube.",
+      "seoTitle": "Gestión de capacidad y equipos para agencias | Taimbox",
+      "seoDescription": "Horarios, ausencias y capacidad real en un mismo sitio. La capacidad descuenta festivos, bajas y el horario de cada persona.",
+      "jsonName": "Gestión de capacidad y equipos",
+      "jsonDescription": "Horarios, ausencias y capacidad real, con festivos y bajas descontados.",
       "page": {
         "mockProfiles": {
           "title": "Perfiles del equipo",
@@ -2020,8 +2011,8 @@
         },
         "hero": {
           "badge": "Para RRHH y managers",
-          "title1": "Tu equipo, visible",
-          "titleHighlight": "y protegido",
+          "title1": "Horarios, ausencias y capacidad real en un mismo sitio",
+          "titleHighlight": "",
           "subtitle": "Horarios personalizados, ausencias, capacidad mensual, vista de tiempos en vivo y métricas de salud del equipo. Todo lo que necesitas para entender y cuidar a tu equipo en un solo lugar.",
           "pills": [
             "Perfiles individuales",
@@ -2128,10 +2119,10 @@
       }
     },
     "reports": {
-      "seoTitle": "Informes de Rentabilidad y Margen Neto para Empresas | Taimbox",
-      "seoDescription": "Rentabilidad por proyecto y empleado: ingreso devengado en mes en curso, ritmo (pacing), coste operativo o dinámico y presupuesto por deadline. Márgenes netos y EHR con datos reales.",
-      "jsonName": "Reportes y Rentabilidad — Taimbox",
-      "jsonDescription": "Rentabilidad por proyecto y empleado: ingreso devengado en mes en curso, ritmo (pacing), coste operativo o dinámico y presupuesto por deadline. Márgenes netos y EHR con datos reales.",
+      "seoTitle": "Rentabilidad por proyecto y margen en tu agencia | Taimbox",
+      "seoDescription": "Cada proyecto muestra coste, ingreso y margen, con la fórmula a la vista. Así se lee la rentabilidad del mes en curso.",
+      "jsonName": "Rentabilidad por proyecto y margen",
+      "jsonDescription": "Coste, ingreso y margen de cada proyecto, con la fórmula a la vista.",
       "page": {
         "mockProfit": {
           "title": "Rentabilidad por proyecto",
@@ -2187,8 +2178,8 @@
         },
         "hero": {
           "badge": "Para dirección financiera",
-          "title1": "Rentabilidad por proyecto,",
-          "titleHighlight": "al céntimo",
+          "title1": "Coste, ingreso y margen de cada proyecto, con la fórmula a la vista",
+          "titleHighlight": "",
           "subtitle": "Cada hora tiene un coste. Cada proyecto tiene un margen. Los reportes de Taimbox conectan tiempo, personas y dinero para que tomes decisiones con datos reales, no con estimaciones.",
           "pills": [
             "Rentabilidad en vivo",
@@ -2288,15 +2279,15 @@
       }
     },
     "projects": {
-      "seoTitle": "Control de Proyectos y Seguimiento de Tiempos | Taimbox",
-      "seoDescription": "Supervisa el progreso de tus proyectos empresariales al detalle. Registro de tiempos, presupuestos de horas y cumplimiento de plazos en tiempo real.",
-      "jsonName": "Control de Proyectos — Taimbox",
-      "jsonDescription": "Supervisa el progreso de tus proyectos empresariales al detalle. Registro de tiempos, presupuestos de horas y cumplimiento de plazos en tiempo real.",
+      "seoTitle": "Control de proyectos y deadlines para agencias | Taimbox",
+      "seoDescription": "Del briefing al plazo, con un aviso cuando el plan no cuadra. Clientes, presupuestos y deadlines en el mismo mes.",
+      "jsonName": "Control de proyectos y deadlines",
+      "jsonDescription": "Del briefing al plazo, con avisos cuando el plan no cuadra.",
       "page": {
         "hero": {
           "badge": "Para project managers",
-          "title1": "Del briefing al deadline,",
-          "titleHighlight": "sin sorpresas",
+          "title1": "Del briefing al plazo, con avisos cuando el plan no cuadra",
+          "titleHighlight": "",
           "subtitle": "Gestiona clientes, proyectos, presupuestos, deadlines y OKRs desde un único punto. Con control de coherencia automática que detecta inconsistencias antes de que lleguen al reporte.",
           "pills": [
             "Clientes y proyectos",
@@ -2494,10 +2485,10 @@
       }
     },
     "integrations": {
-      "seoTitle": "Integraciones: Google Ads, Meta Ads y CRM | Taimbox",
-      "seoDescription": "Conecta Taimbox con las herramientas clave de tu empresa. Sincronización nativa con plataformas publicitarias para un control financiero y de gastos total.",
-      "jsonName": "Integraciones — Taimbox",
-      "jsonDescription": "Conecta Taimbox con las herramientas clave de tu empresa. Sincronización nativa con plataformas publicitarias para un control financiero y de gastos total.",
+      "seoTitle": "Integraciones: Google Ads, Meta Ads y API | Taimbox",
+      "seoDescription": "Google Ads y Meta en solo lectura, API REST y exportaciones. Sin un CRM en el título: se conecta lo que el producto conecta.",
+      "jsonName": "Integraciones: Google Ads, Meta Ads y API",
+      "jsonDescription": "Google Ads y Meta en solo lectura, API REST y exportaciones.",
       "page": {
         "mockGoogle": {
           "title": "Google Ads",
@@ -2596,8 +2587,8 @@
         },
         "hero": {
           "badge": "Para agencias performance",
-          "titleBefore": "Conecta",
-          "titleHighlight": "todo tu ecosistema",
+          "titleBefore": "Google Ads y Meta en solo lectura, API REST y exportaciones",
+          "titleHighlight": "",
           "subtitle": "Google Ads, Meta Ads, API REST y sistema weekly — todo sincronizado con tu planificación de recursos. Controla los presupuestos de las campañas de todos tus clientes desde un solo lugar.",
           "pills": [
             "Google Ads",
@@ -2605,7 +2596,8 @@
             "API REST",
             "Export CSV para CRM/ERP",
             "Weekly Feedback"
-          ]
+          ],
+          "title1": "Google Ads y Meta en solo lectura, API REST y exportaciones"
         },
         "s1": {
           "kicker": "Google Ads",
@@ -2719,10 +2711,10 @@
       }
     },
     "ppc": {
-      "seoTitle": "Monitor de presupuestos PPC | Taimbox",
-      "seoDescription": "Controla el presupuesto publicitario de todos tus clientes desde un solo dashboard. Google Ads y Meta Ads unificados. Sincronización manual y programada (planes Agency/Scale).",
-      "jsonName": "Monitor de presupuestos PPC — Taimbox",
-      "jsonDescription": "Controla el presupuesto publicitario de todos tus clientes desde un solo dashboard. Google Ads y Meta Ads unificados. Sincronización manual y programada (planes Agency/Scale).",
+      "seoTitle": "Monitor de presupuestos PPC de tus clientes | Taimbox",
+      "seoDescription": "El gasto de Google Ads y Meta, unificado, en los planes que lo incluyen. La sincronización es horaria, no instantánea.",
+      "jsonName": "Monitor de presupuestos PPC",
+      "jsonDescription": "El gasto de Google Ads y Meta, unificado, en los planes que lo incluyen.",
       "page": {
         "chart": {
           "title": "Pacing de gasto vs ritmo ideal del mes",
@@ -2808,9 +2800,9 @@
         },
         "hero": {
           "badge": "Desde el Plan Agency",
-          "titleBefore": "Duerme tranquilo.",
-          "titleGradient": "Controla el presupuesto",
-          "titleAfter": "de todos tus clientes desde un solo lugar.",
+          "titleBefore": "El gasto de Google Ads y Meta, unificado, en los planes que lo incluyen",
+          "titleGradient": "",
+          "titleAfter": "",
           "subtitle": "Olvídate de abrir 20 pestañas de Google y Meta Ads cada mañana. Taimbox unifica el gasto tras sincronizar (manual o programada en planes Agency/Scale) y te ayuda a detectar desvíos de presupuesto.",
           "cta": "Probar Agency 14 días",
           "ctaSub": "Trial Agency sin tarjeta · Sincroniza en 2 clics"
@@ -2943,14 +2935,14 @@
       }
     },
     "security": {
-      "seoTitle": "Seguridad y Privacidad nivel Enterprise | Taimbox",
-      "seoDescription": "Descubre cómo Taimbox protege los datos de tu agencia y los de tus clientes con cifrado AES-256, aislamiento RLS estricto y conexiones OAuth2 seguras sin contraseñas.",
-      "jsonName": "Seguridad y Privacidad — Taimbox",
-      "jsonDescription": "Descubre cómo Taimbox protege los datos de tu agencia y los de tus clientes con cifrado AES-256, aislamiento RLS estricto y conexiones OAuth2 seguras sin contraseñas.",
+      "seoTitle": "Dónde se guardan y cómo se aíslan tus datos | Taimbox",
+      "seoDescription": "Dónde están los datos, cómo se aíslan por agencia y qué hace cada tercero. El detalle contrastado está en esta página.",
+      "jsonName": "Dónde se guardan y cómo se aíslan tus datos",
+      "jsonDescription": "Aislamiento por agencia y papel de cada tercero. Sin repetir certificaciones no contrastadas.",
       "page": {
         "heroBadge": "Arquitectura de confianza Zero-Trust",
-        "heroTitle1": "La seguridad de tu agencia no es negociable.",
-        "heroTitleGradient": "La nuestra tampoco.",
+        "heroTitle1": "Dónde están los datos, cómo se aíslan por agencia y qué hace cada tercero",
+        "heroTitleGradient": "",
         "heroSubtitle": "Sabemos que manejas la rentabilidad, los salarios y el gasto publicitario de decenas de clientes. Por eso hemos construido Taimbox sobre una arquitectura de seguridad estricta, diseñada para repeler accesos no autorizados por diseño, no como una capa añadida al final.",
         "threePillarsKicker": "Fundamentos Técnicos",
         "threePillarsH2": "Los 3 pilares de nuestra infraestructura",

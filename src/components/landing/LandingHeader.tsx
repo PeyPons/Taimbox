@@ -49,14 +49,14 @@ export function LandingHeader({ variant = "dark" }: LandingHeaderProps) {
   const spacerH = light ? "h-[68px]" : "h-14";
 
   const navLinkClass = light
-    ? "group relative text-[13px] font-medium px-2 py-2 rounded-lg text-[#3f3a34] hover:text-[#1c1915] hover:bg-[#1c1915]/[0.04] transition-colors"
+    ? "group relative text-[13px] font-medium px-2 py-2 rounded-lg text-[#4A4868] hover:text-[#14123B] hover:bg-[#14123B]/[0.04] transition-colors"
     : "text-sm text-indigo-200 hover:text-white transition-colors";
 
   return (
     <>
       <header
         className={cn(
-          "fixed top-0 left-0 right-0 z-50 w-full border-b border-[#1c1915]/10 bg-[#f3efe6]",
+          "fixed top-0 left-0 right-0 z-50 w-full border-b border-[#14123B]/10 bg-[#F7F8FC]",
         )}
       >
         <div
@@ -100,7 +100,7 @@ export function LandingHeader({ variant = "dark" }: LandingHeaderProps) {
                 size="sm"
                 className={cn(
                   light
-                    ? "relative h-10 px-5 rounded-lg bg-slate-900 text-white text-[14px] font-medium hover:bg-slate-800 transition-colors"
+                    ? "relative h-10 px-5 rounded-lg bg-[#4F46E5] text-white text-[14px] font-medium hover:bg-[#4338CA] transition-colors"
                     : "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white",
                 )}
               >
@@ -116,7 +116,7 @@ export function LandingHeader({ variant = "dark" }: LandingHeaderProps) {
                 size="sm"
                 className={cn(
                   light
-                    ? "h-10 px-5 rounded-lg bg-slate-900 text-white text-[14px] font-medium hover:bg-slate-800"
+                    ? "h-10 px-5 rounded-lg bg-[#4F46E5] text-white text-[14px] font-medium hover:bg-[#4338CA]"
                     : "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-xs px-3",
                 )}
               >

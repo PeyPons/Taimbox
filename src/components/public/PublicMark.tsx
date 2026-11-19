@@ -1,71 +1,55 @@
 import { cn } from "@/lib/utils";
 
 /**
- * Marca de línea de la web pública.
- * El SVG de la línea A (propuesta 18-11-2026) no estaba en el repositorio:
- * trazo único, reloj dentro de la caja, sin gradiente. Sustituir por el
- * fichero oficial cuando llegue. El panel sigue con `TaimboxLogo`.
+ * Línea C, «Palabra con reloj» (Inés, 18-11-2026).
+ * Tinta #14123B y sector #7C3AED; sobre oscuro, lavanda #C4B5FD.
+ * El panel sigue con `TaimboxLogo`.
  */
 export type PublicTone = "ink" | "paper";
 
-const TONE = {
-  ink: { stroke: "#1c1915", hand: "#9a3412", word: "text-[#1c1915]" },
-  paper: { stroke: "#f3efe6", hand: "#e7d7c3", word: "text-[#f3efe6]" },
+const WORDMARK = {
+  ink: "/brand/logo-C.svg",
+  paper: "/brand/logo-C-dark.svg",
 } as const;
 
-export function PublicMark({
-  className,
-  tone = "ink",
-}: {
-  className?: string;
-  tone?: PublicTone;
-}) {
-  const colors = TONE[tone];
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 32 32"
-      fill="none"
-      role="img"
-      aria-hidden
-      className={cn("shrink-0", className)}
-    >
-      <rect
-        x="2.75"
-        y="2.75"
-        width="26.5"
-        height="26.5"
-        rx="1.5"
-        stroke={colors.stroke}
-        strokeWidth="1.25"
-      />
-      <path d="M16 16.2 V8.2" stroke={colors.hand} strokeWidth="1.6" strokeLinecap="square" />
-      <path d="M16 16.2 L21.6 19" stroke={colors.stroke} strokeWidth="1.25" strokeLinecap="square" />
-      <circle cx="16" cy="16.2" r="1.15" fill={colors.stroke} />
-    </svg>
-  );
-}
+const COMPACT = {
+  ink: "/brand/logo-C-compacto.svg",
+  paper: "/brand/logo-C-compacto-dark.svg",
+} as const;
 
 export function PublicWordmark({
   className,
   tone = "ink",
-  markClassName = "h-7 w-7",
+  compact = false,
 }: {
   className?: string;
   tone?: PublicTone;
+  compact?: boolean;
   markClassName?: string;
 }) {
+  const src = (compact ? COMPACT : WORDMARK)[tone];
   return (
-    <span className={cn("inline-flex items-center gap-2.5", className)}>
-      <PublicMark className={markClassName} tone={tone} />
-      <span
-        className={cn(
-          "font-public text-[1.35rem] leading-none tracking-[-0.03em]",
-          TONE[tone].word,
-        )}
-      >
-        Taimbox
-      </span>
-    </span>
+    <img
+      src={src}
+      alt="Taimbox"
+      className={cn("block w-auto", compact ? "h-7" : "h-8", className)}
+    />
+  );
+}
+
+/** Signo (la o-reloj) para sitios donde no cabe la palabra. */
+export function PublicSign({
+  className,
+  tone = "ink",
+}: {
+  className?: string;
+  tone?: PublicTone;
+}) {
+  return (
+    <img
+      src={tone === "paper" ? "/brand/logo-C-signo-dark.svg" : "/brand/logo-C-signo.svg"}
+      alt=""
+      className={cn("block h-8 w-8", className)}
+    />
   );
 }

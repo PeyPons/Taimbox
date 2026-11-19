@@ -49,6 +49,9 @@ export function SeoTags({
       <meta property="og:description" content={description} />
       <meta property="og:url" content={canonical} />
       <meta property="og:locale" content={lang === "en" ? "en_US" : "es_ES"} />
+      <meta property="og:image" content={absoluteUrl("/brand/logo-C.svg")} />
+      <meta name="twitter:card" content="summary" />
+      <meta name="twitter:image" content={absoluteUrl("/brand/logo-C.svg")} />
       {ldPayload != null && (
         <script type="application/ld+json">{JSON.stringify(ldPayload)}</script>
       )}

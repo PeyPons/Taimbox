@@ -62,7 +62,7 @@ export default function LandingPage() {
         }
       />
 
-      <div className="relative min-h-screen min-w-0 isolate bg-[#16130f] overflow-x-clip">
+      <div className="relative min-h-screen min-w-0 isolate bg-[#14123B] overflow-x-clip">
         <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
           <div className="absolute top-0 left-1/4 w-96 h-96 bg-amber-700/15 rounded-full blur-3xl opacity-50" />
           <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-orange-950/40 rounded-full blur-3xl opacity-50" />
