@@ -62,11 +62,11 @@ export default function LandingPage() {
         }
       />
 
-      <div className="relative min-h-screen min-w-0 isolate bg-gradient-to-br from-indigo-950 via-purple-950 to-indigo-900 overflow-x-clip">
+      <div className="relative min-h-screen min-w-0 isolate bg-[#16130f] overflow-x-clip">
         <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
-          <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-3xl opacity-50" />
-          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl opacity-50" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-indigo-500/10 rounded-full blur-3xl opacity-30" />
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-amber-700/15 rounded-full blur-3xl opacity-50" />
+          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-orange-950/40 rounded-full blur-3xl opacity-50" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-stone-700/10 rounded-full blur-3xl opacity-30" />
         </div>
         <div
           className="pointer-events-none absolute inset-0 opacity-10"
@@ -82,8 +82,8 @@ export default function LandingPage() {
           className="pointer-events-none fixed inset-0 z-[5] hidden mix-blend-screen motion-reduce:hidden lg:block"
           style={{
             background: reduceMotion
-              ? "radial-gradient(420px at 50% 25%, rgba(129, 140, 248, 0.2), rgba(168, 85, 247, 0.12) 35%, transparent 70%)"
-              : "radial-gradient(420px at var(--landing-glow-x, 50%) var(--landing-glow-y, 25%), rgba(129, 140, 248, 0.24), rgba(168, 85, 247, 0.14) 35%, transparent 70%)",
+              ? "radial-gradient(420px at 50% 25%, rgba(154, 52, 18, 0.16), rgba(68, 48, 32, 0.12) 35%, transparent 70%)"
+              : "radial-gradient(420px at var(--landing-glow-x, 50%) var(--landing-glow-y, 25%), rgba(154, 52, 18, 0.18), rgba(68, 48, 32, 0.12) 35%, transparent 70%)",
           }}
         />
 

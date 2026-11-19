@@ -7,7 +7,8 @@
     "login": "Log in",
     "menuAria": "Menu",
     "featuresTrigger": "Features",
-    "language": "Language"
+    "language": "Language",
+    "audiences": "Who it's for"
   },
   "features": {
     "exploreByRole": "Explore by role",
@@ -112,7 +113,11 @@
       "demo": "Interactive demo",
       "security": "Security",
       "support": "Contact support",
-      "contact": "Contact"
+      "contact": "Contact",
+      "audiences": "Who it's for",
+      "performance": "Media agencies",
+      "creative": "Studios",
+      "fullService": "Full-service agencies"
     },
     "ctaButton": "Create my account",
     "ctaTrial": "Free trial. No credit card required.",
@@ -122,6 +127,171 @@
     "privacy": "Privacy",
     "terms": "Terms",
     "cookies": "Cookies"
+  },
+  "audiences": {
+    "nav": "Who it's for",
+    "hub": {
+      "seoTitle": "Who Taimbox is for | Agencies",
+      "seoDescription": "Three readings of the same product, based on the work the agency bills: media, studio, or full service.",
+      "kicker": "Agency type",
+      "title": "According to the work you bill",
+      "lede": "These are not separate editions, and they are not plans under another name. It is the same Taimbox, read from the kind of month you run: media accounts, studio work, or both at once.",
+      "footnoteBefore": "Prices are on",
+      "footnoteAfter": "Each screen is spelled out in the"
+    },
+    "performance": {
+      "seoTitle": "Taimbox for media agencies | Spend and hours",
+      "seoDescription": "Google Ads and Meta sync every hour. The planner shows the capacity of the people running the accounts. The budget monitor is on the Agency plan and above.",
+      "kicker": "Media agencies",
+      "title": "Ad spend and the team's hours, in the same month",
+      "lede": "Taimbox pulls Google Ads and Meta once an hour and puts that next to the capacity of the people running the accounts. Budget pace sits in the monitor. The margin on the work sits in finance. A person still decides whether hours move.",
+      "cardLede": "Ad spend, refreshed every hour, next to the hours of the people running the accounts.",
+      "situationsTitle": "Three moments in the month",
+      "situations": [
+        {
+          "title": "The budget runs ahead",
+          "body": "The monitor draws cumulative spend against a straight-line pace for the month and shows the gap. Sync is hourly, not instant. It is for seeing the drift before month-end, not for bidding in the moment."
+        },
+        {
+          "title": "The people on the accounts are out of week",
+          "body": "The planner splits capacity by week and subtracts absences. If someone is over, you see the name and the week. Not a productivity score."
+        },
+        {
+          "title": "The account spends to plan and the agency does not",
+          "body": "Financial health crosses accrued revenue for the work with the cost of the time booked to it. The client's ad spend is not the agency's margin."
+        }
+      ],
+      "modulesTitle": "Where to look",
+      "modules": [
+        {
+          "label": "Budget monitor",
+          "note": "Google Ads and Meta, read every hour. From the Agency plan up."
+        },
+        {
+          "label": "Planner",
+          "note": "Hours by person and by week."
+        },
+        {
+          "label": "Profitability",
+          "note": "Accrued revenue, project pace, and margin on the work."
+        },
+        {
+          "label": "Team",
+          "note": "Absences, capacity, and recorded time."
+        }
+      ],
+      "limitsTitle": "What not to expect",
+      "limits": [
+        "It does not edit campaigns or replace Google Ads or Meta Ads Manager.",
+        "It does not move the work by itself. A redistribution suggestion is accepted by whoever manages the team, and only between people who share the project.",
+        "Export is CSV, JSON, or API, depending on the plan. There is no PDF and no Excel.",
+        "There is no promised saving. The number that matters comes from your hours and your account."
+      ],
+      "ctaTitle": "The way in is the one you already have",
+      "ctaBody": "Prices are published on the plans page. The account is opened from the header."
+    },
+    "creative": {
+      "seoTitle": "Taimbox for studios | Week and capacity",
+      "seoDescription": "Weekly planning, capacity with absences taken out, and deadlines with suggestions the studio accepts. Reassignment is one click, not dragging cards.",
+      "kicker": "Studios",
+      "title": "The studio's week, with the hours that actually fit",
+      "lede": "Pieces, revisions and deliveries are planned by week. Capacity subtracts whoever is out. If a deadline sticks, Taimbox suggests who could take the hours, among people who share the project, and the studio accepts or leaves it.",
+      "cardLede": "Weeks, deliveries, and the capacity left when someone is out.",
+      "situationsTitle": "Three moments in the month",
+      "situations": [
+        {
+          "title": "The revision eats the week",
+          "body": "The month's deadline is still there. A redistribution suggestion looks at who shares the project, who can give hours up, and how far the person receiving them can go. It does not reassign on its own."
+        },
+        {
+          "title": "The calendar says eight hours and the studio does not",
+          "body": "Absences and effective capacity show up on the team page and in the planner. A gap on the calendar is not an hour you can ship."
+        },
+        {
+          "title": "The piece's budget and the hours stop matching",
+          "body": "Profitability shows accrued revenue and the cost of time. It is there so you can decide whether the next revision fits this month or needs a conversation with the client."
+        }
+      ],
+      "modulesTitle": "Where to look",
+      "modules": [
+        {
+          "label": "Planner",
+          "note": "The team's week, hour by hour."
+        },
+        {
+          "label": "Projects and deadlines",
+          "note": "The month's targets and redistribution suggestions, with constraints."
+        },
+        {
+          "label": "Team and time",
+          "note": "Absences, capacity, and the timer on a task."
+        },
+        {
+          "label": "Profitability",
+          "note": "Whether the piece is still inside the cost of the time booked to it."
+        }
+      ],
+      "limitsTitle": "What not to expect",
+      "limits": [
+        "It is not a board for dragging tasks. Reassignment in the planner is one click.",
+        "It does not draw a visual map of dependencies. It does show what is blocking progress.",
+        "It does not promise the studio will stop working late. It shows where the hours are.",
+        "If the studio does not run media, the ads monitor is unnecessary. It is there from the Agency plan for teams that do."
+      ],
+      "ctaTitle": "The way in is the one you already have",
+      "ctaBody": "Prices are published on the plans page. The account is opened from the header."
+    },
+    "fullService": {
+      "seoTitle": "Taimbox for full-service agencies | One month, several lines",
+      "seoDescription": "Clients, the planner, time tracking and, if you run media, the ads monitor. Finance puts accrued revenue next to the cost of time.",
+      "kicker": "Full-service agencies",
+      "title": "Accounts, craft and media, read in the same month",
+      "lede": "A team that does all three usually looks in three places. Taimbox puts clients and projects, the team's week and, if you run media, ad spend in one product. Finance does not mix the client's media budget with the agency's margin: it keeps the revenue of the work apart from the cost of time.",
+      "cardLede": "Clients, the team's week and, where there is media, ad spend in the same month.",
+      "situationsTitle": "Three moments in the month",
+      "situations": [
+        {
+          "title": "The media account and the piece share a team",
+          "body": "The planner shows hours by person and by week. If someone is on both lines, the load shows up together."
+        },
+        {
+          "title": "The client asks about spend and the partners ask about margin",
+          "body": "The monitor answers spend, every hour, from the Agency plan up. Finance answers the margin on the work. They are two questions and they live in two places."
+        },
+        {
+          "title": "The month closes and someone has to see what happened",
+          "body": "There are overload indicators, budget-drift alerts and month-end reminders. There is no per-client PDF and no one-click Excel."
+        }
+      ],
+      "modulesTitle": "Where to look",
+      "modules": [
+        {
+          "label": "Projects",
+          "note": "Clients, deliverables and the month's deadlines."
+        },
+        {
+          "label": "Planner",
+          "note": "The week of anyone who sits on more than one line."
+        },
+        {
+          "label": "Profitability",
+          "note": "Accrued revenue and the cost of time, not the client's ad spend."
+        },
+        {
+          "label": "Budget monitor",
+          "note": "Only if you run media. From the Agency plan up."
+        }
+      ],
+      "limitsTitle": "What not to expect",
+      "limits": [
+        "It does not replace the CRM or the ERP. Time can leave through the API or as CSV and JSON.",
+        "There is no native webhook sync with the CRM.",
+        "Scale covers several agencies, around 100 people. Enterprise, above that or with requirements of that kind, is a separate conversation.",
+        "SSO, external calendars and 24/7 support are not part of what exists today."
+      ],
+      "ctaTitle": "The way in is the one you already have",
+      "ctaBody": "Prices are published on the plans page. The account is opened from the header."
+    }
   },
   "cookie": {
     "bannerTitle": "We use cookies to improve your experience and our service.",

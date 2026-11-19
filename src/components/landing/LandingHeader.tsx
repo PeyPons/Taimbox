@@ -17,7 +17,7 @@ import {
   DollarSign,
   Shield,
 } from "lucide-react";
-import { TaimboxLogo } from "@/components/brand/TaimboxLogo";
+import { PublicWordmark } from "@/components/public/PublicMark";
 import { FeaturesDropdown } from "./FeaturesDropdown";
 import { LanguageSelector } from "./LanguageSelector";
 
@@ -41,21 +41,22 @@ export type LandingHeaderProps = {
 export function LandingHeader({ variant = "dark" }: LandingHeaderProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { t, i18n } = useTranslation("landing");
-  const light = variant === "light";
+  // Una sola barra de papel en toda la web pública. El panel no usa este header.
+  void variant;
+  const light = true;
   const navBp = light ? "md" : "sm";
   const topOffset = light ? "top-[68px]" : "top-[57px]";
   const spacerH = light ? "h-[68px]" : "h-14";
 
   const navLinkClass = light
-    ? "group relative text-[14px] font-medium px-3.5 py-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors"
+    ? "group relative text-[13px] font-medium px-2 py-2 rounded-lg text-[#3f3a34] hover:text-[#1c1915] hover:bg-[#1c1915]/[0.04] transition-colors"
     : "text-sm text-indigo-200 hover:text-white transition-colors";
 
   return (
     <>
       <header
         className={cn(
-          "fixed top-0 left-0 right-0 z-50 w-full transition-shadow duration-200",
-          light ? "border-b border-slate-900/[0.06] bg-white" : "border-b border-white/10 bg-indigo-950/90 backdrop-blur-xl",
+          "fixed top-0 left-0 right-0 z-50 w-full border-b border-[#1c1915]/10 bg-[#f3efe6]",
         )}
       >
         <div
@@ -71,25 +72,21 @@ export function LandingHeader({ variant = "dark" }: LandingHeaderProps) {
               light ? "text-slate-900 hover:text-slate-900" : "text-white hover:text-indigo-200",
             )}
           >
-            <TaimboxLogo
-              variant={light ? "light" : "dark"}
-              markClassName={light ? "h-[22px] w-[22px]" : "h-5 w-5"}
-              wordmarkClassName={cn(
-                "leading-none",
-                light ? "text-[16px] font-semibold -tracking-[0.012em]" : "text-lg font-bold",
-              )}
-            />
+            <PublicWordmark tone="ink" markClassName="h-[22px] w-[22px]" />
           </Link>
 
           <div className={cn(`hidden ${navBp}:flex items-center`, light ? "gap-1" : "gap-4")}>
-            <FeaturesDropdown variant={variant} />
+            <FeaturesDropdown variant="light" />
+            <Link to={localizedPathFromEs("/para-quien", i18n.language)} className={navLinkClass}>
+              {t("header.audiences")}
+            </Link>
             <Link to={localizedPathFromEs("/precios", i18n.language)} className={navLinkClass}>
               {t("header.pricing")}
             </Link>
             <Link to={localizedPathFromEs("/guia", i18n.language)} className={navLinkClass}>
               {t("header.guide")}
             </Link>
-            <Link to={localizedPathFromEs("/api-docs", i18n.language)} className={navLinkClass}>
+            <Link to={localizedPathFromEs("/api-docs", i18n.language)} className={cn(navLinkClass, "hidden xl:inline")}>
               {t("header.api")}
             </Link>
             <Link to={localizedPathFromEs("/contacto", i18n.language)} className={navLinkClass}>
@@ -170,7 +167,7 @@ export function LandingHeader({ variant = "dark" }: LandingHeaderProps) {
           )}
         >
           <div className={cn("shrink-0 px-4 py-3.5 flex flex-wrap gap-2 border-b", light ? "border-slate-100" : "border-white/10")}>
-            {(["/precios", "/guia", "/api-docs", "/contacto"] as const).map((path) => (
+            {(["/para-quien", "/precios", "/guia", "/api-docs", "/contacto"] as const).map((path) => (
               <Link
                 key={path}
                 to={localizedPathFromEs(path, i18n.language)}
@@ -182,6 +179,7 @@ export function LandingHeader({ variant = "dark" }: LandingHeaderProps) {
                     : "border border-white/15 bg-white/10 text-indigo-100 hover:bg-white/15 hover:text-white",
                 )}
               >
+                {path === "/para-quien" && t("header.audiences")}
                 {path === "/precios" && t("header.pricing")}
                 {path === "/guia" && t("header.guide")}
                 {path === "/api-docs" && t("header.api")}

@@ -34,7 +34,7 @@ function NotFoundFallback() {
         lang={lang}
         robots="noindex, nofollow"
       />
-      <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-indigo-900 flex flex-col">
+      <div className="min-h-screen bg-[#16130f] flex flex-col">
         <LandingHeader />
         <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
           <h1 className="text-3xl sm:text-5xl font-black text-white mb-4">
@@ -134,10 +134,10 @@ export default function BlogArticleDynamicPage() {
         jsonLd={articleJsonLd}
       />
 
-      <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-indigo-900 relative overflow-hidden">
+      <div className="min-h-screen bg-[#16130f] relative overflow-hidden">
         <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-3xl opacity-50" />
-          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl opacity-50" />
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-amber-900/20 rounded-full blur-3xl opacity-50" />
+          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-orange-950/35 rounded-full blur-3xl opacity-50" />
         </div>
         <div
           className="absolute inset-0 opacity-10"

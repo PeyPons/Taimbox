@@ -137,6 +137,7 @@ El copy de landings y presentaciones comerciales debe reflejar exactamente lo qu
   - **Sin claims de**: SSO, calendarios externos, "comunidad activa", soporte 24/7, uptime 99,9% (los Términos ya no fijan SLA en planes estándar; ver `/seguridad`).
   - **Naming de planes**: siempre Free/Team/Agency/Scale/Enterprise en copy público (los `plan_id` internos starter/pro/business/scale/enterprise no se muestran); umbral Enterprise ~100 personas.
   - **Cifras**: no usar porcentajes de resultado sin fuente (+40%, 94% fiabilidad, −1h/día…); usar hechos del producto ("En vivo", "1 clic", "cada hora", "2 plataformas Ads").
+  - **Landings por tipo de agencia** (`/para-quien` y las tres hijas, `AudienceLandingPage.tsx`): mismo producto, leído desde medios, estudio o agencia integral. No añaden módulos. El monitor de Ads sigue siendo desde Agency. Sin superlativos ni cifras de ahorro.
   - **Privacidad/legal**: subencargados reales = infraestructura propia UE + Stripe, Resend, Google, Meta (sin AWS/Supabase cloud); facturación solo **mensual**; portabilidad por email o API según plan.
 
 Archivos afectados al cambiar copy: `LandingPage.tsx` (carousel), `ProjectsArticle.tsx`, `PlannerArticle.tsx`, `ReportsArticle.tsx`, `TeamArticle.tsx`, `IntegrationsArticle.tsx`, `PresentationPage.tsx`, `PresentationMockups.tsx`, `DeadlinesTour.tsx`, `FeaturesDropdown.tsx`. Algoritmo de sugerencias: ver lógica en DeadlinesPage y useDeadlines/redistribución.

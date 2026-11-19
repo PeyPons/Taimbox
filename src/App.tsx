@@ -53,6 +53,12 @@ import ApiDocsPage from "./pages/ApiDocsPage";
 import OpenApiViewerPage from "./pages/OpenApiViewerPage";
 import PresentationPage from "./pages/PresentationPage";
 import ContactoPage from "./pages/ContactoPage";
+import {
+  AudienceHubPage,
+  CreativeAudiencePage,
+  FullServiceAudiencePage,
+  PerformanceAudiencePage,
+} from "./pages/AudienceLandingPage";
 import { ModuleGuard } from "./components/auth/ModuleGuard";
 import { PlanGuard } from "./components/auth/PlanGuard";
 import { BrandingEffect } from "./components/layout/BrandingEffect";
@@ -148,6 +154,10 @@ const App = () => (
                         <Route path="/integraciones" element={<IntegrationsLandingPage />} />
                         <Route path="/monitor-ppc" element={<PpcMonitorLandingPage />} />
                         <Route path="/seguridad" element={<SecurityLandingPage />} />
+                        <Route path="/para-quien" element={<AudienceHubPage />} />
+                        <Route path="/agencias-performance" element={<PerformanceAudiencePage />} />
+                        <Route path="/estudios-creativos" element={<CreativeAudiencePage />} />
+                        <Route path="/agencias-integrales" element={<FullServiceAudiencePage />} />
                         <Route path="/privacidad" element={<PrivacyPolicyPage />} />
                         <Route path="/condiciones" element={<TermsOfServicePage />} />
                         <Route path="/precios" element={<PreciosPage />} />
@@ -178,6 +188,10 @@ const App = () => (
                         <Route path="/en/integrations" element={<IntegrationsLandingPage />} />
                         <Route path="/en/ppc-monitor" element={<PpcMonitorLandingPage />} />
                         <Route path="/en/security" element={<SecurityLandingPage />} />
+                        <Route path="/en/who-its-for" element={<AudienceHubPage />} />
+                        <Route path="/en/performance-agencies" element={<PerformanceAudiencePage />} />
+                        <Route path="/en/creative-studios" element={<CreativeAudiencePage />} />
+                        <Route path="/en/full-service-agencies" element={<FullServiceAudiencePage />} />
                         <Route path="/en/privacy" element={<PrivacyPolicyPage />} />
                         <Route path="/en/terms" element={<TermsOfServicePage />} />
                         <Route path="/en/pricing" element={<PreciosPage />} />

@@ -7,7 +7,8 @@
     "login": "Login",
     "menuAria": "Menú",
     "featuresTrigger": "Funcionalidades",
-    "language": "Idioma"
+    "language": "Idioma",
+    "audiences": "Para quién"
   },
   "features": {
     "exploreByRole": "Explora por rol",
@@ -112,7 +113,11 @@
       "demo": "Demo interactiva",
       "security": "Seguridad",
       "support": "Contactar soporte",
-      "contact": "Contacto"
+      "contact": "Contacto",
+      "audiences": "Para quién",
+      "performance": "Agencias de medios",
+      "creative": "Estudios",
+      "fullService": "Agencias integrales"
     },
     "ctaButton": "Crear mi cuenta",
     "ctaTrial": "Prueba gratuita. Sin tarjeta de crédito.",
@@ -122,6 +127,171 @@
     "privacy": "Privacidad",
     "terms": "Condiciones",
     "cookies": "Cookies"
+  },
+  "audiences": {
+    "nav": "Para quién",
+    "hub": {
+      "seoTitle": "Para quién es Taimbox | Agencias",
+      "seoDescription": "Tres lecturas del mismo producto, según el trabajo que factura la agencia: medios, estudio o servicio integral.",
+      "kicker": "Tipo de agencia",
+      "title": "Según el trabajo que facturáis",
+      "lede": "No son ediciones distintas ni planes con otro nombre. Es el mismo Taimbox, leído desde el tipo de mes que lleváis: cuentas de medios, piezas de estudio, o las dos cosas a la vez.",
+      "footnoteBefore": "Los precios están en",
+      "footnoteAfter": "El detalle de cada pantalla, en la"
+    },
+    "performance": {
+      "seoTitle": "Taimbox para agencias de medios | Gasto y horas",
+      "seoDescription": "Google Ads y Meta se sincronizan cada hora. El planificador muestra la capacidad del equipo que opera las cuentas. El monitor de presupuestos está desde el plan Agency.",
+      "kicker": "Agencias de medios",
+      "title": "El gasto de Ads y las horas del equipo, en el mismo mes",
+      "lede": "Taimbox trae Google Ads y Meta cada hora y los deja al lado de la capacidad de quien lleva esas cuentas. El ritmo del presupuesto se ve en el monitor. El margen del trabajo, en finanzas. Mover horas lo decide una persona.",
+      "cardLede": "Gasto publicitario cada hora, junto a las horas del equipo que opera las cuentas.",
+      "situationsTitle": "Tres momentos del mes",
+      "situations": [
+        {
+          "title": "El presupuesto se adelanta",
+          "body": "El monitor dibuja el gasto acumulado frente a un ritmo lineal del mes y marca la diferencia. La sincronización es horaria, no instantánea. Sirve para ver el desvío antes del cierre, no para pujar en el momento."
+        },
+        {
+          "title": "Quien opera las cuentas no da más de sí",
+          "body": "El planificador parte la capacidad por semana y descuenta ausencias. Si alguien está por encima, se ve el nombre y la semana. No es un porcentaje de productividad."
+        },
+        {
+          "title": "La cuenta gasta lo previsto y la agencia no",
+          "body": "Salud financiera cruza el ingreso devengado del trabajo con el coste del tiempo imputado. El gasto de Ads del cliente no es el margen de la agencia."
+        }
+      ],
+      "modulesTitle": "Dónde se mira",
+      "modules": [
+        {
+          "label": "Monitor de presupuestos",
+          "note": "Google Ads y Meta, lectura cada hora. Desde el plan Agency."
+        },
+        {
+          "label": "Planificador",
+          "note": "Horas por persona y por semana."
+        },
+        {
+          "label": "Rentabilidad",
+          "note": "Ingreso devengado, ritmo del proyecto y margen del trabajo."
+        },
+        {
+          "label": "Equipo",
+          "note": "Ausencias, capacidad y tiempos registrados."
+        }
+      ],
+      "limitsTitle": "Lo que conviene no esperar",
+      "limits": [
+        "No edita campañas ni sustituye el administrador de Google Ads o de Meta.",
+        "No mueve el trabajo solo. Si hay una sugerencia de redistribución, la acepta quien gestiona el equipo, y solo entre personas que comparten proyecto.",
+        "La exportación es CSV, JSON o API, según el plan. No hay PDF ni Excel.",
+        "No hay una cifra de ahorro prometida. El número que importa sale de vuestras horas y de vuestra cuenta."
+      ],
+      "ctaTitle": "El acceso es el de siempre",
+      "ctaBody": "Los precios están publicados en la página de planes. La cuenta se abre desde el acceso de la cabecera."
+    },
+    "creative": {
+      "seoTitle": "Taimbox para estudios | Semana y capacidad",
+      "seoDescription": "Planificación por semana, capacidad con ausencias descontadas y deadlines con sugerencias que acepta el estudio. La reasignación es en un clic, no arrastrando tarjetas.",
+      "kicker": "Estudios",
+      "title": "La semana del estudio, con las horas que de verdad caben",
+      "lede": "Piezas, revisiones y entregas se reparten por semana. La capacidad descuenta a quien no está. Si un deadline se atasca, Taimbox propone a quién pasar horas, entre quien comparte el proyecto, y el estudio acepta o lo deja.",
+      "cardLede": "Semanas, entregas y la capacidad que queda cuando alguien no está.",
+      "situationsTitle": "Tres momentos del mes",
+      "situations": [
+        {
+          "title": "La revisión se come la semana",
+          "body": "El deadline del mes sigue ahí. La sugerencia de redistribución mira quién comparte el proyecto, quién puede ceder y hasta dónde puede subir quien recibe. No reasigna sola."
+        },
+        {
+          "title": "El calendario dice ocho horas y el estudio no",
+          "body": "Ausencias y capacidad efectiva salen en equipo y en el planificador. Un hueco en el calendario no es una hora que se pueda entregar."
+        },
+        {
+          "title": "El presupuesto de la pieza y las horas dejan de coincidir",
+          "body": "En rentabilidad se ve el ingreso devengado y el coste del tiempo. Sirve para decidir si la siguiente revisión entra en el mes o se habla con el cliente."
+        }
+      ],
+      "modulesTitle": "Dónde se mira",
+      "modules": [
+        {
+          "label": "Planificador",
+          "note": "La semana del equipo, hora a hora."
+        },
+        {
+          "label": "Proyectos y deadlines",
+          "note": "Objetivos del mes y sugerencias de redistribución, con condicionantes."
+        },
+        {
+          "label": "Equipo y tiempos",
+          "note": "Ausencias, capacidad y el cronómetro por tarea."
+        },
+        {
+          "label": "Rentabilidad",
+          "note": "Si la pieza sigue dentro del coste del tiempo imputado."
+        }
+      ],
+      "limitsTitle": "Lo que conviene no esperar",
+      "limits": [
+        "No es un tablero para arrastrar tareas. La reasignación en el planificador es en un clic.",
+        "No dibuja un mapa visual de dependencias. Sí señala qué bloquea el avance.",
+        "No promete que el estudio deje de hacer horas de más. Enseña dónde están.",
+        "Si el estudio no lleva medios, el monitor de Ads no hace falta. Está desde el plan Agency para quien sí los opera."
+      ],
+      "ctaTitle": "El acceso es el de siempre",
+      "ctaBody": "Los precios están publicados en la página de planes. La cuenta se abre desde el acceso de la cabecera."
+    },
+    "fullService": {
+      "seoTitle": "Taimbox para agencias integrales | Un mes, varias líneas",
+      "seoDescription": "Clientes, planificador, tiempos y, si operáis medios, el monitor de Ads. Finanzas junta el ingreso devengado con el coste del tiempo.",
+      "kicker": "Agencias integrales",
+      "title": "Cuentas, piezas y medios, leídos en el mismo mes",
+      "lede": "Quien hace las tres cosas suele mirar en tres sitios. Taimbox junta clientes y proyectos, la semana del equipo y, si lleváis medios, el gasto de Ads. Finanzas no mezcla el presupuesto del cliente con el margen de la agencia: separa el ingreso del trabajo y el coste del tiempo.",
+      "cardLede": "Clientes, semana del equipo y, si hay medios, el gasto de Ads en el mismo mes.",
+      "situationsTitle": "Tres momentos del mes",
+      "situations": [
+        {
+          "title": "La cuenta de medios y la pieza comparten equipo",
+          "body": "El planificador muestra horas por persona y semana. Si alguien está en las dos líneas, la carga se ve junta."
+        },
+        {
+          "title": "El cliente pregunta por el gasto y la dirección por el margen",
+          "body": "El monitor responde al gasto, cada hora, desde el plan Agency. Finanzas responde al margen del trabajo. Son dos preguntas y salen en dos sitios."
+        },
+        {
+          "title": "Cierra el mes y hay que ver qué pasó",
+          "body": "Hay indicadores de sobrecarga, alertas de desviación de presupuesto y recordatorios de cierre. No hay un informe PDF por cliente ni un Excel de un clic."
+        }
+      ],
+      "modulesTitle": "Dónde se mira",
+      "modules": [
+        {
+          "label": "Proyectos",
+          "note": "Clientes, entregables y deadlines del mes."
+        },
+        {
+          "label": "Planificador",
+          "note": "La semana de quien está en más de una línea."
+        },
+        {
+          "label": "Rentabilidad",
+          "note": "Ingreso devengado y coste del tiempo, no el gasto de Ads del cliente."
+        },
+        {
+          "label": "Monitor de presupuestos",
+          "note": "Solo si operáis medios. Desde el plan Agency."
+        }
+      ],
+      "limitsTitle": "Lo que conviene no esperar",
+      "limits": [
+        "No sustituye al CRM ni al ERP. Los tiempos pueden salir por API o en CSV y JSON.",
+        "No hay una sincronización nativa por webhooks con el CRM.",
+        "Scale cubre varias agencias, en torno a 100 personas. Enterprise, por encima de eso o con requisitos de ese corte, se habla aparte.",
+        "SSO, calendarios externos y soporte 24/7 no forman parte de lo que hay hoy."
+      ],
+      "ctaTitle": "El acceso es el de siempre",
+      "ctaBody": "Los precios están publicados en la página de planes. La cuenta se abre desde el acceso de la cabecera."
+    }
   },
   "cookie": {
     "bannerTitle": "Utilizamos cookies para mejorar tu experiencia y el servicio.",

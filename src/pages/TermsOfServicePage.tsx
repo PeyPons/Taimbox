@@ -76,7 +76,7 @@ export default function TermsOfServicePage() {
                 description={t(`${S}.seoDescription`)}
                 lang={lang}
             />
-        <div className="min-h-screen bg-slate-950 flex flex-col font-sans selection:bg-indigo-500/30 overflow-x-hidden">
+        <div className="min-h-screen bg-[#16130f] flex flex-col font-sans selection:bg-orange-900/30 overflow-x-hidden">
             <LandingHeader />
 
             <main className="flex-1 relative z-10 pt-32 pb-24">

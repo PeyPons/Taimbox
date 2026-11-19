@@ -110,6 +110,26 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://taimbox.com/para-quien</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://taimbox.com/agencias-performance</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://taimbox.com/estudios-creativos</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://taimbox.com/agencias-integrales</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://taimbox.com/privacidad</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
@@ -297,6 +317,26 @@
   </url>
   <url>
     <loc>https://taimbox.com/en/security</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://taimbox.com/en/who-its-for</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://taimbox.com/en/performance-agencies</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://taimbox.com/en/creative-studios</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://taimbox.com/en/full-service-agencies</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>

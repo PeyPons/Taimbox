@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { FileText, Code, HelpCircle, Mail, BookOpen, PlayCircle, LayoutDashboard, CalendarRange, Users, BarChart3, FolderKanban, Plug, Presentation, Shield, Scale, Newspaper, Tag } from 'lucide-react';
-import { TaimboxLogo } from '@/components/brand/TaimboxLogo';
+import { PublicWordmark } from '@/components/public/PublicMark';
 import { localizedHashPath, localizedPathFromEs } from '@/i18n/publicPaths';
 import { cn } from '@/lib/utils';
 
@@ -29,16 +29,17 @@ export type LandingFooterProps = {
 export function LandingFooter({ variant = 'dark' }: LandingFooterProps) {
   const { t, i18n } = useTranslation('landing');
   const currentYear = new Date().getFullYear();
-  const light = variant === 'light';
+  void variant;
+  const light = false;
 
   const linkClass = cn(
     'text-sm flex items-center gap-2 transition-colors',
-    light ? 'text-slate-600 hover:text-violet-700' : 'text-indigo-200/80 hover:text-white',
+    light ? 'text-slate-600 hover:text-violet-700' : 'text-[#f3efe6]/75 hover:text-[#f3efe6]',
   );
   return (
     <footer className={cn(
       'relative z-10 border-t backdrop-blur-xl',
-      light ? 'border-slate-200 bg-slate-50/95' : 'border-white/10 bg-indigo-950/80',
+      light ? 'border-slate-200 bg-slate-50/95' : 'border-[#f3efe6]/10 bg-[#1c1915]',
     )}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
@@ -46,15 +47,11 @@ export function LandingFooter({ variant = 'dark' }: LandingFooterProps) {
           <div className="lg:col-span-1">
             <Link to={localizedPathFromEs('/', i18n.language)} className={cn(
               'inline-flex transition-colors',
-              light ? 'text-slate-900 hover:text-violet-700' : 'text-white hover:text-indigo-200',
+              light ? 'text-slate-900 hover:text-violet-700' : 'text-[#f3efe6] hover:text-white',
             )}>
-              <TaimboxLogo
-                variant={light ? "light" : "dark"}
-                markClassName="h-5 w-5"
-                wordmarkClassName={cn('font-bold text-lg', light ? 'text-slate-900' : 'text-white')}
-              />
+              <PublicWordmark tone="paper" markClassName="h-5 w-5" />
             </Link>
-            <p className={cn('mt-2 text-xs max-w-xs leading-snug', light ? 'text-slate-600' : 'text-indigo-200/80')}>
+            <p className={cn('mt-3 text-xs max-w-xs leading-snug', light ? 'text-slate-600' : 'text-[#f3efe6]/70')}>
               {t('footer.tagline')}
             </p>
           </div>
@@ -82,6 +79,26 @@ export function LandingFooter({ variant = 'dark' }: LandingFooterProps) {
           <div>
             <h4 className={cn('font-semibold text-sm mb-3', light ? 'text-slate-900' : 'text-white')}>{t('footer.companyTitle')}</h4>
             <ul className="space-y-1.5">
+              <li>
+                <Link to={localizedPathFromEs('/para-quien', i18n.language)} className={linkClass}>
+                  {t('footer.links.audiences')}
+                </Link>
+              </li>
+              <li>
+                <Link to={localizedPathFromEs('/agencias-performance', i18n.language)} className={linkClass}>
+                  {t('footer.links.performance')}
+                </Link>
+              </li>
+              <li>
+                <Link to={localizedPathFromEs('/estudios-creativos', i18n.language)} className={linkClass}>
+                  {t('footer.links.creative')}
+                </Link>
+              </li>
+              <li>
+                <Link to={localizedPathFromEs('/agencias-integrales', i18n.language)} className={linkClass}>
+                  {t('footer.links.fullService')}
+                </Link>
+              </li>
               <li>
                 <Link to={localizedPathFromEs('/seguridad', i18n.language)} className={linkClass}>
                   <Shield className="h-3.5 w-3.5 shrink-0" />
@@ -114,14 +131,14 @@ export function LandingFooter({ variant = 'dark' }: LandingFooterProps) {
             <h4 className={cn('font-semibold text-sm mb-3', light ? 'text-slate-900' : 'text-white')}>{t('footer.ctaTitle')}</h4>
             <Link
               to="/login?tab=register"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-sm font-semibold rounded-lg transition-all shadow-lg"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-[#f3efe6] text-[#1c1915] text-sm font-medium hover:bg-white transition-colors"
             >
               {t('footer.ctaButton')}
             </Link>
-            <p className={cn('mt-2 text-xs', light ? 'text-slate-500' : 'text-indigo-200/60')}>
+            <p className={cn('mt-2 text-xs', light ? 'text-slate-500' : 'text-[#f3efe6]/55')}>
               {t('footer.ctaTrial')}
             </p>
-            <p className={cn('mt-2 text-xs', light ? 'text-slate-600' : 'text-indigo-200/70')}>
+            <p className={cn('mt-2 text-xs', light ? 'text-slate-600' : 'text-[#f3efe6]/65')}>
               {t('footer.ctaPitchLead')}{' '}
               <Link to={localizedPathFromEs('/pitch', i18n.language)} className={cn('font-medium hover:underline underline-offset-2', light ? 'text-violet-700 hover:text-violet-900' : 'text-white')}>
                 {t('footer.ctaPitch')}
@@ -131,10 +148,10 @@ export function LandingFooter({ variant = 'dark' }: LandingFooterProps) {
         </div>
 
         <div className={cn('mt-6 pt-5 flex flex-col sm:flex-row justify-between items-center gap-3 border-t', light ? 'border-slate-200' : 'border-white/10')}>
-          <p className={cn('text-xs', light ? 'text-slate-500' : 'text-indigo-200/60')}>
+          <p className={cn('text-xs', light ? 'text-slate-500' : 'text-[#f3efe6]/55')}>
             {t('footer.copyright', { year: currentYear })}
           </p>
-          <div className={cn('flex flex-wrap gap-4 text-xs justify-center sm:justify-end', light ? 'text-slate-500' : 'text-indigo-200/60')}>
+          <div className={cn('flex flex-wrap gap-4 text-xs justify-center sm:justify-end', light ? 'text-slate-500' : 'text-[#f3efe6]/55')}>
             <Link to={localizedPathFromEs('/privacidad', i18n.language)} className={cn('flex items-center gap-1.5 transition-colors', light ? 'hover:text-violet-700' : 'hover:text-white')}>
               <Shield className="h-3.5 w-3.5" />
               {t('footer.privacy')}
