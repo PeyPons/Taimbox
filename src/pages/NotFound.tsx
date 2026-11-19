@@ -1,7 +1,8 @@
-import { useLocation } from "react-router-dom";
 import { useEffect } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
+import { LandingFooter } from "@/components/landing/LandingFooter";
+import { LandingHeader } from "@/components/landing/LandingHeader";
 import { localizedPathFromEs } from "@/i18n/publicPaths";
 
 const NotFound = () => {
@@ -15,14 +16,18 @@ const NotFound = () => {
   const homePath = localizedPathFromEs("/", i18n.language);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">{t("notFound.title")}</h1>
-        <p className="mb-4 text-xl text-muted-foreground">{t("notFound.subtitle")}</p>
-        <Link to={homePath} className="text-primary underline hover:text-primary/90">
-          {t("notFound.cta")}
-        </Link>
-      </div>
+    <div className="pub-light flex min-h-screen flex-col bg-[#F7F8FC] text-[#14123B]">
+      <LandingHeader />
+      <main className="flex flex-1 items-center justify-center px-5 py-16">
+        <div className="max-w-lg text-center">
+          <h1 className="font-display text-4xl font-bold tracking-[-0.02em]">{t("notFound.title")}</h1>
+          <p className="mt-3 text-lg text-[#4A4868]">{t("notFound.subtitle")}</p>
+          <Link to={homePath} className="pub-btn pub-btn-primary mt-6">
+            {t("notFound.cta")}
+          </Link>
+        </div>
+      </main>
+      <LandingFooter />
     </div>
   );
 };

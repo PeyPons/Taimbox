@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "prebuild": "node scripts/generate-plantilla-xlsx.mjs && node scripts/generate-openapi.mjs",
-    "build": "vite build",
+    "build": "vite build && node scripts/prerender-public.mjs",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "typecheck": "tsc -p tsconfig.app.json --noEmit",

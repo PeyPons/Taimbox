@@ -488,3 +488,69 @@ html .width-before-scroll-bar.width-before-scroll-bar {
     background: conic-gradient(#7c3aed 0 90deg, transparent 90deg 360deg);
   }
 }
+
+/* Resto de la web pública: misma niebla, tinta y títulos. No afecta al panel. */
+.pub-light {
+  background: #f7f8fc !important;
+  color: #14123b;
+}
+
+.pub-light h1,
+.pub-light h2,
+.pub-light h3 {
+  font-family: "Bricolage Grotesque", "DM Sans", system-ui, sans-serif;
+  letter-spacing: -0.02em;
+}
+
+.pub-light > .absolute.inset-0,
+.pub-light > .pointer-events-none.absolute {
+  display: none;
+}
+
+.pub-light [class*="text-white"] {
+  color: #14123b;
+}
+
+.pub-light [class*="text-indigo-1"],
+.pub-light [class*="text-indigo-2"],
+.pub-light [class*="text-slate-3"],
+.pub-light [class*="text-slate-4"],
+.pub-light [class*="text-slate-5"] {
+  color: #4a4868;
+}
+
+.pub-light [class*="bg-clip-text"] {
+  background-image: none !important;
+  -webkit-text-fill-color: #14123b;
+  color: #14123b !important;
+}
+
+.pub-light [class*="bg-slate-900"],
+.pub-light [class*="bg-slate-950"],
+.pub-light [class*="bg-white/"] {
+  background-color: #fff;
+}
+
+.pub-light [class*="border-white"] {
+  border-color: #e3e6f0;
+}
+
+.pub-light a[class*="bg-indigo"],
+.pub-light button[class*="bg-indigo"],
+.pub-light a[class*="from-indigo"],
+.pub-light button[class*="from-indigo"],
+.pub-light a[class*="bg-primary"],
+.pub-light button[class*="bg-primary"],
+.pub-light header [class*="4F46E5"],
+.pub-light header [class*="4F46E5"] * {
+  color: #fff;
+}
+
+.pub-light footer {
+  background: #14123b;
+  color: #f7f8fc;
+}
+
+.pub-light footer a[class*="F7F8FC"] {
+  color: #14123b;
+}
