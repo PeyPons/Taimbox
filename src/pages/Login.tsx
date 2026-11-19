@@ -325,7 +325,7 @@ export default function Login() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#14123B] px-4 py-8">
       <Card className="w-full max-w-md border-[#E4DDD0] bg-[#F7F4EC] text-[#14123B] shadow-none">
-        <CardHeader className="space-y-1 pb-2">
+        <CardHeader className="pb-8 pt-8">
           <div className="flex justify-center">
             <img src="/brand/logo-C.svg" alt="Taimbox" className="h-8 w-auto" />
           </div>
@@ -388,7 +388,7 @@ export default function Login() {
                   />
                   <Button
                     type="submit"
-                    className="w-full bg-primary hover:bg-primary/90 text-white font-medium"
+                    className="w-full bg-[#7C3AED] text-white font-medium hover:bg-[#6D28D9]"
                     disabled={loginForm.formState.isSubmitting}
                   >
                     {loginForm.formState.isSubmitting
@@ -403,7 +403,7 @@ export default function Login() {
                   <button
                     type="button"
                     onClick={() => setShowForgotPassword(true)}
-                    className="text-sm text-primary hover:text-primary/80 hover:underline transition-colors"
+                    className="text-sm text-[#7C3AED] transition-colors hover:text-[#6D28D9] hover:underline"
                   >
                     {t("auth.forgotPassword.link")}
                   </button>
@@ -414,7 +414,7 @@ export default function Login() {
                     <button
                       type="button"
                       onClick={() => { setShowForgotPassword(false); setResetSent(false); setForgotEmail(''); }}
-                      className="mt-2 text-xs text-primary hover:underline"
+                      className="mt-2 text-xs text-[#7C3AED] hover:underline"
                     >
                       {t("auth.forgotPassword.success.backToLogin")}
                     </button>
@@ -436,7 +436,7 @@ export default function Login() {
                       <Button type="button" variant="outline" size="sm" className="flex-1" onClick={() => { setShowForgotPassword(false); setForgotEmail(''); }}>
                         {t("auth.forgotPassword.actions.cancel")}
                       </Button>
-                      <Button type="button" size="sm" className="flex-1 bg-primary hover:bg-primary/90 text-white" onClick={onForgotPassword} disabled={isSendingReset}>
+                      <Button type="button" size="sm" className="flex-1 bg-[#7C3AED] text-white hover:bg-[#6D28D9]" onClick={onForgotPassword} disabled={isSendingReset}>
                         {isSendingReset ? t("auth.forgotPassword.actions.sending") : t("auth.forgotPassword.actions.sendLink")}
                       </Button>
                     </div>
@@ -577,7 +577,7 @@ export default function Login() {
 
                   <Button
                     type="submit"
-                    className="w-full bg-gradient-to-r from-primary to-indigo-600 hover:from-primary/90 hover:to-indigo-600/90 text-white font-medium"
+                    className="w-full bg-[#7C3AED] text-white font-medium hover:bg-[#6D28D9]"
                     disabled={isRegistering}
                   >
                     {isRegistering

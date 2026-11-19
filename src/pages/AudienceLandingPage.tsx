@@ -84,25 +84,41 @@ function HoursMock() {
 
 function PaceMock() {
   const weeks = [
-    ["S1", 22],
-    ["S2", 48],
-    ["S3", 71],
-    ["S4", 96],
+    { week: "S1", spent: "3.200 $", width: 22, pace: 25 },
+    { week: "S2", spent: "8.100 $", width: 48, pace: 50 },
+    { week: "S3", spent: "18.400 $", width: 77, pace: 75 },
   ];
   return (
-    <div className="rounded-2xl border border-[#E4DDD0] bg-[#F7F4EC] p-4 text-[#14123B] sm:p-5">
-      <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[#3C3858]">Monitor · gasto del mes</p>
-      <div className="mt-4 space-y-2">
-        {weeks.map(([label, width]) => (
-          <div key={label} className="grid grid-cols-[2rem_1fr] items-center gap-2">
-            <span className="font-mono text-[10px] text-[#3C3858]">{label}</span>
-            <span className="h-2 overflow-hidden rounded-full bg-[#E4DDD0]">
-              <span className="block h-full rounded-full bg-[#7C3AED]" style={{ width: `${width}%` }} />
+    <div className="flex h-full min-h-[17rem] flex-col justify-center rounded-2xl border border-[#E4DDD0] bg-[#F7F4EC] p-5 text-[#14123B] sm:min-h-[20rem] sm:p-7">
+      <div className="flex items-end justify-between gap-4">
+        <div>
+          <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-[#3C3858]">Monitor · Google Ads</p>
+          <p className="mt-1 text-xl font-semibold">TechCorp</p>
+        </div>
+        <p className="text-right">
+          <span className="block text-3xl font-semibold tabular-nums tracking-[-0.04em] sm:text-4xl">18.400 $</span>
+          <span className="font-mono text-[11px] text-[#3C3858]">de 24.000 $</span>
+        </p>
+      </div>
+      <div className="mt-6 space-y-3.5">
+        {weeks.map((row) => (
+          <div key={row.week} className="grid grid-cols-[2rem_1fr_4.5rem] items-center gap-3">
+            <span className="font-mono text-[11px] text-[#3C3858]">{row.week}</span>
+            <span className="relative h-3 overflow-hidden rounded-full bg-[#E4DDD0]">
+              <span className="block h-full rounded-full bg-[#7C3AED]" style={{ width: `${row.width}%` }} />
+              <span
+                className="absolute top-0 h-full w-px bg-[#14123B]"
+                style={{ left: `${row.pace}%` }}
+                aria-hidden
+              />
             </span>
+            <span className="text-right font-mono text-[11px] tabular-nums">{row.spent}</span>
           </div>
         ))}
       </div>
-      <p className="mt-3 text-xs text-[#3C3858]">Gasto acumulado frente al ritmo lineal. Última sincronización.</p>
+      <p className="mt-5 text-sm leading-relaxed text-[#3C3858]">
+        77% del presupuesto en la semana 3. El ritmo lineal del mes va por el 75%. Cifras de la última sincronización.
+      </p>
     </div>
   );
 }
@@ -165,7 +181,7 @@ export function AudienceHubPage() {
         <p className="mt-4 max-w-2xl text-base leading-relaxed text-[#D4CEF0] sm:text-lg">
           {t("audiences.hub.lede")}
         </p>
-        <div className="mt-8 space-y-6">
+        <div className="mt-6">
           {SEGMENTS.map((segment) => {
             const Mock = PROFILE_MOCK[segment.id];
             const situations = i18nAsArray<Situation>(
@@ -175,7 +191,7 @@ export function AudienceHubPage() {
             return (
               <section
                 key={segment.id}
-                className="grid items-center gap-6 border-t border-[rgba(196,181,253,0.22)] py-8 lg:grid-cols-12 lg:gap-10"
+                className="grid items-stretch gap-5 border-t border-[rgba(196,181,253,0.22)] py-5 lg:grid-cols-12 lg:gap-8 lg:py-6"
               >
                 <div className="lg:col-span-5">
                   <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#C4B5FD]">
