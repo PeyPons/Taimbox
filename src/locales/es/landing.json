@@ -8,7 +8,8 @@
     "menuAria": "Menú",
     "featuresTrigger": "Funcionalidades",
     "language": "Idioma",
-    "audiences": "Para quién"
+    "audiences": "Para quién",
+    "start": "Empezar gratis"
   },
   "features": {
     "exploreByRole": "Explora por rol",
@@ -3048,5 +3049,101 @@
     "loss": "Pérdida",
     "free": "LIBRE",
     "pending": "pendiente"
+  },
+  "homeShell": {
+    "kicker": "Timeboxing para agencias",
+    "h1": "Planificación, plazos y rentabilidad en un solo sistema",
+    "lede": "Ven la carga del equipo, reserven el tiempo y midan el margen, sin saltar de herramienta.",
+    "start": "Empezar gratis",
+    "seePlans": "Ver planes",
+    "talk": "Hablar",
+    "mockTitle": "Planificador · esquema",
+    "mockWeek": "Semana",
+    "mockCaption": "Ilustración de ejemplo. Sin datos de una agencia.",
+    "metrics": {
+      "capacity": "Capacidad",
+      "hours": "Horas planificadas",
+      "projects": "Proyectos",
+      "load": "Carga"
+    },
+    "howKicker": "Cómo funciona",
+    "howTitle": "Tres pasos, una caja de tiempo",
+    "steps": [
+      {
+        "title": "Reservan el tiempo",
+        "body": "Encajan el trabajo en cajas con límite, sobre el calendario."
+      },
+      {
+        "title": "Reparten la carga",
+        "body": "Ven quién está en sano, aviso o sobrecarga, y reajustan."
+      },
+      {
+        "title": "Ven el margen",
+        "body": "Siguen la rentabilidad del proyecto a medida que avanza."
+      }
+    ],
+    "featuresKicker": "Funcionalidades",
+    "featuresTitle": "Siete entradas, un mismo sistema",
+    "features": {
+      "employee": {
+        "title": "Dashboard del empleado",
+        "body": "El día de cada persona, sin ruido."
+      },
+      "planner": {
+        "title": "Planificador de recursos",
+        "body": "Cada hora del equipo, en una cuadrícula."
+      },
+      "team": {
+        "title": "Gestión de equipos",
+        "body": "Horarios, ausencias y capacidad."
+      },
+      "reports": {
+        "title": "Reportes y rentabilidad",
+        "body": "Tiempos, ritmo y margen."
+      },
+      "projects": {
+        "title": "Proyectos y deadlines",
+        "body": "Objetivos del mes y plazos a la vista."
+      },
+      "integrations": {
+        "title": "Integraciones",
+        "body": "Conectores en solo lectura, cuando hagan falta."
+      },
+      "ppc": {
+        "title": "Monitor de presupuestos",
+        "body": "El gasto publicitario de los clientes, bajo control."
+      }
+    },
+    "securityKicker": "Seguridad",
+    "securityTitle": "Seguridad y control de accesos",
+    "securityBody": "Los datos de cada agencia se aíslan en la base. El detalle de almacenamiento y de terceros está en la página de seguridad.",
+    "securityLink": "Según el plan",
+    "plansKicker": "Planes",
+    "plansTitle": "Empiecen cuando les encaje",
+    "recommended": "Recomendado",
+    "plans": {
+      "starter": "Para organizar el equipo.",
+      "pro": "Forecast y operación.",
+      "business": "La operación de una agencia.",
+      "enterprise": "A medida."
+    },
+    "faqKicker": "Preguntas frecuentes",
+    "faqTitle": "Antes de empezar",
+    "faqs": [
+      {
+        "q": "¿Pueden empezar con el plan Free?",
+        "a": "Sí. Los límites de personas y de histórico están en la página de precios."
+      },
+      {
+        "q": "¿Cómo se facturan los planes de pago?",
+        "a": "El cobro publicado es mensual. El cambio de plan se hace desde la cuenta."
+      },
+      {
+        "q": "¿Qué queda fuera de la web pública?",
+        "a": "El área de trabajo de la agencia, después de entrar. Esta página explica el producto."
+      }
+    ],
+    "ctaTitle": "Cuando quieran, empiezan",
+    "ctaBody": "Una cuenta para probar el planificador con su equipo."
   }
 }

@@ -95,7 +95,7 @@ export function LandingHeader({ variant = "dark" }: LandingHeaderProps) {
             <div className={light ? "hidden sm:block" : ""}>
               <LanguageSelector surface={light ? "light" : "dark"} />
             </div>
-            <Link to="/login" className="group">
+            <Link to="/login?tab=register" className="group">
               <Button
                 size="sm"
                 className={cn(
@@ -104,14 +104,14 @@ export function LandingHeader({ variant = "dark" }: LandingHeaderProps) {
                     : "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white",
                 )}
               >
-                {t("header.login")}
+                {t("header.start")}
                 <ArrowRight className="ml-1.5 h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
               </Button>
             </Link>
           </div>
 
           <div className={cn(`flex ${navBp}:hidden items-center shrink-0`, light ? "gap-2" : "gap-1.5")}>
-            <Link to="/login" className="group">
+            <Link to="/login?tab=register" className="group">
               <Button
                 size="sm"
                 className={cn(
@@ -120,7 +120,7 @@ export function LandingHeader({ variant = "dark" }: LandingHeaderProps) {
                     : "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-xs px-3",
                 )}
               >
-                {t("header.login")}
+                {t("header.start")}
               </Button>
             </Link>
             <button

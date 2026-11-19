@@ -46,7 +46,6 @@ import { useWeeklyForecastAccess } from '@/hooks/useWeeklyForecastAccess';
 import { SidebarTimerPanel } from '@/components/layout/SidebarTimerPanel';
 import { buildAgencyAwarePath, useSupportAgencyView } from '@/hooks/useSupportAgencyView';
 import { SensitiveText } from '@/components/privacy/SensitiveText';
-import { TaimboxLogo } from '@/components/brand/TaimboxLogo';
 import { SidebarImpersonationPanel } from '@/components/admin/ImpersonationBanner';
 import {
   Collapsible,
@@ -247,11 +246,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
         {/* Header */}
         <div className="h-16 flex items-center justify-between px-6 border-b border-slate-800 bg-slate-950/50">
-          <TaimboxLogo
-            variant="dark"
-            markClassName="h-8 w-8"
-            wordmarkClassName="text-slate-100 font-bold text-xl tracking-tight"
-          />
+          <img src="/brand/logo-C-dark.svg" alt="Taimbox" className="h-8 w-auto" />
 
           <div className="flex items-center gap-1">
             <div className="hidden lg:block">

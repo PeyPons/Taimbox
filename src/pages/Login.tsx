@@ -12,7 +12,6 @@ import { toast } from "@/lib/notify";
 import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { Rocket, LogIn } from "lucide-react";
 import { useAppTranslation } from "@/hooks/useAppTranslation";
-import { TaimboxMark } from "@/components/brand/TaimboxLogo";
 import { INPUT_LIMITS } from "@/constants/inputLimits";
 import { ONBOARDING_WIZARD_ALLOWED_KEY } from "@/utils/onboardingDefaults";
 import { CurrencySelect } from "@/components/agency/CurrencySelect";
@@ -274,7 +273,7 @@ export default function Login() {
       <Card className="w-full max-w-md bg-white shadow-xl">
         <CardHeader className="space-y-1">
           <div className="flex justify-center mb-4">
-            <TaimboxMark className="h-12 w-12" variant="light" />
+            <img src="/brand/logo-C.svg" alt="Taimbox" className="h-10 w-auto" />
           </div>
           <CardTitle className="text-2xl text-center font-bold text-slate-900">
             {t("auth.brand")}

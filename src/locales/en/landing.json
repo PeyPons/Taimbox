@@ -8,7 +8,8 @@
     "menuAria": "Menu",
     "featuresTrigger": "Features",
     "language": "Language",
-    "audiences": "Who it's for"
+    "audiences": "Who it's for",
+    "start": "Start free"
   },
   "features": {
     "exploreByRole": "Explore by role",
@@ -3048,5 +3049,101 @@
     "loss": "Loss",
     "free": "FREE",
     "pending": "pending"
+  },
+  "homeShell": {
+    "kicker": "Timeboxing for agencies",
+    "h1": "Planning, deadlines and margin in one system",
+    "lede": "See the team's load, reserve the time and read the margin, without jumping between tools.",
+    "start": "Start free",
+    "seePlans": "See plans",
+    "talk": "Talk to us",
+    "mockTitle": "Planner · sketch",
+    "mockWeek": "Week",
+    "mockCaption": "Example illustration. Not a real agency's data.",
+    "metrics": {
+      "capacity": "Capacity",
+      "hours": "Planned hours",
+      "projects": "Projects",
+      "load": "Load"
+    },
+    "howKicker": "How it works",
+    "howTitle": "Three steps, one time box",
+    "steps": [
+      {
+        "title": "Reserve the time",
+        "body": "Fit the work into boxes with a limit, on the calendar."
+      },
+      {
+        "title": "Share the load",
+        "body": "See who is fine, on watch or overloaded, and adjust."
+      },
+      {
+        "title": "Read the margin",
+        "body": "Follow the project's margin as the work moves."
+      }
+    ],
+    "featuresKicker": "Features",
+    "featuresTitle": "Seven doors, one system",
+    "features": {
+      "employee": {
+        "title": "Employee dashboard",
+        "body": "Each person's day, without the noise."
+      },
+      "planner": {
+        "title": "Resource planner",
+        "body": "Every hour of the team, on one grid."
+      },
+      "team": {
+        "title": "Team management",
+        "body": "Schedules, absences and capacity."
+      },
+      "reports": {
+        "title": "Reports and margin",
+        "body": "Time, pace and margin."
+      },
+      "projects": {
+        "title": "Projects and deadlines",
+        "body": "The month's targets and deadlines in view."
+      },
+      "integrations": {
+        "title": "Integrations",
+        "body": "Read-only connectors, when you need them."
+      },
+      "ppc": {
+        "title": "Budget monitor",
+        "body": "Client ad spend, in one place."
+      }
+    },
+    "securityKicker": "Security",
+    "securityTitle": "Security and access control",
+    "securityBody": "Each agency's data is isolated in the database. Storage and third parties are described on the security page.",
+    "securityLink": "Depends on the plan",
+    "plansKicker": "Plans",
+    "plansTitle": "Start when it fits",
+    "recommended": "Recommended",
+    "plans": {
+      "starter": "To organise the team.",
+      "pro": "Forecast and day-to-day operations.",
+      "business": "Running an agency.",
+      "enterprise": "Scoped to the agency."
+    },
+    "faqKicker": "Questions",
+    "faqTitle": "Before you start",
+    "faqs": [
+      {
+        "q": "Can we start on the Free plan?",
+        "a": "Yes. People and history limits are on the pricing page."
+      },
+      {
+        "q": "How are paid plans billed?",
+        "a": "Published billing is monthly. Plan changes happen inside the account."
+      },
+      {
+        "q": "What sits outside the public site?",
+        "a": "The agency workspace, after you sign in. This page explains the product."
+      }
+    ],
+    "ctaTitle": "Start when you want",
+    "ctaBody": "An account to try the planner with your team."
   }
 }
