@@ -9,31 +9,6 @@
   isolation: isolate;
 }
 
-.pub-stage::before {
-  content: "";
-  position: absolute;
-  z-index: -1;
-  top: 5.25rem;
-  right: 0.5rem;
-  width: 4.5rem;
-  height: 4.5rem;
-  pointer-events: none;
-  background: conic-gradient(
-    from 206deg,
-    #7c3aed 0deg,
-    #7c3aed 46deg,
-    transparent 46deg
-  );
-  -webkit-mask: radial-gradient(circle, transparent 64%, #000 65.2%, #000 70%, transparent 71.2%);
-  mask: radial-gradient(circle, transparent 64%, #000 65.2%, #000 70%, transparent 71.2%);
-}
-
-@media (max-width: 1023px) {
-  .pub-stage::before {
-    content: none;
-  }
-}
-
 .pub-stage--plain::before {
   content: none;
 }

@@ -125,13 +125,20 @@ export function usePublicPricingCurrency() {
   const formatUsdAmount = useCallback(
     (usd: number, opts?: { compact?: boolean }): string => {
       const amount = convertUsd(usd);
-      const digits = opts?.compact ? 0 : fractionDigitsFor(currency);
       const safe = Number.isFinite(amount) ? amount : 0;
+      const whole = opts?.compact === true || Math.abs(safe - Math.round(safe)) < 0.005;
+      if (currency === 'USD') {
+        const body = whole
+          ? String(Math.round(safe))
+          : safe.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        return locale.startsWith('en') ? `US$ ${body}` : `${body} $`;
+      }
+      const digits = whole ? 0 : fractionDigitsFor(currency);
       return new Intl.NumberFormat(locale, {
         style: 'currency',
         currency,
         maximumFractionDigits: digits,
-        minimumFractionDigits: digits === 0 ? 0 : undefined,
+        minimumFractionDigits: digits,
       }).format(safe);
     },
     [convertUsd, currency, locale],

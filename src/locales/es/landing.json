@@ -593,11 +593,67 @@
     "heroKicker": "Para agencias y equipos creativos",
     "heroLine1": "Empiezas gratis y subes de plan cuando necesitas forecast, API o Ads",
     "heroHighlight": "",
-    "heroSub": "Empieza gratis. Sube de plan cuando requieras más inteligencia financiera, reportes avanzados o integraciones complejas para tu agencia.",
+    "heroSub": "La cuenta se abre sin tarjeta y con 14 días de Agency. Team y Agency se cobran después, cada mes y en USD. No hay tarifa anual.",
     "pill1": "Plan gratuito disponible",
     "pill2": "Prueba de 14 días (Agency)",
     "pill3": "Sin permanencia",
     "recommended": "Recomendado",
+    "monthlyOnly": "Solo hay facturación mensual.",
+    "yes": "Sí",
+    "no": "No",
+    "decisionWho": {
+      "starter": "Hasta 5 personas en el planificador",
+      "pro": "Forecast e informes, hasta 25 personas",
+      "business": "Ads y la API, hasta 100 personas"
+    },
+    "decisionCta": {
+      "starter": "Crear cuenta",
+      "pro": "Crear cuenta",
+      "business": "Probar 14 días"
+    },
+    "decisionNote": {
+      "starter": "Sin tarjeta. Si no contratas, a los 14 días quedas en Free.",
+      "pro": "La prueba es de Agency. Team se contrata después, en facturación, al precio de esta columna.",
+      "business": "14 días de Agency, sin tarjeta. Luego el precio de esta columna cada mes, o pasas a Free."
+    },
+    "decisionRows": {
+      "included": "Personas incluidas",
+      "extra": "Persona de más",
+      "cap": "Tope de personas",
+      "planner": "Planificador",
+      "deadlines": "Deadlines",
+      "timer": "Cronómetro",
+      "history": "Histórico sin tope de meses",
+      "weekly": "Weekly y pronóstico",
+      "okr": "OKR",
+      "reports": "Radar e informes",
+      "activity": "Registro de actividad",
+      "exports": "Exports avanzados",
+      "ppc": "Monitor PPC",
+      "sync": "Sync programada de Ads",
+      "api": "API REST"
+    },
+    "beyond": "Scale son {{price}} al mes: 100 personas incluidas y los mismos Ads y API que Agency. Enterprise se pacta. Los dos se hablan por correo; no hay un checkout en esta página.",
+    "beyondCta": "Escribir a ventas",
+    "intent": {
+      "starter": "Vas a crear la cuenta sin tarjeta. Son 14 días de Agency. Si no contratas, pasas a Free.",
+      "pro": "Vas a crear la cuenta sin tarjeta. La prueba es de Agency, 14 días. Team se contrata después en facturación.",
+      "business": "Vas a crear la cuenta sin tarjeta y empiezas 14 días de Agency. Si no contratas, pasas a Free."
+    },
+    "faqShort": [
+      {
+        "q": "¿La prueba pide tarjeta?",
+        "a": "No. Al registrarte tienes 14 días del plan Agency sin tarjeta. Solo hay un trial por agencia."
+      },
+      {
+        "q": "¿Puedo cancelar?",
+        "a": "Sí. No hay permanencia. Si ya hay una suscripción en Stripe, quien administra la agencia la cambia o la cancela desde facturación. El cambio prorratea el periodo en curso."
+      },
+      {
+        "q": "¿Qué pasa al acabar la prueba?",
+        "a": "Si no contratas, pasas a Free y conservas los datos. En Free, por encima de 5 personas no se añaden personas ni asignaciones."
+      }
+    ],
     "currencyLabel": "Ver precios en",
     "currencyBillingUsd": "Precios y suscripción en USD. El cobro se procesa en dólares vía Stripe.",
     "currencyBillingEur": "Importes orientativos en EUR. La suscripción se cobra en USD.",

@@ -10,6 +10,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/lib/notify";
 import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Rocket, LogIn } from "lucide-react";
 import { useAppTranslation } from "@/hooks/useAppTranslation";
 import { INPUT_LIMITS } from "@/constants/inputLimits";
@@ -45,6 +46,10 @@ export default function Login() {
   const [isSendingReset, setIsSendingReset] = useState(false);
   const [resetSent, setResetSent] = useState(false);
   const { t } = useAppTranslation();
+  const { t: tLanding } = useTranslation("landing");
+  const planIntent = searchParams.get("plan");
+  const intentKey =
+    planIntent === "starter" || planIntent === "pro" || planIntent === "business" ? planIntent : null;
 
   const loginFormSchema = useMemo(
     () =>
@@ -398,6 +403,11 @@ export default function Login() {
             </TabsContent>
 
             <TabsContent value="register">
+              {intentKey ? (
+                <p className="mb-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm leading-snug text-slate-700">
+                  {tLanding(`pricing.intent.${intentKey}`)}
+                </p>
+              ) : null}
               <Form {...registerForm}>
                 <form onSubmit={registerForm.handleSubmit(onRegister)} className="space-y-4">
                   <FormField

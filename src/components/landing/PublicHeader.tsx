@@ -59,7 +59,7 @@ export function PublicHeader() {
             className="shrink-0 rounded-md"
             onClick={() => setOpen(false)}
           >
-            <PublicWordmark tone="paper" />
+            <PublicWordmark tone="paper" className="h-11" />
           </Link>
 
           <nav className="hidden lg:flex items-center gap-0.5" aria-label={t("header.featuresTrigger")}>
