@@ -16,13 +16,20 @@ const NotFound = () => {
   const homePath = localizedPathFromEs("/", i18n.language);
 
   return (
-    <div className="pub-light flex min-h-screen flex-col bg-[#F7F8FC] text-[#14123B]">
+    <div className="relative flex min-h-screen flex-col overflow-hidden bg-[#14123B] text-white">
+      <div className="pointer-events-none absolute inset-0" aria-hidden>
+        <div className="absolute top-0 left-1/4 h-96 w-96 rounded-full bg-amber-900/20 blur-3xl" />
+        <div className="absolute bottom-0 right-1/4 h-96 w-96 rounded-full bg-orange-950/35 blur-3xl" />
+      </div>
       <LandingHeader />
-      <main className="flex flex-1 items-center justify-center px-5 py-16">
+      <main className="relative z-10 flex flex-1 items-center justify-center px-5 py-16">
         <div className="max-w-lg text-center">
-          <h1 className="font-display text-4xl font-bold tracking-[-0.02em]">{t("notFound.title")}</h1>
-          <p className="mt-3 text-lg text-[#4A4868]">{t("notFound.subtitle")}</p>
-          <Link to={homePath} className="pub-btn pub-btn-primary mt-6">
+          <h1 className="text-4xl font-black tracking-tight text-white">{t("notFound.title")}</h1>
+          <p className="mt-3 text-lg text-indigo-100/90">{t("notFound.subtitle")}</p>
+          <Link
+            to={homePath}
+            className="mt-6 inline-flex min-h-11 items-center rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 px-5 text-sm font-medium text-white hover:from-indigo-700 hover:to-purple-700"
+          >
             {t("notFound.cta")}
           </Link>
         </div>

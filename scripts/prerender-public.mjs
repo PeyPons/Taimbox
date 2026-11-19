@@ -39,7 +39,7 @@ function pair(pathEs, pathEn, titleEs, descEs, h1Es, titleEn, descEn, h1En) {
 }
 
 const pages = [
-  ...pair("/", "/en", es.home.seoTitle, es.home.seoDescription, es.homeShell.h1, en.home.seoTitle, en.home.seoDescription, en.homeShell.h1),
+  ...pair("/", "/en", es.home.seoTitle, es.home.seoDescription, es.home.heroTitleLine1, en.home.seoTitle, en.home.seoDescription, en.home.heroTitleLine1),
   ...pair("/por-que-timeboxing", "/en/why-taimbox", es.articleWhy.seoTitle, es.articleWhy.seoDescription, es.articleWhy.heroTitle, en.articleWhy.seoTitle, en.articleWhy.seoDescription, en.articleWhy.heroTitle),
   ...pair("/dashboard-empleado", "/en/employee-dashboard", es.commercial.employeeDashboard.seoTitle, es.commercial.employeeDashboard.seoDescription, es.commercial.employeeDashboard.page.hero.title1, en.commercial.employeeDashboard.seoTitle, en.commercial.employeeDashboard.seoDescription, en.commercial.employeeDashboard.page.hero.title1),
   ...pair("/planificador-recursos", "/en/resource-planner", es.commercial.planner.seoTitle, es.commercial.planner.seoDescription, es.commercial.planner.page.hero.title1, en.commercial.planner.seoTitle, en.commercial.planner.seoDescription, en.commercial.planner.page.hero.title1),

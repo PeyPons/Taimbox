@@ -79,7 +79,7 @@ export default function PrivacyPolicyPage() {
                 lang={lang}
             />
         <div className="min-h-screen bg-[#14123B] flex flex-col font-sans selection:bg-orange-900/30 overflow-x-hidden">
-            <LandingHeader />
+            <LandingHeader variant="light" />
 
             <main className="flex-1 relative z-10 pt-32 pb-24">
                 {/* Ambient glow */}

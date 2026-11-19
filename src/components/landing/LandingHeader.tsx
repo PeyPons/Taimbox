@@ -41,9 +41,7 @@ export type LandingHeaderProps = {
 export function LandingHeader({ variant = "dark" }: LandingHeaderProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { t, i18n } = useTranslation("landing");
-  // Una sola barra de papel en toda la web pública. El panel no usa este header.
-  void variant;
-  const light = true;
+  const light = variant === "light";
   const navBp = light ? "md" : "sm";
   const topOffset = light ? "top-[68px]" : "top-[57px]";
   const spacerH = light ? "h-[68px]" : "h-14";
@@ -56,7 +54,10 @@ export function LandingHeader({ variant = "dark" }: LandingHeaderProps) {
     <>
       <header
         className={cn(
-          "fixed top-0 left-0 right-0 z-50 w-full border-b border-[#14123B]/10 bg-[#F7F8FC]",
+          "fixed top-0 left-0 right-0 z-50 w-full border-b backdrop-blur-xl",
+          light
+            ? "border-[#14123B]/10 bg-[#F7F8FC]"
+            : "border-white/10 bg-[#14123B]/90",
         )}
       >
         <div
@@ -72,11 +73,11 @@ export function LandingHeader({ variant = "dark" }: LandingHeaderProps) {
               light ? "text-slate-900 hover:text-slate-900" : "text-white hover:text-indigo-200",
             )}
           >
-            <PublicWordmark tone="ink" markClassName="h-[22px] w-[22px]" />
+            <PublicWordmark tone={light ? "ink" : "paper"} markClassName="h-[22px] w-[22px]" />
           </Link>
 
           <div className={cn(`hidden ${navBp}:flex items-center`, light ? "gap-1" : "gap-4")}>
-            <FeaturesDropdown variant="light" />
+            <FeaturesDropdown variant={light ? "light" : "dark"} />
             <Link to={localizedPathFromEs("/para-quien", i18n.language)} className={navLinkClass}>
               {t("header.audiences")}
             </Link>
@@ -95,7 +96,7 @@ export function LandingHeader({ variant = "dark" }: LandingHeaderProps) {
             <div className={light ? "hidden sm:block" : ""}>
               <LanguageSelector surface={light ? "light" : "dark"} />
             </div>
-            <Link to="/login?tab=register" className="group">
+            <Link to="/login" className="group">
               <Button
                 size="sm"
                 className={cn(
@@ -104,14 +105,14 @@ export function LandingHeader({ variant = "dark" }: LandingHeaderProps) {
                     : "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white",
                 )}
               >
-                {t("header.start")}
+                {t("header.login")}
                 <ArrowRight className="ml-1.5 h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
               </Button>
             </Link>
           </div>
 
           <div className={cn(`flex ${navBp}:hidden items-center shrink-0`, light ? "gap-2" : "gap-1.5")}>
-            <Link to="/login?tab=register" className="group">
+            <Link to="/login" className="group">
               <Button
                 size="sm"
                 className={cn(
@@ -120,7 +121,7 @@ export function LandingHeader({ variant = "dark" }: LandingHeaderProps) {
                     : "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-xs px-3",
                 )}
               >
-                {t("header.start")}
+                {t("header.login")}
               </Button>
             </Link>
             <button

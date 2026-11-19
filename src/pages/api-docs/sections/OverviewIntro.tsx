@@ -68,29 +68,29 @@ export function OverviewIntro() {
         </CardContent>
       </Card>
 
-      <Card className="border-2 border-indigo-300/40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl mb-6 shadow-xl shadow-indigo-950/20">
+      <Card className="border border-indigo-400/35 bg-slate-900/80 backdrop-blur-xl mb-6 shadow-xl shadow-indigo-950/30">
         <CardContent className="p-6">
           <div className="flex items-start gap-4">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center shrink-0 shadow-lg">
               <Key className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h3 className="text-slate-900 dark:text-white font-bold text-lg mb-2">
+              <h3 className="text-white font-bold text-lg mb-2">
                 {t('overview.intro.tokenTitle')}
               </h3>
-              <p className="text-slate-700 dark:text-white/95 text-sm leading-relaxed mb-3">
+              <p className="text-indigo-100/95 text-sm leading-relaxed mb-3">
                 <Trans
                   i18nKey="overview.intro.tokenBody"
                   ns="apiDocs"
                   components={{
-                    strong: <strong />,
+                    strong: <strong className="text-white" />,
                     code: (
-                      <code className="px-1 py-0.5 rounded bg-slate-200 dark:bg-white/20 font-mono text-xs text-slate-800 dark:text-white" />
+                      <code className="px-1 py-0.5 rounded bg-white/15 font-mono text-xs text-white" />
                     ),
                   }}
                 />
               </p>
-              <p className="text-slate-600 dark:text-white/85 text-xs leading-relaxed mb-3">
+              <p className="text-indigo-200/85 text-xs leading-relaxed mb-3">
                 {t('overview.intro.tokenRls')}
               </p>
               <Link to={localizedPathFromEs('/api-keys', i18n.language)}>

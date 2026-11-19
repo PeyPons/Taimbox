@@ -86,6 +86,7 @@ export const LandingLiteralHero = forwardRef<
   const prefersReduced = reduceMotion === true;
   const { t } = useTranslation("landing", { keyPrefix: "home" });
   const { t: tLit, path } = useHomeLiteralT();
+  const highlight = t("heroTitleHighlight").trim();
   const tickerItems = i18nAsArray<HeroTickerItem>(
     tLit("hero.ticker", { returnObjects: true }),
   );
@@ -192,17 +193,19 @@ export const LandingLiteralHero = forwardRef<
               )}
             >
               {t("heroTitleLine1")}
-            </span>{" "}
-            <span
-              className="block relative"
-              style={landingInlineStyle(
-                `opacity: 1; filter: blur(0px); transform: none;`,
-              )}
-            >
-              <span className="bg-gradient-to-r from-blue-400 via-cyan-400 to-teal-400 bg-clip-text text-transparent">
-                {t("heroTitleHighlight")}
-              </span>
             </span>
+            {highlight ? (
+              <span
+                className="block relative"
+                style={landingInlineStyle(
+                  `opacity: 1; filter: blur(0px); transform: none;`,
+                )}
+              >
+                <span className="bg-gradient-to-r from-blue-400 via-cyan-400 to-teal-400 bg-clip-text text-transparent">
+                  {highlight}
+                </span>
+              </span>
+            ) : null}
           </h1>
           <p
             className="mt-7 max-w-lg text-[15px] sm:text-[17px] leading-relaxed text-indigo-100/90"

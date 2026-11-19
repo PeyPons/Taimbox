@@ -123,7 +123,7 @@ export default function OpenApiViewerPage() {
                 {t('openapi.viewerTitle')}
               </span>
             </div>
-            <LanguageSelector />
+            <LanguageSelector surface="light" />
           </div>
         </header>
 

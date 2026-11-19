@@ -16,7 +16,7 @@ import { absoluteUrl } from "@/lib/publicSiteUrl";
 import type { BlogPostRecord, BlogPostLocaleFields } from "@/lib/blog/types";
 
 const Loader = () => (
-  <div className="min-h-screen flex items-center justify-center bg-slate-50">
+    <div className="min-h-screen flex items-center justify-center bg-[#14123B]">
     <div className="h-8 w-8 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
   </div>
 );
@@ -34,7 +34,7 @@ function NotFoundFallback() {
         lang={lang}
         robots="noindex, nofollow"
       />
-      <div className="pub-light min-h-screen bg-[#F7F8FC] flex flex-col">
+      <div className="min-h-screen bg-[#14123B] flex flex-col">
         <LandingHeader />
         <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
           <h1 className="text-3xl sm:text-5xl font-black text-white mb-4">
@@ -134,7 +134,7 @@ export default function BlogArticleDynamicPage() {
         jsonLd={articleJsonLd}
       />
 
-      <div className="pub-light min-h-screen bg-[#F7F8FC] relative overflow-hidden">
+      <div className="min-h-screen bg-[#14123B] relative overflow-hidden">
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-0 left-1/4 w-96 h-96 bg-amber-900/20 rounded-full blur-3xl opacity-50" />
           <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-orange-950/35 rounded-full blur-3xl opacity-50" />
