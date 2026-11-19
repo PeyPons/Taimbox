@@ -453,6 +453,7 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
           prev.stripeCustomerId === agency.stripeCustomerId &&
           prev.stripeSubscriptionId === agency.stripeSubscriptionId &&
           prev.trialEndsAt === agency.trialEndsAt &&
+          prev.trialExpiredAt === agency.trialExpiredAt &&
           prev.subscriptionPeriodEndsAt === agency.subscriptionPeriodEndsAt &&
           prev.subscriptionCancelAtPeriodEnd === agency.subscriptionCancelAtPeriodEnd &&
           prev.trialUsedAt === agency.trialUsedAt) {

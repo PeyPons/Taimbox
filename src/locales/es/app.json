@@ -1939,7 +1939,10 @@
     },
     "subscriptionBanner": {
       "exceeds": "Tu agencia excede los límites del plan {{planName}} ({{current}}/{{max}} personas). Pasa a {{upgradeOptions}} para volver a planificar.",
-      "viewPlans": "Ver planes"
+      "viewPlans": "Ver planes",
+      "trialEnded": "La prueba de Agency ha terminado. Estás en Free.",
+      "upgrade": "Mejorar de plan",
+      "dismiss": "Cerrar aviso"
     },
     "departmentSelector": {
       "globalView": "Vista Global",

@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Clock, Square, User } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from 'react-i18next';
+import { effectivePlanId, visibleAgencyModules } from '@/utils/effectivePlanModules';
 
 interface TeamActiveTimerRow {
   employee_id: string;
@@ -36,13 +37,14 @@ export default function TiemposPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [, setTick] = useState(0);
   // Misma regla que Sidebar + ModuleGuard: solo el flag de agencia (el menú / ruta ya exigen módulo activo).
-  const modules = currentAgency?.settings?.modules || {
-    ppc: true,
-    weeklyFeedback: true,
-    professionalGoals: true,
-    deadlines: true,
-    timeTracker: false,
-  };
+  const modules = visibleAgencyModules(
+    currentAgency?.settings,
+    effectivePlanId({
+      planId: currentAgency?.planId,
+      subscriptionStatus: currentAgency?.subscriptionStatus,
+      trialEndsAt: currentAgency?.trialEndsAt,
+    }),
+  );
   const isTimeTrackerEnabled = modules.timeTracker === true;
   const activeTimer = useActiveTimerForSidebar(isTimeTrackerEnabled ? currentUser?.id : undefined);
 

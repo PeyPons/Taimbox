@@ -7,6 +7,7 @@ import { Header } from './Header';
 import { ImpersonationProvider } from '@/components/admin/ImpersonationBanner';
 import { DepartmentViewBanner } from '@/components/layout/DepartmentViewBanner';
 import { SubscriptionSoftLockBanner } from '@/components/layout/SubscriptionSoftLockBanner';
+import { TrialEndedBanner } from '@/components/layout/TrialEndedBanner';
 import { PlannerMonthBanner } from '@/components/layout/PlannerMonthBanner';
 import { PrivacyDemoIndicator } from '@/components/privacy/PrivacyDemoIndicator';
 import { useAllocationNotesRealtime } from '@/hooks/useAllocationNotes';
@@ -36,6 +37,7 @@ export function AppLayout() {
         (eso dejaba el texto del aviso tapado y un hueco blanco).
       */}
       <div className="flex flex-col flex-1 min-w-0 pt-16 lg:pt-0">
+        <TrialEndedBanner />
         <SubscriptionSoftLockBanner />
         <DepartmentViewBanner />
         <PlannerMonthBanner />

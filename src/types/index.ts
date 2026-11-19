@@ -217,8 +217,10 @@ export interface Agency {
   subscriptionStatus?: string;
   stripeCustomerId?: string;
   stripeSubscriptionId?: string;
-  /** Fin del trial (14 d?as para Business) */
+  /** Fin del trial (14 d?as para Business). Se vacía al pasar a Free. */
   trialEndsAt?: string;
+  /** Instante en que la prueba terminó y la cuenta pasó a Free. */
+  trialExpiredAt?: string;
   /** Fin del periodo de facturaci?n actual (pr?xima facturaci?n) */
   subscriptionPeriodEndsAt?: string;
   /** True si el usuario cancel? en Stripe "al final del periodo"; el plan sigue activo hasta subscriptionPeriodEndsAt */

@@ -3,6 +3,7 @@ import { useAgency } from '@/contexts/AgencyContext';
 import { AgencyModules, type AgencySettings } from '@/types';
 import { PageLoader } from '@/components/layout/PageLoader';
 import { resolveWeeklyEnabled } from '@/utils/agencyUtils';
+import { effectivePlanId, visibleAgencyModules } from '@/utils/effectivePlanModules';
 import { usePermissions } from '@/hooks/usePermissions';
 
 const MODULE_DEFAULTS: Required<Pick<AgencyModules, 'ppc' | 'weeklyFeedback' | 'professionalGoals' | 'deadlines' | 'timeTracker'>> = {
@@ -19,9 +20,17 @@ interface ModuleGuardProps {
     children?: React.ReactNode;
 }
 
-function isAgencyModuleEnabled(module: keyof AgencyModules, settings: AgencySettings | undefined): boolean {
+function isAgencyModuleEnabled(
+    module: keyof AgencyModules,
+    settings: AgencySettings | undefined,
+    planId: ReturnType<typeof effectivePlanId>,
+): boolean {
+    const visible = visibleAgencyModules(settings, planId);
     if (module === 'weeklyFeedback') {
-        return resolveWeeklyEnabled(settings);
+        return visible.weeklyFeedback && resolveWeeklyEnabled(settings);
+    }
+    if (module in visible) {
+        return Boolean(visible[module as keyof typeof visible]);
     }
 
     const modules: AgencyModules = {
@@ -40,7 +49,13 @@ export function ModuleGuard({ module, redirectTo, children }: ModuleGuardProps) 
         return <PageLoader />;
     }
 
-    if (!isAgencyModuleEnabled(module, currentAgency?.settings)) {
+    const planId = effectivePlanId({
+        planId: currentAgency?.planId,
+        subscriptionStatus: currentAgency?.subscriptionStatus,
+        trialEndsAt: currentAgency?.trialEndsAt,
+    });
+
+    if (!isAgencyModuleEnabled(module, currentAgency?.settings, planId)) {
         const fallbackRedirect =
             module === 'weeklyFeedback' && canAccess('/agency')
                 ? '/agency?tab=modules'

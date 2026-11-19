@@ -1,5 +1,5 @@
 import { useAgency } from '@/contexts/AgencyContext';
-import { resolveWeeklyEnabled } from '@/utils/agencyUtils';
+import { effectivePlanId, visibleAgencyModules } from '@/utils/effectivePlanModules';
 
 /**
  * Hook para verificar si una integración está activa para la agencia actual
@@ -16,5 +16,10 @@ export function useIntegration(integrationId: string): boolean {
 export function useWeeklyModuleEnabled(): boolean {
   const { currentAgency, isLoading } = useAgency();
   if (isLoading || !currentAgency) return false;
-  return resolveWeeklyEnabled(currentAgency.settings);
+  const planId = effectivePlanId({
+    planId: currentAgency.planId,
+    subscriptionStatus: currentAgency.subscriptionStatus,
+    trialEndsAt: currentAgency.trialEndsAt,
+  });
+  return visibleAgencyModules(currentAgency.settings, planId).weeklyFeedback;
 }

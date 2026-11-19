@@ -2821,7 +2821,10 @@
     },
     "subscriptionBanner": {
       "exceeds": "Your agency exceeds {{planName}} limits ({{current}}/{{max}} people). Upgrade to {{upgradeOptions}} to plan again.",
-      "viewPlans": "View plans"
+      "viewPlans": "View plans",
+      "trialEnded": "The Agency trial has ended. You're on Free.",
+      "upgrade": "Upgrade plan",
+      "dismiss": "Dismiss notice"
     },
     "departmentSelector": {
       "globalView": "Global View",
