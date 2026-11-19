@@ -110,10 +110,10 @@ export function LandingFooter({ variant = 'dark' }: LandingFooterProps) {
                 </Link>
               </li>
               <li>
-                <Link to="/soporte" className={linkClass}>
+                <a href="/soporte" className={linkClass}>
                   {stage ? null : <HelpCircle className="h-3.5 w-3.5 shrink-0" />}
                   {t('footer.links.support')}
-                </Link>
+                </a>
               </li>
               <li>
                 <Link to={localizedPathFromEs('/contacto', i18n.language)} className={linkClass}>
@@ -133,15 +133,15 @@ export function LandingFooter({ variant = 'dark' }: LandingFooterProps) {
           {/* CTA principal: registro para nuevos usuarios */}
           <div>
             <h4 className={cn('font-semibold text-sm mb-3', light ? 'text-slate-900' : 'text-white')}>{t('footer.ctaTitle')}</h4>
-            <Link
-              to="/login?tab=register"
+            <a
+              href="/login?tab=register"
               className={cn(
                 'inline-flex items-center gap-2 px-4 py-2 bg-[#F7F8FC] text-[#14123B] text-sm font-medium hover:bg-white transition-colors',
                 stage && 'h-11 rounded-full px-5',
               )}
             >
               {t('footer.ctaButton')}
-            </Link>
+            </a>
             <p className={cn('mt-2 text-xs', stage ? 'text-[#D4CEF0]' : light ? 'text-slate-500' : 'text-[#F7F8FC]/55')}>
               {t('footer.ctaTrial')}
             </p>

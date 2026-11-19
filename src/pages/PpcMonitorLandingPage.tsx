@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom';
 import { useTranslation, Trans } from 'react-i18next';
 import { CommercialSeoTags } from '@/seo/CommercialSeoTags';
 import { Button } from '@/components/ui/button';
@@ -6,9 +5,7 @@ import { LandingHeader } from '@/components/landing/LandingHeader';
 import { LandingFooter } from '@/components/landing/LandingFooter';
 import {
     ArrowRight,
-    Eye,
     AlertTriangle,
-    Clock,
     Shield,
     BarChart3,
     DollarSign,
@@ -27,7 +24,6 @@ import { i18nAsArray } from '@/lib/i18nReturnObjects';
 
 const P = 'commercial.ppc.page';
 
-const FEATURE_ICONS = [Eye, AlertTriangle, DollarSign, Clock];
 const PLATFORM_ICONS = [Globe, MessageSquare, DollarSign, TrendingUp];
 const SECURITY_ICONS = [Shield, RefreshCw];
 
@@ -317,7 +313,7 @@ export default function PpcMonitorLandingPage() {
     const ctaStats = i18nAsArray<{ num: string; label: string }>(t(`${P}.cta.stats`, { returnObjects: true }));
     const ctaFooters = i18nAsArray<string>(t(`${P}.cta.footers`, { returnObjects: true }));
 
-    const loginHref = `${localizedPathFromEs('/login', i18n.language)}?tab=register`;
+    const loginHref = '/login?tab=register';
 
     return (
         <>
@@ -356,7 +352,7 @@ export default function PpcMonitorLandingPage() {
                         <p className="text-indigo-100/90 text-base sm:text-lg lg:text-xl leading-relaxed max-w-3xl mx-auto mb-8">
                             {t(`${P}.hero.subtitle`)}
                         </p>
-                        <Link to={loginHref}>
+                        <a href={loginHref}>
                             <Button
                                 size="lg"
                                 className="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white px-10 py-7 text-lg font-bold shadow-2xl shadow-amber-500/30 rounded-xl"
@@ -364,7 +360,7 @@ export default function PpcMonitorLandingPage() {
                                 {t(`${P}.hero.cta`)}
                                 <ArrowRight className="ml-2 h-5 w-5" />
                             </Button>
-                        </Link>
+                        </a>
                         <p className="mt-3 text-sm text-indigo-200/70">{t(`${P}.hero.ctaSub`)}</p>
                     </section>
 
@@ -403,19 +399,13 @@ export default function PpcMonitorLandingPage() {
                             <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">{t(`${P}.featuresSection.h2`)}</h2>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {features.map((f, i) => {
-                                const Icon = FEATURE_ICONS[i] ?? Eye;
-                                return (
-                                    <div key={i} className={`rounded-2xl border ${f.border} bg-gradient-to-br ${f.bg} p-6 sm:p-8 flex flex-col`}>
-                                        <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${f.gradient} flex items-center justify-center mb-5 shadow-lg`}>
-                                            <Icon className="h-7 w-7 text-white" />
-                                        </div>
-                                        <h3 className={`text-lg font-bold ${f.color} mb-3`}>{f.title}</h3>
-                                        <p className="text-indigo-100/85 text-sm leading-relaxed flex-1">{f.desc}</p>
-                                    </div>
-                                );
-                            })}
+                        <div className="mx-auto max-w-3xl border-t border-[rgba(196,181,253,0.22)]">
+                            {features.map((f, i) => (
+                                <div key={i} className="border-b border-[rgba(196,181,253,0.22)] py-5">
+                                    <h3 className="text-lg font-semibold text-white">{f.title}</h3>
+                                    <p className="mt-1 text-sm leading-relaxed text-[#D4CEF0]">{f.desc}</p>
+                                </div>
+                            ))}
                         </div>
                     </section>
 
@@ -517,7 +507,7 @@ export default function PpcMonitorLandingPage() {
                                 ))}
                             </div>
                             <div className="text-center">
-                                <Link to={loginHref}>
+                                <a href={loginHref}>
                                     <Button
                                         size="lg"
                                         className="w-full sm:w-auto bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white px-12 py-7 text-lg font-bold shadow-2xl shadow-amber-500/30 rounded-xl"
@@ -525,7 +515,7 @@ export default function PpcMonitorLandingPage() {
                                         {t(`${P}.cta.btn`)}
                                         <ArrowRight className="ml-2 h-5 w-5" />
                                     </Button>
-                                </Link>
+                                </a>
                                 <p className="mt-3 text-sm text-indigo-200/80">{t(`${P}.cta.sub`)}</p>
                                 <div className="mt-4 flex flex-wrap justify-center gap-3 text-xs text-indigo-200/60">
                                     {ctaFooters.map((f, i) => (

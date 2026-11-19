@@ -24,6 +24,8 @@ export default function LandingPage() {
     [literalHeroDomMotion],
   );
   useLandingHeroAmbientMotion(heroRef, reduceMotion);
+  const staticHero =
+    typeof document !== "undefined" && document.getElementById("prerender-hero") != null;
 
   return (
     <MotionConfig reducedMotion="user">
@@ -46,9 +48,11 @@ export default function LandingPage() {
       />
 
       <div className="pub-stage pub-stage--plain relative min-h-screen min-w-0 bg-[#14123B] overflow-x-clip">
-        <LandingHeader />
+        <LandingHeader spacer={!staticHero} />
 
-        <LandingLiteralHero ref={setLiteralHeroRef} reduceMotion={reduceMotion} />
+        {staticHero ? null : (
+          <LandingLiteralHero ref={setLiteralHeroRef} reduceMotion={reduceMotion} />
+        )}
 
         <LandingBelowMotionSections reduceMotion={reduceMotion} />
 

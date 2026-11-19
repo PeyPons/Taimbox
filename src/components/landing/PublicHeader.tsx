@@ -30,7 +30,7 @@ const FEATURES = [
 const navLink =
   "relative text-[13px] font-medium text-[#D4CEF0] px-2.5 py-2 rounded-md hover:text-white transition-colors after:absolute after:left-2.5 after:right-2.5 after:-bottom-0.5 after:h-px after:origin-left after:scale-x-0 after:bg-[#7C3AED] after:transition-transform hover:after:scale-x-100 focus-visible:outline-none";
 
-export function PublicHeader() {
+export function PublicHeader({ spacer = true }: { spacer?: boolean }) {
   const [open, setOpen] = useState(false);
   const { t, i18n } = useTranslation("landing");
 
@@ -52,14 +52,14 @@ export function PublicHeader() {
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-50 h-16 border-b border-[rgba(196,181,253,0.18)] bg-[#14123B]/92 backdrop-blur-xl">
+      <header className="fixed top-0 left-0 right-0 z-50 h-16 border-b border-[rgba(196,181,253,0.28)] bg-[#14123B]">
         <div className="mx-auto flex h-full max-w-[1280px] items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
           <Link
             to={path("/")}
             className="shrink-0 rounded-md"
             onClick={() => setOpen(false)}
           >
-            <PublicWordmark tone="paper" className="h-11" />
+            <PublicWordmark tone="paper" className="h-8" />
           </Link>
 
           <nav className="hidden lg:flex items-center gap-0.5" aria-label={t("header.featuresTrigger")}>
@@ -73,21 +73,21 @@ export function PublicHeader() {
               {t("header.api")}
             </Link>
             <LanguageSelector surface="dark" />
-            <Link
-              to="/login"
+            <a
+              href="/login"
               className="ml-2 inline-flex h-11 items-center rounded-full bg-[#7C3AED] px-4 text-[13px] font-medium text-white hover:bg-[#6D28D9]"
             >
               {t("header.login")}
-            </Link>
+            </a>
           </nav>
 
           <div className="flex lg:hidden items-center">
-            <Link
-              to="/login"
+            <a
+              href="/login"
               className="inline-flex h-11 items-center px-3 text-sm font-medium text-[#E7E2FB]"
             >
               {t("header.login")}
-            </Link>
+            </a>
             <button
               type="button"
               className="inline-flex h-11 w-11 items-center justify-center rounded-md text-[#E7E2FB] hover:text-white"
@@ -101,7 +101,7 @@ export function PublicHeader() {
           </div>
         </div>
       </header>
-      <div className="h-16" />
+      {spacer ? <div className="h-16" /> : null}
 
       {open ? (
         <div

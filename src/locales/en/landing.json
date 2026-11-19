@@ -593,12 +593,12 @@
     "heroKicker": "For agencies and creative teams",
     "heroLine1": "Start free and move up when you need forecast, the API or Ads",
     "heroHighlight": "",
-    "heroSub": "The account opens with no card and 14 days of Agency. Team and Agency are billed afterwards, monthly, in USD. There is no annual rate.",
+    "heroSub": "Free opens with no card. Team is paid up front, monthly, in USD. Agency includes 14 days with no card. There is no annual rate.",
     "pill1": "Free plan available",
     "pill2": "14-day trial (Agency)",
     "pill3": "No lock-in",
     "recommended": "Recommended",
-    "monthlyOnly": "Billing is monthly only.",
+    "monthlyOnly": "Billing is monthly. There is no annual rate.",
     "yes": "Yes",
     "no": "No",
     "decisionWho": {
@@ -608,13 +608,13 @@
     },
     "decisionCta": {
       "starter": "Create account",
-      "pro": "Create account",
-      "business": "Start 14-day trial"
+      "pro": "Pay Team",
+      "business": "Try 14 days"
     },
     "decisionNote": {
-      "starter": "No card. If you don’t subscribe, you stay on Free after 14 days.",
-      "pro": "The trial is Agency. Team is bought later, in billing, at this column’s price.",
-      "business": "14 days of Agency, no card. Then this column’s price each month, or you move to Free."
+      "starter": "No card. The account stays on Free.",
+      "pro": "Stripe checkout, at this price. No trial.",
+      "business": "14 days of Agency, no card."
     },
     "decisionRows": {
       "included": "People included",
@@ -636,14 +636,15 @@
     "beyond": "Scale is {{price}} a month: 100 people included and the same Ads and API as Agency. Enterprise is agreed separately. Both go through email; there is no checkout on this page.",
     "beyondCta": "Write to sales",
     "intent": {
-      "starter": "You’re creating the account with no card. That’s 14 days of Agency. If you don’t subscribe, you move to Free.",
-      "pro": "You’re creating the account with no card. The trial is Agency, for 14 days. Team is bought later in billing.",
+      "starter": "You’re creating the account for free, with no card. The plan is Free.",
+      "pro": "You’ll create the account and go straight to Team checkout in Stripe. The plan starts when you pay. If you close checkout, the account stays on Free.",
       "business": "You’re creating the account with no card and starting 14 days of Agency. If you don’t subscribe, you move to Free."
     },
+    "checkoutUnavailable": "Team checkout could not be opened. The account exists; you can try again from billing.",
     "faqShort": [
       {
-        "q": "Does the trial need a card?",
-        "a": "No. Sign-up includes 14 days of Agency with no card. One trial per agency."
+        "q": "Does the Agency trial need a card?",
+        "a": "No. Agency sign-up is 14 days with no card, once per agency. Team has no trial: the button opens Stripe checkout. Free is sign-up with no payment."
       },
       {
         "q": "Can I cancel?",

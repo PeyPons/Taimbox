@@ -1,3 +1,4 @@
+import "@/i18n/blogBundle";
 import { Link } from 'react-router-dom';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';

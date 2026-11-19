@@ -508,7 +508,7 @@ export function TeamArticle() {
                         ))}
                     </div>
                     <div className="text-center">
-                        <Link to={localizedPathFromEs('/login', i18n.language)}>
+                        <a href="/login">
                             <Button
                                 size="lg"
                                 className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white px-12 py-7 text-lg font-bold shadow-2xl shadow-blue-500/30 rounded-xl"
@@ -516,7 +516,7 @@ export function TeamArticle() {
                                 {t(`${P}.cta.btn`)}
                                 <ArrowRight className="ml-2 h-5 w-5" />
                             </Button>
-                        </Link>
+                        </a>
                         <p className="mt-3 text-sm text-indigo-200/80">{t(`${P}.cta.sub`)}</p>
                         <Link
                             to={localizedPathFromEs('/guia/equipo', i18n.language)}

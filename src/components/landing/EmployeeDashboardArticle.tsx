@@ -616,7 +616,7 @@ export function EmployeeDashboardArticle() {
                         ))}
                     </div>
                     <div className="text-center">
-                        <Link to="/login">
+                        <a href="/login">
                             <Button
                                 size="lg"
                                 className="w-full sm:w-auto bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-12 py-7 text-lg font-bold shadow-2xl shadow-indigo-500/30 rounded-xl"
@@ -624,7 +624,7 @@ export function EmployeeDashboardArticle() {
                                 {t(`${P}.cta.btn`)}
                                 <ArrowRight className="ml-2 h-5 w-5" />
                             </Button>
-                        </Link>
+                        </a>
                         <p className="mt-3 text-sm text-indigo-200/80">
                             {t(`${P}.cta.sub`)}
                         </p>

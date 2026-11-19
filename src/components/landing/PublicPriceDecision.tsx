@@ -133,11 +133,9 @@ export function PublicPriceDecision({
 
   return (
     <div>
-      <p className="text-center font-mono text-[11px] uppercase tracking-[0.22em] text-[#C4B5FD]">
-        {t("pricing.monthlyOnly")}
-      </p>
+      <p className="hidden text-center text-xs text-[#D4CEF0] sm:block">{t("pricing.monthlyOnly")}</p>
 
-      <div className="mt-8 grid grid-cols-3 gap-px overflow-hidden rounded-2xl border border-[#E4DDD0] bg-[#E4DDD0]">
+      <div className="mt-6 grid grid-cols-1 gap-px overflow-hidden rounded-2xl border border-[#E4DDD0] bg-[#E4DDD0] md:mt-8 md:grid-cols-3">
         {COLUMNS.map((id) => {
           const pricing = PUBLIC_PLAN_PRICING.find((plan) => plan.id === id);
           const recommended = pricing?.recommended === true;
@@ -146,27 +144,25 @@ export function PublicPriceDecision({
             <article
               key={id}
               className={cn(
-                "flex flex-col bg-[#F7F4EC] px-3 py-4 text-[#14123B] sm:px-6 sm:py-6",
+                "flex flex-col bg-[#F7F4EC] px-5 py-5 text-[#14123B] sm:px-6 sm:py-6",
                 recommended && "shadow-[inset_0_3px_0_0_#7C3AED]",
               )}
             >
               <p className="min-h-[1rem] font-mono text-[10px] uppercase tracking-[0.14em] text-[#14123B]">
                 {recommended ? t("pricing.recommended") : "\u00a0"}
               </p>
-              <h2 className="mt-1 text-sm font-semibold sm:text-lg">{PUBLIC_PLAN_LABELS[id]}</h2>
-              <p className="mt-3 text-[1.65rem] font-semibold leading-none tracking-[-0.04em] tabular-nums [font-feature-settings:'zero'_1] sm:text-5xl">
+              <h2 className="mt-1 text-lg font-semibold">{PUBLIC_PLAN_LABELS[id]}</h2>
+              <p className="mt-3 text-5xl font-semibold leading-none tracking-[-0.04em] tabular-nums [font-feature-settings:'zero'_1]">
                 {formatMoney(amount)}
               </p>
-              <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.14em] text-[#3C3858] sm:text-[11px]">
+              <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.14em] text-[#3C3858]">
                 / {t(`pricing.plans.${id}.period`)}
               </p>
-              <p className="mt-3 min-h-[2.5rem] text-[12px] leading-snug text-[#3C3858] sm:min-h-0 sm:text-sm">
-                {t(`pricing.decisionWho.${id}`)}
-              </p>
+              <p className="mt-3 text-sm leading-snug text-[#3C3858]">{t(`pricing.decisionWho.${id}`)}</p>
               <a
                 href={registerHref(id)}
                 className={cn(
-                  "mt-4 inline-flex h-11 items-center justify-center rounded-full px-3 text-center text-[13px] font-semibold sm:text-sm",
+                  "mt-4 inline-flex h-11 w-full items-center justify-center whitespace-nowrap rounded-full px-4 text-sm font-semibold",
                   recommended
                     ? "bg-[#14123B] text-white hover:bg-[#2A2558]"
                     : "border border-[#14123B] text-[#14123B] hover:bg-[#14123B] hover:text-white",
@@ -174,15 +170,27 @@ export function PublicPriceDecision({
               >
                 {t(`pricing.decisionCta.${id}`)}
               </a>
-              <p className="mt-3 text-[11px] leading-snug text-[#3C3858] sm:text-xs">
-                {t(`pricing.decisionNote.${id}`)}
-              </p>
+              <p className="mt-3 text-xs leading-snug text-[#3C3858]">{t(`pricing.decisionNote.${id}`)}</p>
             </article>
           );
         })}
       </div>
 
-      <div className="mt-6 overflow-hidden rounded-2xl border border-[#E4DDD0] bg-[#F7F4EC] text-[#14123B]">
+      <div className="mt-6 rounded-2xl border border-[#E4DDD0] bg-[#F7F4EC] text-[#14123B]">
+        <div className="sticky top-16 z-30 grid grid-cols-[minmax(0,1.5fr)_repeat(3,minmax(0,0.8fr))] border-b border-[#E4DDD0] bg-[#F7F4EC]">
+          <div className="px-3 py-2 sm:px-5" />
+          {COLUMNS.map((id) => (
+            <div
+              key={id}
+              className={cn(
+                "px-1 py-2 text-center text-[11px] font-semibold sm:text-xs",
+                id === "business" ? "text-[#5B21B6]" : "text-[#14123B]",
+              )}
+            >
+              {PUBLIC_PLAN_LABELS[id]}
+            </div>
+          ))}
+        </div>
         {rows.map((row) => (
           <div
             key={row.key}

@@ -593,12 +593,12 @@
     "heroKicker": "Para agencias y equipos creativos",
     "heroLine1": "Empiezas gratis y subes de plan cuando necesitas forecast, API o Ads",
     "heroHighlight": "",
-    "heroSub": "La cuenta se abre sin tarjeta y con 14 días de Agency. Team y Agency se cobran después, cada mes y en USD. No hay tarifa anual.",
+    "heroSub": "Free se abre sin tarjeta. Team se paga al momento, cada mes y en USD. Agency incluye 14 días sin tarjeta. No hay tarifa anual.",
     "pill1": "Plan gratuito disponible",
     "pill2": "Prueba de 14 días (Agency)",
     "pill3": "Sin permanencia",
     "recommended": "Recomendado",
-    "monthlyOnly": "Solo hay facturación mensual.",
+    "monthlyOnly": "La facturación es mensual. No hay tarifa anual.",
     "yes": "Sí",
     "no": "No",
     "decisionWho": {
@@ -608,13 +608,13 @@
     },
     "decisionCta": {
       "starter": "Crear cuenta",
-      "pro": "Crear cuenta",
+      "pro": "Pagar Team",
       "business": "Probar 14 días"
     },
     "decisionNote": {
-      "starter": "Sin tarjeta. Si no contratas, a los 14 días quedas en Free.",
-      "pro": "La prueba es de Agency. Team se contrata después, en facturación, al precio de esta columna.",
-      "business": "14 días de Agency, sin tarjeta. Luego el precio de esta columna cada mes, o pasas a Free."
+      "starter": "Sin tarjeta. La cuenta queda en Free.",
+      "pro": "Checkout de Stripe, a este precio. Sin prueba.",
+      "business": "14 días de Agency, sin tarjeta."
     },
     "decisionRows": {
       "included": "Personas incluidas",
@@ -636,14 +636,15 @@
     "beyond": "Scale son {{price}} al mes: 100 personas incluidas y los mismos Ads y API que Agency. Enterprise se pacta. Los dos se hablan por correo; no hay un checkout en esta página.",
     "beyondCta": "Escribir a ventas",
     "intent": {
-      "starter": "Vas a crear la cuenta sin tarjeta. Son 14 días de Agency. Si no contratas, pasas a Free.",
-      "pro": "Vas a crear la cuenta sin tarjeta. La prueba es de Agency, 14 días. Team se contrata después en facturación.",
+      "starter": "Vas a crear la cuenta gratis, sin tarjeta. El plan es Free.",
+      "pro": "Vas a crear la cuenta y, al momento, el checkout de Team en Stripe. El plan se activa al pagar. Si cierras el pago, la cuenta queda en Free.",
       "business": "Vas a crear la cuenta sin tarjeta y empiezas 14 días de Agency. Si no contratas, pasas a Free."
     },
+    "checkoutUnavailable": "No se ha podido abrir el pago de Team. La cuenta está creada; puedes intentarlo desde facturación.",
     "faqShort": [
       {
-        "q": "¿La prueba pide tarjeta?",
-        "a": "No. Al registrarte tienes 14 días del plan Agency sin tarjeta. Solo hay un trial por agencia."
+        "q": "¿La prueba de Agency pide tarjeta?",
+        "a": "No. El alta de Agency son 14 días sin tarjeta, una vez por agencia. Team no tiene prueba: el botón abre el checkout de Stripe. Free es registro sin pago."
       },
       {
         "q": "¿Puedo cancelar?",

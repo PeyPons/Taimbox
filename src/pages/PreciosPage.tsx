@@ -26,7 +26,7 @@ export default function PreciosPage() {
         lang={lang}
       />
 
-      <div className="pub-stage pub-stage--plain relative min-h-screen overflow-x-clip bg-[#14123B]">
+      <div className="pub-stage pub-stage--plain relative min-h-screen bg-[#14123B]">
         <LandingHeader />
 
         <article className="relative z-10 mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-14 lg:px-8">
@@ -48,8 +48,9 @@ export default function PreciosPage() {
             options={currencyOptions}
             loading={ratesLoading}
             variant="dark"
+            compact
           />
-          <p className="-mt-4 mb-2 text-center text-[11px] text-[#D4CEF0]">{billingNote}</p>
+          <p className="-mt-2 mb-2 hidden text-center text-[11px] text-[#D4CEF0] sm:block">{billingNote}</p>
 
           <PublicPriceDecision formatMoney={formatMonthly} enterpriseMail={enterpriseMail} />
 

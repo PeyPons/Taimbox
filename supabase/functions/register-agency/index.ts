@@ -16,6 +16,7 @@ import {
     RateLimitError,
     RateLimitUnavailableError,
 } from "../_shared/rate-limit.ts"
+import { resolveRegisterPlan } from "../_shared/register-plan.ts"
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -68,7 +69,11 @@ serve(async (req) => {
             true,
         )
 
-        const { email, password, name, agencyName, currency: bodyCurrency } = body
+        const { email, password, name, agencyName, currency: bodyCurrency, plan: bodyPlan } = body
+        const registerPlan = resolveRegisterPlan(bodyPlan)
+        const trialEndsAt = registerPlan.trial
+            ? new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
+            : null
 
         const ALLOWED_CURRENCIES = new Set([
             'EUR', 'USD', 'GBP', 'MXN', 'ARS', 'COP', 'CLP', 'PEN', 'BRL',
@@ -211,10 +216,10 @@ serve(async (req) => {
                     integrations: {} // Objeto para claves API
                 },
                 setup_completed: false,
-                plan_id: 'business',
-                subscription_status: 'trialing',
-                trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-                trial_used_at: new Date().toISOString(),
+                plan_id: registerPlan.storedPlanId,
+                subscription_status: registerPlan.trial ? 'trialing' : 'active',
+                trial_ends_at: trialEndsAt,
+                trial_used_at: registerPlan.trial ? new Date().toISOString() : null,
             })
             .select()
             .single()
@@ -326,7 +331,8 @@ serve(async (req) => {
                 success: true,
                 user: authData.user,
                 agency: agencyData,
-                employee: employeeData
+                employee: employeeData,
+                checkoutPlan: registerPlan.checkoutPlan,
             }),
             {
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' },

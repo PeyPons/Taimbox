@@ -54,6 +54,53 @@
   padding-top: clamp(3.25rem, 6vw, 5rem);
 }
 
+/* Kickers de plantilla: la pastilla de color pasa a ser la línea mono de la home. */
+.pub-stage :is(span, div).rounded-full.uppercase.tracking-wider {
+  border-radius: 0;
+  background: transparent !important;
+  border-color: transparent !important;
+  padding: 0;
+  color: #c4b5fd !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.22em;
+  font-weight: 500;
+  font-size: 11px;
+  box-shadow: none;
+}
+
+/* Tres cifras en cajas idénticas: una lista con filete. */
+.pub-stage .grid.grid-cols-1.sm\:grid-cols-3.gap-4.max-w-2xl {
+  display: block;
+  max-width: 36rem;
+  margin-inline: auto;
+  border-top: 1px solid rgba(196, 181, 253, 0.28);
+  background: transparent;
+}
+
+.pub-stage .grid.grid-cols-1.sm\:grid-cols-3.gap-4.max-w-2xl > * {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0;
+  padding: 0.85rem 0;
+  text-align: left;
+  background: transparent !important;
+  border: 0 !important;
+  border-bottom: 1px solid rgba(196, 181, 253, 0.22) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+/* Cuadrados de icono con degradado, dentro de un artículo. Los mocks no usan article. */
+.pub-article :is(.h-10, .h-12, .h-14).rounded-xl.bg-gradient-to-br,
+.pub-article :is(.h-10, .h-12, .h-14).rounded-2xl.bg-gradient-to-br {
+  background-image: none !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  border-radius: 0;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .pub-stage [style*="hero-pulse-bar"] {
     animation: none !important;

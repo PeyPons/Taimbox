@@ -7,8 +7,6 @@ import { Button } from '@/components/ui/button';
 import {
     Shield,
     Lock,
-    Key,
-    Database,
     Server,
     CheckCircle2,
     Building2,
@@ -61,47 +59,27 @@ export default function SecurityLandingPage() {
                             <h2 className="text-sm font-semibold text-emerald-500 tracking-wider uppercase mb-2">{t(`${P}.threePillarsKicker`)}</h2>
                             <h3 className="text-3xl font-bold text-white">{t(`${P}.threePillarsH2`)}</h3>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div className="p-8 rounded-2xl bg-slate-900/40 border border-slate-800 hover:border-slate-700 transition-colors flex flex-col">
-                                <div className="w-12 h-12 rounded-xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 mb-6">
-                                    <Database className="h-6 w-6 text-indigo-400" />
-                                </div>
-                                <h3 className="text-xl font-bold text-white mb-3">{t(`${P}.pillar1Title`)}</h3>
-                                <p className="text-slate-400 text-sm leading-relaxed">
-                                    <Trans
-                                        i18nKey={`${P}.pillar1Body`}
-                                        ns="landing"
-                                        components={{ strong: <strong className="text-slate-200" /> }}
-                                    />
-                                </p>
-                            </div>
-                            <div className="p-8 rounded-2xl bg-slate-900/40 border border-slate-800 hover:border-slate-700 transition-colors flex flex-col">
-                                <div className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 mb-6">
-                                    <Lock className="h-6 w-6 text-emerald-400" />
-                                </div>
-                                <h3 className="text-xl font-bold text-white mb-3">{t(`${P}.pillar2Title`)}</h3>
-                                <p className="text-slate-400 text-sm leading-relaxed">
-                                    <Trans
-                                        i18nKey={`${P}.pillar2Body`}
-                                        ns="landing"
-                                        components={{ strong: <strong className="text-slate-200" /> }}
-                                    />
-                                </p>
-                            </div>
-                            <div className="p-8 rounded-2xl bg-slate-900/40 border border-slate-800 hover:border-slate-700 transition-colors flex flex-col">
-                                <div className="w-12 h-12 rounded-xl bg-orange-500/10 flex items-center justify-center border border-orange-500/20 mb-6">
-                                    <Key className="h-6 w-6 text-orange-400" />
-                                </div>
-                                <h3 className="text-xl font-bold text-white mb-3">{t(`${P}.pillar3Title`)}</h3>
-                                <p className="text-slate-400 text-sm leading-relaxed">
-                                    <Trans
-                                        i18nKey={`${P}.pillar3Body`}
-                                        ns="landing"
-                                        components={{ strong: <strong className="text-slate-200" /> }}
-                                    />
-                                </p>
-                            </div>
-                        </div>
+                        <ol className="mx-auto max-w-3xl border-y border-[rgba(196,181,253,0.22)]">
+                            {([
+                                ['01', 'pillar1Title', 'pillar1Body'],
+                                ['02', 'pillar2Title', 'pillar2Body'],
+                                ['03', 'pillar3Title', 'pillar3Body'],
+                            ] as const).map(([index, titleKey, bodyKey]) => (
+                                <li key={index} className="grid gap-2 border-b border-[rgba(196,181,253,0.22)] py-6 last:border-b-0 sm:grid-cols-[4.5rem_1fr] sm:gap-8">
+                                    <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#C4B5FD]">{index}</p>
+                                    <div>
+                                        <h3 className="text-xl font-semibold text-white">{t(`${P}.${titleKey}`)}</h3>
+                                        <p className="mt-2 text-sm leading-relaxed text-[#D4CEF0]">
+                                            <Trans
+                                                i18nKey={`${P}.${bodyKey}`}
+                                                ns="landing"
+                                                components={{ strong: <strong className="text-white" /> }}
+                                            />
+                                        </p>
+                                    </div>
+                                </li>
+                            ))}
+                        </ol>
                     </section>
 
                     <section className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto mb-32">

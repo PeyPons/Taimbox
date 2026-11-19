@@ -1,3 +1,4 @@
+import "@/i18n/blogBundle";
 import { Suspense } from "react";
 import { useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";

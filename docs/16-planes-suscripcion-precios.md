@@ -158,13 +158,16 @@ Requiere permiso `can_access_agency_settings` **y** plan Team+ (`PlanGuard`).
 
 ---
 
-## 9. Trial Agency (14 días)
+## 9. Trial Agency (14 días) y alta desde /precios
 
-- **Registro:** `register-agency` asigna `plan_id = business`, `subscription_status = trialing`, `trial_ends_at` (+14 d), marca `trial_used_at` si es el primer trial.
+- **Alta sin `plan`** (home, footer, `/login?tab=register`): `register-agency` sigue asignando `plan_id = business`, `subscription_status = trialing`, `trial_ends_at` (+14 d) y `trial_used_at`. No cambia el alta actual.
+- **Free** (`plan=starter`): `plan_id = starter`, `subscription_status = active`, sin prueba ni checkout.
+- **Team** (`plan=pro`): la agencia se crea en Free (sin `trial_used_at`). Tras el login, el cliente llama a `create-checkout-session` con el Price ID de Team (`VITE_STRIPE_PRICE_ID_PRO`). El webhook pasa a `pro` al completar el pago. Si se cierra el checkout, la cuenta queda en Free.
+- **Agency** (`plan=business`): igual que el alta sin `plan` (14 días, sin tarjeta).
 - **Un trial por agencia** (`trial_used_at` no null → no se ofrece trial en checkout).
-- **Checkout:** sin periodo de prueba en Stripe (solo registro).
+- **Checkout de Stripe:** sin periodo de prueba. La prueba de Agency solo existe en el alta, no en la sesión de pago.
 - **Expiración:** Edge `expire-trials` + RPC `expire_agency_trials()`; cron recomendado en servidor.
-- **Cliente:** si `trialing` y `trial_ends_at` pasado, `useSubscriptionLimits` trata como **Free** hasta que el webhook actualice.
+- **Cliente:** si `trialing` y `trial_ends_at` pasado, `useSubscriptionLimits` trata como **Free** hasta que el cron actualice.
 
 Durante el trial, la agencia tiene **entitlements de Agency** (OKR, finanzas, Ads, exports avanzados).
 
