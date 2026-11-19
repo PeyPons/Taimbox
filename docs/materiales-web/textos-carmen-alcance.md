@@ -153,7 +153,7 @@ El bloque más grande es el blog bilingüe. Si se prefiere un ritmo más conteni
 Sin estos puntos no se deberían publicar cifras, nombres de plan ni promesas de integración. Fuente de cada duda:
 
 1. **Nombres de plan.** En producto y en `publicPricing.ts` el plan gratuito se llama Free (`plan_id` `starter`). En el cierre de `/precios` todavía se lee «plan Starter» (`landing.json`, `pricing.finalSub`). Conviene un solo nombre público.
-2. **Precios y early adopter.** En código, Team 49 USD/mes (oficial 99), Agency 149 (oficial 249), Scale 299 USD, Enterprise a medida, cobro en USD (`src/config/publicPricing.ts` y `docs/16-planes-suscripcion-precios.md`). El copy promete un 50 % «de por vida» y menciona tarifas oficiales de 99 y 249 USD (`pricing.earlyAdopter`, `pricing.rewardBanner`, FAQ). Confirmar si esa condición se mantiene, cómo se comunica y si Scale se muestra con precio (299) o solo como «contactar».
+2. **Precios.** Resuelto en código: Team 99 USD/mes, Agency 249 USD/mes, Scale 299 USD, Enterprise a medida, cobro en USD, sin tarifa early adopter (`src/config/publicPricing.ts` y `docs/16`). Scale se muestra con precio y el alta se habla por contacto.
 3. **Precios LATAM** (29, 89 y 179 USD en `PUBLIC_PLAN_LATAM_USD`): si se siguen mostrando y con qué texto.
 4. **Límites por plan** (personas incluidas y asientos extra, histórico de dos meses en Free, módulos Weekly, OKR, finanzas, PPC y API): alinear el copy con `docs/16-planes-suscripcion-precios.md`, que prevalece sobre el texto antiguo.
 5. **Prueba de 14 días del plan Agency sin tarjeta** y un trial por agencia: confirmar que se sigue ofreciendo así.

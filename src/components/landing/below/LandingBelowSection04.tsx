@@ -334,10 +334,10 @@ function PhaseCard({ phase, active }: { phase: Phase; active: boolean }) {
     <div
       className="group relative rounded-2xl p-6 sm:p-7 grid grid-cols-[auto_1fr] gap-5 sm:gap-6 items-start transition-all duration-500"
       style={{
-        background: active ? "rgb(255, 255, 255)" : "rgba(255, 255, 255, 0.55)",
+        background: active ? "#F7F4EC" : "rgba(247, 244, 236, 0.72)",
         border: active
-          ? `1px solid ${rgba(phase.color, 0.25)}`
-          : "1px solid rgba(15, 23, 42, 0.06)",
+          ? "1px solid #7C3AED"
+          : "1px solid rgba(20, 18, 59, 0.08)",
         boxShadow: active
           ? `rgba(15, 23, 42, 0.04) 0px 1px 2px, ${phase.shadowRgba} 0px 24px 50px -22px, rgba(255, 255, 255, 0.6) 0px 1px 0px inset`
           : "rgba(15, 23, 42, 0.03) 0px 1px 2px, rgba(15, 23, 42, 0.06) 0px 8px 24px -16px",
@@ -347,8 +347,8 @@ function PhaseCard({ phase, active }: { phase: Phase; active: boolean }) {
       <div
         className="absolute left-0 top-6 bottom-6 w-[3px] rounded-full transition-opacity duration-500"
         style={{
-          background: phase.color,
-          boxShadow: `${rgba(phase.color, 0.6)} 0px 0px 12px`,
+          background: "#7C3AED",
+          boxShadow: "none",
           opacity: active ? 1 : 0.3,
         }}
       />
@@ -464,20 +464,15 @@ function useMockupSlideAnimation(
       const on = i === activeIdx;
       const fromOpacity = parseFloat(el.style.opacity || (on ? "0" : "1"));
       const toOpacity = on ? 1 : 0;
-      const fromY = on ? 18 : 0;
-      const toY = on ? 0 : -10;
-      const fromScale = on ? 0.97 : 1;
-      const toScale = on ? 1 : 0.97;
+      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
       const ctrl = animate(0, 1, {
-        duration: 0.5,
+        duration: reduce ? 0 : 0.28,
         ease: [0.22, 1, 0.36, 1],
         onUpdate: (p) => {
           const op = fromOpacity + (toOpacity - fromOpacity) * p;
-          const y = fromY + (toY - fromY) * p;
-          const sc = fromScale + (toScale - fromScale) * p;
           el.style.opacity = String(op);
-          el.style.transform = `translateY(${y}px) scale(${sc})`;
+          el.style.transform = "none";
         },
         onComplete: () => {
           el.style.pointerEvents = on ? "auto" : "none";
@@ -530,24 +525,19 @@ export const LandingBelowSection04: FC = () => {
 
   return (
     <section
-      className="relative"
+      className="relative overflow-hidden"
       style={landingInlineStyle(
-        "overflow: clip; background: radial-gradient(90% 50% at 50% 0%, rgba(196, 181, 253, 0.3), transparent 60%), linear-gradient(rgb(250, 247, 255) 0%, rgb(240, 233, 255) 60%, rgb(250, 247, 255) 100%); padding-top: clamp(6rem, 12vw, 10rem); padding-bottom: clamp(7rem, 13vw, 11rem);",
+        "background: #14123B; padding-top: clamp(5rem, 9vw, 7rem); padding-bottom: clamp(4.5rem, 8vw, 6rem);",
       )}
     >
-      {/* Decorative blobs */}
-      <div aria-hidden className="absolute top-[20%] -right-20 h-[400px] w-[400px] rounded-full opacity-30 blur-3xl pointer-events-none" style={landingInlineStyle("background: radial-gradient(circle, rgb(199, 210, 254), transparent 70%);")} />
-      <div aria-hidden className="absolute bottom-[10%] -left-20 h-[400px] w-[400px] rounded-full opacity-25 blur-3xl pointer-events-none" style={landingInlineStyle("background: radial-gradient(circle, rgb(251, 207, 232), transparent 70%);")} />
-
       <div className="relative max-w-6xl mx-auto px-6 lg:px-10">
-        {/* Section Header */}
         <div className="max-w-3xl mb-14 sm:mb-20 text-center mx-auto">
-          <span className="inline-block font-mono text-[10px] uppercase tracking-[0.24em] text-violet-700 mb-3">
+          <span className="inline-block font-mono text-[10px] uppercase tracking-[0.24em] text-[#C4B5FD] mb-3">
             {t("s04.kicker")}
           </span>
-          <h2 className="text-[2.25rem] sm:text-5xl lg:text-[3.6rem] font-semibold text-slate-900 leading-[1.05] -tracking-[0.028em]">
+          <h2 className="text-[2.25rem] sm:text-5xl lg:text-[3.6rem] font-semibold text-white leading-[1.05] tracking-[-0.03em]">
             {t("s04.title")}{" "}
-            <span className="italic font-normal bg-gradient-to-r from-violet-600 via-indigo-600 to-pink-600 bg-clip-text text-transparent">
+            <span className="italic font-normal text-[#C4B5FD]">
               {t("s04.titleHighlight")}
             </span>
             .
@@ -596,14 +586,14 @@ export const LandingBelowSection04: FC = () => {
         {/* CTA */}
         <div className="mt-16 sm:mt-20 flex flex-col sm:flex-row gap-3 justify-center items-center">
           <a
-            className="group inline-flex items-center gap-2 h-12 px-7 rounded-full text-[14px] font-semibold bg-slate-900 text-white hover:bg-slate-800 transition-all shadow-[0_8px_24px_-8px_rgba(15,23,42,0.4)]"
+            className="group inline-flex items-center gap-2 h-12 px-7 rounded-full text-[14px] font-semibold bg-[#F7F4EC] text-[#14123B] hover:bg-white transition-colors"
             href="/login?tab=register"
           >
             {t("s04.ctaPrimary")}
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
           </a>
           <a
-            className="group inline-flex items-center gap-2 h-12 px-6 rounded-full text-[14px] font-medium text-slate-900 bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition-all"
+            className="group inline-flex items-center gap-2 h-12 px-6 rounded-full text-[14px] font-medium text-white bg-transparent border border-[rgba(196,181,253,0.4)] hover:border-[#C4B5FD] transition-colors"
             href={path("/guia")}
           >
             {t("s04.ctaGuide")}
@@ -612,10 +602,6 @@ export const LandingBelowSection04: FC = () => {
         </div>
       </div>
 
-      {/* Bottom wave */}
-      <svg aria-hidden className="absolute left-0 right-0 bottom-0 w-full pointer-events-none h-14 sm:h-20" viewBox="0 0 1440 120" preserveAspectRatio="none">
-        <path d="M0,80 C320,40 640,120 880,90 C1120,60 1280,90 1440,70 L1440,120 L0,120 Z" fill="#ffffff" />
-      </svg>
     </section>
   );
 };

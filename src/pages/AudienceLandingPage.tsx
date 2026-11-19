@@ -52,15 +52,11 @@ function usePublicLang(): "es" | "en" {
 
 function AudienceFrame({ children }: { children: ReactNode }) {
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#14123B] text-white">
-      <div className="pointer-events-none absolute inset-0" aria-hidden>
-        <div className="absolute left-1/4 top-0 h-96 w-96 rounded-full bg-violet-600/25 blur-3xl" />
-        <div className="absolute bottom-0 right-1/4 h-96 w-96 rounded-full bg-indigo-900/50 blur-3xl" />
-      </div>
+    <div className="pub-stage relative min-h-screen overflow-x-clip bg-[#14123B] text-white">
       <div className="relative z-10">
         <LandingHeader />
         {children}
-        <LandingFooter />
+        <LandingFooter variant="stage" />
       </div>
     </div>
   );

@@ -237,7 +237,7 @@ export function ReportsArticle() {
     const exportColors = ['from-purple-500 to-pink-500', 'from-amber-500 to-orange-500'];
 
     return (
-        <article className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-14 md:py-16 text-left overflow-x-hidden">
+        <article className="pub-article relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-14 md:py-16 text-left overflow-x-hidden">
             {/* HERO */}
             <section className="mb-16 sm:mb-20 text-center">
                 <div className="mb-6">

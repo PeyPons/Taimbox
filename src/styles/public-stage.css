@@ -1,0 +1,86 @@
+/*
+  Escenario de la web pública (sector sobre tinta).
+  No afecta al Dashboard: solo nodos con .pub-stage.
+*/
+
+.pub-stage {
+  background-color: #14123b;
+  color: #f4f1ff;
+  isolation: isolate;
+}
+
+.pub-stage::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: 5.25rem;
+  right: 0.5rem;
+  width: 4.5rem;
+  height: 4.5rem;
+  pointer-events: none;
+  background: conic-gradient(
+    from 206deg,
+    #7c3aed 0deg,
+    #7c3aed 46deg,
+    transparent 46deg
+  );
+  -webkit-mask: radial-gradient(circle, transparent 64%, #000 65.2%, #000 70%, transparent 71.2%);
+  mask: radial-gradient(circle, transparent 64%, #000 65.2%, #000 70%, transparent 71.2%);
+}
+
+@media (max-width: 1023px) {
+  .pub-stage::before {
+    content: none;
+  }
+}
+
+.pub-stage--plain::before {
+  content: none;
+}
+
+/* Halos y rejilla de plantilla, solo si cuelgan directo del escenario. */
+.pub-stage > .absolute.inset-0,
+.pub-stage > .pointer-events-none.absolute.inset-0 {
+  display: none !important;
+}
+
+.pub-stage ::selection {
+  background: #7c3aed;
+  color: #fff;
+}
+
+.pub-stage :focus-visible {
+  outline: 2px solid #c4b5fd;
+  outline-offset: 3px;
+}
+
+/* Énfasis de titular: sólido, no degradado recortado. */
+.pub-stage :is(h1, h2, h3) :is(.bg-clip-text, .text-transparent) {
+  background-image: none !important;
+  -webkit-text-fill-color: #c4b5fd;
+  color: #c4b5fd;
+}
+
+/* CTAs de marketing. Los mocks usan div, no estos controles. */
+.pub-stage :is(a, button).bg-gradient-to-r {
+  background-image: none !important;
+  background-color: #f7f4ec !important;
+  color: #14123b !important;
+  border-radius: 9999px;
+  box-shadow: none !important;
+}
+
+.pub-stage :is(a, button).bg-gradient-to-r:hover {
+  background-color: #fff !important;
+}
+
+.pub-article > section + section {
+  border-top: 1px solid rgba(196, 181, 253, 0.16);
+  padding-top: clamp(3.25rem, 6vw, 5rem);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pub-stage [style*="hero-pulse-bar"] {
+    animation: none !important;
+  }
+}

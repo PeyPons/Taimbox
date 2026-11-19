@@ -53,7 +53,7 @@ export function LandingArticle() {
   const [apiTab, setApiTab] = useState<'curl' | 'js'>('js');
 
   return (
-    <article id="por-que-timeboxing" className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-14 md:py-16 text-left overflow-x-hidden">
+    <article id="por-que-timeboxing" className="pub-article relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-14 md:py-16 text-left overflow-x-hidden">
       {/* Bloque 1: El gancho */}
       <section className="mb-12 sm:mb-14">
         <div className="mb-6 text-center">

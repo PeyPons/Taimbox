@@ -15,9 +15,9 @@ export const LandingBelowSection09: FC = () => {
   <section
     className="relative overflow-hidden"
     style={{
-      background: "rgb(76, 29, 149)",
-      paddingTop: "clamp(8rem, 14vw, 12rem)",
-      paddingBottom: "clamp(7rem, 13vw, 11rem)",
+      background: "#14123B",
+      paddingTop: "clamp(5.5rem, 10vw, 8rem)",
+      paddingBottom: "clamp(5rem, 9vw, 7rem)",
     }}
   >
     <div
@@ -38,8 +38,8 @@ export const LandingBelowSection09: FC = () => {
           {t("s09.badge")}
         </span>
       </div>
-      <h2 className="text-[2.5rem] sm:text-5xl lg:text-6xl xl:text-7xl font-semibold text-white leading-[1.05] -tracking-[0.03em] mb-7">
-        <span className="bg-gradient-to-r from-white via-violet-100 to-pink-100 bg-clip-text text-transparent">
+      <h2 className="text-[2.5rem] sm:text-5xl lg:text-6xl xl:text-7xl font-semibold text-white leading-[1.05] tracking-[-0.035em] mb-7">
+        <span>
           {t("s09.titleLine1")}
         </span>
         <br />

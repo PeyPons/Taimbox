@@ -34,7 +34,7 @@ export default function SecurityLandingPage() {
     return (
         <>
             <CommercialSeoTags pathEs="/seguridad" pageKey="security" />
-            <div className="min-h-screen bg-[#14123B] flex flex-col font-sans selection:bg-orange-900/30 overflow-x-hidden">
+            <div className="pub-stage min-h-screen bg-[#14123B] flex flex-col font-sans selection:bg-orange-900/30 overflow-x-hidden">
                 <LandingHeader />
 
                 <main className="flex-1 relative z-10 pt-32 pb-24">
@@ -384,7 +384,7 @@ export default function SecurityLandingPage() {
                     </section>
                 </main>
 
-                <LandingFooter />
+                <LandingFooter variant="stage" />
             </div>
         </>
     );

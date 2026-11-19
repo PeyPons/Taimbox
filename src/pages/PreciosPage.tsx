@@ -61,7 +61,7 @@ const PLAN_UI: Record<
     iconBg: 'bg-amber-500/20 border border-amber-500/30',
     iconColor: 'text-amber-400',
     cardStyle:
-      'bg-gradient-to-b from-indigo-500/10 to-purple-500/10 border-indigo-500/40 relative lg:-translate-y-2 shadow-2xl shadow-purple-500/20 transition-all duration-300',
+      'bg-[#1C1848] border-[#7C3AED] relative shadow-[0_24px_60px_-28px_rgba(124,58,237,0.55)]',
   },
   scale: {
     name: PUBLIC_PLAN_LABELS.scale,
@@ -140,7 +140,7 @@ export default function PreciosPage() {
         lang={lang}
       />
 
-      <div className="min-h-screen bg-[#14123B] relative overflow-hidden">
+      <div className="pub-stage min-h-screen bg-[#14123B] relative overflow-hidden">
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-0 left-1/4 w-96 h-96 bg-amber-900/20 rounded-full blur-3xl opacity-50" />
           <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-orange-950/35 rounded-full blur-3xl opacity-50" />
@@ -156,7 +156,7 @@ export default function PreciosPage() {
 
         <LandingHeader />
 
-        <article className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-14 md:py-16 text-left overflow-x-hidden">
+        <article className="pub-article relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-14 md:py-16 text-left overflow-x-hidden">
 
           <section className="mb-12 sm:mb-16 text-center">
             <div className="mb-6">
@@ -210,7 +210,7 @@ export default function PreciosPage() {
                     >
                       {plan.recommended && (
                         <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
-                          <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-white bg-gradient-to-r from-indigo-500 to-purple-500 shadow-lg shadow-purple-500/30">
+                          <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-white bg-[#7C3AED]">
                             {t('pricing.recommended')}
                           </span>
                         </div>
@@ -493,7 +493,7 @@ export default function PreciosPage() {
 
         </article>
 
-        <LandingFooter />
+        <LandingFooter variant="stage" />
       </div>
     </>
   );

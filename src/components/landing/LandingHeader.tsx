@@ -20,6 +20,7 @@ import {
 import { PublicWordmark } from "@/components/public/PublicMark";
 import { FeaturesDropdown } from "./FeaturesDropdown";
 import { LanguageSelector } from "./LanguageSelector";
+import { PublicHeader } from "./PublicHeader";
 
 const MOBILE_FEATURE_META = [
   { id: "employeeDashboard" as const, hrefEs: "/dashboard-empleado", icon: LayoutDashboard, gradient: "from-indigo-500 to-purple-500" },
@@ -39,6 +40,12 @@ export type LandingHeaderProps = {
 };
 
 export function LandingHeader({ variant = "dark" }: LandingHeaderProps) {
+  if (variant !== "light") return <PublicHeader />;
+  return <LegacyLandingHeader />;
+}
+
+function LegacyLandingHeader() {
+  const variant = "light" as const;
   const [mobileOpen, setMobileOpen] = useState(false);
   const { t, i18n } = useTranslation("landing");
   const light = variant === "light";

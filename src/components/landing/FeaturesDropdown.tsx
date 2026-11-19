@@ -156,7 +156,7 @@ export function FeaturesDropdown({ variant = "dark" }: FeaturesDropdownProps) {
             "w-[340px] sm:w-[600px] rounded-2xl border overflow-hidden backdrop-blur-2xl",
             light
               ? "border-slate-200/70 bg-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.7),0_30px_80px_-20px_rgba(15,23,42,0.2),0_18px_48px_-22px_rgba(15,23,42,0.15)]"
-              : "border-white/15 bg-slate-900/95 shadow-2xl shadow-black/40",
+              : "border-[rgba(196,181,253,0.22)] bg-[#1A1736] shadow-2xl shadow-black/40",
           )}
         >
           <div className={cn("px-5 pt-4 pb-3 border-b", light ? "border-slate-100" : "border-white/10")}>
@@ -187,17 +187,18 @@ export function FeaturesDropdown({ variant = "dark" }: FeaturesDropdownProps) {
                     light ? "hover:bg-slate-50" : "hover:bg-white/5",
                   )}
                 >
-                  <div
-                    className={cn(
-                      "w-10 h-10 shrink-0 rounded-xl bg-gradient-to-br flex items-center justify-center transition-all duration-200",
-                      feature.gradient,
-                      light
-                        ? "shadow-[0_8px_18px_-6px_rgba(99,102,241,0.45)] group-hover:scale-105"
-                        : "shadow-lg group-hover:shadow-xl group-hover:scale-105",
-                    )}
-                  >
-                    <Icon className="h-5 w-5 text-white" />
-                  </div>
+                  {light ? (
+                    <div
+                      className={cn(
+                        "w-10 h-10 shrink-0 rounded-xl bg-gradient-to-br flex items-center justify-center shadow-[0_8px_18px_-6px_rgba(99,102,241,0.45)]",
+                        feature.gradient,
+                      )}
+                    >
+                      <Icon className="h-5 w-5 text-white" />
+                    </div>
+                  ) : (
+                    <span className="mt-1 h-8 w-[2px] shrink-0 bg-[#7C3AED]" aria-hidden />
+                  )}
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 mb-0.5">
                       <p

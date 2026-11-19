@@ -62,7 +62,7 @@ export function LanguageSelector({ surface = "dark" }: LanguageSelectorProps) {
                             : "bg-white border-slate-200 text-slate-600 hover:text-slate-900 hover:border-slate-300"
                         : isOpen
                           ? "bg-white/15 border-white/30 text-white"
-                          : "bg-white/[0.05] border-white/10 text-white/70 hover:text-white hover:bg-white/[0.08]"
+                          : "bg-white/[0.05] border-white/15 text-[#E7E2FB] hover:text-white hover:bg-white/[0.08] min-h-11"
                 )}
                 aria-expanded={isOpen}
                 aria-haspopup="true"

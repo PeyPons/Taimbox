@@ -16,7 +16,7 @@ const NotFound = () => {
   const homePath = localizedPathFromEs("/", i18n.language);
 
   return (
-    <div className="relative flex min-h-screen flex-col overflow-hidden bg-[#14123B] text-white">
+    <div className="pub-stage relative flex min-h-screen flex-col overflow-hidden bg-[#14123B] text-white">
       <div className="pointer-events-none absolute inset-0" aria-hidden>
         <div className="absolute top-0 left-1/4 h-96 w-96 rounded-full bg-amber-900/20 blur-3xl" />
         <div className="absolute bottom-0 right-1/4 h-96 w-96 rounded-full bg-orange-950/35 blur-3xl" />
@@ -34,7 +34,7 @@ const NotFound = () => {
           </Link>
         </div>
       </main>
-      <LandingFooter />
+      <LandingFooter variant="stage" />
     </div>
   );
 };

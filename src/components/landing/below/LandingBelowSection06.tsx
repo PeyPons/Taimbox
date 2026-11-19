@@ -130,7 +130,7 @@ export const LandingBelowSection06: FC = () => {
     <section
       className="relative overflow-hidden"
       style={landingInlineStyle(
-        "background: radial-gradient(70% 50% at 30% 20%, rgba(167, 243, 208, 0.3), transparent 60%), radial-gradient(70% 50% at 80% 80%, rgba(165, 243, 252, 0.25), transparent 60%), linear-gradient(rgb(240, 253, 244) 0%, rgb(236, 253, 245) 60%, rgb(240, 253, 244) 100%); padding-top: clamp(6rem, 12vw, 10rem); padding-bottom: clamp(7rem, 13vw, 11rem);",
+        "background: #14123B; padding-top: clamp(5rem, 9vw, 7rem); padding-bottom: clamp(4.5rem, 8vw, 6rem);",
       )}
     >
       <div className="relative max-w-6xl mx-auto px-6 lg:px-10">
@@ -138,20 +138,20 @@ export const LandingBelowSection06: FC = () => {
           className="max-w-3xl mb-14 mx-auto text-center"
           style={landingInlineStyle("opacity: 1; transform: none;")}
         >
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-emerald-200 bg-emerald-50 mb-5">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_6px_#10b981]" />
-            <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-emerald-700">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[rgba(196,181,253,0.35)] mb-5">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#7C3AED]" />
+            <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#C4B5FD]">
               {t("s06.badge")}
             </span>
           </div>
-          <h2 className="text-[2rem] sm:text-4xl lg:text-5xl font-semibold text-slate-900 leading-[1.1] -tracking-[0.02em] mb-5">
+          <h2 className="text-[2rem] sm:text-4xl lg:text-5xl font-semibold text-white leading-[1.1] tracking-[-0.03em] mb-5">
             {t("s06.title")}{" "}
-            <span className="bg-gradient-to-r from-emerald-600 to-cyan-600 bg-clip-text text-transparent">
+            <span className="text-[#C4B5FD]">
               {t("s06.titleHighlight")}
             </span>
             {t("s06.titleSuffix")}
           </h2>
-          <p className="text-[15px] sm:text-[16px] text-slate-600 leading-relaxed">
+          <p className="text-[15px] sm:text-[16px] text-[#D4CEF0] leading-relaxed">
             {t("s06.subtitle")}
           </p>
         </div>
@@ -159,28 +159,16 @@ export const LandingBelowSection06: FC = () => {
           {cards.map((card, i) => {
             const shell = CARD_SHELLS[i];
             if (!shell) return null;
-            const Icon = shell.icon;
             return (
               <div
                 key={card.title}
-                className="relative rounded-2xl p-6 sm:p-7 bg-white"
+                className="relative rounded-2xl p-6 sm:p-7 bg-[#F7F4EC]"
                 style={landingInlineStyle(
                   `border: 1px solid ${shell.border}; box-shadow: rgba(15, 23, 42, 0.04) 0px 1px 2px, ${shell.shadow} 0px 16px 40px -20px; opacity: 1; transform: none;`,
                 )}
               >
-                <div
-                  className="h-11 w-11 rounded-xl flex items-center justify-center mb-4"
-                  style={landingInlineStyle(
-                    `background: ${shell.gradient}; box-shadow: ${shell.glow} 0px 10px 24px -8px;`,
-                  )}
-                >
-                  <Icon
-                    className="h-5 w-5 text-white"
-                    strokeWidth={2}
-                    aria-hidden
-                  />
-                </div>
-                <h3 className="text-[17px] font-semibold text-slate-900 mb-2">
+                <span className="mb-4 block h-[2px] w-8 bg-[#7C3AED]" aria-hidden />
+                <h3 className="text-[17px] font-semibold text-[#14123B] mb-2">
                   {card.title}
                 </h3>
                 <p className="text-[13.5px] text-slate-600 leading-relaxed">
@@ -195,7 +183,7 @@ export const LandingBelowSection06: FC = () => {
           <AuditLogMockup />
         </div>
         <div
-          className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 text-[12px] uppercase tracking-[0.18em] font-medium text-slate-500"
+          className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 text-[12px] uppercase tracking-[0.18em] font-medium text-[#D4CEF0]"
           style={landingInlineStyle("opacity: 1;")}
         >
           {trustStrip.map((label, i) => {
@@ -212,7 +200,7 @@ export const LandingBelowSection06: FC = () => {
         </div>
         <div className="mt-10 text-center">
           <a
-            className="group inline-flex items-center gap-1.5 text-[14px] font-medium text-slate-700 hover:text-slate-900 border-b border-slate-300 hover:border-slate-700 pb-0.5 transition-colors"
+            className="group inline-flex items-center gap-1.5 text-[14px] font-medium text-[#C4B5FD] hover:text-white border-b border-[rgba(196,181,253,0.4)] hover:border-white pb-0.5 transition-colors"
             href={path(t("s06.securityHref"))}
           >
             {t("s06.securityLink")}
@@ -235,17 +223,6 @@ export const LandingBelowSection06: FC = () => {
           </a>
         </div>
       </div>
-      <svg
-        aria-hidden
-        className="absolute left-0 right-0 bottom-0 w-full pointer-events-none h-14 sm:h-20"
-        viewBox="0 0 1440 120"
-        preserveAspectRatio="none"
-      >
-        <path
-          d="M0,120 C320,60 1120,0 1440,60 L1440,120 L0,120 Z"
-          fill="#faf5e8"
-        />
-      </svg>
     </section>
   );
 };
