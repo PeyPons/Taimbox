@@ -1,6 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import type { FC, ReactNode } from "react";
-import { animate } from "motion";
 import { ArrowRight, ArrowUpRight } from "lucide-react";
 
 import { landingInlineStyle } from "@/components/landing/below/landingInlineStyle";
@@ -327,173 +326,141 @@ const PHASE_SHELLS: Pick<Phase, "color" | "shadowRgba" | "Mockup">[] = [
   { color: "rgb(236, 72, 153)", shadowRgba: "rgba(236, 72, 153, 0.267)", Mockup: WeeklyForecastMockup },
 ];
 
-/* ─────────────────────── Phase Card ────────────────────── */
+function phaseOpacity(index: number, active: number, local: number, count: number): number {
+  if (index === active) {
+    if (active >= count - 1 || local < 0.68) return 1;
+    return 1 - (local - 0.68) / 0.32;
+  }
+  if (index === active + 1 && local >= 0.68) return (local - 0.68) / 0.32;
+  return 0;
+}
 
-function PhaseCard({ phase, active }: { phase: Phase; active: boolean }) {
+function usePrefersReducedMotion(): boolean {
+  const [reduce, setReduce] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const apply = () => setReduce(mq.matches);
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
+  return reduce;
+}
+
+function useTrackPhase(trackRef: RefObject<HTMLElement | null>, count: number, reduce: boolean) {
+  const [state, setState] = useState({ active: 0, local: 0 });
+
+  useEffect(() => {
+    if (reduce || count < 1) return;
+    const track = trackRef.current;
+    if (!track) return;
+    let raf = 0;
+
+    const update = () => {
+      const rect = track.getBoundingClientRect();
+      const sticky = window.innerHeight - 64;
+      const scrollable = Math.max(rect.height - sticky, 1);
+      const passed = Math.min(Math.max(-rect.top, 0), scrollable);
+      const scaled = (passed / scrollable) * count;
+      const active = Math.min(count - 1, Math.max(0, Math.floor(scaled)));
+      const local = Math.min(1, Math.max(0, scaled - active));
+      setState((prev) =>
+        prev.active === active && Math.abs(prev.local - local) < 0.015 ? prev : { active, local },
+      );
+    };
+
+    const onScroll = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(update);
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    update();
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      cancelAnimationFrame(raf);
+    };
+  }, [count, reduce, trackRef]);
+
+  return state;
+}
+
+function PhaseCopy({ phase }: { phase: Phase }) {
   return (
-    <div
-      className="group relative rounded-2xl p-6 sm:p-7 grid grid-cols-[auto_1fr] gap-5 sm:gap-6 items-start transition-all duration-500"
-      style={{
-        background: active ? "#F7F4EC" : "rgba(247, 244, 236, 0.72)",
-        border: active
-          ? "1px solid #7C3AED"
-          : "1px solid rgba(20, 18, 59, 0.08)",
-        boxShadow: active
-          ? `rgba(15, 23, 42, 0.04) 0px 1px 2px, ${phase.shadowRgba} 0px 24px 50px -22px, rgba(255, 255, 255, 0.6) 0px 1px 0px inset`
-          : "rgba(15, 23, 42, 0.03) 0px 1px 2px, rgba(15, 23, 42, 0.06) 0px 8px 24px -16px",
-      }}
-    >
-      {/* Side bar accent */}
-      <div
-        className="absolute left-0 top-6 bottom-6 w-[3px] rounded-full transition-opacity duration-500"
-        style={{
-          background: "#7C3AED",
-          boxShadow: "none",
-          opacity: active ? 1 : 0.3,
-        }}
-      />
+    <div>
+      <p className="font-mono text-[11px] uppercase tracking-[0.18em]" style={{ color: phase.color }}>
+        {phase.number} · {phase.label}
+      </p>
+      <h3 className="mt-2 text-[1.65rem] font-semibold leading-[1.12] tracking-[-0.03em] text-white sm:text-3xl">
+        {phase.heading}
+      </h3>
+      <p className="mt-3 text-sm leading-relaxed text-[#D4CEF0] sm:text-[15px]">{phase.description}</p>
+      <ul className="mt-4 space-y-1.5">
+        {phase.bullets.map((bullet) => (
+          <li key={bullet} className="flex gap-2 text-sm leading-snug text-[#F7F4EC]">
+            <span aria-hidden className="mt-2 h-1 w-1 shrink-0 rounded-full" style={{ background: phase.color }} />
+            <span>{bullet}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
 
-      {/* Number */}
-      <div
-        className="text-4xl sm:text-6xl font-semibold leading-none tabular-nums -tracking-[0.04em] -mt-1 transition-all duration-500"
-        style={{
-          color: active ? phase.color : "transparent",
-          WebkitTextStroke: active ? `0px rgba(29, 37, 48, 0)` : `1.5px ${rgba(phase.color, 0.4)}`,
-        }}
-      >
-        {phase.number}
+function PhaseStage({
+  phases,
+  active,
+  local,
+}: {
+  phases: Phase[];
+  active: number;
+  local: number;
+}) {
+  return (
+    <div className="grid w-full grid-cols-1 items-center gap-5 lg:grid-cols-12 lg:gap-10">
+      <div className="relative min-h-[12.5rem] lg:col-span-5 lg:min-h-[15rem]">
+        {phases.map((phase, index) => {
+          const opacity = phaseOpacity(index, active, local, phases.length);
+          return (
+            <div
+              key={phase.number}
+              className="absolute inset-0"
+              style={{ opacity, pointerEvents: opacity > 0.55 ? "auto" : "none" }}
+              aria-hidden={opacity < 0.45}
+            >
+              <PhaseCopy phase={phase} />
+            </div>
+          );
+        })}
       </div>
-
-      {/* Content */}
-      <div>
-        <div className="flex items-center gap-2.5 mb-2">
-          <span className="inline-block font-mono text-[10px] uppercase tracking-[0.2em] font-semibold" style={{ color: phase.color }}>
-            {phase.label}
-          </span>
-          {active && (
-            <span className="inline-block h-1.5 w-1.5 rounded-full" style={{ background: phase.color, boxShadow: `${phase.color} 0px 0px 8px` }} />
-          )}
-        </div>
-        <h3 className="text-xl sm:text-2xl font-semibold text-slate-900 leading-[1.2] -tracking-[0.018em] mb-3">
-          {phase.heading}
-        </h3>
-        <p className="text-[14px] sm:text-[15px] text-slate-600 leading-relaxed mb-4">
-          {phase.description}
-        </p>
-        <ul className="space-y-2">
-          {phase.bullets.map((b, i) => (
-            <li key={i} className="flex items-start gap-2.5 text-[13px] sm:text-[13.5px] text-slate-600 leading-relaxed">
-              <span aria-hidden className="mt-1.5 inline-block h-1 w-1 rounded-full shrink-0" style={{ background: phase.color, boxShadow: `${rgba(phase.color, 0.4)} 0px 0px 6px` }} />
-              <span>{b}</span>
-            </li>
-          ))}
-        </ul>
+      <div
+        className="relative h-[min(340px,42svh)] lg:col-span-7 lg:h-[min(440px,52svh)]"
+        role="region"
+      >
+        {phases.map((phase, index) => {
+          const opacity = phaseOpacity(index, active, local, phases.length);
+          const Mockup = phase.Mockup;
+          return (
+            <div
+              key={phase.number}
+              className="absolute inset-0 flex items-center justify-center"
+              style={{ opacity, pointerEvents: opacity > 0.55 ? "auto" : "none" }}
+              aria-hidden={opacity < 0.45}
+            >
+              <Mockup />
+            </div>
+          );
+        })}
       </div>
     </div>
   );
 }
 
-/* ─────────────────────── Scroll-driven hook ────────────────────── */
-
-function useScrollDrivenPhase(cardRefs: React.RefObject<(HTMLDivElement | null)[]>) {
-  const [active, setActive] = useState(0);
-
-  useEffect(() => {
-    const cards = cardRefs.current;
-    if (!cards || cards.length === 0) return;
-
-    let rafId = 0;
-
-    const update = () => {
-      const vh = window.innerHeight;
-      const center = vh * 0.4;
-      let bestIdx = 0;
-      let bestDist = Infinity;
-
-      for (let i = 0; i < cards.length; i++) {
-        const card = cards[i];
-        if (!card) continue;
-        const rect = card.getBoundingClientRect();
-        const cardCenter = rect.top + rect.height / 2;
-        const dist = Math.abs(cardCenter - center);
-        if (dist < bestDist) {
-          bestDist = dist;
-          bestIdx = i;
-        }
-      }
-
-      setActive(bestIdx);
-    };
-
-    const onScroll = () => {
-      cancelAnimationFrame(rafId);
-      rafId = requestAnimationFrame(update);
-    };
-
-    window.addEventListener("scroll", onScroll, { passive: true });
-    update();
-
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      cancelAnimationFrame(rafId);
-    };
-  }, [cardRefs]);
-
-  return active;
-}
-
-/* ─────────────────────── Mockup slide animator ────────────────────── */
-
-function useMockupSlideAnimation(
-  containerRef: React.RefObject<HTMLDivElement | null>,
-  activeIdx: number,
-) {
-  const stopsRef = useRef<Array<{ stop: () => void }>>([]);
-  const prevRef = useRef(0);
-
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-    const slides = Array.from(container.querySelectorAll<HTMLElement>("[data-s04-slide]"));
-    if (slides.length !== 4) return;
-
-    stopsRef.current.forEach((c) => c.stop());
-    stopsRef.current = [];
-
-    slides.forEach((el, i) => {
-      const on = i === activeIdx;
-      const fromOpacity = parseFloat(el.style.opacity || (on ? "0" : "1"));
-      const toOpacity = on ? 1 : 0;
-      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-      const ctrl = animate(0, 1, {
-        duration: reduce ? 0 : 0.28,
-        ease: [0.22, 1, 0.36, 1],
-        onUpdate: (p) => {
-          const op = fromOpacity + (toOpacity - fromOpacity) * p;
-          el.style.opacity = String(op);
-          el.style.transform = "none";
-        },
-        onComplete: () => {
-          el.style.pointerEvents = on ? "auto" : "none";
-        },
-      });
-      stopsRef.current.push(ctrl);
-      el.style.zIndex = String(on ? 2 : 0);
-    });
-
-    prevRef.current = activeIdx;
-
-    return () => {
-      stopsRef.current.forEach((c) => c.stop());
-    };
-  }, [activeIdx, containerRef]);
-}
-
-/* ─────────────────────── Main Section Component ────────────────────── */
-
 export const LandingBelowSection04: FC = () => {
   const { t, path } = useHomeLiteralT();
+  const reduce = usePrefersReducedMotion();
   const phaseCopies = i18nAsArray<PhaseCopy>(t("s04.phases", { returnObjects: true }));
   const phases = useMemo<Phase[]>(
     () =>
@@ -512,88 +479,56 @@ export const LandingBelowSection04: FC = () => {
       }),
     [phaseCopies],
   );
-
-  const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const mockupContainerRef = useRef<HTMLDivElement>(null);
-
-  const setCardRef = useCallback((idx: number) => (el: HTMLDivElement | null) => {
-    cardRefs.current[idx] = el;
-  }, []);
-
-  const activeIdx = useScrollDrivenPhase(cardRefs);
-  useMockupSlideAnimation(mockupContainerRef, activeIdx);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const { active, local } = useTrackPhase(trackRef, phases.length, reduce);
 
   return (
-    <section
-      className="relative overflow-hidden"
-      style={landingInlineStyle(
-        "background: #14123B; padding-top: clamp(5rem, 9vw, 7rem); padding-bottom: clamp(4.5rem, 8vw, 6rem);",
-      )}
-    >
-      <div className="relative max-w-6xl mx-auto px-6 lg:px-10">
-        <div className="max-w-3xl mb-14 sm:mb-20 text-center mx-auto">
-          <span className="inline-block font-mono text-[10px] uppercase tracking-[0.24em] text-[#C4B5FD] mb-3">
+    <section className="relative bg-[#14123B] py-10 sm:py-14">
+      <div className="relative mx-auto max-w-6xl px-6 lg:px-10">
+        <div className="mb-6 max-w-3xl sm:mb-8">
+          <span className="mb-2 inline-block font-mono text-[10px] uppercase tracking-[0.24em] text-[#C4B5FD]">
             {t("s04.kicker")}
           </span>
-          <h2 className="text-[2.25rem] sm:text-5xl lg:text-[3.6rem] font-semibold text-white leading-[1.05] tracking-[-0.03em]">
+          <h2 className="text-[1.85rem] font-semibold leading-[1.08] tracking-[-0.03em] text-white sm:text-4xl">
             {t("s04.title")}{" "}
-            <span className="italic font-normal text-[#C4B5FD]">
-              {t("s04.titleHighlight")}
-            </span>
-            .
+            <span className="italic font-normal text-[#C4B5FD]">{t("s04.titleHighlight")}</span>.
           </h2>
         </div>
 
-        {/* Two-column layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
-          {/* Left: Scrollable phase cards */}
-          <div className="lg:col-span-5 order-2 lg:order-1 space-y-6 sm:space-y-8">
-            {phases.map((phase, i) => (
-              <div key={phase.number} ref={setCardRef(i)}>
-                <PhaseCard phase={phase} active={i === activeIdx} />
-              </div>
-            ))}
-          </div>
-
-          {/* Right: Sticky mockup */}
-          <div className="lg:col-span-7 order-1 lg:order-2">
-            <div className="lg:sticky lg:top-28 flex items-center justify-center min-h-[420px] lg:min-h-[520px]">
-              <div
-                ref={mockupContainerRef}
-                className="relative w-full max-w-xl mx-auto h-[400px] sm:h-[440px] flex items-center"
-                role="region"
-                aria-label={t("s04.mockupAria")}
-              >
-                {phases.map((phase, i) => (
-                  <div
-                    key={phase.number}
-                    data-s04-slide={i}
-                    className="absolute inset-0 flex items-center justify-center"
-                    style={{
-                      opacity: i === 0 ? 1 : 0,
-                      transform: i === 0 ? "none" : "translateY(18px) scale(0.97)",
-                      pointerEvents: i === 0 ? "auto" : "none",
-                    }}
-                  >
-                    <phase.Mockup />
+        {reduce ? (
+          <div className="space-y-12">
+            {phases.map((phase) => {
+              const Mockup = phase.Mockup;
+              return (
+                <div key={phase.number} className="grid items-center gap-6 lg:grid-cols-12">
+                  <div className="lg:col-span-5">
+                    <PhaseCopy phase={phase} />
                   </div>
-                ))}
-              </div>
+                  <div className="lg:col-span-7">
+                    <Mockup />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div ref={trackRef} style={{ height: `${Math.max(phases.length, 1) * 78}vh` }}>
+            <div className="sticky top-16 flex h-[calc(100svh-4rem)] items-center overflow-hidden">
+              <PhaseStage phases={phases} active={active} local={local} />
             </div>
           </div>
-        </div>
+        )}
 
-        {/* CTA */}
-        <div className="mt-16 sm:mt-20 flex flex-col sm:flex-row gap-3 justify-center items-center">
+        <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <a
-            className="group inline-flex items-center gap-2 h-12 px-7 rounded-full text-[14px] font-semibold bg-[#F7F4EC] text-[#14123B] hover:bg-white transition-colors"
+            className="group inline-flex h-12 items-center gap-2 rounded-full bg-[#F7F4EC] px-7 text-[14px] font-semibold text-[#14123B] hover:bg-white"
             href="/login?tab=register"
           >
             {t("s04.ctaPrimary")}
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
           </a>
           <a
-            className="group inline-flex items-center gap-2 h-12 px-6 rounded-full text-[14px] font-medium text-white bg-transparent border border-[rgba(196,181,253,0.4)] hover:border-[#C4B5FD] transition-colors"
+            className="group inline-flex h-12 items-center gap-2 rounded-full border border-[rgba(196,181,253,0.4)] px-6 text-[14px] font-medium text-white hover:border-[#C4B5FD]"
             href={path("/guia")}
           >
             {t("s04.ctaGuide")}
@@ -601,7 +536,6 @@ export const LandingBelowSection04: FC = () => {
           </a>
         </div>
       </div>
-
     </section>
   );
 };

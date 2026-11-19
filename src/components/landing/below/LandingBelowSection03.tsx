@@ -644,7 +644,7 @@ export const LandingBelowSection03: FC = () => {
   return (
     <section
       className="relative overflow-hidden"
-      style={landingInlineStyle("background: #14123B; padding-top: clamp(5rem, 10vw, 8rem); padding-bottom: clamp(4.5rem, 8vw, 6rem);")}
+      style={landingInlineStyle("background: #14123B; padding-top: clamp(2.5rem, 4.5vw, 3.75rem); padding-bottom: clamp(2.25rem, 4vw, 3.25rem);")}
     >
       <div className="relative max-w-7xl mx-auto px-6 lg:px-10">
         <div className="max-w-3xl mb-12 text-center mx-auto">
@@ -749,7 +749,7 @@ export const LandingBelowSection03: FC = () => {
               </div>
             </div>
 
-            <div className="lg:col-span-6 relative flex items-center justify-center min-h-[420px] lg:min-h-[520px]">
+            <div className="lg:col-span-6 relative flex items-center justify-center">
               <div key={`mockup-${activeIdx}`} className="w-full">
                 <ActiveMockup />
               </div>

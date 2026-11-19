@@ -19,7 +19,7 @@ export const LandingBelowSection01: FC = () => {
     <section
       className="relative overflow-hidden"
       style={landingInlineStyle(
-        "background: #14123B; padding-top: clamp(4.5rem, 8vw, 6.5rem); padding-bottom: clamp(4rem, 8vw, 7rem);",
+        "background: #14123B; padding-top: clamp(2.5rem, 4.5vw, 3.5rem); padding-bottom: clamp(2.25rem, 4vw, 3.25rem);",
       )}
     >
       <div className="relative max-w-6xl mx-auto px-6 lg:px-10 text-center">

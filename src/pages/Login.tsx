@@ -5,7 +5,7 @@ import * as z from 'zod';
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/lib/notify";
@@ -323,18 +323,12 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-950 px-4 py-8">
-      <Card className="w-full max-w-md bg-white shadow-xl">
-        <CardHeader className="space-y-1">
-          <div className="flex justify-center mb-4">
-            <img src="/brand/logo-C.svg" alt="Taimbox" className="h-10 w-auto" />
+    <div className="flex min-h-screen items-center justify-center bg-[#14123B] px-4 py-8">
+      <Card className="w-full max-w-md border-[#E4DDD0] bg-[#F7F4EC] text-[#14123B] shadow-none">
+        <CardHeader className="space-y-1 pb-2">
+          <div className="flex justify-center">
+            <img src="/brand/logo-C.svg" alt="Taimbox" className="h-8 w-auto" />
           </div>
-          <CardTitle className="text-2xl text-center font-bold text-slate-900">
-            {t("auth.brand")}
-          </CardTitle>
-          <CardDescription className="text-center text-slate-500">
-            {t("auth.tagline")}
-          </CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'login' | 'register')}>
