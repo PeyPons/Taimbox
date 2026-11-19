@@ -4,8 +4,6 @@ import {
   ArrowUpRight,
   Building2,
   Crown,
-  Rocket,
-  Sparkles,
   Users,
   Zap,
 } from "lucide-react";
@@ -115,10 +113,6 @@ export const LandingBelowSection07: FC = () => {
           <p className="text-[15px] sm:text-[16px] text-slate-600 leading-relaxed mb-5">
             {t("s07.subtitle")}
           </p>
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-100 border border-amber-600/30 text-amber-950 text-xs font-semibold uppercase tracking-wider">
-            <Rocket className="h-3.5 w-3.5 text-amber-700 shrink-0" aria-hidden />
-            {tPricing("pricing.earlyAdopter")}
-          </div>
         </div>
 
         <LandingPricingCurrencySelect
@@ -145,19 +139,12 @@ export const LandingBelowSection07: FC = () => {
             const displayName = PUBLIC_PLAN_LABELS[pricing.id];
             const checkClass = CHECK_COLORS[pricing.id] ?? "rgb(100, 116, 139)";
             const isEnterprise = pricing.usdMonthly == null;
-            const hasEarlyDiscount =
-              pricing.usdMonthlyOfficial != null && pricing.usdMonthly != null;
 
             const priceDisplay = isEnterprise
               ? copy.customPrice
               : pricing.usdMonthly === 0
                 ? formatUsdAmount(0)
                 : formatMonthly(pricing.usdMonthly!);
-
-            const priceWasDisplay =
-              hasEarlyDiscount && pricing.usdMonthlyOfficial != null
-                ? formatMonthly(pricing.usdMonthlyOfficial)
-                : null;
 
             const ctaHref =
               pricing.id === "enterprise" ? enterpriseMail : path(pricing.href);
@@ -205,13 +192,6 @@ export const LandingBelowSection07: FC = () => {
                 </p>
 
                 <div className="mb-6">
-                  {priceWasDisplay ? (
-                    <div
-                      className={`text-[13px] line-through tabular-nums mb-0.5 ${featured ? "text-white/40" : "text-slate-400"}`}
-                    >
-                      {priceWasDisplay}
-                    </div>
-                  ) : null}
                   <div className="flex items-baseline gap-1.5 flex-wrap">
                     <span
                       className={
@@ -230,19 +210,6 @@ export const LandingBelowSection07: FC = () => {
                       </span>
                     ) : null}
                   </div>
-                  {hasEarlyDiscount ? (
-                    <p
-                      className={`mt-1.5 inline-flex items-center gap-1.5 text-[10.5px] font-semibold uppercase tracking-wide ${
-                        featured ? "text-amber-200" : "text-amber-800"
-                      }`}
-                    >
-                      <Sparkles
-                        className={`h-3 w-3 shrink-0 ${featured ? "text-amber-300" : "text-amber-600"}`}
-                        aria-hidden
-                      />
-                      {tPricing("pricing.earlyTariff")}
-                    </p>
-                  ) : null}
                 </div>
 
                 <ul className="space-y-2.5 mb-7 flex-1">

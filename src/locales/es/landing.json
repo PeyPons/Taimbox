@@ -593,13 +593,11 @@
     "heroKicker": "Para agencias y equipos creativos",
     "heroLine1": "Empiezas gratis y subes de plan cuando necesitas forecast, API o Ads",
     "heroHighlight": "",
-    "earlyAdopter": "Precios Early Adopter vigentes",
     "heroSub": "Empieza gratis. Sube de plan cuando requieras más inteligencia financiera, reportes avanzados o integraciones complejas para tu agencia.",
     "pill1": "Plan gratuito disponible",
     "pill2": "Prueba de 14 días (Agency)",
     "pill3": "Sin permanencia",
     "recommended": "Recomendado",
-    "earlyTariff": "Tarifa Early Adopter",
     "currencyLabel": "Ver precios en",
     "currencyBillingUsd": "Precios y suscripción en USD. El cobro se procesa en dólares vía Stripe.",
     "currencyBillingEur": "Importes orientativos en EUR. La suscripción se cobra en USD.",
@@ -621,7 +619,6 @@
     "finalCta": "Empezar gratis",
     "finalLogin": "¿Ya tienes cuenta?",
     "finalLoginLink": "Iniciar sesión",
-    "rewardBanner": "Estos son los precios que se cobran hoy. La app no congela la tarifa de por vida si más adelante cambian los precios públicos.",
     "plans": {
       "starter": {
         "period": "siempre",
@@ -740,10 +737,6 @@
       {
         "q": "¿Qué pasa si somos más de 100 empleados?",
         "a": "Por encima del tope de un plan de pago se habla el plan Enterprise. No hay chat dentro de la app: escríbenos a hello@taimbox.com."
-      },
-      {
-        "q": "¿Los precios de early adopter se mantendrán?",
-        "a": "Pagas el precio de la suscripción que contratas en Stripe en ese momento. La aplicación no tiene un mecanismo que congele esa tarifa si después cambian los precios públicos."
       },
       {
         "q": "¿La prueba de Agency requiere tarjeta de crédito?",

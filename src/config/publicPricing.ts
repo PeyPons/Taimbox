@@ -12,6 +12,7 @@ export const PUBLIC_PLAN_LABELS: Record<PublicPlanId, string> = {
   enterprise: 'Enterprise',
 };
 
+/** No lo lee ninguna pantalla ni el checkout. El selector convierte el USD vigente. */
 export const PUBLIC_PLAN_LATAM_USD: Partial<Record<Exclude<PublicPlanId, 'starter' | 'enterprise'>, number>> = {
   pro: 29,
   business: 89,
@@ -20,10 +21,8 @@ export const PUBLIC_PLAN_LATAM_USD: Partial<Record<Exclude<PublicPlanId, 'starte
 
 export interface PublicPlanPricing {
   id: PublicPlanId;
-  /** Precio mensual en USD (número mostrado; sin conversión desde EUR). */
+  /** Precio mensual en USD (número mostrado y cobrado en Stripe). */
   usdMonthly: number | null;
-  /** Tarifa oficial antes del descuento early adopter (USD). */
-  usdMonthlyOfficial?: number;
   recommended?: boolean;
   featuredOnHome?: boolean;
   href: string;
@@ -38,14 +37,12 @@ export const PUBLIC_PLAN_PRICING: PublicPlanPricing[] = [
   },
   {
     id: 'pro',
-    usdMonthly: 49,
-    usdMonthlyOfficial: 99,
+    usdMonthly: 99,
     href: '/login?tab=register',
   },
   {
     id: 'business',
-    usdMonthly: 149,
-    usdMonthlyOfficial: 249,
+    usdMonthly: 249,
     recommended: true,
     featuredOnHome: true,
     href: '/login?tab=register',
