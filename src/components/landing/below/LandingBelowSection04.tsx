@@ -335,16 +335,29 @@ function phaseOpacity(index: number, active: number, local: number, count: numbe
   return 0;
 }
 
-function usePrefersReducedMotion(): boolean {
-  const [reduce, setReduce] = useState(false);
+function useMediaFlag(query: string): boolean {
+  const [matches, setMatches] = useState(() =>
+    typeof window !== "undefined" ? window.matchMedia(query).matches : false,
+  );
   useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const apply = () => setReduce(mq.matches);
+    const mq = window.matchMedia(query);
+    const apply = () => setMatches(mq.matches);
     apply();
     mq.addEventListener("change", apply);
     return () => mq.removeEventListener("change", apply);
-  }, []);
-  return reduce;
+  }, [query]);
+  return matches;
+}
+
+function usePrefersReducedMotion(): boolean {
+  return useMediaFlag("(prefers-reduced-motion: reduce)");
+}
+
+/** Móvil estrecho o táctil: el sticky con svh atrapa el scroll en iOS/Android. */
+function useStackPhases(): boolean {
+  const narrow = useMediaFlag("(max-width: 768px)");
+  const coarse = useMediaFlag("(pointer: coarse)");
+  return narrow || coarse;
 }
 
 function useTrackPhase(trackRef: RefObject<HTMLElement | null>, count: number, reduce: boolean) {
@@ -385,6 +398,36 @@ function useTrackPhase(trackRef: RefObject<HTMLElement | null>, count: number, r
   }, [count, reduce, trackRef]);
 
   return state;
+}
+
+function PhaseStackItem({ children }: { children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [shown, setShown] = useState(false);
+
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setShown(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry?.isIntersecting) return;
+        setShown(true);
+        observer.disconnect();
+      },
+      { threshold: 0.18, rootMargin: "0px 0px -8% 0px" },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div ref={ref} className={shown ? "phase-stack-item is-in" : "phase-stack-item"}>
+      {children}
+    </div>
+  );
 }
 
 function PhaseCopy({ phase }: { phase: Phase }) {
@@ -461,6 +504,7 @@ function PhaseStage({
 export const LandingBelowSection04: FC = () => {
   const { t, path } = useHomeLiteralT();
   const reduce = usePrefersReducedMotion();
+  const stack = useStackPhases() || reduce;
   const phaseCopies = i18nAsArray<PhaseCopy>(t("s04.phases", { returnObjects: true }));
   const phases = useMemo<Phase[]>(
     () =>
@@ -480,7 +524,7 @@ export const LandingBelowSection04: FC = () => {
     [phaseCopies],
   );
   const trackRef = useRef<HTMLDivElement>(null);
-  const { active, local } = useTrackPhase(trackRef, phases.length, reduce);
+  const { active, local } = useTrackPhase(trackRef, phases.length, stack);
 
   return (
     <section className="relative bg-[#14123B] py-10 sm:py-14">
@@ -495,19 +539,21 @@ export const LandingBelowSection04: FC = () => {
           </h2>
         </div>
 
-        {reduce ? (
-          <div className="space-y-12">
+        {stack ? (
+          <div className="space-y-12" style={{ touchAction: "pan-y" }}>
             {phases.map((phase) => {
               const Mockup = phase.Mockup;
               return (
-                <div key={phase.number} className="grid items-center gap-6 lg:grid-cols-12">
-                  <div className="lg:col-span-5">
-                    <PhaseCopy phase={phase} />
+                <PhaseStackItem key={phase.number}>
+                  <div className="grid items-center gap-6 lg:grid-cols-12">
+                    <div className="lg:col-span-5">
+                      <PhaseCopy phase={phase} />
+                    </div>
+                    <div className="lg:col-span-7">
+                      <Mockup />
+                    </div>
                   </div>
-                  <div className="lg:col-span-7">
-                    <Mockup />
-                  </div>
-                </div>
+                </PhaseStackItem>
               );
             })}
           </div>

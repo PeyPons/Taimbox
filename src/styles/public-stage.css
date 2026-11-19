@@ -101,6 +101,27 @@
   border-radius: 0;
 }
 
+/* Fases apiladas en móvil: solo opacidad y translate, sin mover el layout. */
+.pub-stage .phase-stack-item {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .pub-stage .phase-stack-item {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0);
+    transition: opacity 0.55s ease, transform 0.55s ease;
+    will-change: opacity, transform;
+  }
+
+  .pub-stage .phase-stack-item.is-in {
+    opacity: 1;
+    transform: none;
+    will-change: auto;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .pub-stage [style*="hero-pulse-bar"] {
     animation: none !important;
