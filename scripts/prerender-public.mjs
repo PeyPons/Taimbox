@@ -136,4 +136,16 @@ for (const page of pages) {
   writeFileSync(file, html);
 }
 
-console.log(`prerender-public: ${pages.length} HTML`);
+const servePath = resolve(root, "dist/serve.json");
+const serveConfig = JSON.parse(readFileSync(servePath, "utf8"));
+const rewrites = [];
+for (const page of pages) {
+  if (page.path === "/") continue;
+  const destination = `${page.path}/index.html`;
+  rewrites.push({ source: page.path, destination });
+  rewrites.push({ source: `${page.path}/`, destination });
+}
+serveConfig.rewrites = rewrites;
+writeFileSync(servePath, `${JSON.stringify(serveConfig, null, 2)}\n`);
+
+console.log(`prerender-public: ${pages.length} HTML, ${rewrites.length} rewrites`);

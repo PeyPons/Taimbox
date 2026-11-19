@@ -13,7 +13,7 @@
 
 **Mitigación en servidor (imprescindible)**: `index.html` **no** debe cachearse agresivamente; los `/assets/*` con hash sí (immutable).
 
-En producción (Pi) el frontend se sirve con `npx serve -s` (`mi-planificador` → `Timeboxing/dist`). La config va en [`public/serve.json`](../public/serve.json) (Vite la copia a `dist/` en cada build):
+En producción (Pi) el contenedor arranca con `npx --yes serve -s .` y el directorio de trabajo es `Timeboxing/dist` (`mi-planificador`). La config va en [`public/serve.json`](../public/serve.json) (Vite la copia a `dist/`). El build añade ahí los rewrites del HTML prerenderizado y copia un `serve` local (`tools/serve-cli`, vía `scripts/install-public-server.mjs`) para que `npx` no use el paquete de npm: su `-s` reescribe todo a `/index.html` antes que el resto de reglas. Con el ejecutable del repo, `/precios` sirve `precios/index.html` y `/login` o `/dashboard` siguen recibiendo el `index.html` de la SPA.
 
 - `/` e `*.html` → `Cache-Control: no-cache, no-store, must-revalidate`
 - `/assets/**` y estáticos hasheados → `public, max-age=31536000, immutable`

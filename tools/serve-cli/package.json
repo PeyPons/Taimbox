@@ -1,0 +1,14 @@
+{
+  "name": "serve",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Sustituto de `serve -s` para el dist de Taimbox. El flag -s de vercel/serve antepone un rewrite ** → /index.html y serve-handler encadena las reglas, así que el HTML prerenderizado nunca se sirve.",
+  "bin": {
+    "serve": "./serve.mjs"
+  },
+  "dependencies": {
+    "compression": "1.8.2",
+    "serve-handler": "6.1.7"
+  }
+}
