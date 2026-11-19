@@ -28,7 +28,7 @@ El `meta-worker.js` de la raíz no sirve para esto: sincroniza Meta Ads. Con A, 
 | Rendimiento: bundle público separado, caché larga con `immutable`, imágenes y fuentes | no | 10 a 16 |
 | **Total** | **25 a 41 h** | **37 a 61 h** |
 
-Esto encaja con las partidas «Técnico» (350 € / 500 €) y «Migración» de tu §4; el precio en euros lo cuadras tú con Ramón. En el plan base el rendimiento queda como recomendación para una segunda fase; con A ya mejora algo, sin dato de cuánto.
+En el plan base el rendimiento queda como recomendación para una segunda fase; con A ya mejora algo, sin dato de cuánto.
 
 ## 4. Redirecciones (CSV)
 `aportes/seo-pepe-mapa-301.csv`: 78 filas. 76 `mantener`, 1 `301` (`/que-es-timeboxing`) y 1 `retirar` del índice (`/login`). Se conservan las 75 URL actuales. 0 cadenas: el 301 apunta a una URL que se mantiene.
