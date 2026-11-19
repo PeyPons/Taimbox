@@ -16,8 +16,8 @@ export const LandingBelowSection09: FC = () => {
     className="relative overflow-hidden"
     style={{
       background: "#14123B",
-      paddingTop: "clamp(5.5rem, 10vw, 8rem)",
-      paddingBottom: "clamp(5rem, 9vw, 7rem)",
+      paddingTop: "clamp(2.75rem, 5vw, 4rem)",
+      paddingBottom: "clamp(2.75rem, 5vw, 4rem)",
     }}
   >
     <div
@@ -38,7 +38,7 @@ export const LandingBelowSection09: FC = () => {
           {t("s09.badge")}
         </span>
       </div>
-      <h2 className="text-[2.5rem] sm:text-5xl lg:text-6xl xl:text-7xl font-semibold text-white leading-[1.05] tracking-[-0.035em] mb-7">
+      <h2 className="text-[2.15rem] sm:text-5xl font-semibold text-white leading-[1.08] tracking-[-0.035em] mb-5">
         <span>
           {t("s09.titleLine1")}
         </span>

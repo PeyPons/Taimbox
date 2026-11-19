@@ -14,6 +14,15 @@
     <title>Taimbox</title>
 
     <link rel="icon" type="image/svg+xml" href="/brand/favicon-C.svg" />
+    <script>
+      (function () {
+        var path = (location.pathname || "/").replace(/\/+$/, "") || "/";
+        if (path !== "/" && path !== "/en") document.documentElement.classList.add("no-prerender-hero");
+      })();
+    </script>
+    <style>
+      html.no-prerender-hero #prerender-hero { display: none !important; }
+    </style>
     <link rel="preload" href="/fonts/dm-sans-latin.woff2" as="font" type="font/woff2" crossorigin />
 
     <meta property="og:title" content="Planificación de recursos y margen para agencias | Taimbox" />

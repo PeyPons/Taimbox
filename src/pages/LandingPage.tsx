@@ -1,34 +1,43 @@
-import { useCallback, useRef } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { MotionConfig, useReducedMotion } from "motion/react";
-import { SeoTags } from "@/seo/SeoTags";
-import { LandingHeader } from "@/components/landing/LandingHeader";
-import { LandingFooter } from "@/components/landing/LandingFooter";
-import { LandingBelowMotionSections } from "@/components/landing/LandingBelowMotionSections";
-import { LandingLiteralHero } from "@/components/landing/LandingLiteralHero";
-import { useLandingLiteralDomMotion } from "@/hooks/useLandingLiteralDomMotion";
-import { useLandingHeroAmbientMotion } from "@/hooks/useLandingHeroAmbientMotion";
 
-/** Home literal (hero + secciones inferiores en TSX). Ticker/órbita del hero: `useLandingLiteralDomMotion`. */
+import { LandingFooter } from "@/components/landing/LandingFooter";
+import { LandingHeader } from "@/components/landing/LandingHeader";
+import { SeoTags } from "@/seo/SeoTags";
+
+const LandingHeroSlot = lazy(() =>
+  import("@/components/landing/LandingHeroSlot").then((mod) => ({ default: mod.LandingHeroSlot })),
+);
+const LandingBelowMotionSections = lazy(() =>
+  import("@/components/landing/LandingBelowMotionSections").then((mod) => ({
+    default: mod.LandingBelowMotionSections,
+  })),
+);
+
+function useShowBelowFold(): boolean {
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    const start = () => setShow(true);
+    if (typeof window.requestIdleCallback === "function") {
+      const id = window.requestIdleCallback(start, { timeout: 800 });
+      return () => window.cancelIdleCallback(id);
+    }
+    const id = window.setTimeout(start, 1);
+    return () => window.clearTimeout(id);
+  }, []);
+  return show;
+}
+
+/** Home literal. El hero de producción ya está en el HTML; las secciones entran después del primer pintado. */
 export default function LandingPage() {
   const { t, i18n } = useTranslation("landing");
   const lang = i18n.language.startsWith("en") ? "en" : "es";
-  const reduceMotion = useReducedMotion();
-  const heroRef = useRef<HTMLElement | null>(null);
-  const literalHeroDomMotion = useLandingLiteralDomMotion(reduceMotion);
-  const setLiteralHeroRef = useCallback(
-    (node: HTMLElement | null) => {
-      heroRef.current = node;
-      literalHeroDomMotion(node);
-    },
-    [literalHeroDomMotion],
-  );
-  useLandingHeroAmbientMotion(heroRef, reduceMotion);
   const staticHero =
     typeof document !== "undefined" && document.getElementById("prerender-hero") != null;
+  const showBelow = useShowBelowFold();
 
   return (
-    <MotionConfig reducedMotion="user">
+    <>
       <SeoTags
         pathEs="/"
         pathEn="/en"
@@ -47,17 +56,23 @@ export default function LandingPage() {
         }
       />
 
-      <div className="pub-stage pub-stage--plain relative min-h-screen min-w-0 bg-[#14123B] overflow-x-clip">
+      <div className="pub-stage pub-stage--plain relative min-h-screen min-w-0 overflow-x-clip bg-[#14123B]">
         <LandingHeader spacer={!staticHero} />
 
         {staticHero ? null : (
-          <LandingLiteralHero ref={setLiteralHeroRef} reduceMotion={reduceMotion} />
+          <Suspense fallback={null}>
+            <LandingHeroSlot />
+          </Suspense>
         )}
 
-        <LandingBelowMotionSections reduceMotion={reduceMotion} />
+        {showBelow ? (
+          <Suspense fallback={null}>
+            <LandingBelowMotionSections reduceMotion={null} />
+          </Suspense>
+        ) : null}
 
         <LandingFooter variant="stage" />
       </div>
-    </MotionConfig>
+    </>
   );
 }

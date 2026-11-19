@@ -155,11 +155,11 @@ export const LandingBelowSection02: FC = () => {
     <section
       className="relative overflow-hidden"
       style={landingInlineStyle(
-        "background: #14123B; padding-top: clamp(5rem, 10vw, 8rem); padding-bottom: clamp(4.5rem, 8vw, 6rem);",
+        "background: #14123B; padding-top: clamp(2.5rem, 4.5vw, 3.75rem); padding-bottom: clamp(2.25rem, 4vw, 3.25rem);",
       )}
     >
       <div className="relative mx-auto max-w-6xl px-6 lg:px-10">
-        <div className="relative mb-12 sm:mb-14 lg:mb-16">
+        <div className="relative mb-8">
           <p
             aria-hidden
             className="pointer-events-none absolute -left-2 top-1/2 hidden -translate-y-1/2 select-none font-black leading-none tracking-tighter text-white/[0.04] sm:block sm:text-[7rem] lg:text-[9rem]"

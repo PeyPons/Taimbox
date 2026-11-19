@@ -19,10 +19,10 @@ export const LandingBelowSection08: FC = () => {
   return (
     <section
       className="relative overflow-hidden"
-      style={landingInlineStyle("background: #14123B; padding-top: clamp(5rem, 9vw, 7rem); padding-bottom: clamp(4.5rem, 8vw, 6rem);")}
+      style={landingInlineStyle("background: #14123B; padding-top: clamp(2.5rem, 4.5vw, 3.5rem); padding-bottom: clamp(2.25rem, 4vw, 3.25rem);")}
     >
       <div className="relative max-w-3xl mx-auto px-6 lg:px-10">
-        <div className="text-center mb-10 sm:mb-12">
+        <div className="text-center mb-6">
           <span className="inline-block font-mono text-[10px] uppercase tracking-[0.24em] text-[#C4B5FD] mb-3">
             {t("s08.kicker")}
           </span>
