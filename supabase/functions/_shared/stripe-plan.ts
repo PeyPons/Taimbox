@@ -9,6 +9,12 @@ const LEGACY_EUR_PRICE_IDS: Partial<Record<PaidPlanId, string>> = {
   business: "price_1T9CpLKEVG6SFdOY0hBKOFA6",
 };
 
+/** Early access USD (49 / 149). El checkout nuevo usa los Price ID del entorno. */
+const LEGACY_USD_EARLY_PRICE_IDS: Partial<Record<PaidPlanId, string>> = {
+  pro: "price_1TbpcpKEVG6SFdOYbJx5SSvO",
+  business: "price_1TbpcqKEVG6SFdOYPXFn8sZi",
+};
+
 const PAID_PLANS_DESC: PaidPlanId[] = ["scale", "business", "pro"];
 
 function isPaidPlanMeta(meta: string): meta is PaidPlanId {
@@ -18,8 +24,10 @@ function isPaidPlanMeta(meta: string): meta is PaidPlanId {
 function priceIdMatchesPlan(priceId: string, planId: PaidPlanId, env: StripePlanEnv): boolean {
   const current = getStripePriceIdForPlan(planId, env);
   if (current && priceId === current) return true;
-  const legacy = LEGACY_EUR_PRICE_IDS[planId];
-  return legacy != null && priceId === legacy;
+  const legacyEur = LEGACY_EUR_PRICE_IDS[planId];
+  if (legacyEur != null && priceId === legacyEur) return true;
+  const legacyEarly = LEGACY_USD_EARLY_PRICE_IDS[planId];
+  return legacyEarly != null && priceId === legacyEarly;
 }
 
 export interface StripePlanEnv {

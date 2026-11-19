@@ -20,8 +20,8 @@ Copy de marketing: `src/locales/{es,en}/landing.json` → `pricing.plans.*` (hom
 | `plan_id` (BD / Stripe metadata) | Nombre en UI pública | Cobro Stripe self-serve |
 |----------------------------------|----------------------|-------------------------|
 | `starter` | **Free** | No |
-| `pro` | **Team** | Sí (49 USD/mes early, 99 USD oficial) |
-| `business` | **Agency** | Sí (149 / 249 USD) |
+| `pro` | **Team** | Sí (99 USD/mes) |
+| `business` | **Agency** | Sí (249 USD/mes) |
 | `scale` | **Scale** | Contacto ventas (`/contacto`) |
 | `enterprise` | **Enterprise** | Contacto / contrato |
 
@@ -32,11 +32,13 @@ Los IDs internos **no** se renombran en BD (`pro` = Team, `business` = Agency).
 ## 2. Precios públicos (landing)
 
 - **Moneda mostrada:** USD (conversión orientativa vía Frankfurter en selector; **cobro Stripe en USD**).
-- **Early adopter:** precio tachado = `usdMonthlyOfficial`; precio activo = `usdMonthly` en `publicPricing.ts`.
+- **Importes vigentes:** Team 99 USD/mes, Agency 249 USD/mes, Scale 299 USD/mes, Enterprise a medida. No hay precio tachado ni tarifa early adopter.
+- **Price ID live (mismo producto, metadata `plan_id`):** Team `price_1UdVFGKEVG6SFdOY6vUSLwwS`, Agency `price_1UdVFGKEVG6SFdOYV2XhK1DF`. Van en `VITE_STRIPE_PRICE_ID_*` y `STRIPE_PRICE_ID_*`.
+- **Legacy USD (49 / 149), solo para reconocer suscripciones antiguas:** `price_1TbpcpKEVG6SFdOYbJx5SSvO` y `price_1TbpcqKEVG6SFdOYPXFn8sZi`. El webhook sigue mapeándolos en `stripe-plan.ts`. No se usan en el checkout nuevo.
 - **Home (s07):** Free, Team, Agency (destacado), Enterprise — sin tarjeta Scale (`PRICING_HOME_PLAN_IDS`).
 - **`/precios`:** fila 1: Free, Team, Agency; fila 2: Scale, Enterprise (`PRICING_ROW_PRIMARY` / `PRICING_ROW_SECONDARY`).
 
-LATAM orientativo (solo display): Team 29 USD, Agency 89 USD, Scale 179 USD (`PLAN_REGIONAL_LATAM_USD`).
+`PUBLIC_PLAN_LATAM_USD` y `PLAN_REGIONAL_LATAM_USD` (Team 29, Agency 89, Scale 179) están definidos y **no los lee ninguna pantalla ni el checkout**. El selector de divisa convierte el USD vigente.
 
 ---
 

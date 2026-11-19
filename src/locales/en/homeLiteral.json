@@ -486,9 +486,9 @@
   },
   "s07": {
     "kicker": "Plans",
-    "title": "Start with four people.",
-    "titleHighlight": "Grow at your pace.",
-    "subtitle": "The prices on the home page are what is charged today. The app does not lock a discount for life.",
+    "title": "Start on Free.",
+    "titleHighlight": "Five people.",
+    "subtitle": "Team, 99 USD a month. Agency, 249 USD a month. Billing is in USD.",
     "compareLink": "See all plans (incl. Scale)",
     "compareHref": "/precios"
   },

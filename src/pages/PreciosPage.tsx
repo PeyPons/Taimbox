@@ -19,7 +19,6 @@ import {
   PieChart,
   Activity,
   Lock,
-  Rocket,
   Crown,
   Layers,
 } from 'lucide-react';
@@ -172,11 +171,6 @@ export default function PreciosPage() {
               </span>
             </h1>
 
-            <div className="inline-flex items-center gap-2 px-4 py-2 mb-6 rounded-full bg-amber-400/10 border border-amber-400/30 text-amber-200 text-xs font-semibold uppercase tracking-wider">
-              <Rocket className="h-3.5 w-3.5 text-amber-400 shrink-0" />
-              {t('pricing.earlyAdopter')}
-            </div>
-
             <p className="text-indigo-100/90 text-base sm:text-lg lg:text-xl leading-relaxed max-w-3xl mx-auto mb-8">
               {t('pricing.heroSub')}
             </p>
@@ -207,7 +201,6 @@ export default function PreciosPage() {
                   const Icon = plan.icon;
                   const isEnterprise = plan.usdMonthly == null;
                   const isContactSales = isEnterprise || plan.id === 'scale';
-                  const hasEarlyDiscount = plan.usdMonthlyOfficial != null && plan.usdMonthly != null;
                   const registerHref = path(plan.href);
 
                   return (
@@ -234,11 +227,6 @@ export default function PreciosPage() {
 
                       <div className="flex flex-col mb-5 pb-5 border-b border-white/10">
                         <div className="flex items-baseline gap-2 flex-wrap">
-                          {hasEarlyDiscount && (
-                            <span className="text-sm font-medium text-indigo-300/40 line-through tabular-nums">
-                              {formatMonthly(plan.usdMonthlyOfficial!)}
-                            </span>
-                          )}
                           <span className="text-3xl sm:text-4xl font-black text-white tabular-nums leading-none">
                             {isEnterprise
                               ? plan.customPrice
@@ -250,12 +238,6 @@ export default function PreciosPage() {
                             <span className="text-sm font-medium text-indigo-300/80">/ {plan.period}</span>
                           ) : null}
                         </div>
-                        {hasEarlyDiscount && (
-                          <span className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-semibold text-amber-300 uppercase tracking-wide">
-                            <Sparkles className="h-3 w-3 text-amber-400 shrink-0" aria-hidden />
-                            {t('pricing.earlyTariff')}
-                          </span>
-                        )}
                       </div>
 
                       <ul className="space-y-3 flex-1 mb-6 text-[13px] sm:text-sm">
@@ -308,7 +290,6 @@ export default function PreciosPage() {
                   const Icon = plan.icon;
                   const isEnterprise = plan.usdMonthly == null;
                   const isContactSales = isEnterprise || plan.id === 'scale';
-                  const hasEarlyDiscount = plan.usdMonthlyOfficial != null && plan.usdMonthly != null;
                   const registerHref = path(plan.href);
 
                   return (
@@ -389,13 +370,7 @@ export default function PreciosPage() {
               })}
             </div>
 
-            <div className="mt-10 rounded-2xl border border-amber-400/20 bg-gradient-to-r from-amber-500/10 via-orange-500/5 to-amber-500/10 p-5 sm:p-6 text-center">
-              <p className="text-amber-100/90 text-sm sm:text-base leading-relaxed">
-                {t('pricing.rewardBanner')}
-              </p>
-            </div>
-
-            <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-5 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="mt-10 rounded-2xl border border-white/10 bg-white/5 p-5 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="text-center sm:text-left">
                 <p className="text-white font-semibold text-sm">{t('pricing.enterpriseTitle')}</p>
                 <p className="text-indigo-200/70 text-xs mt-0.5">{t('pricing.enterpriseSub')}</p>

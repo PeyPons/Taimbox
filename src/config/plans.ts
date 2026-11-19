@@ -45,7 +45,7 @@ export interface PlanLimits {
   supportTier: 'community' | 'email' | 'priority' | 'dedicated';
 }
 
-/** Precios regionales LATAM (USD equivalente mostrado; cobro según Stripe configurado) */
+/** Misma tabla que PUBLIC_PLAN_LATAM_USD. No la usa la UI ni Stripe. */
 export const PLAN_REGIONAL_LATAM_USD: Partial<Record<Exclude<PlanId, 'starter' | 'enterprise'>, number>> = {
   pro: 29,
   business: 89,

@@ -593,13 +593,11 @@
     "heroKicker": "For agencies and creative teams",
     "heroLine1": "Start free and move up when you need forecast, the API or Ads",
     "heroHighlight": "",
-    "earlyAdopter": "Current early-adopter prices",
     "heroSub": "Start free. Upgrade when you need more financial intelligence, advanced reporting, or complex integrations.",
     "pill1": "Free plan available",
     "pill2": "14-day trial (Agency)",
     "pill3": "No lock-in",
     "recommended": "Recommended",
-    "earlyTariff": "Early adopter rate",
     "currencyLabel": "Show prices in",
     "currencyBillingUsd": "Prices and subscription in USD. Charges are processed in US dollars via Stripe.",
     "currencyBillingEur": "Indicative amounts in EUR. Your subscription is billed in USD.",
@@ -621,7 +619,6 @@
     "finalCta": "Start free",
     "finalLogin": "Already have an account?",
     "finalLoginLink": "Log in",
-    "rewardBanner": "These are the prices charged today. The app does not lock a rate for life if public prices change later.",
     "plans": {
       "starter": {
         "period": "forever",
@@ -740,10 +737,6 @@
       {
         "q": "What if we have more than 100 employees?",
         "a": "Above a paid plan’s cap, Enterprise is a conversation. There is no in-app chat: write to hello@taimbox.com."
-      },
-      {
-        "q": "Will early adopter pricing stay?",
-        "a": "You pay the Stripe price you subscribe to at that moment. The app has no mechanism that freezes that rate if public prices change later."
       },
       {
         "q": "Does the Agency trial require a card?",

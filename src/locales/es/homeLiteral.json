@@ -486,9 +486,9 @@
   },
   "s07": {
     "kicker": "Planes",
-    "title": "Empieza con cuatro personas.",
-    "titleHighlight": "Crece a tu ritmo.",
-    "subtitle": "Los precios de la home son los que se cobran hoy. La app no congela un descuento de por vida.",
+    "title": "Empieza en Free.",
+    "titleHighlight": "Cinco personas.",
+    "subtitle": "Team, 99 USD al mes. Agency, 249 USD al mes. El cobro es en USD.",
     "compareLink": "Ver todos los planes (incl. Scale)",
     "compareHref": "/precios"
   },

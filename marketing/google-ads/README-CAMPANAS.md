@@ -156,7 +156,7 @@ Reglas de copy:
 - Mencionar **agencia** o **equipo** en al menos 3 titulares por grupo.
 - Incluir **"No es un CRM"** en campañas Joyas y Rentabilidad.
 - CTA: *Prueba gratis*, *Ver planificador*, *Descargar plantilla*.
-- Usar **early adopter ~50% de por vida** solo en grupos Competidores y Rentabilidad.
+- No anunciar early adopter ni descuento de por vida. Los precios públicos son Team 99 USD/mes y Agency 249 USD/mes.
 
 ---
 
