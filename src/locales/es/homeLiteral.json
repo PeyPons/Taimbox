@@ -371,11 +371,11 @@
       },
       {
         "title": "Meta Ads",
-        "desc": "Presupuesto mensual objetivo y desviaciones en vivo."
+        "desc": "Presupuesto mensual objetivo. Las cifras entran al sincronizar, no en streaming."
       },
       {
         "title": "API REST",
-        "desc": "Endpoints documentados, SDK JS, autenticación con tokens."
+        "desc": "Endpoints documentados y ejemplos con el cliente HTTP. No hay un SDK publicado."
       },
       {
         "title": "Cronómetro",
@@ -393,7 +393,7 @@
     "ppcKicker": "Monitor PPC en vivo",
     "ppcTitle": "Tus campañas Meta y Google,",
     "ppcTitleHighlight": "leídas dentro de Taimbox",
-    "ppcBody": "Conectas una vez, en solo lectura. Taimbox trae gasto, ROAS, CPL y conversiones cada hora, agrupa cuentas por cliente y te dice cómo cerrarás el mes. Si una campaña se va de presupuesto, lo ves a mitad de mes — no el último día.",
+    "ppcBody": "Conectas en solo lectura. Al sincronizar (a mano, o con el cron desde Agency) entran gasto, clics, impresiones, conversiones y ROAS si hay valor de conversión. El ritmo de gasto proyecta el cierre de mes. No hay un indicador llamado CPL.",
     "ppcBullet1Prefix": "Estados",
     "ppcBullet1Suffix": "por cuenta y campaña.",
     "ppcBullets": [
@@ -418,7 +418,7 @@
         "status": "OK",
         "spend": "€4.8k/6k",
         "roas": "3.4× ROAS",
-        "cpl": "€18 CPL",
+        "cpl": "CPC 0,40",
         "widthPct": 80,
         "variant": "ok"
       },
@@ -428,7 +428,7 @@
         "status": "Bajo",
         "spend": "€2.1k/4k",
         "roas": "1.9× ROAS",
-        "cpl": "€34 CPL",
+        "cpl": "CPC 0,55",
         "widthPct": 60,
         "variant": "under"
       },
@@ -438,7 +438,7 @@
         "status": "Sobre",
         "spend": "€5.8k/5k",
         "roas": "2.6× ROAS",
-        "cpl": "€22 CPL",
+        "cpl": "CPC 0,32",
         "widthPct": 100,
         "variant": "over"
       }
@@ -488,7 +488,7 @@
     "kicker": "Planes",
     "title": "Empieza con cuatro personas.",
     "titleHighlight": "Crece a tu ritmo.",
-    "subtitle": "Si entras ahora como early adopter, mantienes el 50% de por vida antes de que suban las tarifas oficiales.",
+    "subtitle": "Los precios de la home son los que se cobran hoy. La app no congela un descuento de por vida.",
     "compareLink": "Ver todos los planes (incl. Scale)",
     "compareHref": "/precios"
   },

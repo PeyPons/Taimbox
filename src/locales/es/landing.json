@@ -142,16 +142,16 @@
     },
     "performance": {
       "seoTitle": "Taimbox para agencias de medios | Gasto y horas",
-      "seoDescription": "Google Ads y Meta se sincronizan cada hora. El planificador muestra la capacidad del equipo que opera las cuentas. El monitor de presupuestos está desde el plan Agency.",
+      "seoDescription": "Google Ads y Meta entran al sincronizar, o con el cron del servidor desde Agency. El planificador muestra la capacidad de quien opera las cuentas.",
       "kicker": "Agencias de medios",
       "title": "El gasto de Ads y las horas del equipo, en el mismo mes",
-      "lede": "Taimbox trae Google Ads y Meta cada hora y los deja al lado de la capacidad de quien lleva esas cuentas. El ritmo del presupuesto se ve en el monitor. El margen del trabajo, en finanzas. Mover horas lo decide una persona.",
-      "cardLede": "Gasto publicitario cada hora, junto a las horas del equipo que opera las cuentas.",
+      "lede": "Taimbox trae Google Ads y Meta al sincronizar, o con el cron del servidor desde Agency, y los deja al lado de la capacidad de quien lleva esas cuentas. El ritmo del presupuesto se ve en el monitor. El margen del trabajo, en finanzas. Mover horas lo decide una persona.",
+      "cardLede": "Gasto de la última sincronización, junto a las horas del equipo que opera las cuentas.",
       "situationsTitle": "Tres momentos del mes",
       "situations": [
         {
           "title": "El presupuesto se adelanta",
-          "body": "El monitor dibuja el gasto acumulado frente a un ritmo lineal del mes y marca la diferencia. La sincronización es horaria, no instantánea. Sirve para ver el desvío antes del cierre, no para pujar en el momento."
+          "body": "El monitor dibuja el gasto acumulado frente a un ritmo lineal del mes y marca la diferencia. Las cifras son las de la última sincronización, no una puja en directo. Sirve para ver el desvío antes del cierre, no para pujar en el momento."
         },
         {
           "title": "Quien opera las cuentas no da más de sí",
@@ -166,7 +166,7 @@
       "modules": [
         {
           "label": "Monitor de presupuestos",
-          "note": "Google Ads y Meta, lectura cada hora. Desde el plan Agency."
+          "note": "Google Ads y Meta, con la última sincronización. Desde el plan Agency."
         },
         {
           "label": "Planificador",
@@ -257,7 +257,7 @@
         },
         {
           "title": "El cliente pregunta por el gasto y la dirección por el margen",
-          "body": "El monitor responde al gasto, cada hora, desde el plan Agency. Finanzas responde al margen del trabajo. Son dos preguntas y salen en dos sitios."
+          "body": "El monitor responde al gasto de la última sincronización, desde el plan Agency. Finanzas responde al margen del trabajo. Son dos preguntas y salen en dos sitios."
         },
         {
           "title": "Cierra el mes y hay que ver qué pasó",
@@ -287,7 +287,7 @@
       "limits": [
         "No sustituye al CRM ni al ERP. Los tiempos pueden salir por API o en CSV y JSON.",
         "No hay una sincronización nativa por webhooks con el CRM.",
-        "Scale cubre varias agencias, en torno a 100 personas. Enterprise, por encima de eso o con requisitos de ese corte, se habla aparte.",
+        "Scale incluye unas 100 personas y no pone tope de personas. No agrupa varias agencias dentro de una sola cuenta. Enterprise, por encima de eso, se habla aparte.",
         "SSO, calendarios externos y soporte 24/7 no forman parte de lo que hay hoy."
       ],
       "ctaTitle": "El acceso es el de siempre",
@@ -440,7 +440,7 @@
         "subtitle": "Cierre semanal y asistente de redistribución",
         "description": "Cada semana, el sistema genera un resumen con métricas. Asistente de redistribución rápida: te muestra quién tiene horas libres para que redistribuyas el trabajo en segundos.",
         "featureList": [
-          "Resumen semanal automático",
+          "Resumen de la semana al abrir el cierre",
           "Asistente de redistribución rápida",
           "Quién tiene horas libres al instante",
           "Comparativa semanal"
@@ -553,7 +553,7 @@
     "useCasesLeaderItems": [
       "Decisiones informadas sobre distribución",
       "Identifica quién necesita ayuda",
-      "Reduce reuniones en un 70%",
+      "Menos idas y venidas para ver quién hace qué",
       "Alertas automáticas de sobrecarga"
     ],
     "useCasesPmTitle": "Para project managers",
@@ -566,7 +566,7 @@
     "useCasesEmployeeTitle": "Para empleados",
     "useCasesEmployeeItems": [
       "Vista clara de tu carga de trabajo",
-      "Priorización automática de tareas",
+      "Tus tareas de la semana, con las dependencias a la vista",
       "Seguimiento de tu progreso",
       "Sabes qué hacer y cuándo"
     ],
@@ -593,19 +593,19 @@
     "heroKicker": "Para agencias y equipos creativos",
     "heroLine1": "Empiezas gratis y subes de plan cuando necesitas forecast, API o Ads",
     "heroHighlight": "",
-    "earlyAdopter": "Precios Early Adopter — 50% de descuento de por vida",
+    "earlyAdopter": "Precios Early Adopter vigentes",
     "heroSub": "Empieza gratis. Sube de plan cuando requieras más inteligencia financiera, reportes avanzados o integraciones complejas para tu agencia.",
     "pill1": "Plan gratuito disponible",
     "pill2": "Prueba de 14 días (Agency)",
     "pill3": "Sin permanencia",
     "recommended": "Recomendado",
-    "earlyTariff": "Tarifa Early Adopter · de por vida",
+    "earlyTariff": "Tarifa Early Adopter",
     "currencyLabel": "Ver precios en",
     "currencyBillingUsd": "Precios y suscripción en USD. El cobro se procesa en dólares vía Stripe.",
     "currencyBillingEur": "Importes orientativos en EUR. La suscripción se cobra en USD.",
     "currencyBillingConverted": "Importes orientativos en {{currency}}. La suscripción se cobra en USD.",
     "enterpriseTitle": "¿Más de 100 personas o requisitos enterprise?",
-    "enterpriseSub": "Personas sin límite · SLA · DPA · Facturación y hosting a medida",
+    "enterpriseSub": "Por encima de los topes de los planes de pago, disponibilidad, DPA y hosting se hablan con ventas. No son interruptores del producto.",
     "enterpriseCta": "Hablar con ventas",
     "enterpriseMailSubject": "Plan Enterprise",
     "includedTitle": "Todo lo que necesitas",
@@ -621,7 +621,7 @@
     "finalCta": "Empezar gratis",
     "finalLogin": "¿Ya tienes cuenta?",
     "finalLoginLink": "Iniciar sesión",
-    "rewardBanner": "🎯 Premiaremos a las primeras agencias que confíen en nosotros manteniendo esta cuota de por vida, antes de aplicar las tarifas oficiales de 99 $ y 249 $.",
+    "rewardBanner": "Estos son los precios que se cobran hoy. La app no congela la tarifa de por vida si más adelante cambian los precios públicos.",
     "plans": {
       "starter": {
         "period": "siempre",
@@ -664,37 +664,34 @@
       },
       "scale": {
         "period": "mes",
-        "description": "Multi-agencia y operación a gran escala (hasta ~100 personas en producto).",
+        "description": "Más personas incluidas y el mismo Ads, API y sync que Agency.",
         "cta": "Contactar ventas",
         "customPrice": "",
         "features": [
           "Todo lo de Agency, más:",
-          "100 personas incluidas (+2,50 $/extra)",
-          "Varias agencias / marcas en una cuenta",
-          "Auditoría y soporte prioritario",
-          "Límites API ampliados",
-          "Onboarding trimestral"
+          "100 personas incluidas (+2,50 $/extra, sin tope de personas en el plan)",
+          "La misma API REST que Agency",
+          "Registro de actividad del equipo",
+          "Puedes crear otra agencia y cambiar entre ellas; no hay un holding dentro de una sola cuenta"
         ]
       },
       "enterprise": {
         "period": "",
-        "description": "Más de 100 personas, holdings o SLA/DPA y hosting dedicado.",
+        "description": "Por encima de Scale, o con un acuerdo de disponibilidad y DPA, se habla con ventas.",
         "cta": "Hablar con ventas",
         "customPrice": "A medida",
         "features": [
-          "Personas sin límite",
-          "SLA y soporte dedicado",
-          "Integraciones a medida",
-          "Facturación personalizada",
-          "Opciones de acceso a medida",
-          "Cuenta técnica asignada"
+          "Sin tope de personas en la configuración del plan",
+          "El acuerdo de disponibilidad, el DPA y el hosting se pactan; no están activados en el producto",
+          "La API REST es la misma que en Agency y Scale",
+          "Facturación por Stripe o, si hace falta otro esquema, por conversación con ventas"
         ]
       }
     },
     "universal": [
       {
         "title": "Multi-proyecto",
-        "desc": "Gestiona infinitos clientes y proyectos en paralelo sin restricciones."
+        "desc": "No hay un tope de clientes ni de proyectos en la configuración de los planes."
       },
       {
         "title": "Colaboración en vivo",
@@ -702,7 +699,7 @@
       },
       {
         "title": "Reportes de tiempos",
-        "desc": "Cronómetro integrado y partes de horas manuales o automatizados."
+        "desc": "Cronómetro por tarea y horas que introduces a mano. No se genera un parte solo."
       },
       {
         "title": "Alertas de sobrecarga",
@@ -734,19 +731,19 @@
     "faq": [
       {
         "q": "¿Puedo cambiar de plan en cualquier momento?",
-        "a": "Sí. Puedes subir o bajar de plan en cualquier momento desde Configuración. Los cambios se aplican de forma prorrateada."
+        "a": "Sí. Quien administra la agencia puede cambiar de plan desde Plan y facturación. Si ya hay una suscripción en Stripe, el cambio prorratea el periodo en curso."
       },
       {
         "q": "¿Qué pasa si supero el límite de empleados de mi plan?",
-        "a": "Recibirás un aviso y tu agencia entrará en modo solo lectura hasta que actualices tu plan o ajustes el número de empleados activos. Nunca borraremos tus datos."
+        "a": "En Free, al pasar de 5 personas no puedes añadir gente ni nuevas asignaciones hasta bajar del límite o cambiar de plan. En los planes de pago, al llegar al máximo no se dan de alta más personas. No borramos datos ni pasamos toda la agencia a solo lectura."
       },
       {
         "q": "¿Qué pasa si somos más de 100 empleados?",
-        "a": "Tenemos planes Enterprise sin límite de usuarios y con soporte dedicado. Contáctanos por el chat de la app o a hello@taimbox.com."
+        "a": "Por encima del tope de un plan de pago se habla el plan Enterprise. No hay chat dentro de la app: escríbenos a hello@taimbox.com."
       },
       {
         "q": "¿Los precios de early adopter se mantendrán?",
-        "a": "Sí. Si contratas ahora, tu tarifa queda congelada de por vida aunque los precios suban a 99 $/249 $ en el futuro."
+        "a": "Pagas el precio de la suscripción que contratas en Stripe en ese momento. La aplicación no tiene un mecanismo que congele esa tarifa si después cambian los precios públicos."
       },
       {
         "q": "¿La prueba de Agency requiere tarjeta de crédito?",
@@ -1072,7 +1069,7 @@
       "weeklyForecast": {
         "introTitle": "Qué es Weekly Forecast",
         "introBody": "Weekly Forecast (menú Seguimiento) es la previsión y el cierre de equipo: resumen por persona, ajustes y redistribución de horas. Por otro lado, el botón Weekly en Mi espacio es la revisión personal de tareas de semanas ya cerradas: completar, mover a otra semana (incluso varios meses adelante), repartir o registrar horas hechas y planificar el resto en la semana que elijas.",
-        "introExample": "Carlos no completó 15h esta semana. El sistema detecta que Laura tiene 10h libres y Pedro 5h, y sugiere redistribuir el trabajo automáticamente.",
+        "introExample": "Si a Carlos le faltan horas, ves quién tiene hueco y decides tú a quién pasarle trabajo. No se reasigna solo.",
         "accessTitle": "Dónde acceder",
         "accessBody": "Weekly Forecast está en el menú lateral bajo Seguimiento (junto a Seguimiento operativo, Rentabilidad y Capacidad de Equipo). Solo es visible si tienes permiso de capacidad de equipo.",
         "howTitle": "Cómo funciona",
@@ -1087,7 +1084,7 @@
           },
           {
             "title": "Redistribuir pendientes",
-            "description": "Las horas no completadas se pueden redistribuir a compañeros con disponibilidad, de forma sugerida o automática."
+            "description": "Puedes pasar horas a otra persona. El sistema propone; no mueve las horas solo."
           },
           {
             "title": "Cerrar semana",
@@ -2431,7 +2428,7 @@
         "s3": {
           "kicker": "Objetivos estratégicos",
           "h2": "OKRs: alinea ejecución con estrategia",
-          "p": "Define objetivos ambiciosos y key results medibles. El sistema conecta automáticamente los datos del planner con tus OKRs para medir progreso real, no opiniones.",
+          "p": "Defines el objetivo, los key results y el porcentaje de avance a mano. El planner no rellena el progreso del OKR.",
           "tiles": [
             {
               "label": "Objetivos",
@@ -2443,7 +2440,7 @@
             },
             {
               "label": "Progreso real",
-              "desc": "Datos del planner en vivo"
+              "desc": "El avance lo escribes tú"
             },
             {
               "label": "Tracking Q",
@@ -2454,12 +2451,12 @@
         "s4": {
           "kicker": "Validación automática",
           "h2": "Control de coherencia: cero errores silenciosos",
-          "p": "El sistema revisa automáticamente que no haya tareas sin asignar, presupuestos excedidos, conflictos de horario o inconsistencias entre planificación y ejecución. Si detecta algo, lo marca antes de que salga en un reporte.",
+          "p": "El control de coherencia compara, por persona y proyecto, las horas del deadline con las planificadas y las computadas. No revisa solo tareas huérfanas ni conflictos de agenda.",
           "bullets": [
-            "Tareas huérfanas sin empleado",
-            "Presupuestos que superan el override",
-            "Conflictos de horario por ausencias",
-            "Inconsistencias planificación vs ejecución"
+            "Horas de deadline frente a horas planificadas",
+            "Horas de deadline frente a horas computadas",
+            "Diferencia por persona y por proyecto",
+            "Lo marcas tú al revisar; no se corrige solo"
           ]
         },
         "cta": {
@@ -2557,7 +2554,7 @@
           "codeTaskName": "Diseño Home",
           "pillJwt": "Auth JWT",
           "pillCrm": "CRM/ERP",
-          "pillSdk": "SDK"
+          "pillSdk": "HTTP"
         },
         "mockWeekly": {
           "title": "Weekly Feedback",
@@ -2584,7 +2581,7 @@
               "status": "pending"
             }
           ],
-          "foot": "Los días configurables por integración. Notificación automática a las 18:00 del viernes."
+          "foot": "Los avisos se programan por día y hora si configuras una regla. No hay un aviso fijo los viernes a las 18:00."
         },
         "hero": {
           "badge": "Para agencias performance",
@@ -2603,9 +2600,9 @@
         "s1": {
           "kicker": "Google Ads",
           "h2": "Campañas de Google, datos siempre al día",
-          "p": "Conecta las cuentas de Google Ads de tus clientes y monitoriza el consumo de sus campañas con sincronización automática cada hora. Detecta sobrecostes antes de que ocurran y evita a tus gestores PPC la revisión manual diaria de presupuestos.",
+          "p": "Conecta las cuentas de Google Ads de tus clientes y mira el gasto cuando sincronizas. En Agency, Scale y Enterprise hay además un cron en el servidor; la app no promete un refresco cada hora.",
           "bullets": [
-            "Monitor de presupuesto por cliente, actualizado cada hora",
+            "Monitor de presupuesto por cliente, con los datos de la última sincronización",
             "Alertas anti-despistes: evita sobrepasar el presupuesto pactado",
             "Elimina la revisión manual cuenta por cuenta"
           ]
@@ -2650,12 +2647,12 @@
         },
         "s4": {
           "kicker": "Sistema Weekly",
-          "h2": "Cierre semanal automatizado",
-          "p": "Cada semana, los empleados confirman sus horas con un clic. El sistema notifica automáticamente, recoge el feedback y actualiza el forecast. Sin perseguir a nadie por email.",
+          "h2": "Cierre semanal que confirma el equipo",
+          "p": "Cada semana, los empleados pueden confirmar sus horas. Si configuras una regla, se envía un aviso. El forecast no se reescribe solo: las horas reales entran cuando alguien las confirma o las corrige.",
           "bullets": [
-            "Notificación automática configurada por día",
-            "Confirmación individual de horas con un clic",
-            "Actualización automática del forecast con datos reales"
+            "Aviso solo si hay una regla programada",
+            "Confirmación individual de horas",
+            "Las horas confirmadas quedan en el seguimiento; el forecast no se recalcula solo"
           ]
         },
         "s5": {
@@ -2676,7 +2673,7 @@
             },
             {
               "label": "Weekly System",
-              "desc": "Cierre semanal automático"
+              "desc": "Cierre semanal confirmado por la persona"
             },
             {
               "label": "Exportación",
@@ -2713,7 +2710,7 @@
     },
     "ppc": {
       "seoTitle": "Monitor de presupuestos PPC de tus clientes | Taimbox",
-      "seoDescription": "El gasto de Google Ads y Meta, unificado, en los planes que lo incluyen. La sincronización es horaria, no instantánea.",
+      "seoDescription": "El gasto de Google Ads y Meta, unificado, en los planes que lo incluyen. Los datos son los de la última sincronización, no un streaming.",
       "jsonName": "Monitor de presupuestos PPC",
       "jsonDescription": "El gasto de Google Ads y Meta, unificado, en los planes que lo incluyen.",
       "page": {
@@ -2835,7 +2832,7 @@
           },
           {
             "title": "Métricas de Rentabilidad",
-            "desc": "Controla no solo el gasto, sino el rendimiento. Visualiza automáticamente el ROAS global, CPA, CPC y CTR de cada cuenta sin necesidad de cruzar datos manualmente.",
+            "desc": "En Google Ads el panel calcula ROAS, CPA, CPC y CTR con el gasto, los clics y las impresiones ya sincronizados. En Meta el foco es el gasto, el ritmo y el ROAS cuando hay valor de conversión.",
             "gradient": "from-emerald-500 to-teal-500",
             "color": "text-emerald-300",
             "border": "border-emerald-500/30",
@@ -2843,7 +2840,7 @@
           },
           {
             "title": "Sincronización manual bajo demanda",
-            "desc": "Tú controlas cuándo quieres actualizar los datos. Presiona un botón en el dashboard y conéctate en tiempo real con la API de Google Ads sin latencias ni esperas programadas.",
+            "desc": "Pulsas sincronizar y el servidor llama a la API de Google Ads. No es un streaming continuo ni una conexión sin espera.",
             "gradient": "from-fuchsia-500 to-pink-500",
             "color": "text-fuchsia-300",
             "border": "border-fuchsia-500/30",
