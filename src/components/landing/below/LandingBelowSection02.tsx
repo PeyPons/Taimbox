@@ -3,8 +3,6 @@ import { Activity, ChartLine, Sparkles } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 import { landingInlineStyle } from "@/components/landing/below/landingInlineStyle";
-import { LANDING_SECTION } from "@/components/landing/below/landingSectionColors";
-import { LandingSectionWave } from "@/components/landing/below/LandingSectionWave";
 import { useHomeLiteralT } from "@/components/landing/below/useHomeLiteralT";
 import { cn } from "@/lib/utils";
 import { i18nAsArray } from "@/lib/i18nReturnObjects";
@@ -157,29 +155,24 @@ export const LandingBelowSection02: FC = () => {
     <section
       className="relative overflow-hidden"
       style={landingInlineStyle(
-        `background: ${LANDING_SECTION.cream}; padding-top: clamp(5rem, 10vw, 8rem); padding-bottom: clamp(7rem, 12vw, 10rem);`,
+        "background: #14123B; padding-top: clamp(5rem, 10vw, 8rem); padding-bottom: clamp(4.5rem, 8vw, 6rem);",
       )}
     >
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -left-24 top-24 h-72 w-72 rounded-full opacity-40 blur-3xl"
-        style={landingInlineStyle("background: radial-gradient(circle, rgb(251, 191, 36), transparent 70%);")}
-      />
       <div className="relative mx-auto max-w-6xl px-6 lg:px-10">
         <div className="relative mb-12 sm:mb-14 lg:mb-16">
           <p
             aria-hidden
-            className="pointer-events-none absolute -left-2 top-1/2 hidden -translate-y-1/2 select-none font-black leading-none tracking-tighter text-slate-900/[0.04] sm:block sm:text-[7rem] lg:text-[9rem]"
+            className="pointer-events-none absolute -left-2 top-1/2 hidden -translate-y-1/2 select-none font-black leading-none tracking-tighter text-white/[0.04] sm:block sm:text-[7rem] lg:text-[9rem]"
           >
             02
           </p>
           <div className="relative max-w-3xl">
-            <span className="mb-3 inline-block font-mono text-[10px] uppercase tracking-[0.28em] text-amber-800">
+            <span className="mb-3 inline-block font-mono text-[10px] uppercase tracking-[0.28em] text-[#C4B5FD]">
               {t("s02.kicker")}
             </span>
-            <h2 className="text-[2.15rem] font-black leading-[1.05] tracking-tight text-slate-900 sm:text-4xl lg:text-[3.25rem]">
+            <h2 className="text-[2.15rem] font-black leading-[1.05] tracking-[-0.035em] text-white sm:text-4xl lg:text-[3.25rem]">
               {t("s02.title")}{" "}
-              <span className="bg-gradient-to-r from-amber-600 via-orange-600 to-rose-600 bg-clip-text text-transparent">
+              <span className="text-[#C4B5FD]">
                 {t("s02.titleEmphasis")}
               </span>
               .
@@ -188,27 +181,13 @@ export const LandingBelowSection02: FC = () => {
         </div>
 
         <div
-          className="relative overflow-hidden rounded-[1.75rem] border border-indigo-500/25 sm:rounded-[2rem]"
-          style={landingInlineStyle(
-            "background: linear-gradient(145deg, rgb(15, 23, 42) 0%, rgb(30, 27, 75) 48%, rgb(15, 23, 42) 100%); box-shadow: rgba(79, 70, 229, 0.35) 0px 40px 100px -48px, rgba(0, 0, 0, 0.45) 0px 24px 48px -32px;",
-          )}
+          className="relative overflow-hidden rounded-[1.75rem] border border-[rgba(196,181,253,0.2)] bg-[#1A1736] sm:rounded-[2rem]"
         >
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0 opacity-[0.35]"
-            style={landingInlineStyle(
-              "background-image: linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px); background-size: 40px 40px;",
-            )}
-          />
-          <div aria-hidden className="pointer-events-none absolute -right-16 top-0 h-56 w-56 rounded-full bg-violet-500/25 blur-3xl" />
-          <div aria-hidden className="pointer-events-none absolute -left-10 bottom-0 h-48 w-48 rounded-full bg-amber-500/15 blur-3xl" />
-          <div aria-hidden className="pointer-events-none absolute left-8 top-8 bottom-8 hidden w-px bg-gradient-to-b from-transparent via-white/20 to-transparent lg:block" />
+          <div aria-hidden className="pointer-events-none absolute left-8 top-8 bottom-8 hidden w-px bg-white/15 lg:block" />
 
           <div className="relative divide-y divide-white/[0.08]">
             {cards.map((card, i) => {
-              const shell = CARD_SHELL[i];
-              if (!shell) return null;
-              const Icon = shell.icon;
+              if (!CARD_SHELL[i]) return null;
               const Visual = visuals[i];
               if (!Visual) return null;
               const stepNum = String(i + 1).padStart(2, "0");
@@ -229,16 +208,10 @@ export const LandingBelowSection02: FC = () => {
                   </p>
                   <div className={cn("relative z-[1] lg:col-span-7", flip && "lg:col-start-6")}>
                     <div className="mb-4 flex items-center gap-3">
-                      <span className={cn("h-8 w-1 shrink-0 rounded-full bg-gradient-to-b", shell.bar)} aria-hidden />
-                      <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-indigo-200/80">
+                      <span className="h-6 w-[2px] shrink-0 bg-[#7C3AED]" aria-hidden />
+                      <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#C4B5FD]">
                         {card.step}
                       </span>
-                    </div>
-                    <div
-                      className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl border border-white/10"
-                      style={landingInlineStyle(`background: ${shell.glow}; box-shadow: 0 0 32px ${shell.glow};`)}
-                    >
-                      <Icon className="h-5 w-5" strokeWidth={2} style={landingInlineStyle(`color: ${shell.accent};`)} />
                     </div>
                     <h3 className="mb-3 text-2xl font-bold leading-[1.12] tracking-tight text-white sm:text-3xl lg:text-[2rem]">
                       {card.heading}
@@ -264,7 +237,6 @@ export const LandingBelowSection02: FC = () => {
           </div>
         </div>
       </div>
-      <LandingSectionWave position="bottom" fill={LANDING_SECTION.white} variant="bottomIntoWhite" />
     </section>
   );
 };

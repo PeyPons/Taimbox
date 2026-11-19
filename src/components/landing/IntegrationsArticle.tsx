@@ -275,7 +275,7 @@ export function IntegrationsArticle() {
     ];
 
     return (
-        <article className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-14 md:py-16 text-left overflow-x-hidden">
+        <article className="pub-article relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-14 md:py-16 text-left overflow-x-hidden">
             <section className="mb-16 sm:mb-20 text-center">
                 <div className="mb-6">
                     <span className="inline-block px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider text-cyan-300 bg-cyan-500/20 border border-cyan-400/30">
@@ -468,7 +468,7 @@ export function IntegrationsArticle() {
                         ))}
                     </div>
                     <div className="text-center">
-                        <Link to={localizedPathFromEs('/login', i18n.language)}>
+                        <a href="/login">
                             <Button
                                 size="lg"
                                 className="w-full sm:w-auto bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white px-12 py-7 text-lg font-bold shadow-2xl shadow-cyan-500/30 rounded-xl"
@@ -476,7 +476,7 @@ export function IntegrationsArticle() {
                                 {t(`${P}.cta.btn`)}
                                 <ArrowRight className="ml-2 h-5 w-5" />
                             </Button>
-                        </Link>
+                        </a>
                         <p className="mt-3 text-sm text-indigo-200/80">{t(`${P}.cta.sub`)}</p>
                         <Link
                             to={localizedPathFromEs('/guia/configuracion', i18n.language)}

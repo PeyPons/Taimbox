@@ -1,7 +1,7 @@
 /**
- * HTML inicial de la web pública (Pepe, opción A reducida a lo que el build
- * puede hacer sin Chrome): title, description, canonical, hreflang, OG y un
- * H1 visible dentro de #root. React lo sustituye al arrancar.
+ * HTML inicial de la web pública: title, description, canonical, hreflang, OG
+ * y un H1 visible. En la home el hero completo va fuera de #root para que el
+ * LCP no espere al JavaScript. React no lo desmonta.
  * No prerenderiza login, reset ni el panel.
  */
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -102,6 +102,49 @@ function esc(value) {
     .replaceAll('"', "&quot;");
 }
 
+function heroHtml(home, lang) {
+  const pricing = lang === "en" ? "/en/pricing" : "/precios";
+  const pitch = lang === "en" ? "/en/pitch" : "/pitch";
+  const and = home.heroSubtitleLine2And || (lang === "en" ? "and" : "y");
+  return `<section id="prerender-hero" aria-label="Taimbox">
+      <style>
+        #prerender-hero{box-sizing:border-box;min-height:100svh;display:flex;align-items:center;background:#14123B;color:#fff;padding:5.5rem 1.25rem 3rem}
+        #prerender-hero .wrap{width:min(1120px,100%);margin:0 auto;display:grid;gap:2.5rem;align-items:center}
+        @media(min-width:900px){#prerender-hero .wrap{grid-template-columns:1.15fr .85fr}}
+        #prerender-hero h1{margin:0;font-family:"DM Sans Variable",system-ui,sans-serif;font-size:clamp(2.1rem,6vw,4.6rem);line-height:1.05;letter-spacing:-.03em;font-weight:650}
+        #prerender-hero p{margin:.9rem 0 0;max-width:36rem;color:#D4CEF0;font-size:1.05rem;line-height:1.55;font-family:"DM Sans Variable",system-ui,sans-serif}
+        #prerender-hero p strong{color:#fff;font-weight:650}
+        #prerender-hero .cta{display:flex;flex-wrap:wrap;gap:.75rem;margin-top:1.5rem}
+        #prerender-hero a{display:inline-flex;align-items:center;justify-content:center;min-height:3rem;padding:0 1.25rem;border-radius:999px;text-decoration:none;font-weight:600;font-family:"DM Sans Variable",system-ui,sans-serif}
+        #prerender-hero .primary{background:#F7F4EC;color:#14123B}
+        #prerender-hero .secondary{color:#fff;border:1px solid rgba(196,181,253,.45)}
+        #prerender-hero svg{width:min(100%,320px);height:auto;margin-inline:auto;display:block}
+        #prerender-hero .orbit{transform-origin:160px 160px;animation:prerender-orbit 96s linear infinite}
+        @keyframes prerender-orbit{to{transform:rotate(360deg)}}
+        @media(prefers-reduced-motion:reduce){#prerender-hero .orbit{animation:none}}
+      </style>
+      <div class="wrap">
+        <div>
+          <h1>${esc(home.heroTitleLine1)}</h1>
+          <p>${esc(home.heroSubtitleLine1)} ${esc(home.heroSubtitleLine2Prefix)} <strong>${esc(home.heroSubtitleLine2When)}</strong> ${esc(and)} <strong>${esc(home.heroSubtitleLine2Why)}</strong>.</p>
+          <div class="cta">
+            <a class="primary" href="/login?tab=register">${esc(home.heroPrimaryCta)}</a>
+            <a class="secondary" href="${pitch}">${esc(home.heroSecondaryCta)}</a>
+            <a class="secondary" href="${pricing}">${esc(home.heroPricingLink)}</a>
+          </div>
+        </div>
+        <svg viewBox="0 0 320 320" role="img" aria-label="Taimbox">
+          <g class="orbit">
+            <circle cx="160" cy="160" r="118" fill="none" stroke="#C4B5FD" stroke-width="1.5" opacity=".7"/>
+            <path d="M160 160 L160 42 A118 118 0 0 1 262 210 Z" fill="#7C3AED" opacity=".9"/>
+          </g>
+          <circle cx="160" cy="160" r="46" fill="#14123B" stroke="#F7F4EC"/>
+          <text x="160" y="166" text-anchor="middle" fill="#F7F4EC" font-size="22" font-family="system-ui,sans-serif">47h</text>
+        </svg>
+      </div>
+    </section>`;
+}
+
 const shell = readFileSync(distIndex, "utf8");
 if (!shell.includes('<div id="root"></div>')) {
   console.error("dist/index.html no tiene #root vacío");
@@ -127,10 +170,12 @@ for (const page of pages) {
   ].join("\n    ");
   let html = shell.replace("<title>Taimbox</title>", head);
   html = html.replace("<html lang=\"es\">", `<html lang="${page.lang}">`);
-  html = html.replace(
-    '<div id="root"></div>',
-    `<div id="root"><main><h1>${esc(page.h1)}</h1><p>${esc(page.description)}</p></main></div>`,
-  );
+  const home = page.lang === "en" ? en.home : es.home;
+  const rootHtml =
+    page.path === "/" || page.path === "/en"
+      ? `${heroHtml(home, page.lang)}\n    <div id="root"></div>`
+      : `<div id="root"><main><h1>${esc(page.h1)}</h1><p>${esc(page.description)}</p></main></div>`;
+  html = html.replace('<div id="root"></div>', rootHtml);
   const file = page.path === "/" ? distIndex : resolve(root, "dist", page.path.slice(1), "index.html");
   mkdirSync(dirname(file), { recursive: true });
   writeFileSync(file, html);

@@ -20,6 +20,7 @@ import {
 import { PublicWordmark } from "@/components/public/PublicMark";
 import { FeaturesDropdown } from "./FeaturesDropdown";
 import { LanguageSelector } from "./LanguageSelector";
+import { PublicHeader } from "./PublicHeader";
 
 const MOBILE_FEATURE_META = [
   { id: "employeeDashboard" as const, hrefEs: "/dashboard-empleado", icon: LayoutDashboard, gradient: "from-indigo-500 to-purple-500" },
@@ -36,9 +37,17 @@ export type LandingHeaderVariant = "dark" | "light";
 
 export type LandingHeaderProps = {
   variant?: LandingHeaderVariant;
+  /** Hueco bajo la cabecera fija. La home prerenderizada ya ocupa el primer viewport. */
+  spacer?: boolean;
 };
 
-export function LandingHeader({ variant = "dark" }: LandingHeaderProps) {
+export function LandingHeader({ variant = "dark", spacer = true }: LandingHeaderProps) {
+  if (variant !== "light") return <PublicHeader spacer={spacer} />;
+  return <LegacyLandingHeader />;
+}
+
+function LegacyLandingHeader() {
+  const variant = "light" as const;
   const [mobileOpen, setMobileOpen] = useState(false);
   const { t, i18n } = useTranslation("landing");
   const light = variant === "light";
@@ -96,7 +105,7 @@ export function LandingHeader({ variant = "dark" }: LandingHeaderProps) {
             <div className={light ? "hidden sm:block" : ""}>
               <LanguageSelector surface={light ? "light" : "dark"} />
             </div>
-            <Link to="/login" className="group">
+            <a href="/login" className="group">
               <Button
                 size="sm"
                 className={cn(
@@ -108,11 +117,11 @@ export function LandingHeader({ variant = "dark" }: LandingHeaderProps) {
                 {t("header.login")}
                 <ArrowRight className="ml-1.5 h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
               </Button>
-            </Link>
+            </a>
           </div>
 
           <div className={cn(`flex ${navBp}:hidden items-center shrink-0`, light ? "gap-2" : "gap-1.5")}>
-            <Link to="/login" className="group">
+            <a href="/login" className="group">
               <Button
                 size="sm"
                 className={cn(
@@ -123,7 +132,7 @@ export function LandingHeader({ variant = "dark" }: LandingHeaderProps) {
               >
                 {t("header.login")}
               </Button>
-            </Link>
+            </a>
             <button
               type="button"
               onClick={() => setMobileOpen(!mobileOpen)}

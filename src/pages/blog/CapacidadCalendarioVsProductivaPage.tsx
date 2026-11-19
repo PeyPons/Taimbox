@@ -70,7 +70,7 @@ export default function CapacidadCalendarioVsProductivaPage() {
     <>
       <BlogArticleSeo jsonLd={jsonLd} />
 
-      <div className="min-h-screen bg-[#14123B] relative overflow-hidden">
+      <div className="pub-stage min-h-screen bg-[#14123B] relative overflow-hidden">
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-0 left-1/4 w-96 h-96 bg-amber-900/20 rounded-full blur-3xl opacity-50" />
           <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-orange-950/35 rounded-full blur-3xl opacity-50" />
@@ -98,7 +98,7 @@ export default function CapacidadCalendarioVsProductivaPage() {
           />
         </div>
 
-        <LandingFooter />
+        <LandingFooter variant="stage" />
       </div>
     </>
   );

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { FC } from "react";
 import { motion } from "motion/react";
 import {
@@ -606,9 +606,6 @@ const ROLE_SHELLS: Pick<Role, "color" | "icon" | "Mockup">[] = [
   { color: "rgb(16, 185, 129)", icon: ChartLine, Mockup: FinanzasMockup },
 ];
 
-const AUTOCYCLE_MS = 5500;
-const PAUSE_AFTER_INTERACTION_MS = 12000;
-
 /* ─────────────────────── Componente principal ────────────────────── */
 
 export const LandingBelowSection03: FC = () => {
@@ -635,32 +632,10 @@ export const LandingBelowSection03: FC = () => {
   );
 
   const [activeIdx, setActiveIdx] = useState(0);
-  const pinnedIdxRef = useRef(0);
-  const pausedRef = useRef(false);
-  const pauseTimerRef = useRef<number>(0);
 
   const activate = useCallback((idx: number) => {
-    pinnedIdxRef.current = idx;
-    pausedRef.current = true;
     setActiveIdx(idx);
-    window.clearTimeout(pauseTimerRef.current);
-    pauseTimerRef.current = window.setTimeout(() => {
-      pausedRef.current = false;
-    }, PAUSE_AFTER_INTERACTION_MS);
   }, []);
-
-  useEffect(() => {
-    const id = window.setInterval(() => {
-      if (pausedRef.current) return;
-      const next = (pinnedIdxRef.current + 1) % roles.length;
-      pinnedIdxRef.current = next;
-      setActiveIdx(next);
-    }, AUTOCYCLE_MS);
-    return () => {
-      window.clearInterval(id);
-      window.clearTimeout(pauseTimerRef.current);
-    };
-  }, [roles.length]);
 
   const role = roles[activeIdx];
   const ActiveMockup = role.Mockup;
@@ -668,19 +643,18 @@ export const LandingBelowSection03: FC = () => {
 
   return (
     <section
-      className="relative bg-white overflow-hidden"
-      style={landingInlineStyle("padding-top: clamp(5rem, 10vw, 8rem); padding-bottom: clamp(7rem, 12vw, 10rem);")}
+      className="relative overflow-hidden"
+      style={landingInlineStyle("background: #14123B; padding-top: clamp(5rem, 10vw, 8rem); padding-bottom: clamp(4.5rem, 8vw, 6rem);")}
     >
       <div className="relative max-w-7xl mx-auto px-6 lg:px-10">
-        {/* Encabezado */}
         <div className="max-w-3xl mb-12 text-center mx-auto">
-          <span className="inline-block font-mono text-[10px] uppercase tracking-[0.24em] text-slate-400 mb-3">
+          <span className="inline-block font-mono text-[10px] uppercase tracking-[0.24em] text-[#C4B5FD] mb-3">
             {t("s03.kicker")}
           </span>
-          <h2 className="text-[2rem] sm:text-4xl lg:text-5xl font-semibold text-slate-900 leading-[1.1] -tracking-[0.02em] mb-5">
-            {t("s03.title")} <span className="text-violet-600">{t("s03.titleHighlight")}</span>.
+          <h2 className="text-[2rem] sm:text-4xl lg:text-5xl font-semibold text-white leading-[1.1] tracking-[-0.03em] mb-5">
+            {t("s03.title")} <span className="text-[#C4B5FD]">{t("s03.titleHighlight")}</span>.
           </h2>
-          <p className="text-[15px] sm:text-[16px] text-slate-500 leading-relaxed">{t("s03.subtitle")}</p>
+          <p className="text-[15px] sm:text-[16px] text-[#D4CEF0] leading-relaxed">{t("s03.subtitle")}</p>
         </div>
 
         {/* Tabs */}
@@ -701,14 +675,14 @@ export const LandingBelowSection03: FC = () => {
                 }}
                 className={cn(
                   "relative inline-flex items-center gap-2 h-11 px-4 sm:px-5 rounded-full text-[13px] sm:text-[14px] font-medium transition-colors duration-200",
-                  isActive ? "text-white" : "text-slate-700 hover:text-slate-900",
+                  isActive ? "text-white" : "text-[#D4CEF0] hover:text-white",
                 )}
               >
                 {isActive ? (
                   <motion.span
                     layoutId="section-03-tabs-pill"
-                    className="absolute inset-0 rounded-full"
-                    style={landingInlineStyle(`background: ${r.color}; box-shadow: ${r.color} 0px 8px 24px -10px; z-index: 0;`)}
+                    className="absolute inset-0 rounded-full bg-[#7C3AED]"
+                    style={landingInlineStyle("z-index: 0;")}
                     transition={{ type: "spring", stiffness: 380, damping: 28, mass: 0.85 }}
                   />
                 ) : null}
@@ -720,12 +694,7 @@ export const LandingBelowSection03: FC = () => {
         </div>
 
         {/* Panel */}
-        <div className="relative rounded-3xl overflow-hidden border border-slate-100 bg-gradient-to-br from-slate-50/80 to-white">
-          <div
-            aria-hidden
-            className="absolute -top-32 -right-32 h-96 w-96 rounded-full blur-3xl opacity-25 pointer-events-none transition-[background] duration-300"
-            style={landingInlineStyle(`background: radial-gradient(circle, ${role.color}, transparent 70%);`)}
-          />
+        <div className="relative rounded-3xl overflow-hidden border border-[#E4DDD0] bg-[#F7F4EC] text-[#14123B]">
           <div className="relative grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 p-8 sm:p-10 lg:p-14">
             {/* Columna izquierda */}
             <div className="lg:col-span-6 relative">
@@ -743,12 +712,7 @@ export const LandingBelowSection03: FC = () => {
                   {role.badgeText}
                 </span>
               </div>
-              <motion.div
-                key={`heading-${activeIdx}`}
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-              >
+              <div key={`heading-${activeIdx}`}>
                 <h3 className="text-[1.75rem] sm:text-3xl lg:text-4xl font-semibold text-slate-900 leading-[1.15] -tracking-[0.02em] mb-4">
                   {role.heading}
                 </h3>
@@ -782,20 +746,13 @@ export const LandingBelowSection03: FC = () => {
                   {role.linkText}
                   <ArrowUpRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                 </a>
-              </motion.div>
+              </div>
             </div>
 
-            {/* Columna derecha (mockup) */}
             <div className="lg:col-span-6 relative flex items-center justify-center min-h-[420px] lg:min-h-[520px]">
-              <motion.div
-                key={`mockup-${activeIdx}`}
-                initial={{ opacity: 0, y: 14, scale: 0.96 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
-                className="w-full"
-              >
+              <div key={`mockup-${activeIdx}`} className="w-full">
                 <ActiveMockup />
-              </motion.div>
+              </div>
             </div>
           </div>
         </div>

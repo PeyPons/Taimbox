@@ -249,7 +249,7 @@ export function ProjectsArticle() {
     const s3Icons = [Flag, Target, TrendingUp, CalendarCheck];
 
     return (
-        <article className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-14 md:py-16 text-left overflow-x-hidden">
+        <article className="pub-article relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-14 md:py-16 text-left overflow-x-hidden">
 
             {/* HERO */}
             <section className="mb-16 sm:mb-20 text-center">
@@ -416,12 +416,12 @@ export function ProjectsArticle() {
                         ))}
                     </div>
                     <div className="text-center">
-                        <Link to={localizedPathFromEs('/login', i18n.language)}>
+                        <a href="/login">
                             <Button size="lg" className="w-full sm:w-auto bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white px-12 py-7 text-lg font-bold shadow-2xl shadow-amber-500/30 rounded-xl">
                                 {t(`${P}.cta.btn`)}
                                 <ArrowRight className="ml-2 h-5 w-5" />
                             </Button>
-                        </Link>
+                        </a>
                         <p className="mt-3 text-sm text-indigo-200/80">{t(`${P}.cta.sub`)}</p>
                         <Link
                             to={localizedPathFromEs('/guia/clientes-proyectos', i18n.language)}

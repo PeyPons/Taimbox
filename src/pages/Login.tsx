@@ -10,6 +10,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/lib/notify";
 import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Rocket, LogIn } from "lucide-react";
 import { useAppTranslation } from "@/hooks/useAppTranslation";
 import { INPUT_LIMITS } from "@/constants/inputLimits";
@@ -17,6 +18,8 @@ import { ONBOARDING_WIZARD_ALLOWED_KEY } from "@/utils/onboardingDefaults";
 import { CurrencySelect } from "@/components/agency/CurrencySelect";
 import { DEFAULT_AGENCY_CURRENCY, type AgencyCurrencyCode } from "@/constants/currencies";
 import { trackGoogleAdsRegistrationConversion } from "@/lib/googleAdsConversion";
+import { getStripePriceIdForCheckout } from "@/config/billingDisplay";
+import { primaryAgencyIdForUser, startPlanCheckout } from "@/lib/startPlanCheckout";
 
 type LoginFormValues = {
   email: string;
@@ -45,6 +48,10 @@ export default function Login() {
   const [isSendingReset, setIsSendingReset] = useState(false);
   const [resetSent, setResetSent] = useState(false);
   const { t } = useAppTranslation();
+  const { t: tLanding } = useTranslation("landing");
+  const planIntent = searchParams.get("plan");
+  const intentKey =
+    planIntent === "starter" || planIntent === "pro" || planIntent === "business" ? planIntent : null;
 
   const loginFormSchema = useMemo(
     () =>
@@ -98,13 +105,49 @@ export default function Login() {
     if (tabParam === 'register') setActiveTab('register');
   }, [tabParam]);
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        navigate(from, { replace: true });
-      }
+  const openTeamCheckout = async (agencyId: string): Promise<"left" | "stay"> => {
+    const priceId = getStripePriceIdForCheckout("pro");
+    if (!priceId) return "stay";
+    const result = await startPlanCheckout({
+      agencyId,
+      planId: "pro",
+      priceId,
+      successPath: "/onboarding/choose",
+      cancelPath: "/agency?tab=billing",
     });
-  }, [navigate, from]);
+    if (result.url) {
+      window.location.assign(result.url);
+      return "left";
+    }
+    if (result.updated) {
+      navigate("/agency?tab=billing", { replace: true });
+      return "left";
+    }
+    return "stay";
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!session || cancelled) return;
+      if (planIntent === "pro") {
+        const agencyId = await primaryAgencyIdForUser(session.user.id);
+        if (cancelled) return;
+        if (agencyId && (await openTeamCheckout(agencyId)) === "left") return;
+        if (!cancelled) {
+          toast.error(tLanding("pricing.checkoutUnavailable"));
+          navigate("/agency?tab=billing", { replace: true });
+        }
+        return;
+      }
+      navigate(from, { replace: true });
+    });
+    return () => {
+      cancelled = true;
+    };
+    // openTeamCheckout se recrea cada render; el efecto solo debe reaccionar al intent.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [navigate, from, planIntent]);
 
   const onLogin = async (data: LoginFormValues) => {
     const { error } = await supabase.auth.signInWithPassword({
@@ -207,6 +250,7 @@ export default function Login() {
           name: data.name.trim(),
           agencyName: agencyNameTrimmed,
           currency: registerCurrency,
+          ...(intentKey ? { plan: intentKey } : {}),
         },
       });
 
@@ -257,6 +301,16 @@ export default function Login() {
       if (typeof window !== 'undefined') {
         sessionStorage.removeItem(ONBOARDING_WIZARD_ALLOWED_KEY);
       }
+
+      const wantsTeamCheckout = responseData?.checkoutPlan === 'pro' || intentKey === 'pro';
+      if (wantsTeamCheckout) {
+        const agencyId = typeof responseData?.agency?.id === 'string' ? responseData.agency.id : null;
+        if (agencyId && (await openTeamCheckout(agencyId)) === 'left') return;
+        toast.error(tLanding('pricing.checkoutUnavailable'));
+        navigate('/agency?tab=billing', { replace: true });
+        return;
+      }
+
       setTimeout(() => {
         navigate('/onboarding/choose', { replace: true });
       }, 100);
@@ -398,6 +452,11 @@ export default function Login() {
             </TabsContent>
 
             <TabsContent value="register">
+              {intentKey ? (
+                <p className="mb-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm leading-snug text-slate-700">
+                  {tLanding(`pricing.intent.${intentKey}`)}
+                </p>
+              ) : null}
               <Form {...registerForm}>
                 <form onSubmit={registerForm.handleSubmit(onRegister)} className="space-y-4">
                   <FormField
@@ -535,12 +594,14 @@ export default function Login() {
                   <p className="text-xs text-center text-slate-500 leading-snug">
                     {t("auth.register.footer")}
                   </p>
-                  <p className="text-[11px] text-center text-indigo-700/90 leading-snug">
-                    {t(
-                      'auth.register.trialNote',
-                      '14 días de prueba del plan Business. Sin tarjeta al registrarte.'
-                    )}
-                  </p>
+                  {intentKey == null ? (
+                    <p className="text-[11px] text-center text-indigo-700/90 leading-snug">
+                      {t(
+                        'auth.register.trialNote',
+                        '14 días de prueba del plan Business. Sin tarjeta al registrarte.'
+                      )}
+                    </p>
+                  ) : null}
                 </form>
               </Form>
             </TabsContent>

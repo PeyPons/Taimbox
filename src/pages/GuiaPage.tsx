@@ -83,7 +83,7 @@ function buildGuideSections(t: TFunction<'landing'>): GuideSection[] {
 /* ─── LAYOUT ─── */
 function GuiaLayout({ children, title, description }: { children: React.ReactNode; title?: string; description?: string }) {
   return (
-    <div className="min-h-screen bg-[#14123B] relative overflow-hidden">
+    <div className="pub-stage min-h-screen bg-[#14123B] relative overflow-hidden">
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-amber-900/20 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '4s' }} />
         <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-orange-950/35 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '6s', animationDelay: '1s' }} />
@@ -107,24 +107,21 @@ function GuiaLayout({ children, title, description }: { children: React.ReactNod
 }
 
 /* ─── SECTION CARD (index) ─── */
-function SectionCard({ slug, title, icon: Icon, short, color }: GuideSection) {
+function SectionCard({ slug, title, short }: GuideSection) {
   const { i18n } = useTranslation('landing');
   return (
-    <Link to={localizedPathFromEs(`/guia/${slug}`, i18n.language)} className="block">
-      <Card className="border-2 border-white/15 bg-gradient-to-br from-indigo-900/90 to-purple-900/90 backdrop-blur-xl hover:border-white/40 hover:scale-[1.02] hover:shadow-2xl hover:shadow-indigo-500/20 transition-all duration-300 group cursor-pointer">
-        <CardContent className="p-5 sm:p-6 flex items-center gap-4 relative overflow-hidden">
-          {/* Glow behind icon on hover */}
-          <div className={cn("absolute -left-4 top-1/2 -translate-y-1/2 w-24 h-24 rounded-full b lur-2xl opacity-0 group-hover:opacity-40 transition-opacity duration-500 bg-gradient-to-br", color)} />
-          <div className={cn("relative w-14 h-14 rounded-xl flex items-center justify-center bg-gradient-to-br shrink-0 shadow-lg group-hover:shadow-xl group-hover:scale-110 transition-all duration-300", color)}>
-            <Icon className="h-7 w-7 text-white" />
-          </div>
-          <div className="flex-1 min-w-0 relative">
-            <h2 className="text-lg sm:text-xl font-bold text-white group-hover:text-indigo-200 transition-colors duration-200">{title}</h2>
-            <p className="text-sm text-indigo-200/70 mt-0.5">{short}</p>
-          </div>
-          <ChevronRight className="h-5 w-5 text-white/40 group-hover:text-white group-hover:translate-x-1 shrink-0 transition-all duration-300" />
-        </CardContent>
-      </Card>
+    <Link
+      to={localizedPathFromEs(`/guia/${slug}`, i18n.language)}
+      className="group block rounded-2xl border border-[rgba(196,181,253,0.22)] bg-[#1A1736] px-5 py-4 transition-colors hover:border-[#C4B5FD]"
+    >
+      <span className="flex items-center gap-4">
+        <span className="h-10 w-[3px] shrink-0 rounded-full bg-[#7C3AED]" aria-hidden />
+        <span className="min-w-0 flex-1">
+          <h2 className="text-lg sm:text-xl font-semibold text-white group-hover:text-[#C4B5FD]">{title}</h2>
+          <p className="text-sm text-[#D4CEF0] mt-0.5">{short}</p>
+        </span>
+        <ChevronRight className="h-4 w-4 text-[#C4B5FD] transition-transform group-hover:translate-x-0.5 shrink-0" />
+      </span>
     </Link>
   );
 }
@@ -135,7 +132,7 @@ function ContentBlock({ title, children }: { title: string; children: React.Reac
   return (
     <div className="mb-10">
       <h2 className="text-xl font-bold text-white mb-5 flex items-center gap-2.5">
-        <span className="w-1.5 h-7 bg-gradient-to-b from-indigo-400 to-purple-400 rounded-full" />
+        <span className="w-[3px] h-7 bg-[#7C3AED] rounded-full" />
         {title}
       </h2>
       <div className="text-indigo-100/90 leading-relaxed space-y-4">{children}</div>
@@ -143,16 +140,14 @@ function ContentBlock({ title, children }: { title: string; children: React.Reac
   );
 }
 
-function FeatureCard({ icon: Icon, title, description, color = 'from-indigo-500 to-purple-500' }: { icon: React.ElementType; title: string; description: string; color?: string }) {
+function FeatureCard({ icon: Icon, title, description }: { icon: React.ElementType; title: string; description: string; color?: string }) {
   return (
-    <div className="p-4 bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all duration-200 group">
+    <div className="rounded-xl border border-[rgba(196,181,253,0.18)] bg-[#1A1736] p-4">
       <div className="flex items-start gap-3">
-        <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center bg-gradient-to-br shrink-0 shadow-md group-hover:scale-110 transition-transform duration-200", color)}>
-          <Icon className="h-5 w-5 text-white" />
-        </div>
+        <Icon className="mt-0.5 h-4 w-4 shrink-0 text-[#C4B5FD]" aria-hidden />
         <div className="min-w-0">
           <h3 className="font-semibold text-white text-sm mb-1">{title}</h3>
-          <p className="text-indigo-200/80 text-sm leading-relaxed">{description}</p>
+          <p className="text-[#D4CEF0] text-sm leading-relaxed">{description}</p>
         </div>
       </div>
     </div>
@@ -161,8 +156,8 @@ function FeatureCard({ icon: Icon, title, description, color = 'from-indigo-500 
 
 function ExampleBox({ children }: { children: React.ReactNode }) {
   return (
-    <div className="relative p-4 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 rounded-xl border border-indigo-400/25 overflow-hidden">
-      <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-indigo-400 to-purple-400" />
+    <div className="relative rounded-xl border border-[rgba(196,181,253,0.22)] bg-[#1A1736] p-4 overflow-hidden">
+      <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-[#7C3AED]" />
       <div className="flex items-start gap-3 pl-2">
         <Lightbulb className="h-5 w-5 text-indigo-300 shrink-0 mt-0.5" />
         <div className="text-sm text-indigo-200/90 leading-relaxed italic">{children}</div>
@@ -911,7 +906,6 @@ export default function GuiaPage() {
     return null;
   }
 
-  const Icon = current.icon;
   const SectionContent = CONTENT_MAP[section];
   const pathEsSection = `/guia/${section}`;
 
@@ -929,13 +923,10 @@ export default function GuiaPage() {
           <ArrowLeft className="h-4 w-4 mr-2" /> {t('guide.backToIndex')}
         </Button>
 
-        <Card className="border-2 border-white/20 bg-gradient-to-br from-indigo-900/90 to-purple-900/90 backdrop-blur-xl overflow-hidden mb-4">
+        <Card className="border border-[rgba(196,181,253,0.22)] bg-[#1A1736] overflow-hidden mb-4">
           <CardContent className="p-6 sm:p-8">
-            {/* Hero header */}
-            <div className="flex items-center gap-4 mb-8 pb-6 border-b border-white/10">
-              <div className={cn("w-16 h-16 rounded-2xl flex items-center justify-center bg-gradient-to-br shadow-xl", current.color)}>
-                <Icon className="h-8 w-8 text-white" />
-              </div>
+            <div className="flex items-center gap-4 mb-8 pb-6 border-b border-[rgba(196,181,253,0.16)]">
+              <span className="h-12 w-[3px] shrink-0 rounded-full bg-[#7C3AED]" aria-hidden />
               <div>
                 <h1 className="text-2xl sm:text-3xl font-black text-white">{current.title}</h1>
                 <p className="text-indigo-200/80 mt-1">{current.short}</p>

@@ -593,11 +593,68 @@
     "heroKicker": "Para agencias y equipos creativos",
     "heroLine1": "Empiezas gratis y subes de plan cuando necesitas forecast, API o Ads",
     "heroHighlight": "",
-    "heroSub": "Empieza gratis. Sube de plan cuando requieras más inteligencia financiera, reportes avanzados o integraciones complejas para tu agencia.",
+    "heroSub": "Free se abre sin tarjeta. Team se paga al momento, cada mes y en USD. Agency incluye 14 días sin tarjeta. No hay tarifa anual.",
     "pill1": "Plan gratuito disponible",
     "pill2": "Prueba de 14 días (Agency)",
     "pill3": "Sin permanencia",
     "recommended": "Recomendado",
+    "monthlyOnly": "La facturación es mensual. No hay tarifa anual.",
+    "yes": "Sí",
+    "no": "No",
+    "decisionWho": {
+      "starter": "Hasta 5 personas en el planificador",
+      "pro": "Forecast e informes, hasta 25 personas",
+      "business": "Ads y la API, hasta 100 personas"
+    },
+    "decisionCta": {
+      "starter": "Crear cuenta",
+      "pro": "Pagar Team",
+      "business": "Probar 14 días"
+    },
+    "decisionNote": {
+      "starter": "Sin tarjeta. La cuenta queda en Free.",
+      "pro": "Checkout de Stripe, a este precio. Sin prueba.",
+      "business": "14 días de Agency, sin tarjeta."
+    },
+    "decisionRows": {
+      "included": "Personas incluidas",
+      "extra": "Persona de más",
+      "cap": "Tope de personas",
+      "planner": "Planificador",
+      "deadlines": "Deadlines",
+      "timer": "Cronómetro",
+      "history": "Histórico sin tope de meses",
+      "weekly": "Weekly y pronóstico",
+      "okr": "OKR",
+      "reports": "Radar e informes",
+      "activity": "Registro de actividad",
+      "exports": "Exports avanzados",
+      "ppc": "Monitor PPC",
+      "sync": "Sync programada de Ads",
+      "api": "API REST"
+    },
+    "beyond": "Scale son {{price}} al mes: 100 personas incluidas y los mismos Ads y API que Agency. Enterprise se pacta. Los dos se hablan por correo; no hay un checkout en esta página.",
+    "beyondCta": "Escribir a ventas",
+    "intent": {
+      "starter": "Vas a crear la cuenta gratis, sin tarjeta. El plan es Free.",
+      "pro": "Vas a crear la cuenta y, al momento, el checkout de Team en Stripe. El plan se activa al pagar. Si cierras el pago, la cuenta queda en Free.",
+      "business": "Vas a crear la cuenta sin tarjeta y empiezas 14 días de Agency. Si no contratas, pasas a Free."
+    },
+    "checkoutUnavailable": "No se ha podido abrir el pago de Team. La cuenta está creada; puedes intentarlo desde facturación.",
+    "faqShort": [
+      {
+        "q": "¿La prueba de Agency pide tarjeta?",
+        "a": "No. El alta de Agency son 14 días sin tarjeta, una vez por agencia. Team no tiene prueba: el botón abre el checkout de Stripe. Free es registro sin pago."
+      },
+      {
+        "q": "¿Puedo cancelar?",
+        "a": "Sí. No hay permanencia. Si ya hay una suscripción en Stripe, quien administra la agencia la cambia o la cancela desde facturación. El cambio prorratea el periodo en curso."
+      },
+      {
+        "q": "¿Qué pasa al acabar la prueba?",
+        "a": "Si no contratas, pasas a Free y conservas los datos. En Free, por encima de 5 personas no se añaden personas ni asignaciones."
+      }
+    ],
     "currencyLabel": "Ver precios en",
     "currencyBillingUsd": "Precios y suscripción en USD. El cobro se procesa en dólares vía Stripe.",
     "currencyBillingEur": "Importes orientativos en EUR. La suscripción se cobra en USD.",
@@ -612,7 +669,7 @@
     "faqKicker": "Preguntas frecuentes",
     "faqH2": "Todo sobre planes y facturación",
     "finalH2": "¿Listo para tomar el control de tu agencia?",
-    "finalSub": "Crea tu cuenta en menos de un minuto. Sin necesidad de métodos de pago para crear la cuenta y usar nuestro plan Starter libremente.",
+    "finalSub": "Crea tu cuenta en menos de un minuto. Sin necesidad de métodos de pago para crear la cuenta y usar el plan Free.",
     "finalStat1Label": "para empezar a operar",
     "finalStat2Label": "días de prueba en Agency",
     "finalStat3Label": "para invitar al equipo",

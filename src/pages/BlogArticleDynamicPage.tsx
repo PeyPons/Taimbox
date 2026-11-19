@@ -1,3 +1,4 @@
+import "@/i18n/blogBundle";
 import { Suspense } from "react";
 import { useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -34,7 +35,7 @@ function NotFoundFallback() {
         lang={lang}
         robots="noindex, nofollow"
       />
-      <div className="min-h-screen bg-[#14123B] flex flex-col">
+      <div className="pub-stage min-h-screen bg-[#14123B] flex flex-col">
         <LandingHeader />
         <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
           <h1 className="text-3xl sm:text-5xl font-black text-white mb-4">
@@ -49,7 +50,7 @@ function NotFoundFallback() {
             )}
           </p>
         </div>
-        <LandingFooter />
+        <LandingFooter variant="stage" />
       </div>
     </>
   );
@@ -134,7 +135,7 @@ export default function BlogArticleDynamicPage() {
         jsonLd={articleJsonLd}
       />
 
-      <div className="min-h-screen bg-[#14123B] relative overflow-hidden">
+      <div className="pub-stage min-h-screen bg-[#14123B] relative overflow-hidden">
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-0 left-1/4 w-96 h-96 bg-amber-900/20 rounded-full blur-3xl opacity-50" />
           <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-orange-950/35 rounded-full blur-3xl opacity-50" />
@@ -168,7 +169,7 @@ export default function BlogArticleDynamicPage() {
           <BlogArticleRelatedPost post={post} lang={lang} />
         </article>
 
-        <LandingFooter />
+        <LandingFooter variant="stage" />
       </div>
     </>
   );

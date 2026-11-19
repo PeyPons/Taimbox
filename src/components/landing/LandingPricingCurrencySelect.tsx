@@ -19,6 +19,7 @@ interface LandingPricingCurrencySelectProps {
   options: { value: AgencyCurrencyCode; label: string }[];
   loading?: boolean;
   variant?: Variant;
+  compact?: boolean;
 }
 
 export const LandingPricingCurrencySelect: FC<LandingPricingCurrencySelectProps> = ({
@@ -27,23 +28,33 @@ export const LandingPricingCurrencySelect: FC<LandingPricingCurrencySelectProps>
   options,
   loading = false,
   variant = 'light',
+  compact = false,
 }) => {
   const { t } = useTranslation('landing');
   const isDark = variant === 'dark';
 
   return (
     <div
-      className={`flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-8 sm:mb-10 ${
-        isDark ? 'text-indigo-100/90' : 'text-slate-600'
-      }`}
+      className={`flex flex-row items-center justify-center ${
+        compact ? 'mb-4 gap-2 sm:mb-8 sm:gap-4' : 'mb-8 gap-3 sm:mb-10 sm:gap-4'
+      } ${isDark ? 'text-indigo-100/90' : 'text-slate-600'}`}
     >
-      <span className={`inline-flex items-center gap-2 text-xs font-medium ${isDark ? 'text-indigo-200/80' : ''}`}>
-        <Coins className={`h-3.5 w-3.5 shrink-0 ${isDark ? 'text-amber-400' : 'text-amber-700'}`} aria-hidden />
+      <span
+        className={`inline-flex items-center gap-2 font-medium ${
+          compact ? 'text-[11px] sm:text-xs' : 'text-xs'
+        } ${isDark ? 'text-indigo-200/80' : ''}`}
+      >
+        <Coins
+          className={`h-3.5 w-3.5 shrink-0 ${compact ? 'hidden sm:block' : ''} ${
+            isDark ? 'text-amber-400' : 'text-amber-700'
+          }`}
+          aria-hidden
+        />
         {t('pricing.currencyLabel')}
       </span>
       <Select value={currency} onValueChange={(v) => onCurrencyChange(v as AgencyCurrencyCode)}>
         <SelectTrigger
-          className={`w-[min(100%,14rem)] h-9 text-sm font-medium ${
+          className={`h-9 min-w-0 max-w-[17rem] flex-1 text-sm font-medium sm:w-[17rem] sm:flex-none ${
             isDark
               ? 'bg-white/10 border-white/20 text-white hover:bg-white/15'
               : 'bg-white border-slate-200/80 text-slate-900 shadow-sm'

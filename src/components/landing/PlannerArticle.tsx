@@ -304,7 +304,7 @@ export function PlannerArticle() {
     ];
 
     return (
-        <article className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-14 md:py-16 text-left overflow-x-hidden">
+        <article className="pub-article relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-14 md:py-16 text-left overflow-x-hidden">
             <section className="mb-16 sm:mb-20 text-center">
                 <div className="mb-6">
                     <span className="inline-block px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider text-indigo-300 bg-indigo-500/20 border border-indigo-400/30">
@@ -488,7 +488,7 @@ export function PlannerArticle() {
                         ))}
                     </div>
                     <div className="text-center">
-                        <Link to={localizedPathFromEs('/login', i18n.language)}>
+                        <a href="/login">
                             <Button
                                 size="lg"
                                 className="w-full sm:w-auto bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-12 py-7 text-lg font-bold shadow-2xl shadow-indigo-500/30 rounded-xl"
@@ -496,7 +496,7 @@ export function PlannerArticle() {
                                 {t(`${P}.cta.btn`)}
                                 <ArrowRight className="ml-2 h-5 w-5" />
                             </Button>
-                        </Link>
+                        </a>
                         <p className="mt-3 text-sm text-indigo-200/80">{t(`${P}.cta.sub`)}</p>
                         <Link
                             to={localizedPathFromEs('/guia/planificador', i18n.language)}

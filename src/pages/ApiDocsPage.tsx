@@ -1,3 +1,4 @@
+import "@/i18n/apiDocsBundle";
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -136,8 +137,8 @@ export default function ApiDocsPage() {
 
   const pathHome = localizedPathFromEs('/', i18n.language);
   const pathGuide = localizedPathFromEs('/guia', i18n.language);
-  const pathApiKeys = localizedPathFromEs('/api-keys', i18n.language);
-  const pathLogin = localizedPathFromEs('/login', i18n.language);
+  const pathApiKeys = '/api-keys';
+  const pathLogin = '/login';
 
   return (
     <>
@@ -149,7 +150,7 @@ export default function ApiDocsPage() {
         lang={lang}
       />
 
-      <div className="min-h-screen bg-[#14123B] relative">
+      <div className="pub-stage min-h-screen bg-[#14123B] relative">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div
             className="absolute top-0 left-1/4 w-96 h-96 bg-amber-900/20 rounded-full blur-3xl animate-pulse"
@@ -242,7 +243,7 @@ export default function ApiDocsPage() {
             </div>
             <div className="flex items-center gap-1 sm:gap-2 shrink-0">
               {!isMobile && (
-                <Link to={pathApiKeys}>
+                <a href={pathApiKeys}>
                   <Button
                     size="sm"
                     className="bg-indigo-900/60 border border-indigo-400/40 text-indigo-100 hover:bg-indigo-800/70 hover:text-white gap-1.5"
@@ -250,10 +251,10 @@ export default function ApiDocsPage() {
                     <Key className="h-3.5 w-3.5 shrink-0" />
                     <span className="hidden lg:inline">{t('page.apiIntegrations')}</span>
                   </Button>
-                </Link>
+                </a>
               )}
               <LanguageSelector />
-              <Link to={pathLogin}>
+              <a href={pathLogin}>
                 <Button
                   size="sm"
                   className="bg-gradient-to-r from-indigo-600 to-purple-600 border-0 text-white hover:from-indigo-500 hover:to-purple-500 hover:shadow-lg hover:shadow-indigo-500/30 transition-all duration-200 gap-1.5 text-xs sm:text-sm px-2 sm:px-3"
@@ -262,7 +263,7 @@ export default function ApiDocsPage() {
                   <span className="sm:hidden">{t('page.loginShort')}</span>
                   <ArrowRight className="h-3.5 w-3.5 shrink-0 hidden sm:inline" />
                 </Button>
-              </Link>
+              </a>
             </div>
           </div>
         </header>

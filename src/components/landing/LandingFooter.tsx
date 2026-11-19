@@ -20,7 +20,7 @@ const PRODUCT_LINKS = [
   { hrefEs: '/api-docs', linkKey: 'api' as const, icon: Code },
 ] as const;
 
-export type LandingFooterVariant = 'dark' | 'light';
+export type LandingFooterVariant = 'dark' | 'light' | 'stage';
 
 export type LandingFooterProps = {
   variant?: LandingFooterVariant;
@@ -29,12 +29,16 @@ export type LandingFooterProps = {
 export function LandingFooter({ variant = 'dark' }: LandingFooterProps) {
   const { t, i18n } = useTranslation('landing');
   const currentYear = new Date().getFullYear();
-  void variant;
+  const stage = variant === 'stage';
   const light = false;
 
   const linkClass = cn(
-    'text-sm flex items-center gap-2 transition-colors',
-    light ? 'text-slate-600 hover:text-violet-700' : 'text-[#F7F8FC]/75 hover:text-[#F7F8FC]',
+    'text-sm flex items-center gap-2 transition-colors rounded-sm',
+    stage
+      ? 'text-[#D4CEF0] hover:text-white'
+      : light
+        ? 'text-slate-600 hover:text-violet-700'
+        : 'text-[#F7F8FC]/75 hover:text-[#F7F8FC]',
   );
   return (
     <footer className={cn(
@@ -51,7 +55,7 @@ export function LandingFooter({ variant = 'dark' }: LandingFooterProps) {
             )}>
               <PublicWordmark tone="paper" markClassName="h-5 w-5" />
             </Link>
-            <p className={cn('mt-3 text-xs max-w-xs leading-snug', light ? 'text-slate-600' : 'text-[#F7F8FC]/70')}>
+            <p className={cn('mt-3 text-xs max-w-xs leading-snug', stage ? 'text-[#D4CEF0]' : light ? 'text-slate-600' : 'text-[#F7F8FC]/70')}>
               {t('footer.tagline')}
             </p>
           </div>
@@ -63,13 +67,13 @@ export function LandingFooter({ variant = 'dark' }: LandingFooterProps) {
               {PRODUCT_LINKS.map(({ hrefEs, linkKey, icon: Icon }) => (
                 <li key={hrefEs}>
                   <Link to={localizedPathFromEs(hrefEs, i18n.language)} className={linkClass}>
-                    <Icon className="h-3.5 w-3.5 shrink-0" /> {t(`footer.links.${linkKey}`)}
+                    {stage ? null : <Icon className="h-3.5 w-3.5 shrink-0" />} {t(`footer.links.${linkKey}`)}
                   </Link>
                 </li>
               ))}
               <li className="col-span-2">
                 <Link to={localizedHashPath('/#demo', i18n.language)} className={linkClass}>
-                  <PlayCircle className="h-3.5 w-3.5 shrink-0" /> {t('footer.links.demo')}
+                  {stage ? null : <PlayCircle className="h-3.5 w-3.5 shrink-0" />} {t('footer.links.demo')}
                 </Link>
               </li>
             </ul>
@@ -101,25 +105,25 @@ export function LandingFooter({ variant = 'dark' }: LandingFooterProps) {
               </li>
               <li>
                 <Link to={localizedPathFromEs('/seguridad', i18n.language)} className={linkClass}>
-                  <Shield className="h-3.5 w-3.5 shrink-0" />
+                  {stage ? null : <Shield className="h-3.5 w-3.5 shrink-0" />}
                   {t('footer.links.security')}
                 </Link>
               </li>
               <li>
-                <Link to="/soporte" className={linkClass}>
-                  <HelpCircle className="h-3.5 w-3.5 shrink-0" />
+                <a href="/soporte" className={linkClass}>
+                  {stage ? null : <HelpCircle className="h-3.5 w-3.5 shrink-0" />}
                   {t('footer.links.support')}
-                </Link>
+                </a>
               </li>
               <li>
                 <Link to={localizedPathFromEs('/contacto', i18n.language)} className={linkClass}>
-                  <Mail className="h-3.5 w-3.5 shrink-0" />
+                  {stage ? null : <Mail className="h-3.5 w-3.5 shrink-0" />}
                   {t('footer.links.contact')}
                 </Link>
               </li>
               <li>
                 <a href="mailto:hello@taimbox.com" className={linkClass}>
-                  <Mail className="h-3.5 w-3.5 shrink-0" />
+                  {stage ? null : <Mail className="h-3.5 w-3.5 shrink-0" />}
                   hello@taimbox.com
                 </a>
               </li>
@@ -129,16 +133,19 @@ export function LandingFooter({ variant = 'dark' }: LandingFooterProps) {
           {/* CTA principal: registro para nuevos usuarios */}
           <div>
             <h4 className={cn('font-semibold text-sm mb-3', light ? 'text-slate-900' : 'text-white')}>{t('footer.ctaTitle')}</h4>
-            <Link
-              to="/login?tab=register"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-[#F7F8FC] text-[#14123B] text-sm font-medium hover:bg-white transition-colors"
+            <a
+              href="/login?tab=register"
+              className={cn(
+                'inline-flex items-center gap-2 px-4 py-2 bg-[#F7F8FC] text-[#14123B] text-sm font-medium hover:bg-white transition-colors',
+                stage && 'h-11 rounded-full px-5',
+              )}
             >
               {t('footer.ctaButton')}
-            </Link>
-            <p className={cn('mt-2 text-xs', light ? 'text-slate-500' : 'text-[#F7F8FC]/55')}>
+            </a>
+            <p className={cn('mt-2 text-xs', stage ? 'text-[#D4CEF0]' : light ? 'text-slate-500' : 'text-[#F7F8FC]/55')}>
               {t('footer.ctaTrial')}
             </p>
-            <p className={cn('mt-2 text-xs', light ? 'text-slate-600' : 'text-[#F7F8FC]/65')}>
+            <p className={cn('mt-2 text-xs', stage ? 'text-[#D4CEF0]' : light ? 'text-slate-600' : 'text-[#F7F8FC]/65')}>
               {t('footer.ctaPitchLead')}{' '}
               <Link to={localizedPathFromEs('/pitch', i18n.language)} className={cn('font-medium hover:underline underline-offset-2', light ? 'text-violet-700 hover:text-violet-900' : 'text-white')}>
                 {t('footer.ctaPitch')}
@@ -148,16 +155,16 @@ export function LandingFooter({ variant = 'dark' }: LandingFooterProps) {
         </div>
 
         <div className={cn('mt-6 pt-5 flex flex-col sm:flex-row justify-between items-center gap-3 border-t', light ? 'border-slate-200' : 'border-white/10')}>
-          <p className={cn('text-xs', light ? 'text-slate-500' : 'text-[#F7F8FC]/55')}>
+          <p className={cn('text-xs', stage ? 'text-[#D4CEF0]' : light ? 'text-slate-500' : 'text-[#F7F8FC]/55')}>
             {t('footer.copyright', { year: currentYear })}
           </p>
-          <div className={cn('flex flex-wrap gap-4 text-xs justify-center sm:justify-end', light ? 'text-slate-500' : 'text-[#F7F8FC]/55')}>
+          <div className={cn('flex flex-wrap gap-4 text-xs justify-center sm:justify-end', stage ? 'text-[#D4CEF0]' : light ? 'text-slate-500' : 'text-[#F7F8FC]/55')}>
             <Link to={localizedPathFromEs('/privacidad', i18n.language)} className={cn('flex items-center gap-1.5 transition-colors', light ? 'hover:text-violet-700' : 'hover:text-white')}>
-              <Shield className="h-3.5 w-3.5" />
+              {stage ? null : <Shield className="h-3.5 w-3.5" />}
               {t('footer.privacy')}
             </Link>
             <Link to={localizedPathFromEs('/condiciones', i18n.language)} className={cn('flex items-center gap-1.5 transition-colors', light ? 'hover:text-violet-700' : 'hover:text-white')}>
-              <Scale className="h-3.5 w-3.5" />
+              {stage ? null : <Scale className="h-3.5 w-3.5" />}
               {t('footer.terms')}
             </Link>
             <button
@@ -168,11 +175,11 @@ export function LandingFooter({ variant = 'dark' }: LandingFooterProps) {
               {t('footer.cookies')}
             </button>
             <Link to={localizedPathFromEs('/api-docs', i18n.language)} className={cn('flex items-center gap-1.5 transition-colors', light ? 'hover:text-violet-700' : 'hover:text-white')}>
-              <Code className="h-3.5 w-3.5" />
+              {stage ? null : <Code className="h-3.5 w-3.5" />}
               {t('header.api')}
             </Link>
             <Link to={localizedPathFromEs('/guia', i18n.language)} className={cn('flex items-center gap-1.5 transition-colors', light ? 'hover:text-violet-700' : 'hover:text-white')}>
-              <FileText className="h-3.5 w-3.5" />
+              {stage ? null : <FileText className="h-3.5 w-3.5" />}
               {t('header.guide')}
             </Link>
           </div>

@@ -83,7 +83,7 @@ export const LandingLiteralHero = forwardRef<
   HTMLElement,
   LandingLiteralHeroProps
 >(function LandingLiteralHero({ reduceMotion = null }, ref) {
-  const prefersReduced = reduceMotion === true;
+  void reduceMotion;
   const { t } = useTranslation("landing", { keyPrefix: "home" });
   const { t: tLit, path } = useHomeLiteralT();
   const highlight = t("heroTitleHighlight").trim();
@@ -97,17 +97,12 @@ export const LandingLiteralHero = forwardRef<
   return (
     <section
       ref={ref}
-      className="relative overflow-hidden min-h-[calc(100vh-3.5rem)] flex flex-col"
-      style={landingInlineStyle(
-        "background: radial-gradient(80% 60% at 15% 20%, rgba(99, 102, 241, 0.22), transparent 60%), radial-gradient(70% 50% at 90% 70%, rgba(168, 85, 247, 0.14), transparent 60%);",
-      )}
+      className="relative overflow-hidden min-h-[calc(100svh-4rem)] flex flex-col"
     >
       <style dangerouslySetInnerHTML={{ __html: LANDING_HERO_CSS }} />
       <motion.div
         className="relative z-10 flex-1 grid lg:grid-cols-12 gap-8 lg:gap-12 px-6 sm:px-10 lg:px-16 pt-8 lg:pt-14 pb-10 max-w-[1500px] w-full mx-auto items-center"
-        initial={prefersReduced ? false : { opacity: 0, y: 22 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.52, ease: [0.22, 1, 0.36, 1] }}
+        initial={false}
       >
         <div
           className="lg:col-span-7 text-left"
@@ -128,7 +123,7 @@ export const LandingLiteralHero = forwardRef<
                 cx="7"
                 cy="7"
                 r="5.5"
-                stroke="rgba(15,23,42,0.30)"
+                stroke="rgba(196,181,253,0.7)"
                 strokeWidth="1"
                 fill="none"
               ></circle>
@@ -136,7 +131,7 @@ export const LandingLiteralHero = forwardRef<
                 cx="7"
                 cy="7"
                 r="2.5"
-                stroke="rgba(15,23,42,0.15)"
+                stroke="rgba(196,181,253,0.4)"
                 strokeWidth="0.75"
                 fill="none"
                 strokeDasharray="1 1.5"
@@ -710,14 +705,8 @@ export const LandingLiteralHero = forwardRef<
         </div>
       </motion.div>
       <motion.div
-        className="relative z-10 mt-auto border-y border-white/10 backdrop-blur-md bg-indigo-950/70"
-        initial={prefersReduced ? false : { opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{
-          duration: 0.46,
-          ease: [0.22, 1, 0.36, 1],
-          delay: prefersReduced ? 0 : 0.08,
-        }}
+        className="relative z-10 mt-auto border-y border-[rgba(196,181,253,0.16)] bg-[#100E24]/80"
+        initial={false}
       >
         <div className="flex items-center px-6 sm:px-10 lg:px-16 py-4 gap-6 max-w-[1500px] w-full mx-auto">
           <div className="hidden lg:flex items-center gap-2.5 shrink-0">

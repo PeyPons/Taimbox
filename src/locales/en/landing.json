@@ -593,11 +593,68 @@
     "heroKicker": "For agencies and creative teams",
     "heroLine1": "Start free and move up when you need forecast, the API or Ads",
     "heroHighlight": "",
-    "heroSub": "Start free. Upgrade when you need more financial intelligence, advanced reporting, or complex integrations.",
+    "heroSub": "Free opens with no card. Team is paid up front, monthly, in USD. Agency includes 14 days with no card. There is no annual rate.",
     "pill1": "Free plan available",
     "pill2": "14-day trial (Agency)",
     "pill3": "No lock-in",
     "recommended": "Recommended",
+    "monthlyOnly": "Billing is monthly. There is no annual rate.",
+    "yes": "Yes",
+    "no": "No",
+    "decisionWho": {
+      "starter": "Up to 5 people on the planner",
+      "pro": "Forecast and reports, up to 25 people",
+      "business": "Ads and the API, up to 100 people"
+    },
+    "decisionCta": {
+      "starter": "Create account",
+      "pro": "Pay Team",
+      "business": "Try 14 days"
+    },
+    "decisionNote": {
+      "starter": "No card. The account stays on Free.",
+      "pro": "Stripe checkout, at this price. No trial.",
+      "business": "14 days of Agency, no card."
+    },
+    "decisionRows": {
+      "included": "People included",
+      "extra": "Each extra person",
+      "cap": "People cap",
+      "planner": "Planner",
+      "deadlines": "Deadlines",
+      "timer": "Timer",
+      "history": "History without the two-month cap",
+      "weekly": "Weekly and forecast",
+      "okr": "OKRs",
+      "reports": "Radar and reports",
+      "activity": "Activity log",
+      "exports": "Advanced exports",
+      "ppc": "PPC monitor",
+      "sync": "Scheduled Ads sync",
+      "api": "REST API"
+    },
+    "beyond": "Scale is {{price}} a month: 100 people included and the same Ads and API as Agency. Enterprise is agreed separately. Both go through email; there is no checkout on this page.",
+    "beyondCta": "Write to sales",
+    "intent": {
+      "starter": "You’re creating the account for free, with no card. The plan is Free.",
+      "pro": "You’ll create the account and go straight to Team checkout in Stripe. The plan starts when you pay. If you close checkout, the account stays on Free.",
+      "business": "You’re creating the account with no card and starting 14 days of Agency. If you don’t subscribe, you move to Free."
+    },
+    "checkoutUnavailable": "Team checkout could not be opened. The account exists; you can try again from billing.",
+    "faqShort": [
+      {
+        "q": "Does the Agency trial need a card?",
+        "a": "No. Agency sign-up is 14 days with no card, once per agency. Team has no trial: the button opens Stripe checkout. Free is sign-up with no payment."
+      },
+      {
+        "q": "Can I cancel?",
+        "a": "Yes. There’s no lock-in. If a Stripe subscription already exists, the person who administers the agency changes or cancels it from billing. The change prorates the current period."
+      },
+      {
+        "q": "What happens when the trial ends?",
+        "a": "If you don’t subscribe, you move to Free and keep your data. On Free, above 5 people you can’t add people or assignments."
+      }
+    ],
     "currencyLabel": "Show prices in",
     "currencyBillingUsd": "Prices and subscription in USD. Charges are processed in US dollars via Stripe.",
     "currencyBillingEur": "Indicative amounts in EUR. Your subscription is billed in USD.",
@@ -612,7 +669,7 @@
     "faqKicker": "FAQ",
     "faqH2": "Plans & billing",
     "finalH2": "Ready to take control of your agency?",
-    "finalSub": "Create your account in under a minute. No payment method required to sign up and use Starter freely.",
+    "finalSub": "Create your account in under a minute. No payment method required to sign up and use the Free plan.",
     "finalStat1Label": "to start operating",
     "finalStat2Label": "day Agency trial",
     "finalStat3Label": "to invite the team",

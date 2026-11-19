@@ -95,7 +95,7 @@ export const LandingBelowSection07: FC = () => {
     <section
       className="relative overflow-hidden"
       style={landingInlineStyle(
-        "background: rgb(250, 245, 232); padding-top: clamp(5rem, 10vw, 8rem); padding-bottom: clamp(7rem, 12vw, 10rem);",
+        "background: #14123B; padding-top: clamp(5rem, 9vw, 7rem); padding-bottom: clamp(4.5rem, 8vw, 6rem);",
       )}
     >
       <div className="relative max-w-[1280px] mx-auto px-6 lg:px-10">
@@ -103,14 +103,14 @@ export const LandingBelowSection07: FC = () => {
           className="max-w-3xl mb-8 mx-auto text-center"
           style={landingInlineStyle("opacity: 1; transform: none;")}
         >
-          <span className="inline-block font-mono text-[10px] uppercase tracking-[0.24em] text-amber-700 mb-3">
+          <span className="inline-block font-mono text-[10px] uppercase tracking-[0.24em] text-[#C4B5FD] mb-3">
             {t("s07.kicker")}
           </span>
-          <h2 className="text-[2rem] sm:text-4xl lg:text-5xl font-semibold text-slate-900 leading-[1.1] -tracking-[0.02em] mb-4">
+          <h2 className="text-[2rem] sm:text-4xl lg:text-5xl font-semibold text-white leading-[1.1] tracking-[-0.03em] mb-4">
             {t("s07.title")}{" "}
-            <span className="italic text-amber-700">{t("s07.titleHighlight")}</span>
+            <span className="italic text-[#C4B5FD]">{t("s07.titleHighlight")}</span>
           </h2>
-          <p className="text-[15px] sm:text-[16px] text-slate-600 leading-relaxed mb-5">
+          <p className="text-[15px] sm:text-[16px] text-[#D4CEF0] leading-relaxed mb-5">
             {t("s07.subtitle")}
           </p>
         </div>
@@ -120,9 +120,9 @@ export const LandingBelowSection07: FC = () => {
           onCurrencyChange={setCurrency}
           options={currencyOptions}
           loading={ratesLoading}
-          variant="light"
+          variant="dark"
         />
-        <p className="text-center text-[11px] text-slate-500 max-w-xl mx-auto -mt-4 mb-10">
+        <p className="text-center text-[11px] text-[#D4CEF0] max-w-xl mx-auto -mt-4 mb-10">
           {billingNote}
         </p>
 
@@ -165,7 +165,7 @@ export const LandingBelowSection07: FC = () => {
               >
                 {pricing.recommended ? (
                   <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
-                    <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-white bg-gradient-to-r from-indigo-500 to-purple-500 shadow-lg shadow-purple-500/30">
+                    <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-white bg-[#7C3AED]">
                       {tPricing("pricing.recommended")}
                     </span>
                   </div>
@@ -270,7 +270,7 @@ export const LandingBelowSection07: FC = () => {
 
         <div className="mt-12 text-center">
           <a
-            className="group inline-flex items-center gap-1.5 text-[14px] font-medium text-slate-700 hover:text-slate-900 border-b border-slate-400 hover:border-slate-800 pb-0.5 transition-colors"
+            className="group inline-flex items-center gap-1.5 text-[14px] font-medium text-[#C4B5FD] hover:text-white border-b border-[rgba(196,181,253,0.4)] hover:border-white pb-0.5 transition-colors"
             href={path(t("s07.compareHref"))}
           >
             {t("s07.compareLink")}
@@ -281,14 +281,6 @@ export const LandingBelowSection07: FC = () => {
           </a>
         </div>
       </div>
-      <svg
-        aria-hidden
-        className="absolute left-0 right-0 bottom-0 w-full pointer-events-none h-14 sm:h-20"
-        viewBox="0 0 1440 120"
-        preserveAspectRatio="none"
-      >
-        <path d="M0,100 C360,20 1080,20 1440,100 L1440,120 L0,120 Z" fill="#ffffff" />
-      </svg>
     </section>
   );
 };

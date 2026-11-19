@@ -1,4 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap');
+@import './styles/dm-sans.css';
+@import './styles/public-stage.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -234,7 +235,7 @@
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    font-family: 'DM Sans', system-ui, sans-serif;
+    font-family: 'DM Sans Variable', 'DM Sans', system-ui, sans-serif;
   }
 }
 
@@ -347,15 +348,12 @@
     transform: translateY(0);
   }
 }
-.blog-reveal {
-  opacity: 0;
-  transform: translateY(24px);
-  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
-}
+.blog-reveal,
 .blog-reveal.visible {
   opacity: 1;
-  transform: translateY(0);
-  animation: blogRevealUp 0.6s ease-out forwards;
+  transform: none;
+  animation: none;
+  transition: none;
 }
 .blog-reveal-delay-1 { transition-delay: 0.1s; }
 .blog-reveal-delay-2 { transition-delay: 0.2s; }
