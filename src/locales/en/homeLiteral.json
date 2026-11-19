@@ -371,11 +371,11 @@
       },
       {
         "title": "Meta Ads",
-        "desc": "Monthly budget target and live deviations."
+        "desc": "Monthly budget target. Figures arrive when you sync, not as a stream."
       },
       {
         "title": "REST API",
-        "desc": "Documented endpoints, JS SDK, token authentication."
+        "desc": "Documented endpoints and HTTP examples. There is no published SDK."
       },
       {
         "title": "Timer",
@@ -393,7 +393,7 @@
     "ppcKicker": "Live PPC monitor",
     "ppcTitle": "Your Meta and Google campaigns,",
     "ppcTitleHighlight": "read inside Taimbox",
-    "ppcBody": "Connect once, read-only. Taimbox pulls spend, ROAS, CPL, and conversions hourly, groups accounts by client, and shows where you'll land this month. If a campaign is going over budget, you see it mid-month — not on the last day.",
+    "ppcBody": "Connect read-only. When you sync (by hand, or on the server cron from Agency up) spend, clicks, impressions, conversions and ROAS come in if conversion value exists. Spend pace projects the month. There is no metric named CPL.",
     "ppcBullet1Prefix": "States",
     "ppcBullet1Suffix": "per account and campaign.",
     "ppcBullets": [
@@ -418,7 +418,7 @@
         "status": "OK",
         "spend": "€4.8k/6k",
         "roas": "3.4× ROAS",
-        "cpl": "€18 CPL",
+        "cpl": "CPC 0.40",
         "widthPct": 80,
         "variant": "ok"
       },
@@ -428,7 +428,7 @@
         "status": "Under",
         "spend": "€2.1k/4k",
         "roas": "1.9× ROAS",
-        "cpl": "€34 CPL",
+        "cpl": "CPC 0.55",
         "widthPct": 60,
         "variant": "under"
       },
@@ -438,7 +438,7 @@
         "status": "Over",
         "spend": "€5.8k/5k",
         "roas": "2.6× ROAS",
-        "cpl": "€22 CPL",
+        "cpl": "CPC 0.32",
         "widthPct": 100,
         "variant": "over"
       }
@@ -488,7 +488,7 @@
     "kicker": "Plans",
     "title": "Start with four people.",
     "titleHighlight": "Grow at your pace.",
-    "subtitle": "Join now as an early adopter and keep 50% for life before official pricing kicks in.",
+    "subtitle": "The prices on the home page are what is charged today. The app does not lock a discount for life.",
     "compareLink": "See all plans (incl. Scale)",
     "compareHref": "/precios"
   },

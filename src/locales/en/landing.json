@@ -142,16 +142,16 @@
     },
     "performance": {
       "seoTitle": "Taimbox for media agencies | Spend and hours",
-      "seoDescription": "Google Ads and Meta sync every hour. The planner shows the capacity of the people running the accounts. The budget monitor is on the Agency plan and above.",
+      "seoDescription": "Google Ads and Meta come in when you sync, or on the server cron from Agency up. The planner shows the capacity of the people running the accounts.",
       "kicker": "Media agencies",
       "title": "Ad spend and the team's hours, in the same month",
-      "lede": "Taimbox pulls Google Ads and Meta once an hour and puts that next to the capacity of the people running the accounts. Budget pace sits in the monitor. The margin on the work sits in finance. A person still decides whether hours move.",
-      "cardLede": "Ad spend, refreshed every hour, next to the hours of the people running the accounts.",
+      "lede": "Taimbox pulls Google Ads and Meta when you sync, or on the server cron from Agency up, and puts that next to the capacity of the people running the accounts. Budget pace sits in the monitor. The margin on the work sits in finance. A person still decides whether hours move.",
+      "cardLede": "Ad spend from the last sync, next to the hours of the people running the accounts.",
       "situationsTitle": "Three moments in the month",
       "situations": [
         {
           "title": "The budget runs ahead",
-          "body": "The monitor draws cumulative spend against a straight-line pace for the month and shows the gap. Sync is hourly, not instant. It is for seeing the drift before month-end, not for bidding in the moment."
+          "body": "The monitor draws cumulative spend against a straight-line pace for the month and shows the gap. The figures are from the last sync, not a live bid stream. It is for seeing the drift before month-end, not for bidding in the moment."
         },
         {
           "title": "The people on the accounts are out of week",
@@ -166,7 +166,7 @@
       "modules": [
         {
           "label": "Budget monitor",
-          "note": "Google Ads and Meta, read every hour. From the Agency plan up."
+          "note": "Google Ads and Meta, from the last sync. From the Agency plan up."
         },
         {
           "label": "Planner",
@@ -257,7 +257,7 @@
         },
         {
           "title": "The client asks about spend and the partners ask about margin",
-          "body": "The monitor answers spend, every hour, from the Agency plan up. Finance answers the margin on the work. They are two questions and they live in two places."
+          "body": "The monitor answers spend from the last sync, from the Agency plan up. Finance answers the margin on the work. They are two questions and they live in two places."
         },
         {
           "title": "The month closes and someone has to see what happened",
@@ -287,7 +287,7 @@
       "limits": [
         "It does not replace the CRM or the ERP. Time can leave through the API or as CSV and JSON.",
         "There is no native webhook sync with the CRM.",
-        "Scale covers several agencies, around 100 people. Enterprise, above that or with requirements of that kind, is a separate conversation.",
+        "Scale includes about 100 people and does not cap headcount. It does not group several agencies inside one account. Enterprise, above that, is a separate conversation.",
         "SSO, external calendars and 24/7 support are not part of what exists today."
       ],
       "ctaTitle": "The way in is the one you already have",
@@ -553,7 +553,7 @@
     "useCasesLeaderItems": [
       "Informed decisions on workload distribution",
       "Spot who needs help",
-      "Cut coordination meetings by 70%",
+      "Fewer back-and-forths to see who is doing what",
       "Automatic overload alerts"
     ],
     "useCasesPmTitle": "For project managers",
@@ -566,7 +566,7 @@
     "useCasesEmployeeTitle": "For team members",
     "useCasesEmployeeItems": [
       "A clear view of your workload",
-      "Automatic task prioritization",
+      "Your week's tasks, with dependencies in view",
       "Track your own progress",
       "Always know what to do and when"
     ],
@@ -593,19 +593,19 @@
     "heroKicker": "For agencies and creative teams",
     "heroLine1": "Start free and move up when you need forecast, the API or Ads",
     "heroHighlight": "",
-    "earlyAdopter": "Early adopter pricing — 50% off for life",
+    "earlyAdopter": "Current early-adopter prices",
     "heroSub": "Start free. Upgrade when you need more financial intelligence, advanced reporting, or complex integrations.",
     "pill1": "Free plan available",
     "pill2": "14-day trial (Agency)",
     "pill3": "No lock-in",
     "recommended": "Recommended",
-    "earlyTariff": "Early adopter rate · for life",
+    "earlyTariff": "Early adopter rate",
     "currencyLabel": "Show prices in",
     "currencyBillingUsd": "Prices and subscription in USD. Charges are processed in US dollars via Stripe.",
     "currencyBillingEur": "Indicative amounts in EUR. Your subscription is billed in USD.",
     "currencyBillingConverted": "Indicative amounts in {{currency}}. Your subscription is billed in USD.",
     "enterpriseTitle": "More than 100 people or enterprise requirements?",
-    "enterpriseSub": "Unlimited people · SLA · DPA · Custom billing & hosting",
+    "enterpriseSub": "Above the paid-plan caps, availability, a DPA and hosting are discussed with sales. They are not switches in the product.",
     "enterpriseCta": "Talk to sales",
     "enterpriseMailSubject": "Enterprise plan",
     "includedTitle": "Everything you need",
@@ -621,7 +621,7 @@
     "finalCta": "Start free",
     "finalLogin": "Already have an account?",
     "finalLoginLink": "Log in",
-    "rewardBanner": "🎯 We’ll reward the first agencies that trust us by keeping this rate for life, before we move to official pricing of 99 $ and 249 $.",
+    "rewardBanner": "These are the prices charged today. The app does not lock a rate for life if public prices change later.",
     "plans": {
       "starter": {
         "period": "forever",
@@ -664,37 +664,34 @@
       },
       "scale": {
         "period": "month",
-        "description": "Multi-agency ops at scale (up to ~100 managed users on product).",
+        "description": "More people included, and the same Ads, API and sync as Agency.",
         "cta": "Contact sales",
         "customPrice": "",
         "features": [
           "Everything in Agency, plus:",
-          "100 people included (+2.50 $/extra)",
-          "Several agencies / brands in one account",
-          "Audit trail & priority support",
-          "Higher API limits",
-          "Quarterly onboarding"
+          "100 people included (+2.50 $/extra, no people cap on the plan)",
+          "The same REST API as Agency",
+          "Team activity log",
+          "You can create another agency and switch; there is no holding inside a single account"
         ]
       },
       "enterprise": {
         "period": "",
-        "description": "100+ people, holdings, or SLA/DPA and dedicated hosting.",
+        "description": "Above Scale, or with an availability agreement and a DPA, talk to sales.",
         "cta": "Talk to sales",
         "customPrice": "Custom",
         "features": [
-          "Unlimited people",
-          "SLA and dedicated support",
-          "Custom integrations",
-          "Custom billing",
-          "Custom access options",
-          "Assigned technical account"
+          "No people cap in the plan configuration",
+          "Availability, a DPA and hosting are agreed; they are not product switches",
+          "The REST API is the same as on Agency and Scale",
+          "Billing is Stripe, or another arrangement if you talk to sales"
         ]
       }
     },
     "universal": [
       {
         "title": "Multi-project",
-        "desc": "Manage unlimited clients and projects in parallel."
+        "desc": "Plan configuration does not cap clients or projects."
       },
       {
         "title": "Live collaboration",
@@ -702,7 +699,7 @@
       },
       {
         "title": "Time reports",
-        "desc": "Built-in timer and manual or automated timesheets."
+        "desc": "A timer per task and hours you type in. A timesheet is not generated on its own."
       },
       {
         "title": "Overload alerts",
@@ -734,19 +731,19 @@
     "faq": [
       {
         "q": "Can I change plans anytime?",
-        "a": "Yes. You can upgrade or downgrade anytime from Settings. Changes are prorated."
+        "a": "Yes. An agency admin can change plan from Plan and billing. If a Stripe subscription already exists, the change prorates the current period."
       },
       {
         "q": "What if I exceed my plan’s seat limit?",
-        "a": "You’ll get a warning and your agency enters read-only mode until you upgrade or adjust active employees. We never delete your data."
+        "a": "On Free, past 5 people you cannot add people or new assignments until you are back under the cap or you change plan. On paid plans, you cannot add people past the cap. We do not delete data, and the whole agency does not switch to read-only."
       },
       {
         "q": "What if we have more than 100 employees?",
-        "a": "We offer unlimited Enterprise plans with dedicated support. Contact us via in-app chat or hello@taimbox.com."
+        "a": "Above a paid plan’s cap, Enterprise is a conversation. There is no in-app chat: write to hello@taimbox.com."
       },
       {
         "q": "Will early adopter pricing stay?",
-        "a": "Yes. If you subscribe now, your rate is locked for life even if prices rise to 99 $/249 $ later."
+        "a": "You pay the Stripe price you subscribe to at that moment. The app has no mechanism that freezes that rate if public prices change later."
       },
       {
         "q": "Does the Agency trial require a card?",
@@ -1093,7 +1090,7 @@
       "weeklyForecast": {
         "introTitle": "What Weekly Forecast is",
         "introBody": "Weekly Forecast (Tracking menu) is the team-level forecast and close: per-person summary, adjustments, and redistribution. The Weekly button in My space, on the other hand, is your personal review of tasks from already closed weeks: complete, move to another week (even several months ahead), split or log hours already done and plan the remaining ones in the week you choose.",
-        "introExample": "Carlos didn’t complete 15h this week. The system detects that Laura has 10h free and Pedro 5h, and suggests redistributing the work automatically.",
+        "introExample": "If Carlos is short on hours, you see who has room and you choose who takes the work. It is not reassigned on its own.",
         "accessTitle": "Where to access it",
         "accessBody": "Weekly Forecast lives in the sidebar under Tracking (next to Operational tracking, Profitability, and Team capacity). It only appears if you have the team capacity permission.",
         "howTitle": "How it works",
@@ -1108,7 +1105,7 @@
           },
           {
             "title": "Redistribute pending work",
-            "description": "Uncompleted hours can be redistributed to teammates with availability, either with suggestions or fully automatically."
+            "description": "You can move hours to someone else. The system proposes; it does not move the hours on its own."
           },
           {
             "title": "Close the week",
@@ -2431,7 +2428,7 @@
         "s3": {
           "kicker": "Strategic goals",
           "h2": "OKRs: align execution with strategy",
-          "p": "Set ambitious objectives and measurable key results. The system connects planner data to your OKRs automatically—so you track real progress, not opinions.",
+          "p": "Set ambitious objectives and measurable key results. You type the objective, the key results and the progress percent. The planner does not fill OKR progress.",
           "tiles": [
             {
               "label": "Objectives",
@@ -2443,7 +2440,7 @@
             },
             {
               "label": "Real progress",
-              "desc": "Live planner data"
+              "desc": "You type the progress"
             },
             {
               "label": "Quarterly tracking",
@@ -2454,12 +2451,12 @@
         "s4": {
           "kicker": "Automatic validation",
           "h2": "Coherence check: zero silent errors",
-          "p": "The system automatically checks for unassigned tasks, exceeded budgets, schedule conflicts, or mismatches between planning and execution. If it finds something, it flags it before it shows up in a report.",
+          "p": "The coherence check compares, per person and project, deadline hours with planned and computed hours. It does not scan orphan tasks or calendar conflicts on its own.",
           "bullets": [
-            "Orphan tasks with no assignee",
-            "Budgets beyond override limits",
-            "Schedule conflicts from absences",
-            "Planning vs execution inconsistencies"
+            "Deadline hours versus planned hours",
+            "Deadline hours versus computed hours",
+            "The gap per person and per project",
+            "You review it; it does not fix itself"
           ]
         },
         "cta": {
@@ -2557,7 +2554,7 @@
           "codeTaskName": "Homepage design",
           "pillJwt": "JWT auth",
           "pillCrm": "CRM/ERP",
-          "pillSdk": "SDK"
+          "pillSdk": "HTTP"
         },
         "mockWeekly": {
           "title": "Weekly feedback",
@@ -2584,7 +2581,7 @@
               "status": "pending"
             }
           ],
-          "foot": "Configurable days per integration. Automatic notification at 6:00 p.m. on Friday."
+          "foot": "Configurable days per integration. Alerts fire only if you set a rule with a day and hour. There is no fixed Friday 6 p.m. ping."
         },
         "hero": {
           "badge": "Built for performance agencies",
@@ -2603,9 +2600,9 @@
         "s1": {
           "kicker": "Google Ads",
           "h2": "Google campaigns, always up to date",
-          "p": "Connect your clients’ Google Ads accounts and monitor campaign spend with automatic hourly sync. Catch overspend before it happens and spare your PPC team the daily manual budget checks.",
+          "p": "Connect your clients’ Google Ads accounts and read spend when you sync. Agency, Scale and Enterprise can also run a server cron. The app does not promise an hourly refresh.",
           "bullets": [
-            "Per-client budget monitor, refreshed every hour",
+            "Per-client budget monitor, from the last sync",
             "Anti-slip alerts: stay within agreed budgets",
             "No more account-by-account manual reviews"
           ]
@@ -2650,12 +2647,12 @@
         },
         "s4": {
           "kicker": "Weekly workflow",
-          "h2": "Automated weekly close",
-          "p": "Every week, employees confirm their hours in one click. The system notifies automatically, collects feedback, and updates the forecast — without chasing anyone by email.",
+          "h2": "Weekly close the team confirms",
+          "p": "Each week, people can confirm their hours. A notice goes out only if you configure a rule. The forecast is not rewritten on its own: real hours land when someone confirms or edits them.",
           "bullets": [
-            "Automatic notification on the day you configure",
-            "One-click per-person hour confirmation",
-            "Forecast updates automatically with real data"
+            "A notice only if a rule is scheduled",
+            "Each person confirms their own hours",
+            "Confirmed hours stay in tracking; the forecast is not recalculated alone"
           ]
         },
         "s5": {
@@ -2676,7 +2673,7 @@
             },
             {
               "label": "Weekly system",
-              "desc": "Automated weekly close"
+              "desc": "Weekly close each person confirms"
             },
             {
               "label": "Export",
@@ -2713,7 +2710,7 @@
     },
     "ppc": {
       "seoTitle": "PPC budget monitor for agency client spend | Taimbox",
-      "seoDescription": "Google Ads and Meta spend, brought together, on the plans that include it. Sync is hourly, not instant.",
+      "seoDescription": "Google Ads and Meta spend, brought together, on the plans that include it. Sync is the last pull, not a live stream.",
       "jsonName": "PPC budget monitor",
       "jsonDescription": "Google Ads and Meta spend, brought together, on the plans that include it.",
       "page": {
@@ -2835,7 +2832,7 @@
           },
           {
             "title": "Profitability metrics",
-            "desc": "Track spend and performance: global ROAS, CPA, CPC, and CTR per account—no manual cross‑tabs.",
+            "desc": "On Google Ads the panel calculates ROAS, CPA, CPC and CTR from synced spend, clicks and impressions. Meta focuses on spend, pace and ROAS when conversion value exists.",
             "gradient": "from-emerald-500 to-teal-500",
             "color": "text-emerald-300",
             "border": "border-emerald-500/30",
