@@ -22,6 +22,8 @@ import { useAnonymizeAds } from '@/hooks/useAnonymizeAds';
 import { AnonymizedContent } from '@/components/ads/AnonymizedContent';
 import { AdsStatCard } from '@/components/ads/AdsStatCard';
 import { AdsSyncStatusLine } from '@/components/ads/AdsSyncStatusLine';
+import { AdAccountNotesTrigger } from '@/components/ads/AdAccountNotesTrigger';
+import { useAdAccountNotesRealtime } from '@/hooks/useAdAccountNotes';
 import { CampaignPerformanceList, type CampaignMetricRow } from '@/components/ads/CampaignPerformanceList';
 import { RoasValue } from '@/components/ads/RoasValue';
 import { useAdsLastSync } from '@/hooks/useAdsLastSync';
@@ -70,6 +72,7 @@ export default function MetaAdsPage() {
   const { formatMoney, formatGlobalMoney, currencySymbolForClient } = useAdsFormatMoney(registeredAccounts);
   const [loading, setLoading] = useState(true);
   const { google: googleSync, meta: metaSync, refresh: refreshLastSync } = useAdsLastSync();
+  useAdAccountNotesRealtime('meta');
   const googleConnected = Boolean(currentAgency?.google_ads_refresh_token);
   const metaConnected = Boolean(currentAgency?.meta_ads_access_token);
   const [segmentationRules, setSegmentationRules] = useState<SegmentationRule[]>([]);
@@ -426,6 +429,9 @@ export default function MetaAdsPage() {
                     <div className="flex items-center gap-4 lg:gap-6 justify-end">
                       {client.isSalesAccount && client.total_conversions_val > 0 && <div className="text-right hidden sm:block"><div className="text-[10px] uppercase text-slate-400 font-medium">Valor</div><div className="text-lg font-bold text-emerald-600">{formatMoney(client.total_conversions_val, client.client_id)}</div></div>}
                       <div className="text-right"><div className="text-[10px] uppercase text-slate-400 font-medium">Invertido</div><div className="text-xl font-bold text-slate-900">{formatMoney(client.spent, client.client_id)}</div></div>
+                      {!client.is_group && (
+                        <AdAccountNotesTrigger platform="meta" accountId={client.client_id} anonymized={isAnonymized} />
+                      )}
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <div
@@ -599,12 +605,15 @@ export default function MetaAdsPage() {
                                       <td className="px-2 py-2.5 text-right text-emerald-600">{subConv.toFixed(0)}</td>
                                       <td className="px-2 py-2.5 text-center"><RoasValue isSales={client.isSalesAccount} cost={subSpent} conversionValue={subValue} /></td>
                                       <td className="px-2 py-2.5 text-center">
-                                        <button onClick={(e) => {
-                                          e.stopPropagation();
-                                          setEditingClient({ id: sub.id, name: sub.name, group: client.groupName || '', hidden: false, isSales: true });
-                                        }} className="text-slate-400 hover:text-blue-500">
-                                          <Settings className="w-3.5 h-3.5" />
-                                        </button>
+                                        <div className="inline-flex items-center justify-center gap-1" onClick={(e) => e.stopPropagation()}>
+                                          <AdAccountNotesTrigger platform="meta" accountId={sub.id} anonymized={isAnonymized} />
+                                          <button onClick={(e) => {
+                                            e.stopPropagation();
+                                            setEditingClient({ id: sub.id, name: sub.name, group: client.groupName || '', hidden: false, isSales: true });
+                                          }} className="text-slate-400 hover:text-blue-500">
+                                            <Settings className="w-3.5 h-3.5" />
+                                          </button>
+                                        </div>
                                       </td>
                                     </tr>
                                     {isExpanded && (

@@ -57,6 +57,7 @@ export const API_TOKEN_BLOCKED_RESOURCES = [
   'api_tokens',
   'audit_logs',
   'blog_posts',
+  'ad_account_notes',
   'ads_sync_logs',
   'google_ads_changes',
   'meta_sync_logs',
