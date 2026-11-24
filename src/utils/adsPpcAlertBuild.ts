@@ -1,5 +1,5 @@
 import { addCampaignDailyBudget } from '@/utils/adsBudgetUtils';
-import { budgetWindowFor, computeBudgetPace, dateInRange, type BudgetMode } from '@/utils/adBudgetWindow';
+import { budgetWindowFor, computeBudgetPace, dateInRange, resolveStoredBudget, type BudgetMode } from '@/utils/adBudgetWindow';
 
 export type AdsPpcStatus = 'over' | 'risk';
 
@@ -214,9 +214,7 @@ function buildPlatformAlerts(
     if (cfg.is_hidden) continue;
 
     const groupKey = cfg.group_name ? `GROUP-${cfg.group_name}` : finalId;
-    const budgetCfg = (groupKey.startsWith('GROUP-')
-      ? clientSettings[groupKey.replace(/^GROUP-/, '')] || clientSettings[groupKey]
-      : cfg) || cfg;
+    const budgetCfg = resolveStoredBudget(groupKey, [finalId], clientSettings);
     const window = budgetWindowFor({
       mode: budgetCfg.budgetMode,
       periodStart: budgetCfg.periodStart,
@@ -289,11 +287,11 @@ function buildPlatformAlerts(
 
     if (!isManualBudget || monthlyBudgetMax <= 0) continue;
 
-    const budgetCfg = (value.isGroup
-      ? clientSettings[key.replace(/^GROUP-/, '')] || clientSettings[key]
-      : clientSettings[key] || clientSettings[value.realIdsNames[0]?.id ?? '']) || {
-      budget: 0, group_name: '', is_hidden: false, budgetMode: 'month' as const, periodStart: null, periodEnd: null,
-    };
+    const budgetCfg = resolveStoredBudget(
+      key,
+      value.realIdsNames.map((ref) => ref.id),
+      clientSettings,
+    );
     const window = budgetWindowFor({
       mode: budgetCfg.budgetMode,
       periodStart: budgetCfg.periodStart,

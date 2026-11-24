@@ -41,7 +41,7 @@ import { AdsSyncStatusLine } from '@/components/ads/AdsSyncStatusLine';
 import { AdAccountNotesTrigger } from '@/components/ads/AdAccountNotesTrigger';
 import { AdBudgetEditor } from '@/components/ads/AdBudgetEditor';
 import { useAdAccountNotesRealtime } from '@/hooks/useAdAccountNotes';
-import { budgetWindowFor, computeBudgetPace, dateInRange, type BudgetMode } from '@/utils/adBudgetWindow';
+import { budgetWindowFor, computeBudgetPace, dateInRange, resolveStoredBudget, type BudgetMode } from '@/utils/adBudgetWindow';
 import { useAdsLastSync } from '@/hooks/useAdsLastSync';
 
 const GoogleIcon = () => (
@@ -112,6 +112,8 @@ interface ClientPacing {
   realIdsList: { id: string, name: string }[];
   budgetSpent: number;
   budgetMode: BudgetMode;
+  periodStart: string | null;
+  periodEnd: string | null;
   globalRoas: number;
   ctr: number;
   cpc: number;
@@ -153,7 +155,7 @@ export default function AdsPage() {
   // Modales
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncLogs, setSyncLogs] = useState<string[]>([]);
-  const [syncStatus, setSyncStatus] = useState<'idle' | 'running' | 'completed' | 'error'>('idle');
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'running' | 'completed' | 'warning' | 'error'>('idle');
   const [syncProgress, setSyncProgress] = useState(0);
   const [editingClient, setEditingClient] = useState<{ id: string, name: string, group: string, hidden: boolean, isSales: boolean } | null>(null);
   const [isSplitModalOpen, setIsSplitModalOpen] = useState(false);
@@ -290,14 +292,18 @@ export default function AdsPage() {
     const handleUpdate = (row: any) => {
       if (row.logs) setSyncLogs(row.logs);
 
-      if (row.status === 'completed') {
-        setSyncStatus('completed');
+      if (row.status === 'completed' || row.status === 'warning') {
+        setSyncStatus(row.status);
         setSyncProgress(100);
-        toast.success(t('ads.dialogs.sync.completed', 'Sincronización completada'));
+        if (row.status === 'warning') {
+          toast.warning(t('ads.dialogs.sync.relink', 'No se actualizó ninguna campaña. Vuelve a vincular la cuenta en Integraciones.'));
+        } else {
+          toast.success(t('ads.dialogs.sync.completed', 'Sincronización completada'));
+        }
         fetchData();
         void refreshLastSync();
         cleanup();
-        setTimeout(() => { setIsSyncing(false); setCurrentJobId(null); }, 2000);
+        if (row.status === 'completed') setTimeout(() => { setIsSyncing(false); setCurrentJobId(null); }, 2000);
       } else if (row.status === 'error') {
         setSyncStatus('error');
         toast.error(t('ads.dialogs.sync.error', 'Error en el proceso'));
@@ -478,9 +484,7 @@ export default function AdsPage() {
 
       const settings = clientSettings[finalId] || { budget: 0, group_name: '', is_hidden: false, is_sales_account: true, budgetMode: 'month' as const, periodStart: null, periodEnd: null };
       const groupKey = settings.group_name?.trim() ? `GROUP-${settings.group_name}` : finalId;
-      const budgetSettings = (groupKey.startsWith('GROUP-')
-        ? clientSettings[groupKey.replace('GROUP-', '')] || clientSettings[groupKey]
-        : settings) || settings;
+      const budgetSettings = resolveStoredBudget(groupKey, [finalId], clientSettings);
       const window = budgetWindowFor({
         mode: budgetSettings.budgetMode,
         periodStart: budgetSettings.periodStart,
@@ -546,20 +550,9 @@ export default function AdsPage() {
     const report: ClientPacing[] = [];
 
     stats.forEach((value, key) => {
-      let finalBudget = 0;
-      if (value.is_group) {
-        const groupSettings = clientSettings[key.replace('GROUP-', '')] || clientSettings[key];
-        if (groupSettings?.budget > 0) finalBudget = groupSettings.budget;
-      } else if (value.budget > 0) {
-        finalBudget = value.budget;
-      }
-
       const spent = value.spent;
-      const budgetSettings = (value.is_group
-        ? clientSettings[key.replace('GROUP-', '')] || clientSettings[key]
-        : clientSettings[key] || clientSettings[value.realIds[0]]) || {
-        budget: 0, group_name: '', is_hidden: false, is_sales_account: true, budgetMode: 'month' as const, periodStart: null, periodEnd: null,
-      };
+      const budgetSettings = resolveStoredBudget(key, value.realIds, clientSettings);
+      const finalBudget = budgetSettings.budget;
       const window = budgetWindowFor({
         mode: budgetSettings.budgetMode,
         periodStart: budgetSettings.periodStart,
@@ -588,7 +581,10 @@ export default function AdsPage() {
 
       report.push({
         client_id: key, client_name: value.name, is_group: value.is_group,
-        budget: finalBudget, spent, budgetSpent: value.budgetSpent, budgetMode: window.mode, progress, forecast, recommendedDaily, avgDailySpend,
+        budget: finalBudget, spent, budgetSpent: value.budgetSpent, budgetMode: window.mode,
+        periodStart: window.mode === 'period' ? budgetSettings.periodStart : null,
+        periodEnd: window.mode === 'period' ? budgetSettings.periodEnd : null,
+        progress, forecast, recommendedDaily, avgDailySpend,
         currentDailyBudget, status, remainingBudget, total_conversions_val: value.total_conversions_val,
         total_clicks: value.total_clicks, total_impressions: value.total_impressions,
         total_conversions: value.total_conversions, ctr, cpc, cpa,
@@ -940,11 +936,11 @@ export default function AdsPage() {
                               : t('ads.pacing.monthlyBudget', { type: client.is_group ? t('ads.status.total', 'Total') : t('ads.status.monthly', 'Mensual'), defaultValue: `Presupuesto ${client.is_group ? 'Total' : 'Mensual'}` })}
                           </Label>
                           <AdBudgetEditor
-                            key={`${client.client_id}-${client.budget}-${client.budgetMode}-${clientSettings[client.client_id]?.periodStart ?? ''}-${clientSettings[client.client_id]?.periodEnd ?? ''}`}
-                            amount={clientSettings[client.client_id]?.budget || 0}
-                            mode={clientSettings[client.client_id]?.budgetMode || 'month'}
-                            periodStart={clientSettings[client.client_id]?.periodStart ?? null}
-                            periodEnd={clientSettings[client.client_id]?.periodEnd ?? null}
+                            key={`${client.client_id}-${client.budget}-${client.budgetMode}-${client.periodStart ?? ''}-${client.periodEnd ?? ''}`}
+                            amount={client.budget || 0}
+                            mode={client.budgetMode}
+                            periodStart={client.periodStart}
+                            periodEnd={client.periodEnd}
                             currencySymbol={currencySymbolForClient(client.client_id, client.realIdsList.map((r) => r.id))}
                             onCommit={(next) => { void handleSaveBudget(client.client_id, next); }}
                           />
@@ -1405,10 +1401,15 @@ export default function AdsPage() {
             <DialogTitle className="flex items-center gap-2 text-white">
               {syncStatus === 'running' && <RefreshCw className="w-5 h-5 animate-spin text-blue-500" />}
               {syncStatus === 'completed' && <CheckCircle2 className="w-5 h-5 text-emerald-500" />}
+              {syncStatus === 'warning' && <AlertTriangle className="w-5 h-5 text-amber-400" />}
               {t('ads.dialogs.sync.title', { platform: 'Google Ads' })}
             </DialogTitle>
             <DialogDescription className="text-slate-400">
-              {syncStatus === 'running' ? t('ads.dialogs.sync.connecting', 'Conectando con la API...') : t('ads.dialogs.sync.finished', 'Proceso finalizado')}
+              {syncStatus === 'running'
+                ? t('ads.dialogs.sync.connecting', 'Conectando con la API...')
+                : syncStatus === 'warning'
+                  ? t('ads.dialogs.sync.relink', 'No se actualizó ninguna campaña. Vuelve a vincular la cuenta en Integraciones.')
+                  : t('ads.dialogs.sync.finished', 'Proceso finalizado')}
             </DialogDescription>
           </DialogHeader>
           <div className="w-full">

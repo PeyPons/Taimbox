@@ -150,6 +150,40 @@ export function computeBudgetPace(input: {
   return { forecast, remaining, recommendedDaily, avgDaily, progress, status };
 }
 
+export interface StoredBudget {
+  budget: number;
+  budgetMode: BudgetMode;
+  periodStart: string | null;
+  periodEnd: string | null;
+}
+
+function isPeriod(row: StoredBudget | undefined): row is StoredBudget {
+  return Boolean(row && row.budgetMode === 'period' && row.periodStart && row.periodEnd && row.periodStart <= row.periodEnd);
+}
+
+/** El presupuesto que se pinta en la fila. La fila manda; si está vacía, hereda un periodo del padre o de una cuenta del grupo. */
+export function resolveStoredBudget(
+  clientId: string,
+  memberIds: string[],
+  byId: Record<string, StoredBudget | undefined>,
+): StoredBudget {
+  const own = byId[clientId];
+  if (isPeriod(own)) return own;
+  if (own && own.budget > 0) return own;
+
+  const extras: Array<StoredBudget | undefined> = [];
+  if (clientId.startsWith('GROUP-')) {
+    extras.push(byId[clientId.slice('GROUP-'.length)]);
+    for (const id of memberIds) extras.push(byId[id]);
+  } else {
+    const cut = clientId.lastIndexOf('_');
+    if (cut > 0) extras.push(byId[clientId.slice(0, cut)]);
+  }
+  const period = extras.find((row) => isPeriod(row));
+  if (period) return period;
+  return own ?? { budget: 0, budgetMode: 'month', periodStart: null, periodEnd: null };
+}
+
 export function earliestBudgetQueryStart(
   settings: Array<{ budget_mode?: string | null; budget_period_start?: string | null }>,
   monthStart: string,

@@ -263,6 +263,7 @@ CREATE TABLE public.meta_ads_campaigns (
   clicks integer DEFAULT 0,
   conversions numeric DEFAULT 0,
   conversions_value numeric DEFAULT 0,
+  daily_budget numeric DEFAULT 0,
   created_at timestamp with time zone DEFAULT now(),
   agency_id uuid,
   CONSTRAINT meta_ads_campaigns_pkey PRIMARY KEY (id),

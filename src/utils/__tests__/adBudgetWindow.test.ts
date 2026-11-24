@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { budgetWindowFor, computeBudgetPace, earliestBudgetQueryStart, monthKeyToRange } from '@/utils/adBudgetWindow';
+import { budgetWindowFor, computeBudgetPace, earliestBudgetQueryStart, monthKeyToRange, resolveStoredBudget } from '@/utils/adBudgetWindow';
 
 describe('ad budget window', () => {
   const november = new Date(2026, 10, 24);
@@ -35,6 +35,40 @@ describe('ad budget window', () => {
     );
     const pace = computeBudgetPace({ spent: 1100, amount: 1000, window, currentDailyBudget: 0 });
     expect(pace.status).toBe('over');
+  });
+
+  it('counts December through February across the new year', () => {
+    const january = new Date(2027, 0, 15);
+    const window = budgetWindowFor(
+      { mode: 'period', periodStart: '2026-12-01', periodEnd: '2027-02-28' },
+      january,
+    );
+    expect(window.totalDays).toBe(90);
+    expect(window.elapsedDays).toBe(46);
+    expect(window.remainingDays).toBe(45);
+    expect(window.mode).toBe('period');
+    const pace = computeBudgetPace({ spent: 400, amount: 1000, window, currentDailyBudget: 0 });
+    expect(pace.status).not.toBe('over');
+    expect(pace.remaining).toBe(600);
+  });
+
+  it('keeps a saved period when the row is opened again', () => {
+    const resolved = resolveStoredBudget(
+      'GROUP-Fundacion',
+      ['act_1'],
+      {
+        'GROUP-Fundacion': { budget: 1500, budgetMode: 'period', periodStart: '2026-11-01', periodEnd: '2027-01-31' },
+        act_1: { budget: 500, budgetMode: 'month', periodStart: null, periodEnd: null },
+      },
+    );
+    expect(resolved.budgetMode).toBe('period');
+    expect(resolved.periodEnd).toBe('2027-01-31');
+
+    const split = resolveStoredBudget('act_1_PODCAST', [], {
+      act_1: { budget: 1000, budgetMode: 'period', periodStart: '2026-10-01', periodEnd: '2026-12-31' },
+    });
+    expect(split.budgetMode).toBe('period');
+    expect(split.periodStart).toBe('2026-10-01');
   });
 
   it('asks the sync reader to include months before the current one', () => {

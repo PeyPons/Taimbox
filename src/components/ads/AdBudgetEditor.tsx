@@ -68,9 +68,10 @@ function MonthRangeField({
   const [anchor, setAnchor] = useState<string | null>(null);
   const [hover, setHover] = useState<string | null>(null);
 
-  const previewStart = anchor && hover ? (anchor < hover ? anchor : hover) : anchor;
-  const previewEnd = anchor && hover ? (anchor < hover ? hover : anchor) : anchor;
+  const previewStart = anchor ? (hover && hover < anchor ? hover : anchor) : fromKey;
+  const previewEnd = anchor ? (hover && hover > anchor ? hover : anchor) : toKey;
   const todayKey = currentMonthKey();
+  const anchorInOtherYear = Boolean(anchor && !anchor.startsWith(String(year)));
 
   const apply = (start: string, end: string) => {
     const from = start <= end ? start : end;
@@ -117,9 +118,14 @@ function MonthRangeField({
       </PopoverTrigger>
       <PopoverContent align="start" className="w-[17.5rem] p-3">
         <p className="mb-2 text-xs text-slate-500">
-          {anchor
-            ? t('ads.pacing.periodPickEnd', 'Ahora el mes de fin')
-            : t('ads.pacing.periodPickStart', 'Pulsa el mes de inicio y después el de fin')}
+          {anchorInOtherYear
+            ? t('ads.pacing.periodPickAcrossYear', {
+              month: monthLabel(anchor!, locale, 'long'),
+              defaultValue: `Inicio: ${monthLabel(anchor!, locale, 'long')}. El fin puede ser del año siguiente.`,
+            })
+            : anchor
+              ? t('ads.pacing.periodPickEnd', 'Ahora el mes de fin')
+              : t('ads.pacing.periodPickStart', 'Pulsa el mes de inicio y después el de fin')}
         </p>
         <div className="mb-3 grid grid-cols-3 gap-1">
           <PresetButton

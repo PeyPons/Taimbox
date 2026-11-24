@@ -5,7 +5,7 @@ import {
     assertPlatformAdmin,
     getBearerToken,
 } from '../_shared/agency-access.ts'
-import { completeAdsSyncLog } from '../_shared/complete-ads-sync-log.ts'
+import { ADS_SYNC_RELINK_LINE, classifyAdsSync, completeAdsSyncLog } from '../_shared/complete-ads-sync-log.ts'
 import { assertPlanIncludesAds } from '../_shared/plan-entitlements.ts'
 import { repairUtf8Mojibake } from '../_shared/repair-utf8-mojibake.ts'
 
@@ -102,15 +102,19 @@ Deno.serve(async (req) => {
 
         async function fetchAdAccounts(accessToken: string) {
             const url = `https://graph.facebook.com/${API_VERSION}/me/adaccounts?fields=account_id,name,currency,account_status&limit=100&access_token=${accessToken}`;
-            try {
-                const res = await fetch(url);
-                const json = await res.json();
-                if (json.error) throw new Error(json.error.message);
-                return json.data || [];
-            } catch (e: any) {
-                // throw new Error(`Error fetching ad accounts: ${e.message}`);
-                return [];
-            }
+            const res = await fetch(url);
+            const json = await res.json();
+            if (json.error) throw new Error(json.error.message);
+            return json.data || [];
+        }
+
+        const META_ZERO_DECIMAL = new Set(['BIF', 'CLP', 'DJF', 'GNF', 'JPY', 'KMF', 'KRW', 'MGA', 'PYG', 'RWF', 'VND', 'VUV', 'XAF', 'XOF', 'XPF']);
+
+        function metaMajorAmount(raw: string | undefined, currency: string): number {
+            const amount = Number(raw || 0);
+            if (!Number.isFinite(amount) || amount <= 0) return 0;
+            const offset = META_ZERO_DECIMAL.has(currency.toUpperCase()) ? 1 : 100;
+            return amount / offset;
         }
 
         type MetaCampaignInsight = {
@@ -148,17 +152,24 @@ Deno.serve(async (req) => {
 
         async function fetchCampaignCatalog(accessToken: string, accountId: string): Promise<MetaCampaignCatalogItem[]> {
             const url = `https://graph.facebook.com/${API_VERSION}/${accountId}/campaigns?fields=id,name,status,effective_status,daily_budget&limit=500&access_token=${accessToken}`;
-            try {
-                const campaigns = await fetchGraphPaginated<MetaCampaignCatalogItem>(url);
-                return campaigns.filter((c) => {
-                    const status = c.effective_status || c.status || '';
-                    return status === 'ACTIVE' || status === 'PAUSED';
-                });
-            } catch (e: unknown) {
-                const msg = e instanceof Error ? e.message : String(e);
-                console.error(`Error catalog ${accountId}:`, msg);
-                return [];
+            const campaigns = await fetchGraphPaginated<MetaCampaignCatalogItem>(url);
+            return campaigns.filter((c) => {
+                const status = c.effective_status || c.status || '';
+                return status === 'ACTIVE' || status === 'PAUSED';
+            });
+        }
+
+        async function fetchActiveAdSetDaily(accessToken: string, accountId: string, currency: string): Promise<Map<string, number>> {
+            const url = `https://graph.facebook.com/${API_VERSION}/${accountId}/adsets?fields=campaign_id,effective_status,daily_budget&limit=500&access_token=${accessToken}`;
+            const totals = new Map<string, number>();
+            const adsets = await fetchGraphPaginated<{ campaign_id?: string; effective_status?: string; daily_budget?: string }>(url);
+            for (const adset of adsets) {
+                if (adset.effective_status !== 'ACTIVE' || !adset.campaign_id) continue;
+                const daily = metaMajorAmount(adset.daily_budget, currency);
+                if (daily <= 0) continue;
+                totals.set(adset.campaign_id, (totals.get(adset.campaign_id) || 0) + daily);
             }
+            return totals;
         }
 
         async function fetchCampaignInsights(accessToken: string, accountId: string): Promise<Map<string, MetaCampaignInsight>> {
@@ -260,7 +271,7 @@ Deno.serve(async (req) => {
                 // 2. Process ACTIVE accounts from DB
                 const { data: configAccounts, error: selectErr } = await supabase
                     .from('ad_accounts_config')
-                    .select('account_id, account_name')
+                    .select('account_id, account_name, currency')
                     .eq('agency_id', agency.id)
                     .eq('platform', 'meta')
                     .eq('is_active', true);
@@ -283,13 +294,30 @@ Deno.serve(async (req) => {
 
                 for (const account of accountsToProcess) {
                     const id = account.account_id;
-                    const catalog = await fetchCampaignCatalog(accessToken, id);
+                    const currency = String(account.currency || 'EUR');
+                    let catalog: MetaCampaignCatalogItem[];
+                    try {
+                        catalog = await fetchCampaignCatalog(accessToken, id);
+                    } catch (catalogErr: unknown) {
+                        const msg = catalogErr instanceof Error ? catalogErr.message : String(catalogErr);
+                        await log(`    ❌ ${account.account_name}: ${msg}`);
+                        continue;
+                    }
                     const insights = await fetchCampaignInsights(accessToken, id);
+                    let adSetDaily = new Map<string, number>();
+                    try {
+                        adSetDaily = await fetchActiveAdSetDaily(accessToken, id, currency);
+                    } catch (adSetErr: unknown) {
+                        const msg = adSetErr instanceof Error ? adSetErr.message : String(adSetErr);
+                        await log(`    ⚠️ ${account.account_name}: no se leyeron los presupuestos de conjuntos (${msg}).`);
+                    }
 
                     if (catalog.length > 0) {
                         const upsertData = catalog.map((camp) => {
                             const row = insights.get(String(camp.id));
                             const { conv, val } = row ? parseMetaConversions(row) : { conv: 0, val: 0 };
+                            const campaignDaily = metaMajorAmount(camp.daily_budget, currency);
+                            const dailyBudget = campaignDaily > 0 ? campaignDaily : (adSetDaily.get(String(camp.id)) || 0);
 
                             return {
                                 client_id: id,
@@ -299,6 +327,7 @@ Deno.serve(async (req) => {
                                 status: camp.effective_status || camp.status || 'UNKNOWN',
                                 date: start,
                                 cost: row ? parseFloat(row.spend || '0') : 0,
+                                daily_budget: dailyBudget,
                                 conversions: conv,
                                 conversions_value: val,
                                 impressions: row ? parseInt(String(row.impressions || 0), 10) : 0,
@@ -338,13 +367,15 @@ Deno.serve(async (req) => {
             for (const agency of agencies) await processAgency(agency)
         }
 
-        await log('🎉 Finalizado.')
+        const outcome = classifyAdsSync(logMessages)
+        if (outcome === 'warning') await log(ADS_SYNC_RELINK_LINE)
+        else await log('🎉 Finalizado.')
         await completeAdsSyncLog(supabase, {
             platform: 'meta',
             agencyId: agency_id,
             jobId: job_id,
             logMessages,
-            status: 'completed',
+            status: outcome,
             source: isAdsCron ? 'cron' : 'manual',
         })
 

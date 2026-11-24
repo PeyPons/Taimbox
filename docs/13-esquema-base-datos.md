@@ -36,7 +36,7 @@ Si el código o una migración **contradice** el snapshot, **prevalece el códig
 
 ## 13.5. Ads, API y plataforma
 
-- **`ad_accounts_config`**, **`ads_sync_logs`**, **`meta_sync_logs`**, **`google_ads_campaigns`**, **`meta_ads_campaigns`**, **`google_ads_changes`**, **`segmentation_rules`**.
+- **`ad_accounts_config`**, **`ads_sync_logs`**, **`meta_sync_logs`**, **`google_ads_campaigns`**, **`meta_ads_campaigns`** (`daily_budget`: límite diario de la campaña o suma de conjuntos activos), **`google_ads_changes`**, **`segmentation_rules`**.
 - **`ad_account_notes`**: notas internas del equipo por cuenta de Google Ads o Meta (`platform`, `account_id`, `body`, `author_employee_id`, `created_at`, `updated_at`). Borrado lógico (`deleted_at`). No entra en la API de tokens. En la ficha de la cuenta se ve la fecha, se puede editar y borrar solo tras una segunda confirmación.
 - **`api_tokens`**: tokens de integración por agencia (`permissions` readonly|readwrite, **`scopes` text[]** allowlist de recursos, hash, expiración). Metadatos listables por app; `token_hash` no expuesto a `authenticated`. Create/revoke vía Edge. Ver scopes en migración `20260726120000_api_token_scopes_restrictive_rls.sql` y `src/lib/apiTokenScopes.ts`.
 - **`notification_rules`**, **`notification_deliveries`**: reglas de avisos por email por agencia y registro/dedupe de envíos (ver `docs/05`, Edge `notify-task-transfer`, `process-event-notifications`, `process-notification-rules`).

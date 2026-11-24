@@ -5,7 +5,7 @@ import {
     assertPlatformAdmin,
     getBearerToken,
 } from '../_shared/agency-access.ts'
-import { completeAdsSyncLog } from '../_shared/complete-ads-sync-log.ts'
+import { ADS_SYNC_RELINK_LINE, classifyAdsSync, completeAdsSyncLog } from '../_shared/complete-ads-sync-log.ts'
 import { assertPlanIncludesAds } from '../_shared/plan-entitlements.ts'
 import { repairUtf8Mojibake } from '../_shared/repair-utf8-mojibake.ts'
 import { GOOGLE_ADS_API_VERSION } from '../_shared/google-ads.ts'
@@ -749,14 +749,16 @@ Deno.serve(async (req) => {
             }
         }
 
-        await log('🎉 Sincronización finalizada correctamente.')
+        const outcome = classifyAdsSync(logMessages)
+        if (outcome === 'warning') await log(ADS_SYNC_RELINK_LINE)
+        else await log('🎉 Sincronización finalizada correctamente.')
 
         await completeAdsSyncLog(supabase, {
             platform: 'google',
             agencyId: agency_id,
             jobId: job_id,
             logMessages,
-            status: 'completed',
+            status: outcome,
             source: isAdsCron ? 'cron' : 'manual',
         })
 
