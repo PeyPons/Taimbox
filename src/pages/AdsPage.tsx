@@ -36,7 +36,7 @@ import { toast } from '@/lib/notify';
 import { useAnonymizeAds } from '@/hooks/useAnonymizeAds';
 import { AnonymizedContent } from '@/components/ads/AnonymizedContent';
 import { AdsPageHeader } from '@/components/ads/AdsPageHeader';
-import { AdsAccountRow, AdsIconButton } from '@/components/ads/AdsAccountRow';
+import { AdsAccountRow, AdsIconButton, adsAccountCardClass } from '@/components/ads/AdsAccountRow';
 import { AdsPacePanel } from '@/components/ads/AdsPacePanel';
 import { AdAccountNotesTrigger } from '@/components/ads/AdAccountNotesTrigger';
 import { AdBudgetEditor } from '@/components/ads/AdBudgetEditor';
@@ -666,47 +666,52 @@ export default function AdsPage() {
         onShowZero={setShowZeroSpend}
       />
 
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-        <Accordion type="single" collapsible>
+      <div className="space-y-3">
+        <Accordion type="single" collapsible className="space-y-3">
           {listedAccounts.map((client) => {
             const statusConfig = getStatusConfig(client.status, t);
             const dailyDiff = client.currentDailyBudget - client.recommendedDaily;
             const isOverspending = dailyDiff > 0 && client.status !== 'ok';
             const sharedBudgetCounts = countSharedBudgetCampaigns(client.campaigns);
-            const attention = client.budget > 0 && (client.status === 'risk' || client.status === 'over');
+            const visibleName = isAnonymized ? anonymizer.account(client.client_id) : formatProjectName(client.client_name);
+            const statusLabel = client.budget <= 0
+              ? undefined
+              : client.status === 'ok'
+                ? t('ads.header.onTrack', 'En ritmo')
+                : client.status === 'under'
+                  ? t('ads.header.underPace', 'Va por debajo')
+                  : statusConfig.text;
 
             return (
               <AccordionItem
                 key={client.client_id}
                 value={client.client_id}
-                className={cn("border-slate-200", client.isHidden && "opacity-60")}
+                className={adsAccountCardClass(client.isHidden, client.status, client.budget > 0)}
               >
-                <AccordionTrigger className="px-4 py-3.5 text-slate-400 hover:bg-slate-50/80 hover:no-underline data-[state=open]:bg-slate-50/50">
+                <AccordionTrigger className="px-4 py-4 text-slate-500 hover:bg-slate-50/80 hover:no-underline data-[state=open]:bg-white [&>svg]:ml-1 [&>svg]:h-8 [&>svg]:w-8 [&>svg]:rounded-full [&>svg]:bg-slate-100 [&>svg]:p-1.5 [&>svg]:text-slate-500">
                   <AdsAccountRow
+                    mark={visibleName}
+                    seed={client.client_id}
                     name={(
-                      <AnonymizedContent isActive={isAnonymized} className="font-medium" asBlock placeholder={anonymizer.account(client.client_id)}>
+                      <AnonymizedContent isActive={isAnonymized} className="font-semibold" asBlock placeholder={anonymizer.account(client.client_id)}>
                         {formatProjectName(client.client_name)}
                       </AnonymizedContent>
                     )}
                     status={client.budget > 0 ? client.status : undefined}
+                    statusLabel={statusLabel}
                     detail={(
                       <>
                         {isAnonymized && (client.realIdsList[0]?.id || client.client_id) && (
                           <span className="font-mono text-[11px] text-slate-400">{client.realIdsList[0]?.id || client.client_id}</span>
                         )}
                         {client.is_group && (
-                          <span className="inline-flex items-center gap-1 text-[12px] text-slate-500">
+                          <span className="inline-flex items-center gap-1">
                             <Layers className="h-3 w-3" /> {t('ads.table.groupAccounts', 'Cuentas del grupo')}
-                          </span>
-                        )}
-                        {attention && (
-                          <span className={cn('text-[12px] font-medium', client.status === 'over' ? 'text-red-600' : 'text-amber-700')}>
-                            {statusConfig.text}
                           </span>
                         )}
                         <RoasValue plain isSales={client.isSalesAccount} cost={client.spent} conversionValue={client.total_conversions_val} />
                         {client.isHidden && (
-                          <span className="inline-flex items-center gap-1 text-[12px] text-slate-400">
+                          <span className="inline-flex items-center gap-1 text-slate-400">
                             <EyeOff className="h-3 w-3" /> {t('ads.status.hidden', 'Oculto')}
                           </span>
                         )}
@@ -714,10 +719,22 @@ export default function AdsPage() {
                     )}
                     progress={client.budget > 0 ? {
                       percent: client.progress,
-                      caption: t('ads.pacing.forecast', { amount: formatMoney(client.forecast, client.client_id), defaultValue: `Proy: ${formatMoney(client.forecast, client.client_id)}` }),
+                      caption: client.remainingBudget > 0
+                        ? t('ads.header.paceLine', {
+                          percent: Math.round(client.progress),
+                          amount: formatMoney(client.remainingBudget, client.client_id),
+                          defaultValue: `${Math.round(client.progress)}% del presupuesto · quedan ${formatMoney(client.remainingBudget, client.client_id)}`,
+                        })
+                        : t('ads.header.paceOver', {
+                          percent: Math.round(client.progress),
+                          defaultValue: `${Math.round(client.progress)}% del presupuesto`,
+                        }),
                     } : null}
                     spentCaption={t('ads.header.thisMonth', 'Este mes')}
                     spent={formatMoney(client.spent, client.client_id)}
+                    budgetLine={client.budget > 0
+                      ? t('ads.header.ofBudget', { amount: formatMoney(client.budget, client.client_id), defaultValue: `de ${formatMoney(client.budget, client.client_id)}` })
+                      : t('ads.header.noBudget', 'Sin presupuesto')}
                     valueCaption={client.isSalesAccount && client.total_conversions_val > 0 ? t('ads.stats.revenue', 'Valor') : undefined}
                     value={client.isSalesAccount && client.total_conversions_val > 0 ? formatMoney(client.total_conversions_val, client.client_id) : undefined}
                     actions={(
@@ -970,13 +987,13 @@ export default function AdsPage() {
         </Accordion>
 
         {attentionOnly && listedAccounts.length === 0 && reportData.length > 0 && (
-          <p className="px-4 py-12 text-center text-sm text-slate-500">
+          <p className="rounded-xl border border-slate-200 bg-white px-4 py-12 text-center text-sm text-slate-500">
             {t('ads.header.reviewEmpty', 'Ninguna cuenta por revisar con los filtros actuales.')}
           </p>
         )}
 
         {reportData.length === 0 && !loading && (
-          <div className="px-4 py-16 text-center">
+          <div className="rounded-xl border border-slate-200 bg-white px-4 py-16 text-center">
             <GoogleIcon />
             <h3 className="mt-3 text-sm font-medium text-slate-800">{t('ads.status.noData', 'Sin datos')}</h3>
             <p className="mt-1 text-sm text-slate-500">{t('ads.status.syncPrompt', 'Sincroniza para cargar las cuentas de Google Ads')}</p>

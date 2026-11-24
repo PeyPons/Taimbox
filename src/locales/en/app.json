@@ -3465,7 +3465,13 @@
       "accounts": "{{count}} accounts",
       "review": "{{count}} to review",
       "reviewEmpty": "No accounts to review with the current filters.",
-      "thisMonth": "This month"
+      "thisMonth": "This month",
+      "onTrack": "On track",
+      "underPace": "Under pace",
+      "ofBudget": "of {{amount}}",
+      "noBudget": "No budget",
+      "paceLine": "{{percent}}% of budget · {{amount}} left",
+      "paceOver": "{{percent}}% of budget"
     },
     "syncSource": {
       "scheduled": "scheduled",
@@ -3516,6 +3522,8 @@
       "showHidden": "Hidden",
       "showZeroSpend": "Zero spend (0 €)",
       "zeroSpendShort": "Zero spend",
+      "viewHidden": "Show hidden",
+      "viewZero": "Show zero spend",
       "accountsCount": "{{count}} accounts"
     },
     "table": {

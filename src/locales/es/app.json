@@ -2302,7 +2302,13 @@
       "accounts": "{{count}} cuentas",
       "review": "{{count}} por revisar",
       "reviewEmpty": "Ninguna cuenta por revisar con los filtros actuales.",
-      "thisMonth": "Este mes"
+      "thisMonth": "Este mes",
+      "onTrack": "En ritmo",
+      "underPace": "Va por debajo",
+      "ofBudget": "de {{amount}}",
+      "noBudget": "Sin presupuesto",
+      "paceLine": "{{percent}}% del presupuesto · quedan {{amount}}",
+      "paceOver": "{{percent}}% del presupuesto"
     },
     "syncSource": {
       "scheduled": "automática",
@@ -2353,6 +2359,8 @@
       "showHidden": "Ocultos",
       "showZeroSpend": "Sin inversión (0 €)",
       "zeroSpendShort": "Sin inversión",
+      "viewHidden": "Ver ocultas",
+      "viewZero": "Ver sin gasto",
       "accountsCount": "{{count}} cuentas"
     },
     "table": {

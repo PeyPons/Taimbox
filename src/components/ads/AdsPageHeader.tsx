@@ -135,10 +135,10 @@ export function AdsPageHeader({
         </div>
         <div className="flex gap-1.5 overflow-x-auto">
           <FilterChip active={showHidden} onClick={() => onShowHidden(!showHidden)}>
-            {t('ads.filters.showHidden', 'Ocultos')}
+            {t('ads.filters.viewHidden', 'Ver ocultas')}
           </FilterChip>
           <FilterChip active={showZero} onClick={() => onShowZero(!showZero)}>
-            {t('ads.filters.zeroSpendShort', 'Sin inversión')}
+            {t('ads.filters.viewZero', 'Ver sin gasto')}
           </FilterChip>
           {attentionCount > 0 && (
             <FilterChip active={attentionOnly} tone="attention" onClick={() => onAttentionOnly(!attentionOnly)}>
