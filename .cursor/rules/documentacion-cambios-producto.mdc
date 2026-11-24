@@ -18,7 +18,7 @@ Si esta regla se aplicara **siempre**, Cursor tendería a proponer cambios en `d
 **Sí** entra en juego este flujo cuando el trabajo modifica:
 
 - **Comportamiento observable:** flujos de pantalla, reglas de negocio que ve el usuario, permisos efectivos en UI, copy/rutas que cambian la experiencia.
-- **Contratos que otros leen en `docs/`** o deberían leer: integraciones, Edge Functions, API, modelo de datos descrito en documentación.
+- **Contratos que otros leen en `docs/`** o deberían leer: integraciones, Edge Functions, API, modelo de datos descrito en documentación. Si la API de tokens expone el dato, la ficha del recurso en `src/pages/api-docs/data/tables.ts` y `tables.en.ts` se actualiza en el mismo cambio.
 
 **No** hace falta ampliar `docs/` ni el índice por refactors sin efecto en producto, fixes triviales, UI cosmética sin cambio de comportamiento, ni cuando el usuario pide explícitamente no documentar en esa tarea.
 

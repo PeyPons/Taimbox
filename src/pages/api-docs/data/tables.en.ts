@@ -983,11 +983,14 @@ const { data, error } = await taimbox
       },
       {
         name: 'client_settings',
-        description: 'Advanced per-client settings: budget limit, grouping, visibility.',
-        authNote: 'Authentication required.',
+        description: 'Per-account settings: budget, grouping and visibility. For Ads, client_id is the account id, the virtual id (account_KEYWORD) or GROUP-{holding name}.',
+        authNote: 'Scope client_settings. Writes require permissions=readwrite. Ads sync does not change these rows.',
         columns: [
-          { name: 'client_id', type: 'text', required: true, pk: true, description: 'Client ID (primary key).' },
-          { name: 'budget_limit', type: 'numeric', required: false, default: '0', description: 'Total budget limit.' },
+          { name: 'client_id', type: 'text', required: true, pk: true, description: 'Key. For Ads: account_id, virtual id or GROUP-{holding}.' },
+          { name: 'budget_limit', type: 'numeric', required: false, default: '0', description: 'Target amount. With budget_mode=month it is the current month. With period it is the total for the range.' },
+          { name: 'budget_mode', type: 'text', required: true, default: 'month', description: 'month or period. period requires budget_period_start and budget_period_end, start <= end.' },
+          { name: 'budget_period_start', type: 'date', required: false, description: 'First day of the period. Null when budget_mode=month. Can fall in the previous year, e.g. 2026-12-01.' },
+          { name: 'budget_period_end', type: 'date', required: false, description: 'Last day of the period. Null when budget_mode=month. E.g. 2027-02-28.' },
           { name: 'group_name', type: 'text', required: false, description: 'Group name to cluster clients.' },
           { name: 'is_hidden', type: 'boolean', required: false, default: 'false', description: 'Hidden from general views.' },
           { name: 'is_sales_account', type: 'boolean', required: false, default: 'true', description: 'Whether this is a sales account.' },
@@ -1001,30 +1004,38 @@ const { data, error } = await taimbox
           insert: `const { data } = await taimbox
   .from('client_settings')
   .upsert({
-    client_id: clientId,
-    budget_limit: 5000,
-    group_name: 'Premium'
-  })
+    client_id: '1234567890',
+    agency_id: agencyId,
+    budget_limit: 1000,
+    budget_mode: 'period',
+    budget_period_start: '2026-10-01',
+    budget_period_end: '2026-12-31'
+  }, { onConflict: 'client_id' })
   .select()
   .single()`,
         },
         responses: {
           getList: `[
-  { "client_id": "c1d2e3f4-...", "budget_limit": 5000, "group_name": "Premium", "is_hidden": false }
+  { "client_id": "1234567890", "budget_limit": 1000, "budget_mode": "period", "budget_period_start": "2026-10-01", "budget_period_end": "2026-12-31", "is_hidden": false }
 ]`,
           getOne: `{
-  "client_id": "c1d2e3f4-...",
-  "budget_limit": 5000,
-  "group_name": "Premium",
+  "client_id": "1234567890",
+  "budget_limit": 1000,
+  "budget_mode": "period",
+  "budget_period_start": "2026-10-01",
+  "budget_period_end": "2026-12-31",
+  "group_name": null,
   "is_hidden": false,
   "is_sales_account": true,
-  "updated_at": "2026-02-10T14:00:00Z"
+  "updated_at": "2026-11-24T15:00:00Z"
 }`,
           post: `{
-  "client_id": "c1d2e3f4-...",
-  "budget_limit": 5000,
-  "group_name": "Premium",
-  "updated_at": "2026-02-17T12:00:00Z"
+  "client_id": "1234567890",
+  "budget_limit": 1000,
+  "budget_mode": "period",
+  "budget_period_start": "2026-10-01",
+  "budget_period_end": "2026-12-31",
+  "updated_at": "2026-11-24T15:00:00Z"
 }`,
         },
       },
@@ -1277,7 +1288,7 @@ const { data, error } = await taimbox
     tables: [
       {
         name: 'ad_accounts_config',
-        description: 'Google or Meta ad accounts linked to the agency. Scope ad_accounts_config. The monthly target is not stored here: it is client_settings.budget_limit, with client_id equal to the account id (or the virtual account id / holding name).',
+        description: 'Google or Meta ad accounts linked to the agency. Scope ad_accounts_config. The target is not stored here: it lives in client_settings (budget_limit, budget_mode and, for period, the dates), with client_id equal to the account id, the virtual id or GROUP-{holding}.',
         authNote: 'Scope ad_accounts_config. Read with the token; writes require permissions=readwrite. Filter by agency_id.',
         columns: [
           { name: 'id', type: 'uuid', required: false, default: 'gen_random_uuid()', pk: true, description: 'Internal id.' },
@@ -1330,7 +1341,7 @@ const { data, error } = await taimbox
       },
       {
         name: 'google_ads_campaigns',
-        description: 'Monthly Google Ads metrics per campaign. Scope google_ads_campaigns. The next sync rewrites the current month, so a manual PATCH can be overwritten.',
+        description: 'Google Ads metrics per campaign, one row per campaign and month (date = day 1). Scope google_ads_campaigns. Sync rewrites only the current month and keeps earlier months, which a budget_mode=period needs. A PATCH of the current month can be overwritten on the next sync.',
         authNote: 'Scope google_ads_campaigns. Primary key (campaign_id, date). date is the first day of the month. Writes require permissions=readwrite.',
         columns: [
           { name: 'campaign_id', type: 'text', required: true, pk: true, description: 'Google Ads campaign id.' },
@@ -1390,8 +1401,8 @@ const { data, error } = await taimbox
       },
       {
         name: 'meta_ads_campaigns',
-        description: 'Monthly Meta Ads metrics per campaign. Scope meta_ads_campaigns. status is ACTIVE or PAUSED.',
-        authNote: 'Scope meta_ads_campaigns. Unique (campaign_id, date). Writes require permissions=readwrite. The next sync can replace the month.',
+        description: 'Meta Ads metrics per campaign, one row per campaign and month. Scope meta_ads_campaigns. status is ACTIVE or PAUSED. daily_budget is the daily cap in the account currency: the campaign budget, or the sum of active ad sets when the campaign has none. It is not the client_settings target.',
+        authNote: 'Scope meta_ads_campaigns. Unique (campaign_id, date). Writes require permissions=readwrite. The next sync replaces the current month, including the daily cap.',
         columns: [
           { name: 'id', type: 'bigint', required: false, pk: true, description: 'Internal id.' },
           { name: 'campaign_id', type: 'text', required: true, description: 'Meta campaign id.' },
@@ -1405,14 +1416,16 @@ const { data, error } = await taimbox
           { name: 'impressions', type: 'integer', required: false, default: '0', description: 'Impressions.' },
           { name: 'conversions', type: 'numeric', required: false, default: '0', description: 'Conversions.' },
           { name: 'conversions_value', type: 'numeric', required: false, default: '0', description: 'Conversion value.' },
+          { name: 'daily_budget', type: 'numeric', required: false, default: '0', description: 'Daily cap in the account currency. 0 when Meta only has a lifetime budget or does not return one.' },
           { name: 'agency_id', type: 'uuid', required: true, fk: 'agencies(id)', description: 'Agency.' },
         ],
         examples: {
           select: `const { data } = await taimbox
   .from('meta_ads_campaigns')
-  .select('campaign_id, campaign_name, status, cost, clicks, impressions, conversions, conversions_value')
+  .select('campaign_id, campaign_name, status, cost, daily_budget, clicks, impressions, conversions, conversions_value')
   .eq('agency_id', agencyId)
-  .eq('date', '2026-10-01')`,
+  .gte('date', '2026-10-01')
+  .lte('date', '2026-12-31')`,
           insert: `const { data } = await taimbox
   .from('meta_ads_campaigns')
   .upsert({

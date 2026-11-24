@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { RefreshCw, Search, Settings, Layers, TrendingUp, TrendingDown, Scissors, Plus, Trash2, AlertTriangle, CheckCircle2, Calendar, Target, ArrowDownRight, Eye, EyeOff, X, Facebook, Check, ChevronDown } from 'lucide-react';
+import { RefreshCw, Settings, Layers, TrendingUp, TrendingDown, Scissors, Plus, Trash2, AlertTriangle, CheckCircle2, ArrowDownRight, EyeOff, X, Facebook, Check, ChevronDown } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { cn } from '@/lib/utils';
 import { useAdsFormatMoney } from '@/hooks/useAdsFormatMoney';
@@ -20,8 +20,7 @@ import { useRefreshMissingAdCurrencies } from '@/hooks/useRefreshMissingAdCurren
 import { toast } from '@/lib/notify';
 import { useAnonymizeAds } from '@/hooks/useAnonymizeAds';
 import { AnonymizedContent } from '@/components/ads/AnonymizedContent';
-import { AdsStatCard } from '@/components/ads/AdsStatCard';
-import { AdsSyncStatusLine } from '@/components/ads/AdsSyncStatusLine';
+import { AdsPageHeader } from '@/components/ads/AdsPageHeader';
 import { AdAccountNotesTrigger } from '@/components/ads/AdAccountNotesTrigger';
 import { AdBudgetEditor } from '@/components/ads/AdBudgetEditor';
 import { useAdAccountNotesRealtime } from '@/hooks/useAdAccountNotes';
@@ -29,7 +28,6 @@ import { budgetWindowFor, computeBudgetPace, dateInRange, resolveStoredBudget, t
 import { CampaignPerformanceList, type CampaignMetricRow } from '@/components/ads/CampaignPerformanceList';
 import { RoasValue } from '@/components/ads/RoasValue';
 import { useAdsLastSync } from '@/hooks/useAdsLastSync';
-import { presentRoas } from '@/utils/adsPerformance';
 import { repairUtf8Mojibake } from '@/utils/repairUtf8Mojibake';
 
 interface MetaCampaignData { campaign_id: string; campaign_name: string; status: string; cost: number; conversions_value?: number; conversions?: number; clicks?: number; impressions?: number; daily_budget?: number; original_client_name?: string; original_client_id?: string; date?: string; client_id?: string; client_name?: string; created_at?: string; }
@@ -74,12 +72,12 @@ export default function MetaAdsPage() {
   const [rawData, setRawData] = useState<MetaCampaignData[]>([]);
   const [clientSettings, setClientSettings] = useState<ClientSettingsMap>({});
   const [registeredAccounts, setRegisteredAccounts] = useState<RegisteredAccount[]>([]);
-  const { formatMoney, formatGlobalMoney, currencySymbolForClient } = useAdsFormatMoney(registeredAccounts);
+  const { formatMoney, currencySymbolForClient } = useAdsFormatMoney(registeredAccounts);
   const [loading, setLoading] = useState(true);
-  const { google: googleSync, meta: metaSync, refresh: refreshLastSync } = useAdsLastSync();
+  const { meta: metaSync, refresh: refreshLastSync } = useAdsLastSync();
   useAdAccountNotesRealtime('meta');
-  const googleConnected = Boolean(currentAgency?.google_ads_refresh_token);
   const metaConnected = Boolean(currentAgency?.meta_ads_access_token);
+  const [attentionOnly, setAttentionOnly] = useState(false);
   const [segmentationRules, setSegmentationRules] = useState<SegmentationRule[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [showHidden, setShowHidden] = useState(false);
@@ -97,13 +95,6 @@ export default function MetaAdsPage() {
   const [newRuleKeyword, setNewRuleKeyword] = useState('');
   const [newRuleName, setNewRuleName] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
-
-  const { currentDay, daysInMonth, daysRemaining } = useMemo(() => {
-    const now = new Date();
-    const dim = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-    const day = now.getDate();
-    return { currentDay: day, daysInMonth: dim, daysRemaining: dim - day };
-  }, []);
 
   const fetchData = useCallback(async () => {
     if (!currentAgency?.id) return;
@@ -324,27 +315,12 @@ export default function MetaAdsPage() {
     }
     if (searchTerm) { const lower = searchTerm.toLowerCase(); filtered = filtered.filter(c => c.client_name.toLowerCase().includes(lower) || c.campaigns.some(camp => camp.campaign_name.toLowerCase().includes(lower))); }
     return filtered.sort((a, b) => b.spent - a.spent);
-  }, [rawData, clientSettings, registeredAccounts, searchTerm, showHidden, showZeroSpend, segmentationRules, currentDay, daysInMonth, daysRemaining]);
+  }, [rawData, clientSettings, registeredAccounts, searchTerm, showHidden, showZeroSpend, segmentationRules]);
 
-  const globalStats = useMemo(() => {
-    const totalBudget = reportData.reduce((acc, r) => acc + r.budget, 0);
-    const totalSpent = reportData.reduce((acc, r) => acc + r.spent, 0);
-    const salesRows = reportData.filter((r) => r.isSalesAccount);
-    const salesSpent = salesRows.reduce((acc, r) => acc + r.spent, 0);
-    const totalRevenue = salesRows.reduce((acc, r) => acc + r.total_conversions_val, 0);
-    const totalRecommendedDaily = reportData.reduce((acc, r) => acc + (r.budget > 0 ? r.recommendedDaily : 0), 0);
-    const atRisk = reportData.filter(r => r.status === 'risk' || r.status === 'over').length;
-    const salesRoas = presentRoas({ isSales: true, cost: salesSpent, conversionValue: totalRevenue });
-    return {
-      totalBudget,
-      totalSpent,
-      totalRevenue,
-      totalRecommendedDaily,
-      atRisk,
-      globalRoas: salesRoas.kind === 'value' ? salesRoas.roas : 0,
-      hasConversionValue: salesRoas.kind === 'value',
-    };
-  }, [reportData]);
+  const attentionCount = reportData.filter((row) => row.budget > 0 && (row.status === 'risk' || row.status === 'over')).length;
+  const listedAccounts = attentionOnly
+    ? reportData.filter((row) => row.budget > 0 && (row.status === 'risk' || row.status === 'over'))
+    : reportData;
 
   const uniqueAccountsForSelector = useMemo(() => {
     const unique = new Map();
@@ -355,84 +331,43 @@ export default function MetaAdsPage() {
 
   return (
     <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6 pb-20">
-      <div className="flex flex-col gap-4 min-w-0">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl shadow-lg shadow-blue-500/20"><Facebook className="w-6 h-6 text-white" /></div>
-            <div>
-              <h1 className="text-2xl font-bold text-slate-900">{t('ads.meta', 'Meta Ads')}</h1>
-              <div className="mt-1 space-y-1">
-                <AdsSyncStatusLine
-                  google={googleSync}
-                  meta={metaSync}
-                  googleConnected={googleConnected}
-                  metaConnected={metaConnected}
-                  primaryPlatform="meta"
-                />
-                <Badge variant="outline" className="text-xs w-fit">
-                  <Calendar className="w-3 h-3 mr-1" />
-                  {t('ads.dayProgress', { current: currentDay, total: daysInMonth, defaultValue: `Día ${currentDay} de ${daysInMonth}` })}
-                </Badge>
-              </div>
-            </div>
-          </div>
-          <div className="flex gap-2 w-full md:w-auto">
-            <Button variant="outline" onClick={() => setIsSplitModalOpen(true)} className="flex-1 md:flex-none">
-              <Scissors className="w-4 h-4 mr-2" /> {t('ads.actions.split', 'Dividir')}
-            </Button>
-            <Button onClick={handleStartSync} disabled={isSyncing} className="flex-1 md:flex-none bg-blue-600 hover:bg-blue-700">
-              <RefreshCw className={cn("w-4 h-4 mr-2", isSyncing && "animate-spin")} />
-              {isSyncing ? t('ads.actions.syncing', 'Sincronizando...') : t('ads.actions.sync', 'Sincronizar')}
-            </Button>
-          </div>
-        </div>
-
-        {/* Ritmo vs objetivo: el presupuesto mensual lo define el usuario en Taimbox; la API de Meta no aporta un “presupuesto diario” equivalente al de Google Ads en esta integración */}
-        <div className="grid grid-cols-1 min-[400px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-2 sm:gap-3 min-w-0">
-          <AdsStatCard icon={Target} label={t('ads.stats.investment', 'Inversión')} value={formatGlobalMoney(globalStats.totalSpent)} subValue={globalStats.totalBudget > 0 ? t('ads.stats.ofBudget', { amount: formatGlobalMoney(globalStats.totalBudget), defaultValue: `de ${formatGlobalMoney(globalStats.totalBudget)}` }) : t('ads.stats.noMonthlyTarget', 'Sin objetivo mensual')} color="blue" />
-          <AdsStatCard icon={TrendingUp} label={t('ads.stats.conversions', 'Conversiones')} value={reportData.reduce((acc, r) => acc + r.campaigns.reduce((a, c) => a + (c.conversions || 0), 0), 0).toFixed(0)} subValue={t('ads.stats.value', { amount: formatGlobalMoney(globalStats.totalRevenue), defaultValue: `Valor ${formatGlobalMoney(globalStats.totalRevenue)}` })} color="emerald" />
-          <AdsStatCard icon={Target} label={t('ads.table.roas', 'ROAS')} value={globalStats.hasConversionValue ? `${globalStats.globalRoas.toFixed(2)}x` : '—'} subValue={globalStats.hasConversionValue ? (globalStats.globalRoas >= 2 ? `✓ ${t('ads.status.goal', 'Objetivo')}` : globalStats.globalRoas >= 1 ? t('ads.status.acceptable', 'Aceptable') : t('ads.status.below', 'Por debajo')) : t('ads.stats.noConversionValue', 'Sin valor de conversión')} color={!globalStats.hasConversionValue ? 'slate' : globalStats.globalRoas >= 2 ? 'emerald' : globalStats.globalRoas >= 1 ? 'amber' : 'red'} />
-          <AdsStatCard icon={Calendar} label={t('ads.stats.daysRemaining', 'Días restantes')} value={daysRemaining.toString()} subValue={t('ads.stats.monthProgress', { percent: Math.round((currentDay / daysInMonth) * 100), defaultValue: `${Math.round((currentDay / daysInMonth) * 100)}% del mes` })} color="slate" />
-          <AdsStatCard icon={AlertTriangle} label={t('ads.stats.atRisk', 'En riesgo')} value={globalStats.atRisk.toString()} subValue={t('ads.stats.accountsCount', { count: globalStats.atRisk, defaultValue: 'cuentas' })} color={globalStats.atRisk > 0 ? 'red' : 'slate'} />
-        </div>
-
-        <div className="flex flex-col sm:flex-row gap-3 items-center bg-white p-3 rounded-xl border shadow-sm">
-          <div className="relative flex-1 w-full"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" /><Input placeholder={t('ads.filters.searchPlaceholder', 'Buscar cuenta o campaña...')} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10 bg-slate-50 border-slate-200" />{searchTerm && <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7" onClick={() => setSearchTerm('')}><X className="h-3 w-3" /></Button>}</div>
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-            <div className="flex items-center gap-2">
-              <Switch id="show-hidden-meta" checked={showHidden} onCheckedChange={setShowHidden} />
-              <Label htmlFor="show-hidden-meta" className="text-sm text-slate-600 cursor-pointer flex items-center gap-1">
-                {showHidden ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-                {t('ads.filters.showHidden', 'Ocultos')}
-              </Label>
-            </div>
-            <div className="flex items-center gap-2">
-              <Switch id="show-zero-spend-meta" checked={showZeroSpend} onCheckedChange={setShowZeroSpend} />
-              <Label htmlFor="show-zero-spend-meta" className="text-sm text-slate-600 cursor-pointer">
-                {t('ads.filters.showZeroSpend', 'Sin inversión (0 €)')}
-              </Label>
-            </div>
-            <span className="text-sm text-slate-500">{t('ads.stats.accountsTotal', { count: reportData.length, defaultValue: `${reportData.length} cuentas` })}</span>
-          </div>
-        </div>
-      </div>
+      <AdsPageHeader
+        title={t('ads.meta', 'Meta Ads')}
+        sync={metaSync}
+        connected={metaConnected}
+        accountCount={reportData.length}
+        attentionCount={attentionCount}
+        attentionOnly={attentionOnly}
+        onAttentionOnly={setAttentionOnly}
+        onSync={handleStartSync}
+        syncing={isSyncing}
+        onSplit={() => setIsSplitModalOpen(true)}
+        search={searchTerm}
+        onSearch={setSearchTerm}
+        showHidden={showHidden}
+        onShowHidden={setShowHidden}
+        showZero={showZeroSpend}
+        onShowZero={setShowZeroSpend}
+        hiddenSwitchId="show-hidden-meta"
+        zeroSwitchId="show-zero-spend-meta"
+      />
 
       <div className="space-y-3">
         <Accordion type="single" collapsible className="space-y-2">
-          {reportData.map((client) => {
+          {listedAccounts.map((client) => {
             const statusConfig = getStatusConfig(client.status, t);
             const dailyDiff = client.currentDailyBudget - client.recommendedDaily;
             const isOverspending = client.currentDailyBudget > 0 && dailyDiff > 0 && client.status !== 'ok';
             return (
-              <AccordionItem key={client.client_id} value={client.client_id} className={cn("bg-white border rounded-xl shadow-sm overflow-hidden", client.isHidden && "opacity-60 border-dashed")}>
-                <AccordionTrigger className="hover:no-underline py-4 px-4 group">
+              <AccordionItem key={client.client_id} value={client.client_id} className={cn("bg-white border rounded-lg overflow-hidden", client.isHidden && "opacity-60 border-dashed")}>
+                <AccordionTrigger className="hover:no-underline py-3 px-4 group">
                   <div className="flex flex-col lg:flex-row lg:items-center justify-between w-full pr-4 gap-4">
                     <div className="flex items-center gap-3 min-w-[200px]">
-                      <div className={cn("w-1.5 h-12 rounded-full", statusConfig.color)} />
+                      <div className={cn("h-8 w-1 shrink-0 rounded-full", statusConfig.color)} />
                       <div className="text-left">
                         <div className="flex items-center gap-2 flex-wrap">
                           <div>
-                            <AnonymizedContent isActive={isAnonymized} className="font-bold text-lg text-slate-900" asBlock placeholder={anonymizer.account(client.client_id)}>{formatProjectName(client.client_name)}</AnonymizedContent>
+                            <AnonymizedContent isActive={isAnonymized} className="font-semibold text-base text-slate-900" asBlock placeholder={anonymizer.account(client.client_id)}>{formatProjectName(client.client_name)}</AnonymizedContent>
                             {isAnonymized && (client.realIdsList[0]?.id || client.client_id) && (
                               <div className="text-[10px] font-mono text-slate-400 mt-0.5">ID: {client.realIdsList[0]?.id || client.client_id}</div>
                             )}
@@ -446,7 +381,7 @@ export default function MetaAdsPage() {
                     {client.budget > 0 && <div className="hidden lg:flex flex-col flex-1 max-w-xs mx-4"><div className="flex justify-between text-[10px] text-slate-500 mb-1"><span>{client.progress.toFixed(0)}% gastado</span><span>Proy: {formatMoney(client.forecast, client.client_id)}</span></div><Progress value={Math.min(client.progress, 100)} className={cn("h-2", client.status === 'over' && "[&>div]:bg-red-500", client.status === 'risk' && "[&>div]:bg-amber-500", client.status === 'ok' && "[&>div]:bg-blue-500")} /></div>}
                     <div className="flex items-center gap-4 lg:gap-6 justify-end">
                       {client.isSalesAccount && client.total_conversions_val > 0 && <div className="text-right hidden sm:block"><div className="text-[10px] uppercase text-slate-400 font-medium">Valor</div><div className="text-lg font-bold text-emerald-600">{formatMoney(client.total_conversions_val, client.client_id)}</div></div>}
-                      <div className="text-right"><div className="text-[10px] uppercase text-slate-400 font-medium">Invertido</div><div className="text-xl font-bold text-slate-900">{formatMoney(client.spent, client.client_id)}</div></div>
+                      <div className="text-right"><div className="text-[10px] uppercase text-slate-400 font-medium">Invertido</div><div className="text-lg font-semibold tabular-nums text-slate-900">{formatMoney(client.spent, client.client_id)}</div></div>
                       {!client.is_group && (
                         <AdAccountNotesTrigger platform="meta" accountId={client.client_id} anonymized={isAnonymized} />
                       )}
@@ -691,9 +626,15 @@ export default function MetaAdsPage() {
             );
           })}
         </Accordion>
+        {attentionOnly && listedAccounts.length === 0 && reportData.length > 0 && (
+          <p className="rounded-lg border bg-white px-4 py-8 text-center text-sm text-slate-500">
+            {t('ads.header.reviewEmpty', 'Ninguna cuenta por revisar con los filtros actuales.')}
+          </p>
+        )}
+
         {reportData.length === 0 && !loading && (
           <div className="text-center py-12 bg-white rounded-xl border">
-            <Facebook className="w-12 h-12 mx-auto text-blue-200" />
+            <Facebook className="w-8 h-8 mx-auto text-slate-300" />
             <h3 className="text-lg font-medium text-slate-700 mt-4">{t('ads.status.noData', 'Sin datos')}</h3>
             <p className="text-sm text-slate-500 mt-1">{t('ads.status.syncPrompt', 'Sincroniza para cargar cuentas')}</p>
           </div>

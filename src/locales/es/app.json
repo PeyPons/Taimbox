@@ -2297,8 +2297,15 @@
     "lastSync": "Última sincronización: {{time}}",
     "lastSyncShort": "{{time}}",
     "noSync": "Sin sincronizar",
+    "header": {
+      "synced": "Sincronizado {{time}} · {{source}}",
+      "accounts": "{{count}} cuentas",
+      "review": "{{count}} por revisar",
+      "reviewEmpty": "Ninguna cuenta por revisar con los filtros actuales."
+    },
     "syncSource": {
-      "scheduled": "automática"
+      "scheduled": "automática",
+      "manual": "manual"
     },
     "notifications": {
       "budgetOverTitle": "Presupuesto PPC superado",

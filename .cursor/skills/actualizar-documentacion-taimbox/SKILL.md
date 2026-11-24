@@ -27,7 +27,7 @@ En el repo existe **[`.cursor/rules/documentacion-cambios-producto.mdc`](../../r
 Actualiza el módulo `docs/*` pertinente y, si aplica, **`DOCUMENTACION.md`**, **solo** si el cambio afecta a alguno de estos ámbitos:
 
 1. **Comportamiento observable por el usuario:** flujos de pantalla, reglas de negocio que cambian lo que ve o puede hacer, permisos efectivos en UI, textos orientados a usuario (copy de producto, no solo claves i18n internas), rutas o navegación.
-2. **Contrato entre módulos o con el exterior:** API documentada, Edge Functions, webhooks, shape de payloads, RLS o modelo de datos **que ya esté descrito en `docs/`** o que deba describirse para que otro dev o integración no se equivoque.
+2. **Contrato entre módulos o con el exterior:** API documentada, Edge Functions, webhooks, shape de payloads, RLS o modelo de datos **que ya esté descrito en `docs/`** o que deba describirse para que otro dev o integración no se equivoque. Si el cambio es una columna o un comportamiento que la API de tokens ya puede leer o escribir (`client_settings`, campañas de Ads, etc.), actualiza en el mismo cambio la ficha del recurso en `src/pages/api-docs/data/tables.ts` y `tables.en.ts` (columnas, descripción y ejemplo). Esas fichas son la documentación pública de `/api-docs`.
 3. **Estructura de la documentación:** añades, renombras o partes archivos bajo `docs/` → **en el mismo PR** actualiza la fila correspondiente en **`DOCUMENTACION.md`** (eso sí es obligatorio cuando cambia el índice real de módulos).
 
 En todos los casos: usa **`DOCUMENTACION.md`** como entrada y abre **solo** los `docs/*.md` que correspondan al tema; no cargues toda la carpeta.

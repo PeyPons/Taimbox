@@ -19,25 +19,23 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
-  RefreshCw, Search, Settings, Layers,
+  RefreshCw, Settings, Layers,
   TrendingUp, TrendingDown, Scissors, Plus, Trash2,
-  AlertTriangle, CheckCircle2, Calendar, Target,
-  ArrowUpRight, ArrowDownRight, Eye, EyeOff, X, Check, ChevronDown
+  AlertTriangle, CheckCircle2,
+  ArrowDownRight, EyeOff, X, Check, ChevronDown
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { cn } from '@/lib/utils';
 import { useAdsFormatMoney } from '@/hooks/useAdsFormatMoney';
 import { useRefreshMissingAdCurrencies } from '@/hooks/useRefreshMissingAdCurrencies';
 import { addCampaignDailyBudget, countSharedBudgetCampaigns, getCampaignDisplayDailyBudget, isSharedPortfolioBudget } from '@/utils/adsBudgetUtils';
-import { presentRoas } from '@/utils/adsPerformance';
 import { repairUtf8Mojibake } from '@/utils/repairUtf8Mojibake';
 import { CampaignPerformanceList, type CampaignMetricRow } from '@/components/ads/CampaignPerformanceList';
 import { RoasValue } from '@/components/ads/RoasValue';
 import { toast } from '@/lib/notify';
 import { useAnonymizeAds } from '@/hooks/useAnonymizeAds';
 import { AnonymizedContent } from '@/components/ads/AnonymizedContent';
-import { AdsStatCard } from '@/components/ads/AdsStatCard';
-import { AdsSyncStatusLine } from '@/components/ads/AdsSyncStatusLine';
+import { AdsPageHeader } from '@/components/ads/AdsPageHeader';
 import { AdAccountNotesTrigger } from '@/components/ads/AdAccountNotesTrigger';
 import { AdBudgetEditor } from '@/components/ads/AdBudgetEditor';
 import { useAdAccountNotesRealtime } from '@/hooks/useAdAccountNotes';
@@ -45,7 +43,7 @@ import { budgetWindowFor, computeBudgetPace, dateInRange, resolveStoredBudget, t
 import { useAdsLastSync } from '@/hooks/useAdsLastSync';
 
 const GoogleIcon = () => (
-  <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="currentColor">
+  <svg className="mx-auto h-8 w-8 text-slate-300" viewBox="0 0 24 24" fill="currentColor">
     <path d="M21.35,11.1H12.18V13.83H18.69C18.36,17.64 15.19,19.27 12.19,19.27C8.36,19.27 5,16.25 5,12C5,7.9 8.2,4.73 12.2,4.73C15.29,4.73 17.1,6.7 17.1,6.7L19,4.72C19,4.72 16.56,2 12.1,2C6.42,2 2.03,6.8 2.03,12C2.03,17.05 6.16,22 12.25,22C17.6,22 21.5,18.33 21.5,12.91C21.5,11.76 21.35,11.1 21.35,11.1V11.1Z" />
   </svg>
 );
@@ -140,12 +138,12 @@ export default function AdsPage() {
   const [rawData, setRawData] = useState<CampaignData[]>([]);
   const [clientSettings, setClientSettings] = useState<Record<string, { budget: number; group_name: string; is_hidden: boolean; is_sales_account: boolean; budgetMode: BudgetMode; periodStart: string | null; periodEnd: string | null }>>({});
   const [registeredAccounts, setRegisteredAccounts] = useState<RegisteredAccount[]>([]);
-  const { formatMoney, formatGlobalMoney, currencySymbolForClient } = useAdsFormatMoney(registeredAccounts);
+  const { formatMoney, currencySymbolForClient } = useAdsFormatMoney(registeredAccounts);
   const [loading, setLoading] = useState(true);
-  const { google: googleSync, meta: metaSync, refresh: refreshLastSync } = useAdsLastSync();
+  const { google: googleSync, refresh: refreshLastSync } = useAdsLastSync();
   useAdAccountNotesRealtime('google');
   const googleConnected = Boolean(currentAgency?.google_ads_refresh_token);
-  const metaConnected = Boolean(currentAgency?.meta_ads_access_token);
+  const [attentionOnly, setAttentionOnly] = useState(false);
   const [segmentationRules, setSegmentationRules] = useState<SegmentationRule[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [showHidden, setShowHidden] = useState(false);
@@ -181,12 +179,9 @@ export default function AdsPage() {
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Datos del mes actual
-  const { currentDay, daysInMonth, daysRemaining } = useMemo(() => {
+  const daysInMonth = useMemo(() => {
     const now = new Date();
-    const dim = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-    const day = now.getDate();
-    return { currentDay: day, daysInMonth: dim, daysRemaining: Math.max(1, dim - day + 1) };
+    return new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
   }, []);
 
   const fetchData = useCallback(async () => {
@@ -608,35 +603,12 @@ export default function AdsPage() {
     }
 
     return filtered.sort((a, b) => b.spent - a.spent);
-  }, [rawData, clientSettings, registeredAccounts, searchTerm, showHidden, showZeroSpend, segmentationRules, currentDay, daysInMonth, daysRemaining]);
+  }, [rawData, clientSettings, registeredAccounts, searchTerm, showHidden, showZeroSpend, segmentationRules, daysInMonth]);
 
-  // Estadísticas globales
-  const globalStats = useMemo(() => {
-    const totalBudget = reportData.reduce((acc, r) => acc + r.budget, 0);
-    const totalSpent = reportData.reduce((acc, r) => acc + r.spent, 0);
-    const salesRows = reportData.filter((r) => r.isSalesAccount);
-    const salesSpent = salesRows.reduce((acc, r) => acc + r.spent, 0);
-    const totalRevenue = salesRows.reduce((acc, r) => acc + r.total_conversions_val, 0);
-    const totalRecommendedDaily = reportData.reduce((acc, r) => acc + (r.budget > 0 ? r.recommendedDaily : 0), 0);
-    const totalCurrentDaily = reportData.reduce((acc, r) => acc + r.currentDailyBudget, 0);
-    const atRisk = reportData.filter(r => r.status === 'risk' || r.status === 'over').length;
-    const salesRoas = presentRoas({ isSales: true, cost: salesSpent, conversionValue: totalRevenue });
-    const globalRoas = salesRoas.kind === 'value' ? salesRoas.roas : 0;
-
-    // Nuevas estadísticas agregadas
-    const totalClicks = reportData.reduce((acc, r) => acc + r.total_clicks, 0);
-    const totalImpressions = reportData.reduce((acc, r) => acc + r.total_impressions, 0);
-    const totalConversions = reportData.reduce((acc, r) => acc + r.total_conversions, 0);
-    const globalCtr = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
-    const globalCpc = totalClicks > 0 ? totalSpent / totalClicks : 0;
-    const globalCpa = totalConversions > 0 ? totalSpent / totalConversions : 0;
-
-    return {
-      totalBudget, totalSpent, totalRevenue, totalRecommendedDaily, totalCurrentDaily, atRisk, globalRoas,
-      hasConversionValue: salesRoas.kind === 'value',
-      totalClicks, totalImpressions, totalConversions, globalCtr, globalCpc, globalCpa
-    };
-  }, [reportData]);
+  const attentionCount = reportData.filter((row) => row.budget > 0 && (row.status === 'risk' || row.status === 'over')).length;
+  const listedAccounts = attentionOnly
+    ? reportData.filter((row) => row.budget > 0 && (row.status === 'risk' || row.status === 'over'))
+    : reportData;
 
   // Selector para modal de reglas
   const uniqueAccountsForSelector = useMemo(() => {
@@ -673,131 +645,31 @@ export default function AdsPage() {
 
   return (
     <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6 pb-20">
-      {/* Header */}
-      <div className="flex flex-col gap-4 min-w-0">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg shadow-blue-500/20">
-              <GoogleIcon />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-slate-900">{t('ads.google', 'Google Ads')}</h1>
-              <div className="mt-1 space-y-1">
-                <AdsSyncStatusLine
-                  google={googleSync}
-                  meta={metaSync}
-                  googleConnected={googleConnected}
-                  metaConnected={metaConnected}
-                  primaryPlatform="google"
-                />
-                <Badge variant="outline" className="text-xs w-fit">
-                  <Calendar className="w-3 h-3 mr-1" />
-                  {t('ads.daysRange', { days: daysInMonth, defaultValue: `Del 1 al ${daysInMonth}` })}
-                </Badge>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex gap-2 w-full md:w-auto">
-            <Button variant="outline" onClick={() => setIsSplitModalOpen(true)} className="flex-1 md:flex-none">
-              <Scissors className="w-4 h-4 mr-2" /> {t('ads.actions.split', 'Dividir')}
-            </Button>
-            <Button onClick={handleStartSync} disabled={isSyncing} className="flex-1 md:flex-none bg-blue-600 hover:bg-blue-700">
-              <RefreshCw className={cn("w-4 h-4 mr-2", isSyncing && "animate-spin")} />
-              {isSyncing ? t('ads.actions.syncing', 'Sincronizando...') : t('ads.actions.sync', 'Sincronizar')}
-            </Button>
-          </div>
-        </div>
-
-        {/* Stats Cards - Reorganized for PPC */}
-        <div className="grid grid-cols-1 min-[400px]:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-2 sm:gap-3 min-w-0">
-          <AdsStatCard
-            icon={Target}
-            label={t('ads.stats.investment', 'Inversión')}
-            value={formatGlobalMoney(globalStats.totalSpent)}
-            subValue={globalStats.totalBudget > 0
-              ? `${t('ads.stats.of', 'de')} ${formatGlobalMoney(globalStats.totalBudget)}`
-              : t('ads.stats.noMonthlyTarget', 'Sin objetivo mensual')}
-            color="blue"
-          />
-          <AdsStatCard
-            icon={ArrowUpRight}
-            label={t('ads.stats.clicks', 'Clicks')}
-            value={globalStats.totalClicks.toLocaleString('es-ES')}
-            subValue={`CTR ${globalStats.globalCtr.toFixed(2)}%`}
-            color="slate"
-          />
-          <AdsStatCard
-            icon={TrendingUp}
-            label={t('ads.stats.conversions', 'Conversiones')}
-            value={globalStats.totalConversions.toFixed(0)}
-            subValue={`CPA ${formatGlobalMoney(globalStats.globalCpa)}`}
-            color="emerald"
-          />
-          <AdsStatCard
-            icon={Target}
-            label={t('ads.stats.roas', 'ROAS')}
-            value={globalStats.hasConversionValue ? `${globalStats.globalRoas.toFixed(2)}x` : '—'}
-            subValue={globalStats.hasConversionValue
-              ? `CPC ${formatGlobalMoney(globalStats.globalCpc)}`
-              : t('ads.stats.noConversionValue', 'Sin valor de conversión')}
-            color={!globalStats.hasConversionValue ? 'slate' : globalStats.globalRoas >= 2 ? 'emerald' : globalStats.globalRoas >= 1 ? 'amber' : 'red'}
-          />
-          <AdsStatCard
-            icon={ArrowDownRight}
-            label={t('ads.stats.dailyRecommended', 'Diario recomendado')}
-            value={formatGlobalMoney(globalStats.totalRecommendedDaily)}
-            subValue={`${t('common.actual', 'Actual')}: ${formatGlobalMoney(globalStats.totalCurrentDaily)}`}
-            color={globalStats.totalRecommendedDaily < globalStats.totalCurrentDaily ? 'amber' : 'emerald'}
-          />
-          <AdsStatCard
-            icon={AlertTriangle}
-            label={t('ads.stats.atRisk', 'En riesgo')}
-            value={globalStats.atRisk.toString()}
-            subValue={t('ads.stats.daysRemaining', { count: daysRemaining, defaultValue: `${daysRemaining} días restantes` })}
-            color={globalStats.atRisk > 0 ? 'red' : 'slate'}
-          />
-        </div>
-
-        {/* Buscador y filtros */}
-        <div className="flex flex-col sm:flex-row gap-3 items-center bg-white p-3 rounded-xl border shadow-sm">
-          <div className="relative flex-1 w-full">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <Input
-              placeholder={t('ads.filters.searchPlaceholder', 'Buscar cuenta o campaña...')}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 bg-slate-50 border-slate-200"
-            />
-            {searchTerm && (
-              <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7" onClick={() => setSearchTerm('')}>
-                <X className="h-3 w-3" />
-              </Button>
-            )}
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Switch id="show-hidden" checked={showHidden} onCheckedChange={setShowHidden} />
-              <Label htmlFor="show-hidden" className="text-sm text-slate-600 cursor-pointer flex items-center gap-1">
-                {showHidden ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-                {t('ads.filters.showHidden', 'Ocultos')}
-              </Label>
-            </div>
-            <div className="flex items-center gap-2">
-              <Switch id="show-zero-spend" checked={showZeroSpend} onCheckedChange={setShowZeroSpend} />
-              <Label htmlFor="show-zero-spend" className="text-sm text-slate-600 cursor-pointer flex items-center gap-1">
-                {t('ads.filters.showZeroSpend', 'Sin inversión (0 €)')}
-              </Label>
-            </div>
-            <span className="text-sm text-slate-500">{t('ads.filters.accountsCount', { count: reportData.length, defaultValue: `${reportData.length} cuentas` })}</span>
-          </div>
-        </div>
-      </div>
+      <AdsPageHeader
+        title={t('ads.google', 'Google Ads')}
+        sync={googleSync}
+        connected={googleConnected}
+        accountCount={reportData.length}
+        attentionCount={attentionCount}
+        attentionOnly={attentionOnly}
+        onAttentionOnly={setAttentionOnly}
+        onSync={handleStartSync}
+        syncing={isSyncing}
+        onSplit={() => setIsSplitModalOpen(true)}
+        search={searchTerm}
+        onSearch={setSearchTerm}
+        showHidden={showHidden}
+        onShowHidden={setShowHidden}
+        showZero={showZeroSpend}
+        onShowZero={setShowZeroSpend}
+        hiddenSwitchId="show-hidden"
+        zeroSwitchId="show-zero-spend"
+      />
 
       {/* Lista de cuentas */}
       <div className="space-y-3">
         <Accordion type="single" collapsible className="space-y-2">
-          {reportData.map((client) => {
+          {listedAccounts.map((client) => {
             const statusConfig = getStatusConfig(client.status, t);
             const dailyDiff = client.currentDailyBudget - client.recommendedDaily;
             const isOverspending = dailyDiff > 0 && client.status !== 'ok';
@@ -808,19 +680,19 @@ export default function AdsPage() {
                 key={client.client_id}
                 value={client.client_id}
                 className={cn(
-                  "bg-white border rounded-xl shadow-sm overflow-hidden",
+                  "bg-white border rounded-lg overflow-hidden",
                   client.isHidden && "opacity-60 border-dashed"
                 )}
               >
-                <AccordionTrigger className="hover:no-underline py-4 px-4 group">
+                <AccordionTrigger className="hover:no-underline py-3 px-4 group">
                   <div className="flex flex-col lg:flex-row lg:items-center justify-between w-full pr-4 gap-4">
                     {/* Info cliente */}
                     <div className="flex items-center gap-3 min-w-[200px]">
-                      <div className={cn("w-1.5 h-12 rounded-full", statusConfig.color)} />
+                      <div className={cn("h-8 w-1 shrink-0 rounded-full", statusConfig.color)} />
                       <div className="text-left">
                         <div className="flex items-center gap-2 flex-wrap">
                           <div>
-                            <AnonymizedContent isActive={isAnonymized} className="font-bold text-lg text-slate-900" asBlock placeholder={anonymizer.account(client.client_id)}>
+                            <AnonymizedContent isActive={isAnonymized} className="font-semibold text-base text-slate-900" asBlock placeholder={anonymizer.account(client.client_id)}>
                               {formatProjectName(client.client_name)}
                             </AnonymizedContent>
                             {isAnonymized && (client.realIdsList[0]?.id || client.client_id) && (
@@ -884,7 +756,7 @@ export default function AdsPage() {
                       )}
                       <div className="text-right">
                         <div className="text-[10px] uppercase text-slate-400 font-medium">Invertido</div>
-                        <div className="text-xl font-bold text-slate-900">{formatMoney(client.spent, client.client_id)}</div>
+                        <div className="text-lg font-semibold tabular-nums text-slate-900">{formatMoney(client.spent, client.client_id)}</div>
                       </div>
                       {!client.is_group && (
                         <AdAccountNotesTrigger
@@ -1205,6 +1077,12 @@ export default function AdsPage() {
             );
           })}
         </Accordion>
+
+        {attentionOnly && listedAccounts.length === 0 && reportData.length > 0 && (
+          <p className="rounded-lg border bg-white px-4 py-8 text-center text-sm text-slate-500">
+            {t('ads.header.reviewEmpty', 'Ninguna cuenta por revisar con los filtros actuales.')}
+          </p>
+        )}
 
         {reportData.length === 0 && !loading && (
           <div className="text-center py-12 bg-white rounded-xl border">

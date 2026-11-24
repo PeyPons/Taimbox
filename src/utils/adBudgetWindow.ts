@@ -157,7 +157,7 @@ export interface StoredBudget {
   periodEnd: string | null;
 }
 
-function isPeriod(row: StoredBudget | undefined): row is StoredBudget {
+function isPeriod(row: StoredBudget | undefined): boolean {
   return Boolean(row && row.budgetMode === 'period' && row.periodStart && row.periodEnd && row.periodStart <= row.periodEnd);
 }
 

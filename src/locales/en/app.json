@@ -3460,8 +3460,15 @@
     "lastSync": "Last sync: {{time}}",
     "lastSyncShort": "{{time}}",
     "noSync": "Never synced",
+    "header": {
+      "synced": "Synced {{time}} · {{source}}",
+      "accounts": "{{count}} accounts",
+      "review": "{{count}} to review",
+      "reviewEmpty": "No accounts to review with the current filters."
+    },
     "syncSource": {
-      "scheduled": "scheduled"
+      "scheduled": "scheduled",
+      "manual": "manual"
     },
     "notifications": {
       "budgetOverTitle": "PPC budget exceeded",
