@@ -131,6 +131,9 @@ CREATE TABLE public.audit_logs (
 CREATE TABLE public.client_settings (
   client_id text NOT NULL,
   budget_limit numeric DEFAULT 0,
+  budget_mode text NOT NULL DEFAULT 'month',
+  budget_period_start date,
+  budget_period_end date,
   updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()),
   group_name text,
   is_hidden boolean DEFAULT false,

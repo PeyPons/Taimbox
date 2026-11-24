@@ -11,6 +11,7 @@ import {
   type AdsCampaignRow,
   type AdsClientSettingRow,
 } from '@/utils/adsPpcAlertBuild';
+import { earliestBudgetQueryStart } from '@/utils/adBudgetWindow';
 import {
   loadNotificationState,
   saveNotificationState,
@@ -49,18 +50,21 @@ export function useAdsBudgetNotifications(): void {
     const monthStart = `${year}-${String(month).padStart(2, '0')}-01`;
     const monthEnd = `${year}-${String(month).padStart(2, '0')}-${String(new Date(year, month, 0).getDate()).padStart(2, '0')}`;
 
-    const [settingsRes, googleRes, metaRes, googleAccountsRes, metaAccountsRes, googleRulesRes, metaRulesRes] =
+    const settingsRes = await supabase
+      .from('client_settings')
+      .select('client_id, budget_limit, group_name, is_hidden, budget_mode, budget_period_start, budget_period_end')
+      .eq('agency_id', currentAgency.id);
+    const settingsPreview = (settingsRes.data ?? []) as AdsClientSettingRow[];
+    const rangeStart = earliestBudgetQueryStart(settingsPreview, monthStart);
+
+    const [googleRes, metaRes, googleAccountsRes, metaAccountsRes, googleRulesRes, metaRulesRes] =
       await Promise.all([
-        supabase
-          .from('client_settings')
-          .select('client_id, budget_limit, group_name, is_hidden')
-          .eq('agency_id', currentAgency.id),
         canGoogle
           ? supabase
               .from('google_ads_campaigns')
               .select(GOOGLE_CAMPAIGN_FIELDS)
               .eq('agency_id', currentAgency.id)
-              .gte('date', monthStart)
+              .gte('date', rangeStart)
               .lte('date', monthEnd)
           : Promise.resolve({ data: [] }),
         canMeta
@@ -68,7 +72,7 @@ export function useAdsBudgetNotifications(): void {
               .from('meta_ads_campaigns')
               .select('client_id, client_name, cost, date, status, campaign_name')
               .eq('agency_id', currentAgency.id)
-              .gte('date', monthStart)
+              .gte('date', rangeStart)
               .lte('date', monthEnd)
           : Promise.resolve({ data: [] }),
         canGoogle
@@ -103,7 +107,7 @@ export function useAdsBudgetNotifications(): void {
           : Promise.resolve({ data: [] }),
       ]);
 
-    const settings = (settingsRes.data ?? []) as AdsClientSettingRow[];
+    const settings = settingsPreview;
     const hasBudgets = settings.some((s) => Number(s.budget_limit) > 0 && !s.is_hidden);
     if (!hasBudgets) return;
 

@@ -23,7 +23,9 @@ import { AnonymizedContent } from '@/components/ads/AnonymizedContent';
 import { AdsStatCard } from '@/components/ads/AdsStatCard';
 import { AdsSyncStatusLine } from '@/components/ads/AdsSyncStatusLine';
 import { AdAccountNotesTrigger } from '@/components/ads/AdAccountNotesTrigger';
+import { AdBudgetEditor } from '@/components/ads/AdBudgetEditor';
 import { useAdAccountNotesRealtime } from '@/hooks/useAdAccountNotes';
+import { budgetWindowFor, computeBudgetPace, dateInRange, type BudgetMode } from '@/utils/adBudgetWindow';
 import { CampaignPerformanceList, type CampaignMetricRow } from '@/components/ads/CampaignPerformanceList';
 import { RoasValue } from '@/components/ads/RoasValue';
 import { useAdsLastSync } from '@/hooks/useAdsLastSync';
@@ -32,7 +34,7 @@ import { repairUtf8Mojibake } from '@/utils/repairUtf8Mojibake';
 
 interface MetaCampaignData { campaign_id: string; campaign_name: string; status: string; cost: number; conversions_value?: number; conversions?: number; clicks?: number; impressions?: number; daily_budget?: number; original_client_name?: string; original_client_id?: string; date?: string; client_id?: string; client_name?: string; created_at?: string; }
 interface SegmentationRule { id: string; account_id: string; keyword: string; virtual_name: string; platform: string; }
-interface ClientPacing { client_id: string; client_name: string; is_group: boolean; budget: number; spent: number; progress: number; forecast: number; recommendedDaily: number; avgDailySpend: number; status: 'ok' | 'risk' | 'over' | 'under'; remainingBudget: number; total_conversions_val: number; campaigns: MetaCampaignData[]; isHidden: boolean; groupName?: string; isManualGroupBudget?: boolean; isSalesAccount: boolean; realIdsList: { id: string, name: string }[]; globalRoas: number; }
+interface ClientPacing { client_id: string; client_name: string; is_group: boolean; budget: number; spent: number; budgetSpent: number; budgetMode: BudgetMode; progress: number; forecast: number; recommendedDaily: number; avgDailySpend: number; status: 'ok' | 'risk' | 'over' | 'under'; remainingBudget: number; total_conversions_val: number; campaigns: MetaCampaignData[]; isHidden: boolean; groupName?: string; isManualGroupBudget?: boolean; isSalesAccount: boolean; realIdsList: { id: string, name: string }[]; globalRoas: number; }
 
 const formatProjectName = (name: string) => (name || '').replace(/^(Cliente|Client|Cuenta|Account)\s*[-:]?\s*/i, '');
 const normalizeId = (id: string) => id ? id.replace(/^act_/, '').trim() : '';
@@ -51,6 +53,9 @@ interface ClientSettingsMap {
     group_name: string;
     is_hidden: boolean;
     is_sales_account: boolean;
+    budgetMode: BudgetMode;
+    periodStart: string | null;
+    periodEnd: string | null;
   };
 }
 
@@ -110,7 +115,7 @@ export default function MetaAdsPage() {
         supabase.from('segmentation_rules').select('*').eq('platform', 'meta').eq('agency_id', currentAgency.id)
       ]);
       const settingsMap: ClientSettingsMap = {};
-      settingsRes.data?.forEach((s: { client_id: string; budget_limit?: number; group_name?: string; is_hidden?: boolean; is_sales_account?: boolean }) => { settingsMap[s.client_id] = { budget: Number(s.budget_limit) || 0, group_name: s.group_name || '', is_hidden: s.is_hidden || false, is_sales_account: s.is_sales_account !== false }; });
+      settingsRes.data?.forEach((s: { client_id: string; budget_limit?: number; group_name?: string; is_hidden?: boolean; is_sales_account?: boolean; budget_mode?: string | null; budget_period_start?: string | null; budget_period_end?: string | null }) => { settingsMap[s.client_id] = { budget: Number(s.budget_limit) || 0, group_name: s.group_name || '', is_hidden: s.is_hidden || false, is_sales_account: s.is_sales_account !== false, budgetMode: s.budget_mode === 'period' ? 'period' : 'month', periodStart: s.budget_period_start ?? null, periodEnd: s.budget_period_end ?? null }; });
       setRawData((adsRes.data || []).map((row: MetaCampaignData) => ({
         ...row,
         campaign_name: repairUtf8Mojibake(row.campaign_name),
@@ -220,11 +225,28 @@ export default function MetaAdsPage() {
     else { setSegmentationRules(prev => prev.filter(r => r.id !== id)); toast.info("Regla eliminada"); }
   };
 
-  const handleSaveBudget = async (clientId: string, amount: string) => {
+  const handleSaveBudget = async (clientId: string, next: { amount: number; mode: BudgetMode; periodStart: string | null; periodEnd: string | null }) => {
     if (!currentAgency?.id) return;
-    const numAmount = parseFloat(amount);
-    setClientSettings(prev => ({ ...prev, [clientId]: { ...prev[clientId], budget: isNaN(numAmount) ? 0 : numAmount } }));
-    const { error } = await supabase.from('client_settings').upsert({ client_id: clientId, budget_limit: isNaN(numAmount) ? 0 : numAmount, agency_id: currentAgency.id }, { onConflict: 'client_id' });
+    setClientSettings(prev => ({
+      ...prev,
+      [clientId]: {
+        budget: next.amount,
+        group_name: prev[clientId]?.group_name || '',
+        is_hidden: prev[clientId]?.is_hidden || false,
+        is_sales_account: prev[clientId]?.is_sales_account !== false,
+        budgetMode: next.mode,
+        periodStart: next.periodStart,
+        periodEnd: next.periodEnd,
+      },
+    }));
+    const { error } = await supabase.from('client_settings').upsert({
+      client_id: clientId,
+      budget_limit: next.amount,
+      budget_mode: next.mode,
+      budget_period_start: next.mode === 'period' ? next.periodStart : null,
+      budget_period_end: next.mode === 'period' ? next.periodEnd : null,
+      agency_id: currentAgency.id,
+    }, { onConflict: 'client_id' });
     if (error) toast.error(t('common.errorSaving', "Error guardando")); else fetchData();
   };
 
@@ -237,42 +259,43 @@ export default function MetaAdsPage() {
   const reportData = useMemo(() => {
     if (!rawData.length) return [];
     const now = new Date();
-    const currentMonthPrefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-    const stats = new Map<string, { name: string, spent: number, budget: number, total_conversions_val: number, is_group: boolean, isHidden: boolean, isSalesAccount: boolean, realIds: string[], realIdsNames: { id: string, name: string }[], campaigns: MetaCampaignData[], isManualGroupBudget: boolean }>();
+    const monthWindow = budgetWindowFor({ mode: 'month' }, now);
+    const emptySettings = { budget: 0, group_name: '', is_hidden: false, is_sales_account: true, budgetMode: 'month' as const, periodStart: null, periodEnd: null };
+    const stats = new Map<string, { name: string, spent: number, budgetSpent: number, budget: number, total_conversions_val: number, is_group: boolean, isHidden: boolean, isSalesAccount: boolean, realIds: string[], realIdsNames: { id: string, name: string }[], campaigns: MetaCampaignData[], isManualGroupBudget: boolean }>();
 
     registeredAccounts.forEach(acc => {
-      const settings = clientSettings[acc.account_id] || { budget: 0, group_name: '', is_hidden: false, is_sales_account: true };
+      const settings = clientSettings[acc.account_id] || emptySettings;
       const groupKey = settings.group_name?.trim() ? `GROUP-${settings.group_name}` : acc.account_id;
       if (!settings.group_name?.trim() && !stats.has(groupKey)) {
-        stats.set(groupKey, { name: acc.account_name || acc.account_id, spent: 0, budget: settings.budget || 0, total_conversions_val: 0, is_group: false, isHidden: settings.is_hidden, isSalesAccount: settings.is_sales_account !== false, realIds: [acc.account_id], realIdsNames: [{ id: acc.account_id, name: acc.account_name }], campaigns: [], isManualGroupBudget: false });
+        stats.set(groupKey, { name: acc.account_name || acc.account_id, spent: 0, budgetSpent: 0, budget: settings.budget || 0, total_conversions_val: 0, is_group: false, isHidden: settings.is_hidden, isSalesAccount: settings.is_sales_account !== false, realIds: [acc.account_id], realIdsNames: [{ id: acc.account_id, name: acc.account_name }], campaigns: [], isManualGroupBudget: false });
       }
     });
 
     rawData.forEach(row => {
-      // Filtrar por mes actual (compara YYYY-MM, no fecha exacta)
-      if (row.date && row.date.startsWith(currentMonthPrefix)) {
-        // NOTA: Se removió filtro isRegistered - causaba ocultación de datos
-
-        let finalId = row.client_id, finalName = row.client_name || row.client_id; // Fallback: usar ID si no hay nombre
-        const rulesForAccount = segmentationRules.filter(r => normalizeId(r.account_id) === normalizeId(row.client_id));
-        if (rulesForAccount.length > 0) { const match = rulesForAccount.find(r => row.campaign_name.toLowerCase().includes(r.keyword.toLowerCase())); if (match) { finalId = `${row.client_id}_${match.keyword.toUpperCase()}`; finalName = match.virtual_name; } }
-        const settings = clientSettings[finalId] || { budget: 0, group_name: '', is_hidden: false, is_sales_account: true };
-        const groupKey = settings.group_name?.trim() ? `GROUP-${settings.group_name}` : finalId;
-        const displayName = settings.group_name?.trim() ? settings.group_name : finalName;
-        const isGroupManual = groupKey.startsWith('GROUP-') && (clientSettings[groupKey]?.budget > 0);
-        const isIndividualManual = !groupKey.startsWith('GROUP-') && settings.budget > 0;
-        if (!stats.has(groupKey)) { stats.set(groupKey, { name: displayName, spent: 0, budget: 0, total_conversions_val: 0, is_group: groupKey.startsWith('GROUP-'), isHidden: settings.is_hidden, isSalesAccount: settings.is_sales_account !== false, realIds: [], realIdsNames: [], campaigns: [], isManualGroupBudget: isGroupManual }); }
-        const entry = stats.get(groupKey)!;
-        entry.spent += Number(row.cost || 0); entry.total_conversions_val += Number(row.conversions_value || 0);
-        if (!entry.realIds.includes(finalId)) { entry.realIds.push(finalId); entry.realIdsNames.push({ id: finalId, name: finalName }); if (!entry.is_group && isIndividualManual) entry.budget = settings.budget; }
-        if (
-          Number(row.cost) > 0
-          || Number(row.impressions) > 0
-          || row.status === 'ACTIVE'
-          || row.status === 'PAUSED'
-        ) {
-          entry.campaigns.push({ ...row, original_client_name: finalName, original_client_id: finalId, cost: Number(row.cost), conversions_value: Number(row.conversions_value), conversions: Number(row.conversions), clicks: Number(row.clicks), impressions: Number(row.impressions) });
-        }
+      if (!row.date) return;
+      const rowDate = row.date.slice(0, 10);
+      let finalId = row.client_id, finalName = row.client_name || row.client_id;
+      const rulesForAccount = segmentationRules.filter(r => normalizeId(r.account_id) === normalizeId(row.client_id));
+      if (rulesForAccount.length > 0) { const match = rulesForAccount.find(r => row.campaign_name.toLowerCase().includes(r.keyword.toLowerCase())); if (match) { finalId = `${row.client_id}_${match.keyword.toUpperCase()}`; finalName = match.virtual_name; } }
+      const settings = clientSettings[finalId] || emptySettings;
+      const groupKey = settings.group_name?.trim() ? `GROUP-${settings.group_name}` : finalId;
+      const budgetSettings = (groupKey.startsWith('GROUP-') ? clientSettings[groupKey.replace('GROUP-', '')] || clientSettings[groupKey] : settings) || settings;
+      const window = budgetWindowFor({ mode: budgetSettings.budgetMode, periodStart: budgetSettings.periodStart, periodEnd: budgetSettings.periodEnd }, now);
+      const inMonth = dateInRange(rowDate, monthWindow.start, monthWindow.end);
+      const inBudget = dateInRange(rowDate, window.start, window.end);
+      if (!inMonth && !inBudget) return;
+      const displayName = settings.group_name?.trim() ? settings.group_name : finalName;
+      const isGroupManual = groupKey.startsWith('GROUP-') && (clientSettings[groupKey]?.budget > 0);
+      const isIndividualManual = !groupKey.startsWith('GROUP-') && settings.budget > 0;
+      if (!stats.has(groupKey)) { stats.set(groupKey, { name: displayName, spent: 0, budgetSpent: 0, budget: 0, total_conversions_val: 0, is_group: groupKey.startsWith('GROUP-'), isHidden: settings.is_hidden, isSalesAccount: settings.is_sales_account !== false, realIds: [], realIdsNames: [], campaigns: [], isManualGroupBudget: isGroupManual }); }
+      const entry = stats.get(groupKey)!;
+      const rowCost = Number(row.cost || 0);
+      if (inBudget) entry.budgetSpent += rowCost;
+      if (!inMonth) return;
+      entry.spent += rowCost; entry.total_conversions_val += Number(row.conversions_value || 0);
+      if (!entry.realIds.includes(finalId)) { entry.realIds.push(finalId); entry.realIdsNames.push({ id: finalId, name: finalName }); if (!entry.is_group && isIndividualManual) entry.budget = settings.budget; }
+      if (rowCost > 0 || Number(row.impressions) > 0 || row.status === 'ACTIVE' || row.status === 'PAUSED') {
+        entry.campaigns.push({ ...row, original_client_name: finalName, original_client_id: finalId, cost: Number(row.cost), conversions_value: Number(row.conversions_value), conversions: Number(row.conversions), clicks: Number(row.clicks), impressions: Number(row.impressions) });
       }
     });
 
@@ -285,19 +308,19 @@ export default function MetaAdsPage() {
       } else if (value.budget > 0) {
         finalBudget = value.budget;
       }
-      const spent = value.spent, avgDailySpend = currentDay > 0 ? spent / currentDay : 0, forecast = avgDailySpend * daysInMonth;
-      const progress = finalBudget > 0 ? (spent / finalBudget) * 100 : 0, remainingBudget = Math.max(0, finalBudget - spent);
-      const recommendedDaily = daysRemaining > 0 ? remainingBudget / daysRemaining : 0;
+      const spent = value.spent;
+      const budgetSettings = (value.is_group ? clientSettings[key.replace('GROUP-', '')] || clientSettings[key] : clientSettings[key] || clientSettings[value.realIds[0]]) || emptySettings;
+      const window = budgetWindowFor({ mode: budgetSettings.budgetMode, periodStart: budgetSettings.periodStart, periodEnd: budgetSettings.periodEnd }, now);
+      const pace = computeBudgetPace({ spent: value.budgetSpent, amount: finalBudget, window, currentDailyBudget: 0 });
       const globalRoas = spent > 0 ? value.total_conversions_val / spent : 0;
-      let status: 'ok' | 'risk' | 'over' | 'under' = 'ok';
-      if (finalBudget > 0) { if (spent > finalBudget) status = 'over'; else if (forecast > finalBudget) status = 'risk'; else if (progress < 50 && currentDay > 20) status = 'under'; }
-      report.push({ client_id: key, client_name: value.name, is_group: value.is_group, budget: finalBudget, spent, progress, forecast, recommendedDaily, avgDailySpend, status, remainingBudget, total_conversions_val: value.total_conversions_val, isHidden: value.isHidden, isSalesAccount: value.isSalesAccount, groupName: value.is_group ? value.name : undefined, isManualGroupBudget: value.isManualGroupBudget, realIdsList: value.realIdsNames, campaigns: value.campaigns.sort((a, b) => b.cost - a.cost), globalRoas });
+      const status = finalBudget > 0 ? pace.status : 'ok';
+      report.push({ client_id: key, client_name: value.name, is_group: value.is_group, budget: finalBudget, spent, budgetSpent: value.budgetSpent, budgetMode: window.mode, progress: pace.progress, forecast: pace.forecast, recommendedDaily: pace.recommendedDaily, avgDailySpend: pace.avgDaily, status, remainingBudget: pace.remaining, total_conversions_val: value.total_conversions_val, isHidden: value.isHidden, isSalesAccount: value.isSalesAccount, groupName: value.is_group ? value.name : undefined, isManualGroupBudget: value.isManualGroupBudget, realIdsList: value.realIdsNames, campaigns: value.campaigns.sort((a, b) => b.cost - a.cost), globalRoas });
     });
     let filtered = report;
     if (!showHidden) filtered = filtered.filter(c => !c.isHidden);
     if (!showZeroSpend) {
       filtered = filtered.filter(c =>
-        c.spent > 0 || c.campaigns.some(camp => camp.status === 'ACTIVE' || camp.status === 'PAUSED')
+        c.spent > 0 || c.budgetSpent > 0 || c.campaigns.some(camp => camp.status === 'ACTIVE' || camp.status === 'PAUSED')
       );
     }
     if (searchTerm) { const lower = searchTerm.toLowerCase(); filtered = filtered.filter(c => c.client_name.toLowerCase().includes(lower) || c.campaigns.some(camp => camp.campaign_name.toLowerCase().includes(lower))); }
@@ -455,24 +478,29 @@ export default function MetaAdsPage() {
                   <div className="p-4 space-y-6">
                     <div className="grid lg:grid-cols-2 gap-6">
                       <div className="bg-white p-4 rounded-lg border space-y-4">
-                        <div className="flex justify-between items-center">
-                          <div className="flex items-center gap-2">
-                            <Label className="text-sm font-medium text-slate-700">
-                              {t('ads.pacing.monthlyBudget', { type: client.is_group ? t('ads.status.total', 'Total') : t('ads.status.monthly', 'Mensual'), defaultValue: `Presupuesto ${client.is_group ? 'Total' : 'Mensual'} objetivo` })}
-                            </Label>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-slate-400">{currencySymbolForClient(client.client_id, client.realIdsList.map((r) => r.id))}</span>
-                            <Input
-                              key={`${client.client_id}-${client.budget}`}
-                              type="number"
-                              defaultValue={clientSettings[client.client_id]?.budget > 0 ? clientSettings[client.client_id]?.budget : ''}
-                              onBlur={(e) => handleSaveBudget(client.client_id, e.target.value)}
-                              className="h-8 w-28 text-right"
-                              placeholder={t('ads.pacing.noTarget', 'Sin objetivo')}
-                            />
-                          </div>
+                        <div className="space-y-1">
+                          <Label className="text-sm font-medium text-slate-700">
+                            {client.budgetMode === 'period'
+                              ? t('ads.pacing.periodBudget', 'Presupuesto del periodo')
+                              : t('ads.pacing.monthlyBudget', { type: client.is_group ? t('ads.status.total', 'Total') : t('ads.status.monthly', 'Mensual'), defaultValue: `Presupuesto ${client.is_group ? 'Total' : 'Mensual'} objetivo` })}
+                          </Label>
+                          <AdBudgetEditor
+                            key={`${client.client_id}-${client.budget}-${client.budgetMode}-${clientSettings[client.client_id]?.periodStart ?? ''}-${clientSettings[client.client_id]?.periodEnd ?? ''}`}
+                            amount={clientSettings[client.client_id]?.budget || 0}
+                            mode={clientSettings[client.client_id]?.budgetMode || 'month'}
+                            periodStart={clientSettings[client.client_id]?.periodStart ?? null}
+                            periodEnd={clientSettings[client.client_id]?.periodEnd ?? null}
+                            currencySymbol={currencySymbolForClient(client.client_id, client.realIdsList.map((r) => r.id))}
+                            onCommit={(next) => { void handleSaveBudget(client.client_id, next); }}
+                          />
                         </div>
+                        {client.budget > 0 && client.budgetMode === 'period' && (
+                          <p className="text-xs text-slate-500 leading-snug">
+                            {t('ads.pacing.periodSpent', { amount: formatMoney(client.budgetSpent, client.client_id), defaultValue: `Gastado en el periodo: ${formatMoney(client.budgetSpent, client.client_id)}` })}
+                            {' · '}
+                            {t('ads.pacing.monthSpent', { amount: formatMoney(client.spent, client.client_id), defaultValue: `Este mes: ${formatMoney(client.spent, client.client_id)}` })}
+                          </p>
+                        )}
                         {client.budget <= 0 && (
                           <p className="text-xs text-slate-500 leading-snug">
                             {t('ads.pacing.setTargetHintMeta', 'Escribe el presupuesto del mes para ver el ritmo. Meta no trae un objetivo mensual: lo defines aquí.')}
@@ -496,7 +524,7 @@ export default function MetaAdsPage() {
                           <div className="p-3 rounded-lg border-2 text-center bg-emerald-50 border-emerald-200">
                             <div className="text-[10px] uppercase text-slate-500 font-medium mb-1">{t('ads.pacing.recommendedDaily', 'Objetivo medio diario')}</div>
                             <div className="text-xl font-bold text-emerald-600">{formatMoney(client.recommendedDaily, client.client_id)}</div>
-                            <div className="text-[10px] text-slate-400 mt-1">{t('ads.pacing.recommendedDailySub', 'para cerrar el mes en el presupuesto')}</div>
+                            <div className="text-[10px] text-slate-400 mt-1">{client.budgetMode === 'period' ? t('ads.pacing.recommendedDailySubPeriod', 'para cerrar el periodo en el presupuesto') : t('ads.pacing.recommendedDailySub', 'para cerrar el mes en el presupuesto')}</div>
                           </div>
                         </div> : (
                           <div className="p-3 rounded-lg border bg-slate-50 text-center">

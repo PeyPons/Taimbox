@@ -1,4 +1,5 @@
 import { addCampaignDailyBudget } from '@/utils/adsBudgetUtils';
+import { budgetWindowFor, computeBudgetPace, dateInRange, type BudgetMode } from '@/utils/adBudgetWindow';
 
 export type AdsPpcStatus = 'over' | 'risk';
 
@@ -18,6 +19,9 @@ export interface AdsClientSettingRow {
   budget_limit: number;
   group_name?: string | null;
   is_hidden?: boolean | null;
+  budget_mode?: BudgetMode | null;
+  budget_period_start?: string | null;
+  budget_period_end?: string | null;
 }
 
 export interface AdsAccountConfigRow {
@@ -122,13 +126,16 @@ function buildPlatformAlerts(
 
   const clientSettings: Record<
     string,
-    { budget: number; group_name: string; is_hidden: boolean }
+    { budget: number; group_name: string; is_hidden: boolean; budgetMode: BudgetMode; periodStart: string | null; periodEnd: string | null }
   > = {};
   for (const s of settings) {
     clientSettings[s.client_id] = {
       budget: Number(s.budget_limit) || 0,
       group_name: s.group_name?.trim() || '',
       is_hidden: Boolean(s.is_hidden),
+      budgetMode: s.budget_mode === 'period' ? 'period' : 'month',
+      periodStart: s.budget_period_start ?? null,
+      periodEnd: s.budget_period_end ?? null,
     };
   }
 
@@ -154,7 +161,7 @@ function buildPlatformAlerts(
   }
 
   for (const acc of uniqueAccounts) {
-    const cfg = clientSettings[acc.id] || { budget: 0, group_name: '', is_hidden: false };
+    const cfg = clientSettings[acc.id] || { budget: 0, group_name: '', is_hidden: false, budgetMode: 'month' as const, periodStart: null, periodEnd: null };
     const groupKey = cfg.group_name ? `GROUP-${cfg.group_name}` : acc.id;
     const resolvedName =
       formatProjectName(acc.name) ||
@@ -182,7 +189,6 @@ function buildPlatformAlerts(
       typeof row.date === 'string'
         ? row.date.substring(0, 10)
         : new Date(row.date).toISOString().substring(0, 10);
-    if (rowDate < monthStart || rowDate > monthEnd) continue;
 
     let finalId = row.client_id;
     let finalName =
@@ -204,10 +210,20 @@ function buildPlatformAlerts(
       }
     }
 
-    const cfg = clientSettings[finalId] || { budget: 0, group_name: '', is_hidden: false };
+    const cfg = clientSettings[finalId] || { budget: 0, group_name: '', is_hidden: false, budgetMode: 'month' as const, periodStart: null, periodEnd: null };
     if (cfg.is_hidden) continue;
 
     const groupKey = cfg.group_name ? `GROUP-${cfg.group_name}` : finalId;
+    const budgetCfg = (groupKey.startsWith('GROUP-')
+      ? clientSettings[groupKey.replace(/^GROUP-/, '')] || clientSettings[groupKey]
+      : cfg) || cfg;
+    const window = budgetWindowFor({
+      mode: budgetCfg.budgetMode,
+      periodStart: budgetCfg.periodStart,
+      periodEnd: budgetCfg.periodEnd,
+    }, now);
+    const inMonth = dateInRange(rowDate, monthStart, monthEnd);
+    if (!dateInRange(rowDate, window.start, window.end) && !inMonth) continue;
     const displayName = cfg.group_name || finalName;
     const isGroupManual = groupKey.startsWith('GROUP-') && (clientSettings[groupKey]?.budget ?? 0) > 0;
 
@@ -226,7 +242,11 @@ function buildPlatformAlerts(
     }
 
     const entry = stats.get(groupKey)!;
-    entry.spent += Number(row.cost) || 0;
+    if (dateInRange(rowDate, window.start, window.end)) entry.spent += Number(row.cost) || 0;
+    if (!entry.realIdsNames.some((r) => r.id === finalId)) {
+      entry.realIdsNames.push({ id: finalId, name: finalName });
+    }
+    if (!inMonth) continue;
 
     if (row.status === 'ENABLED' && Number(row.daily_budget) > 0) {
       entry.autoDailyBudgetSum = addCampaignDailyBudget(
@@ -239,9 +259,6 @@ function buildPlatformAlerts(
       );
     }
 
-    if (!entry.realIdsNames.some((r) => r.id === finalId)) {
-      entry.realIdsNames.push({ id: finalId, name: finalName });
-    }
   }
 
   const alerts: AdsPpcAlertDetail[] = [];
@@ -272,21 +289,33 @@ function buildPlatformAlerts(
 
     if (!isManualBudget || monthlyBudgetMax <= 0) continue;
 
+    const budgetCfg = (value.isGroup
+      ? clientSettings[key.replace(/^GROUP-/, '')] || clientSettings[key]
+      : clientSettings[key] || clientSettings[value.realIdsNames[0]?.id ?? '']) || {
+      budget: 0, group_name: '', is_hidden: false, budgetMode: 'month' as const, periodStart: null, periodEnd: null,
+    };
+    const window = budgetWindowFor({
+      mode: budgetCfg.budgetMode,
+      periodStart: budgetCfg.periodStart,
+      periodEnd: budgetCfg.periodEnd,
+    }, now);
     const spent = value.spent;
-    const avgDailySpend = currentDay > 0 ? spent / currentDay : 0;
     const currentDailyBudget = value.autoDailyBudgetSum;
-    const forecast =
-      currentDailyBudget > 0
-        ? spent + currentDailyBudget * daysRemaining
-        : avgDailySpend * daysInMonth;
+    const pace = computeBudgetPace({
+      spent,
+      amount: monthlyBudgetMax,
+      window,
+      currentDailyBudget,
+    });
+    const avgDailySpend = pace.avgDaily;
+    const forecast = pace.forecast;
 
     let status: AdsPpcStatus | null = null;
-    if (spent > monthlyBudgetMax) status = 'over';
-    else if (forecast > monthlyBudgetMax) status = 'risk';
+    if (pace.status === 'over' || pace.status === 'risk') status = pace.status;
     if (!status) continue;
 
     const remainingBudget = Math.max(0, monthlyBudgetMax - spent);
-    const recommendedDaily = daysRemaining > 0 ? remainingBudget / daysRemaining : 0;
+    const recommendedDaily = pace.recommendedDaily;
     const progressPct = monthlyBudgetMax > 0 ? Math.round((spent / monthlyBudgetMax) * 100) : 0;
     const forecastPct = monthlyBudgetMax > 0 ? Math.round((forecast / monthlyBudgetMax) * 100) : 0;
 

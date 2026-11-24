@@ -17,6 +17,28 @@ describe('computeAdsBudgetAlerts', () => {
     expect(alerts[0]?.displayName).toBe('Cuenta Demo');
   });
 
+  it('suma el gasto de varios meses cuando el objetivo es un periodo', () => {
+    const alerts = computeAdsBudgetAlerts(
+      [{
+        client_id: 'acc-1',
+        budget_limit: 1000,
+        is_hidden: false,
+        budget_mode: 'period',
+        budget_period_start: '2026-10-01',
+        budget_period_end: '2026-12-31',
+      }],
+      [
+        { client_id: 'acc-1', client_name: 'Cuenta Demo', cost: 400, date: '2026-10-01' },
+        { client_id: 'acc-1', client_name: 'Cuenta Demo', cost: 350, date: '2026-11-01' },
+      ],
+      [],
+      new Date('2026-11-24T12:00:00Z'),
+    );
+    expect(alerts).toHaveLength(1);
+    expect(alerts[0]?.status).toBe('risk');
+    expect(alerts[0]?.spent).toBe(750);
+  });
+
   it('alerta riesgo cuando la proyección supera el presupuesto', () => {
     const alerts = computeAdsBudgetAlerts(
       [{ client_id: 'meta-1', budget_limit: 1000, is_hidden: false }],

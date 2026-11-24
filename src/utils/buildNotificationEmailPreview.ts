@@ -15,6 +15,7 @@ import {
   type AdsCampaignRow,
   type AdsClientSettingRow,
 } from '@/utils/adsPpcAlertBuild';
+import { earliestBudgetQueryStart } from '@/utils/adBudgetWindow';
 import {
   analyzeProjectMonthForNotifications,
   passesProjectClientFilters,
@@ -176,8 +177,13 @@ export async function buildNotificationEmailPreview(
     const campaignFields =
       'client_id, client_name, cost, date, daily_budget, status, budget_id, campaign_name';
 
+    const settingsRes = await supabase
+      .from('client_settings')
+      .select('client_id, budget_limit, group_name, is_hidden, budget_mode, budget_period_start, budget_period_end')
+      .eq('agency_id', input.agencyId);
+    const rangeStart = earliestBudgetQueryStart((settingsRes.data ?? []) as AdsClientSettingRow[], monthStart);
+
     const [
-      settingsRes,
       googleCampaignsRes,
       metaCampaignsRes,
       googleAccountsRes,
@@ -185,16 +191,12 @@ export async function buildNotificationEmailPreview(
       googleRulesRes,
       metaRulesRes,
     ] = await Promise.all([
-      supabase
-        .from('client_settings')
-        .select('client_id, budget_limit, group_name, is_hidden')
-        .eq('agency_id', input.agencyId),
       platforms.includes('google')
         ? supabase
             .from('google_ads_campaigns')
             .select(campaignFields)
             .eq('agency_id', input.agencyId)
-            .gte('date', monthStart)
+            .gte('date', rangeStart)
             .lte('date', monthEnd)
         : Promise.resolve({ data: [] }),
       platforms.includes('meta')
@@ -202,7 +204,7 @@ export async function buildNotificationEmailPreview(
             .from('meta_ads_campaigns')
             .select('client_id, client_name, cost, date, status, campaign_name')
             .eq('agency_id', input.agencyId)
-            .gte('date', monthStart)
+            .gte('date', rangeStart)
             .lte('date', monthEnd)
         : Promise.resolve({ data: [] }),
       platforms.includes('google')

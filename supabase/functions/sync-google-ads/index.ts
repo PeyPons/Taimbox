@@ -712,14 +712,18 @@ Deno.serve(async (req) => {
                 }
 
                 const preservedClientIds = Array.from(preserveIds).filter(Boolean);
+                const historyRange = getDateRange();
                 if (preservedClientIds.length > 0) {
                     const { error: delErr } = await supabase
                         .from('google_ads_campaigns')
                         .delete()
                         .eq('agency_id', agency.id)
+                        .gte('date', historyRange.firstDay)
+                        .lte('date', historyRange.today)
                         .not('client_id', 'in', `(${preservedClientIds.join(',')})`);
                     if (delErr) await log(`    ⚠️ Aviso limpieza cuentas antiguas: ${delErr.message}`);
                 }
+                await log(`    ℹ️ El objetivo de presupuesto no se toca. Se actualiza el gasto de ${historyRange.firstDay.slice(0, 7)} y se conservan los meses anteriores.`);
 
                 await refreshMissingAccountCurrencies(accessToken, developerToken, loginCustomerId, agency.id);
 

@@ -39,7 +39,9 @@ import { AnonymizedContent } from '@/components/ads/AnonymizedContent';
 import { AdsStatCard } from '@/components/ads/AdsStatCard';
 import { AdsSyncStatusLine } from '@/components/ads/AdsSyncStatusLine';
 import { AdAccountNotesTrigger } from '@/components/ads/AdAccountNotesTrigger';
+import { AdBudgetEditor } from '@/components/ads/AdBudgetEditor';
 import { useAdAccountNotesRealtime } from '@/hooks/useAdAccountNotes';
+import { budgetWindowFor, computeBudgetPace, dateInRange, type BudgetMode } from '@/utils/adBudgetWindow';
 import { useAdsLastSync } from '@/hooks/useAdsLastSync';
 
 const GoogleIcon = () => (
@@ -108,6 +110,8 @@ interface ClientPacing {
   isManualGroupBudget?: boolean;
   isSalesAccount: boolean;
   realIdsList: { id: string, name: string }[];
+  budgetSpent: number;
+  budgetMode: BudgetMode;
   globalRoas: number;
   ctr: number;
   cpc: number;
@@ -132,7 +136,7 @@ export default function AdsPage() {
   const { currentAgency } = useAgency();
   const { isActive: isAnonymized, anonymizer } = useAnonymizeAds();
   const [rawData, setRawData] = useState<CampaignData[]>([]);
-  const [clientSettings, setClientSettings] = useState<Record<string, { budget: number; group_name: string; is_hidden: boolean; is_sales_account: boolean }>>({});
+  const [clientSettings, setClientSettings] = useState<Record<string, { budget: number; group_name: string; is_hidden: boolean; is_sales_account: boolean; budgetMode: BudgetMode; periodStart: string | null; periodEnd: string | null }>>({});
   const [registeredAccounts, setRegisteredAccounts] = useState<RegisteredAccount[]>([]);
   const { formatMoney, formatGlobalMoney, currencySymbolForClient } = useAdsFormatMoney(registeredAccounts);
   const [loading, setLoading] = useState(true);
@@ -194,13 +198,16 @@ export default function AdsPage() {
         supabase.from('segmentation_rules').select('*').eq('platform', 'google').eq('agency_id', currentAgency.id)
       ]);
 
-      const settingsMap: Record<string, { budget: number; group_name: string; is_hidden: boolean; is_sales_account: boolean }> = {};
-      settingsRes.data?.forEach((s: { client_id: string; budget_limit?: number; group_name?: string; is_hidden?: boolean; is_sales_account?: boolean }) => {
+      const settingsMap: Record<string, { budget: number; group_name: string; is_hidden: boolean; is_sales_account: boolean; budgetMode: BudgetMode; periodStart: string | null; periodEnd: string | null }> = {};
+      settingsRes.data?.forEach((s: { client_id: string; budget_limit?: number; group_name?: string; is_hidden?: boolean; is_sales_account?: boolean; budget_mode?: string | null; budget_period_start?: string | null; budget_period_end?: string | null }) => {
         settingsMap[s.client_id] = {
           budget: Number(s.budget_limit) || 0,
           group_name: s.group_name || '',
           is_hidden: s.is_hidden || false,
-          is_sales_account: s.is_sales_account !== false
+          is_sales_account: s.is_sales_account !== false,
+          budgetMode: s.budget_mode === 'period' ? 'period' : 'month',
+          periodStart: s.budget_period_start ?? null,
+          periodEnd: s.budget_period_end ?? null,
         };
       });
 
@@ -351,18 +358,31 @@ export default function AdsPage() {
     }
   };
 
-  const handleSaveBudget = async (clientId: string, amount: string) => {
+  const handleSaveBudget = async (
+    clientId: string,
+    next: { amount: number; mode: BudgetMode; periodStart: string | null; periodEnd: string | null },
+  ) => {
     if (!currentAgency?.id) return;
-    const numAmount = parseFloat(amount);
 
     setClientSettings(prev => ({
       ...prev,
-      [clientId]: { ...prev[clientId], budget: isNaN(numAmount) ? 0 : numAmount }
+      [clientId]: {
+        budget: next.amount,
+        group_name: prev[clientId]?.group_name || '',
+        is_hidden: prev[clientId]?.is_hidden || false,
+        is_sales_account: prev[clientId]?.is_sales_account !== false,
+        budgetMode: next.mode,
+        periodStart: next.periodStart,
+        periodEnd: next.periodEnd,
+      }
     }));
 
     const { error } = await supabase.from('client_settings').upsert({
       client_id: clientId,
-      budget_limit: isNaN(numAmount) ? 0 : numAmount,
+      budget_limit: next.amount,
+      budget_mode: next.mode,
+      budget_period_start: next.mode === 'period' ? next.periodStart : null,
+      budget_period_end: next.mode === 'period' ? next.periodEnd : null,
       agency_id: currentAgency.id
     }, { onConflict: 'client_id' });
 
@@ -395,7 +415,7 @@ export default function AdsPage() {
     const monthEnd = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(daysInMonth).padStart(2, '0')}`;
 
     const stats = new Map<string, {
-      name: string, spent: number, budget: number, total_conversions_val: number,
+      name: string, spent: number, budgetSpent: number, budget: number, total_conversions_val: number,
       total_clicks: number, total_impressions: number, total_conversions: number,
       is_group: boolean, isHidden: boolean, isSalesAccount: boolean,
       realIds: string[], realIdsNames: { id: string, name: string }[],
@@ -415,13 +435,13 @@ export default function AdsPage() {
 
 
     uniqueAccounts.forEach(acc => {
-      const settings = clientSettings[acc.id] || { budget: 0, group_name: '', is_hidden: false, is_sales_account: true };
+      const settings = clientSettings[acc.id] || { budget: 0, group_name: '', is_hidden: false, is_sales_account: true, budgetMode: 'month' as const, periodStart: null, periodEnd: null };
       const groupKey = settings.group_name?.trim() ? `GROUP-${settings.group_name}` : acc.id;
 
       if (!settings.group_name?.trim() && !stats.has(groupKey)) {
         stats.set(groupKey, {
           name: acc.name || acc.id,
-          spent: 0, budget: settings.budget || 0, total_conversions_val: 0,
+          spent: 0, budgetSpent: 0, budget: settings.budget || 0, total_conversions_val: 0,
           total_clicks: 0, total_impressions: 0, total_conversions: 0,
           is_group: false, isHidden: settings.is_hidden, isSalesAccount: settings.is_sales_account !== false,
           realIds: [acc.id], realIdsNames: [{ id: acc.id, name: acc.name }],
@@ -438,12 +458,8 @@ export default function AdsPage() {
       // Filtrar por todos los días del mes actual (Robust Date check)
       // Aseguramos formato YYYY-MM-DD para comparación de texto
       const rowDateStr = typeof row.date === 'string' ? row.date.substring(0, 10) : new Date(row.date).toISOString().substring(0, 10);
-      const isInRange = rowDateStr >= monthStart && rowDateStr <= monthEnd;
+      const isInMonth = rowDateStr >= monthStart && rowDateStr <= monthEnd;
 
-      if (!isInRange) {
-        filteredOutCount++;
-        return;
-      }
       let finalId = row.client_id;
       let finalName = row.client_name;
 
@@ -460,8 +476,21 @@ export default function AdsPage() {
         }
       }
 
-      const settings = clientSettings[finalId] || { budget: 0, group_name: '', is_hidden: false, is_sales_account: true };
+      const settings = clientSettings[finalId] || { budget: 0, group_name: '', is_hidden: false, is_sales_account: true, budgetMode: 'month' as const, periodStart: null, periodEnd: null };
       const groupKey = settings.group_name?.trim() ? `GROUP-${settings.group_name}` : finalId;
+      const budgetSettings = (groupKey.startsWith('GROUP-')
+        ? clientSettings[groupKey.replace('GROUP-', '')] || clientSettings[groupKey]
+        : settings) || settings;
+      const window = budgetWindowFor({
+        mode: budgetSettings.budgetMode,
+        periodStart: budgetSettings.periodStart,
+        periodEnd: budgetSettings.periodEnd,
+      }, now);
+      const inBudget = dateInRange(rowDateStr, window.start, window.end);
+      if (!isInMonth && !inBudget) {
+        filteredOutCount++;
+        return;
+      }
       const displayName = settings.group_name?.trim() ? settings.group_name : finalName;
 
       const isGroupManual = groupKey.startsWith('GROUP-') && (clientSettings[groupKey]?.budget > 0);
@@ -469,7 +498,7 @@ export default function AdsPage() {
 
       if (!stats.has(groupKey)) {
         stats.set(groupKey, {
-          name: displayName, spent: 0, budget: 0, total_conversions_val: 0,
+          name: displayName, spent: 0, budgetSpent: 0, budget: 0, total_conversions_val: 0,
           total_clicks: 0, total_impressions: 0, total_conversions: 0,
           is_group: groupKey.startsWith('GROUP-'), isHidden: settings.is_hidden, isSalesAccount: settings.is_sales_account !== false,
           realIds: [], realIdsNames: [], campaigns: [], isManualGroupBudget: isGroupManual, autoDailyBudgetSum: 0, seenBudgetIds: new Set<string>()
@@ -478,6 +507,9 @@ export default function AdsPage() {
 
       const entry = stats.get(groupKey)!;
       const rowCost = Number(row.cost) || 0;
+      if (inBudget) entry.budgetSpent += rowCost;
+      if (!isInMonth) return;
+
       entry.spent += rowCost;
       totalProcessedCost += rowCost;
       entry.total_conversions_val += (row.conversions_value || 0);
@@ -523,18 +555,28 @@ export default function AdsPage() {
       }
 
       const spent = value.spent;
-      const avgDailySpend = currentDay > 0 ? spent / currentDay : 0;
+      const budgetSettings = (value.is_group
+        ? clientSettings[key.replace('GROUP-', '')] || clientSettings[key]
+        : clientSettings[key] || clientSettings[value.realIds[0]]) || {
+        budget: 0, group_name: '', is_hidden: false, is_sales_account: true, budgetMode: 'month' as const, periodStart: null, periodEnd: null,
+      };
+      const window = budgetWindowFor({
+        mode: budgetSettings.budgetMode,
+        periodStart: budgetSettings.periodStart,
+        periodEnd: budgetSettings.periodEnd,
+      }, now);
       const currentDailyBudget = value.autoDailyBudgetSum;
-      // Proyección: si hay suma de presupuestos diarios en campañas activas, proyectamos
-      // gasto futuro con ese tope (coherente con "Diario actual" y con el diario recomendado).
-      // Si no, mantenemos el ritmo medio del mes (puede desalinearse si acabas de cambiar límites en Google).
-      const forecast =
-        currentDailyBudget > 0
-          ? spent + currentDailyBudget * daysRemaining
-          : avgDailySpend * daysInMonth;
-      const progress = finalBudget > 0 ? (spent / finalBudget) * 100 : 0;
-      const remainingBudget = Math.max(0, finalBudget - spent);
-      const recommendedDaily = daysRemaining > 0 ? remainingBudget / daysRemaining : 0;
+      const pace = computeBudgetPace({
+        spent: value.budgetSpent,
+        amount: finalBudget,
+        window,
+        currentDailyBudget,
+      });
+      const avgDailySpend = pace.avgDaily;
+      const forecast = pace.forecast;
+      const progress = pace.progress;
+      const remainingBudget = pace.remaining;
+      const recommendedDaily = pace.recommendedDaily;
       const globalRoas = spent > 0 ? value.total_conversions_val / spent : 0;
 
       // Nuevas métricas calculadas
@@ -542,16 +584,11 @@ export default function AdsPage() {
       const cpc = value.total_clicks > 0 ? spent / value.total_clicks : 0;
       const cpa = value.total_conversions > 0 ? spent / value.total_conversions : 0;
 
-      let status: 'ok' | 'risk' | 'over' | 'under' = 'ok';
-      if (finalBudget > 0) {
-        if (spent > finalBudget) status = 'over';
-        else if (forecast > finalBudget) status = 'risk';
-        else if (progress < 50 && currentDay > 20) status = 'under';
-      }
+      const status = finalBudget > 0 ? pace.status : 'ok';
 
       report.push({
         client_id: key, client_name: value.name, is_group: value.is_group,
-        budget: finalBudget, spent, progress, forecast, recommendedDaily, avgDailySpend,
+        budget: finalBudget, spent, budgetSpent: value.budgetSpent, budgetMode: window.mode, progress, forecast, recommendedDaily, avgDailySpend,
         currentDailyBudget, status, remainingBudget, total_conversions_val: value.total_conversions_val,
         total_clicks: value.total_clicks, total_impressions: value.total_impressions,
         total_conversions: value.total_conversions, ctr, cpc, cpa,
@@ -566,7 +603,7 @@ export default function AdsPage() {
     if (!showHidden) filtered = filtered.filter(c => !c.isHidden);
     if (!showZeroSpend) {
       filtered = filtered.filter(c =>
-        c.spent > 0 || c.campaigns.some(camp => camp.status === 'ENABLED' || camp.status === 'PAUSED')
+        c.spent > 0 || c.budgetSpent > 0 || c.campaigns.some(camp => camp.status === 'ENABLED' || camp.status === 'PAUSED')
       );
     }
     if (searchTerm) {
@@ -896,27 +933,32 @@ export default function AdsPage() {
                     <div className="grid lg:grid-cols-2 gap-6">
                       {/* Panel de presupuesto */}
                       <div className="bg-white p-4 rounded-lg border space-y-4">
-                        <div className="flex justify-between items-center">
-                          <div className="flex items-center gap-2">
-                            <Label className="text-sm font-medium text-slate-700">
-                              {t('ads.pacing.monthlyBudget', { type: client.is_group ? t('ads.status.total', 'Total') : t('ads.status.monthly', 'Mensual'), defaultValue: `Presupuesto ${client.is_group ? 'Total' : 'Mensual'}` })}
-                            </Label>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-slate-400">{currencySymbolForClient(client.client_id, client.realIdsList.map((r) => r.id))}</span>
-                            <Input
-                              key={`${client.client_id}-${client.budget}`}
-                              type="number"
-                              defaultValue={clientSettings[client.client_id]?.budget > 0 ? clientSettings[client.client_id]?.budget : ''}
-                              onBlur={(e) => handleSaveBudget(client.client_id, e.target.value)}
-                              className="h-8 w-28 text-right"
-                              placeholder={t('ads.pacing.noTarget', 'Sin objetivo')}
-                            />
-                          </div>
+                        <div className="space-y-1">
+                          <Label className="text-sm font-medium text-slate-700">
+                            {client.budgetMode === 'period'
+                              ? t('ads.pacing.periodBudget', 'Presupuesto del periodo')
+                              : t('ads.pacing.monthlyBudget', { type: client.is_group ? t('ads.status.total', 'Total') : t('ads.status.monthly', 'Mensual'), defaultValue: `Presupuesto ${client.is_group ? 'Total' : 'Mensual'}` })}
+                          </Label>
+                          <AdBudgetEditor
+                            key={`${client.client_id}-${client.budget}-${client.budgetMode}-${clientSettings[client.client_id]?.periodStart ?? ''}-${clientSettings[client.client_id]?.periodEnd ?? ''}`}
+                            amount={clientSettings[client.client_id]?.budget || 0}
+                            mode={clientSettings[client.client_id]?.budgetMode || 'month'}
+                            periodStart={clientSettings[client.client_id]?.periodStart ?? null}
+                            periodEnd={clientSettings[client.client_id]?.periodEnd ?? null}
+                            currencySymbol={currencySymbolForClient(client.client_id, client.realIdsList.map((r) => r.id))}
+                            onCommit={(next) => { void handleSaveBudget(client.client_id, next); }}
+                          />
                         </div>
                         {client.budget <= 0 && (
                           <p className="text-xs text-slate-500 leading-snug">
                             {t('ads.pacing.setTargetHint', 'Escribe el presupuesto del mes para ver el ritmo. No se rellena solo a partir del límite diario de Google.')}
+                          </p>
+                        )}
+                        {client.budget > 0 && client.budgetMode === 'period' && (
+                          <p className="text-xs text-slate-500 leading-snug">
+                            {t('ads.pacing.periodSpent', { amount: formatMoney(client.budgetSpent, client.client_id), defaultValue: `Gastado en el periodo: ${formatMoney(client.budgetSpent, client.client_id)}` })}
+                            {' · '}
+                            {t('ads.pacing.monthSpent', { amount: formatMoney(client.spent, client.client_id), defaultValue: `Este mes: ${formatMoney(client.spent, client.client_id)}` })}
                           </p>
                         )}
 
@@ -967,7 +1009,9 @@ export default function AdsPage() {
                               {formatMoney(client.recommendedDaily, client.client_id)}
                             </div>
                             <div className="text-[10px] text-slate-400 mt-1">
-                              {t('ads.pacing.recommendedDailySub', 'para cerrar el mes en el presupuesto')}
+                              {client.budgetMode === 'period'
+                                ? t('ads.pacing.recommendedDailySubPeriod', 'para cerrar el periodo en el presupuesto')
+                                : t('ads.pacing.recommendedDailySub', 'para cerrar el mes en el presupuesto')}
                             </div>
                           </div>
                         </div>
@@ -996,7 +1040,9 @@ export default function AdsPage() {
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <span className="text-sm text-slate-600 cursor-help border-b border-dotted border-slate-300">
-                                {t('ads.pacing.forecastTitle', 'Proyección fin de mes')}
+                                {client.budgetMode === 'period'
+                                  ? t('ads.pacing.forecastTitlePeriod', 'Proyección fin de periodo')
+                                  : t('ads.pacing.forecastTitle', 'Proyección fin de mes')}
                               </span>
                             </TooltipTrigger>
                             <TooltipContent className="max-w-xs text-xs">

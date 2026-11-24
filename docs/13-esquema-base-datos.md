@@ -32,7 +32,7 @@ Si el código o una migración **contradice** el snapshot, **prevalece el códig
 
 ## 13.4. Proyectos y clientes
 
-- **`clients`**, **`projects`**, **`client_settings`** (clave `client_id` text en settings), **`department_config`**.
+- **`clients`**, **`projects`**, **`client_settings`** (clave `client_id` text en settings; `budget_limit`, `budget_mode` `month`|`period`, `budget_period_start`, `budget_period_end`), **`department_config`**.
 
 ## 13.5. Ads, API y plataforma
 
