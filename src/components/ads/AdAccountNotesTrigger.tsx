@@ -23,7 +23,7 @@ export function AdAccountNotesTrigger({
   anonymized = false,
   className,
 }: AdAccountNotesTriggerProps) {
-  const { t } = useTranslation();
+  const { t } = useTranslation('app');
   const isMobile = useIsMobile();
   const { data: counts } = useAdAccountNoteCounts(platform);
   const noteCount = counts?.[accountId] ?? 0;
@@ -49,17 +49,18 @@ export function AdAccountNotesTrigger({
       role="button"
       tabIndex={0}
       className={cn(
-        'inline-flex items-center justify-center gap-1 h-8 min-w-8 px-1.5 rounded-md cursor-pointer shrink-0',
-        hasNotes
-          ? 'bg-amber-50 text-amber-800 hover:bg-amber-100'
-          : 'text-amber-600/80 hover:bg-amber-50 hover:text-amber-800',
+        'relative inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-800',
         className,
       )}
       aria-label={hasNotes ? `${label}: ${countLabel}` : label}
       {...stopBubble}
     >
-      <StickyNote className="h-3.5 w-3.5" />
-      {hasNotes && <span className="text-[11px] font-semibold">{noteCount > 9 ? '9+' : noteCount}</span>}
+      <StickyNote className="h-4 w-4" />
+      {hasNotes && (
+        <span className="absolute right-1 top-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-slate-900 px-0.5 text-[9px] font-medium leading-none text-white">
+          {noteCount > 9 ? '9+' : noteCount}
+        </span>
+      )}
     </div>
   );
 

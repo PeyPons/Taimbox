@@ -8,9 +8,10 @@ type RoasValueProps = {
   cost: number;
   conversionValue: number;
   className?: string;
+  plain?: boolean;
 };
 
-export function RoasValue({ isSales, cost, conversionValue, className }: RoasValueProps) {
+export function RoasValue({ isSales, cost, conversionValue, className, plain = false }: RoasValueProps) {
   const { t } = useTranslation('app');
   const presentation = presentRoas({ isSales, cost, conversionValue });
 
@@ -23,6 +24,14 @@ export function RoasValue({ isSales, cost, conversionValue, className }: RoasVal
         title={t('ads.roas.emptyHint', 'Sin valor de conversión este mes. El ROAS no aplica.')}
       >
         —
+      </span>
+    );
+  }
+
+  if (plain) {
+    return (
+      <span className={cn('text-[12px] tabular-nums text-slate-500', presentation.roas < 1 && 'text-red-600', className)}>
+        ROAS {presentation.roas.toFixed(2)}
       </span>
     );
   }

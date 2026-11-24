@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { Fragment, useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAgency } from '@/contexts/AgencyContext';
 import { useForm } from 'react-hook-form';
@@ -7,7 +7,7 @@ import * as z from 'zod';
 import { INPUT_LIMITS } from '@/constants/inputLimits';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button, buttonVariants } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -22,7 +22,7 @@ import {
   RefreshCw, Settings, Layers,
   TrendingUp, TrendingDown, Scissors, Plus, Trash2,
   AlertTriangle, CheckCircle2,
-  ArrowDownRight, EyeOff, X, Check, ChevronDown
+  EyeOff, X, Check, ChevronDown, ChevronRight
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { cn } from '@/lib/utils';
@@ -36,6 +36,8 @@ import { toast } from '@/lib/notify';
 import { useAnonymizeAds } from '@/hooks/useAnonymizeAds';
 import { AnonymizedContent } from '@/components/ads/AnonymizedContent';
 import { AdsPageHeader } from '@/components/ads/AdsPageHeader';
+import { AdsAccountRow, AdsIconButton } from '@/components/ads/AdsAccountRow';
+import { AdsPacePanel } from '@/components/ads/AdsPacePanel';
 import { AdAccountNotesTrigger } from '@/components/ads/AdAccountNotesTrigger';
 import { AdBudgetEditor } from '@/components/ads/AdBudgetEditor';
 import { useAdAccountNotesRealtime } from '@/hooks/useAdAccountNotes';
@@ -644,7 +646,7 @@ export default function AdsPage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6 pb-20">
+    <div className="mx-auto max-w-[90rem] space-y-4 p-4 pb-20 sm:p-6">
       <AdsPageHeader
         title={t('ads.google', 'Google Ads')}
         sync={googleSync}
@@ -662,270 +664,159 @@ export default function AdsPage() {
         onShowHidden={setShowHidden}
         showZero={showZeroSpend}
         onShowZero={setShowZeroSpend}
-        hiddenSwitchId="show-hidden"
-        zeroSwitchId="show-zero-spend"
       />
 
-      {/* Lista de cuentas */}
-      <div className="space-y-3">
-        <Accordion type="single" collapsible className="space-y-2">
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+        <Accordion type="single" collapsible>
           {listedAccounts.map((client) => {
             const statusConfig = getStatusConfig(client.status, t);
             const dailyDiff = client.currentDailyBudget - client.recommendedDaily;
             const isOverspending = dailyDiff > 0 && client.status !== 'ok';
             const sharedBudgetCounts = countSharedBudgetCampaigns(client.campaigns);
+            const attention = client.budget > 0 && (client.status === 'risk' || client.status === 'over');
 
             return (
               <AccordionItem
                 key={client.client_id}
                 value={client.client_id}
-                className={cn(
-                  "bg-white border rounded-lg overflow-hidden",
-                  client.isHidden && "opacity-60 border-dashed"
-                )}
+                className={cn("border-slate-200", client.isHidden && "opacity-60")}
               >
-                <AccordionTrigger className="hover:no-underline py-3 px-4 group">
-                  <div className="flex flex-col lg:flex-row lg:items-center justify-between w-full pr-4 gap-4">
-                    {/* Info cliente */}
-                    <div className="flex items-center gap-3 min-w-[200px]">
-                      <div className={cn("h-8 w-1 shrink-0 rounded-full", statusConfig.color)} />
-                      <div className="text-left">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <div>
-                            <AnonymizedContent isActive={isAnonymized} className="font-semibold text-base text-slate-900" asBlock placeholder={anonymizer.account(client.client_id)}>
-                              {formatProjectName(client.client_name)}
-                            </AnonymizedContent>
-                            {isAnonymized && (client.realIdsList[0]?.id || client.client_id) && (
-                              <div className="text-[10px] font-mono text-slate-400 mt-0.5">
-                                ID: {client.realIdsList[0]?.id || client.client_id}
-                              </div>
-                            )}
-                          </div>
-                          {client.is_group && (
-                            <Badge variant="secondary" className="text-[10px] gap-1">
-                              <Layers className="w-3 h-3" /> {t('ads.status.group', 'GRUPO')}
-                            </Badge>
-                          )}
-                          {client.budget > 0 && (
-                            <Badge variant="outline" className={cn("text-[10px]", statusConfig.badgeClass)}>
-                              {statusConfig.text}
-                            </Badge>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2 mt-1 flex-wrap">
-                          <RoasValue
-                            isSales={client.isSalesAccount}
-                            cost={client.spent}
-                            conversionValue={client.total_conversions_val}
-                            className="h-5"
-                          />
-                          {client.isHidden && (
-                            <Badge variant="outline" className="text-[10px] h-5 gap-1">
-                              <EyeOff className="w-3 h-3" /> {t('ads.status.hidden', 'Oculto')}
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Barra de progreso (desktop) */}
-                    {client.budget > 0 && (
-                      <div className="hidden lg:flex flex-col flex-1 max-w-xs mx-4">
-                        <div className="flex justify-between text-[10px] text-slate-500 mb-1">
-                          <span>{t('ads.pacing.spentPct', { percent: client.progress.toFixed(0), defaultValue: `${client.progress.toFixed(0)}% gastado` })}</span>
-                          <span>{t('ads.pacing.forecast', { amount: formatMoney(client.forecast, client.client_id), defaultValue: `Proy: ${formatMoney(client.forecast, client.client_id)}` })}</span>
-                        </div>
-                        <Progress
-                          value={Math.min(client.progress, 100)}
-                          className={cn("h-2",
-                            client.status === 'over' && "[&>div]:bg-red-500",
-                            client.status === 'risk' && "[&>div]:bg-amber-500",
-                            client.status === 'ok' && "[&>div]:bg-blue-500"
-                          )}
-                        />
-                      </div>
+                <AccordionTrigger className="px-4 py-3.5 text-slate-400 hover:bg-slate-50/80 hover:no-underline data-[state=open]:bg-slate-50/50">
+                  <AdsAccountRow
+                    name={(
+                      <AnonymizedContent isActive={isAnonymized} className="font-medium" asBlock placeholder={anonymizer.account(client.client_id)}>
+                        {formatProjectName(client.client_name)}
+                      </AnonymizedContent>
                     )}
-
-                    {/* Métricas rápidas */}
-                    <div className="flex items-center gap-4 lg:gap-6 justify-end">
-                      {client.isSalesAccount && client.total_conversions_val > 0 && (
-                        <div className="text-right hidden sm:block">
-                          <div className="text-[10px] uppercase text-slate-400 font-medium">{t('ads.stats.revenue', 'Valor')}</div>
-                          <div className="text-lg font-bold text-emerald-600">{formatMoney(client.total_conversions_val, client.client_id)}</div>
-                        </div>
-                      )}
-                      <div className="text-right">
-                        <div className="text-[10px] uppercase text-slate-400 font-medium">Invertido</div>
-                        <div className="text-lg font-semibold tabular-nums text-slate-900">{formatMoney(client.spent, client.client_id)}</div>
-                      </div>
-                      {!client.is_group && (
-                        <AdAccountNotesTrigger
-                          platform="google"
-                          accountId={client.client_id}
-                          anonymized={isAnonymized}
-                        />
-                      )}
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div
-                            role="button"
-                            className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "h-8 w-8 cursor-pointer")}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (!client.is_group) {
-                                setEditingClient({
-                                  id: client.client_id,
-                                  name: client.client_name,
-                                  group: clientSettings[client.client_id]?.group_name || '',
-                                  hidden: clientSettings[client.client_id]?.is_hidden || false,
-                                  isSales: clientSettings[client.client_id]?.is_sales_account !== false
-                                });
-                              } else {
-                                toast.info("Abre el grupo para editar cuentas individuales");
-                              }
-                            }}
-                          >
-                            <Settings className="w-4 h-4 text-slate-400" />
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>Configurar</TooltipContent>
-                      </Tooltip>
-                    </div>
-                  </div>
+                    status={client.budget > 0 ? client.status : undefined}
+                    detail={(
+                      <>
+                        {isAnonymized && (client.realIdsList[0]?.id || client.client_id) && (
+                          <span className="font-mono text-[11px] text-slate-400">{client.realIdsList[0]?.id || client.client_id}</span>
+                        )}
+                        {client.is_group && (
+                          <span className="inline-flex items-center gap-1 text-[12px] text-slate-500">
+                            <Layers className="h-3 w-3" /> {t('ads.table.groupAccounts', 'Cuentas del grupo')}
+                          </span>
+                        )}
+                        {attention && (
+                          <span className={cn('text-[12px] font-medium', client.status === 'over' ? 'text-red-600' : 'text-amber-700')}>
+                            {statusConfig.text}
+                          </span>
+                        )}
+                        <RoasValue plain isSales={client.isSalesAccount} cost={client.spent} conversionValue={client.total_conversions_val} />
+                        {client.isHidden && (
+                          <span className="inline-flex items-center gap-1 text-[12px] text-slate-400">
+                            <EyeOff className="h-3 w-3" /> {t('ads.status.hidden', 'Oculto')}
+                          </span>
+                        )}
+                      </>
+                    )}
+                    progress={client.budget > 0 ? {
+                      percent: client.progress,
+                      caption: t('ads.pacing.forecast', { amount: formatMoney(client.forecast, client.client_id), defaultValue: `Proy: ${formatMoney(client.forecast, client.client_id)}` }),
+                    } : null}
+                    spentCaption={t('ads.header.thisMonth', 'Este mes')}
+                    spent={formatMoney(client.spent, client.client_id)}
+                    valueCaption={client.isSalesAccount && client.total_conversions_val > 0 ? t('ads.stats.revenue', 'Valor') : undefined}
+                    value={client.isSalesAccount && client.total_conversions_val > 0 ? formatMoney(client.total_conversions_val, client.client_id) : undefined}
+                    actions={(
+                      <>
+                        {!client.is_group && (
+                          <AdAccountNotesTrigger platform="google" accountId={client.client_id} anonymized={isAnonymized} />
+                        )}
+                        <AdsIconButton
+                          label={t('ads.actions.edit', 'Configurar')}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            if (!client.is_group) {
+                              setEditingClient({
+                                id: client.client_id,
+                                name: client.client_name,
+                                group: clientSettings[client.client_id]?.group_name || '',
+                                hidden: clientSettings[client.client_id]?.is_hidden || false,
+                                isSales: clientSettings[client.client_id]?.is_sales_account !== false,
+                              });
+                            } else {
+                              toast.info("Abre el grupo para editar cuentas individuales");
+                            }
+                          }}
+                        >
+                          <Settings className="h-4 w-4" />
+                        </AdsIconButton>
+                      </>
+                    )}
+                  />
                 </AccordionTrigger>
 
-                <AccordionContent className="border-t bg-slate-50/50">
-                  <div className="p-4 space-y-6">
-                    {/* Cuentas vinculadas (grupos) - Tabla de desglose */}
+                <AccordionContent className="border-t border-slate-100 bg-slate-50/70 p-0">
+                  <div className="grid items-start gap-6 px-4 py-5 lg:grid-cols-[300px_minmax(0,1fr)] lg:px-5">
+                    <AdsPacePanel
+                      title={client.budgetMode === 'period'
+                        ? t('ads.pacing.periodBudget', 'Presupuesto del periodo')
+                        : t('ads.pacing.monthlyBudget', { type: client.is_group ? t('ads.status.total', 'Total') : t('ads.status.monthly', 'Mensual'), defaultValue: `Presupuesto ${client.is_group ? 'Total' : 'Mensual'}` })}
+                      editor={(
+                        <AdBudgetEditor
+                          key={`${client.client_id}-${client.budget}-${client.budgetMode}-${client.periodStart ?? ''}-${client.periodEnd ?? ''}`}
+                          amount={client.budget || 0}
+                          mode={client.budgetMode}
+                          periodStart={client.periodStart}
+                          periodEnd={client.periodEnd}
+                          currencySymbol={currencySymbolForClient(client.client_id, client.realIdsList.map((r) => r.id))}
+                          onCommit={(next) => { void handleSaveBudget(client.client_id, next); }}
+                        />
+                      )}
+                      note={(
+                        <>
+                          {client.budget <= 0 && t('ads.pacing.setTargetHint', 'Escribe el presupuesto del mes para ver el ritmo. No se rellena solo a partir del límite diario de Google.')}
+                          {client.budget > 0 && client.budgetMode === 'period' && (
+                            <>
+                              {t('ads.pacing.periodSpent', { amount: formatMoney(client.budgetSpent, client.client_id), defaultValue: `Gastado en el periodo: ${formatMoney(client.budgetSpent, client.client_id)}` })}
+                              {' · '}
+                              {t('ads.pacing.monthSpent', { amount: formatMoney(client.spent, client.client_id), defaultValue: `Este mes: ${formatMoney(client.spent, client.client_id)}` })}
+                            </>
+                          )}
+                        </>
+                      )}
+                      progress={client.budget > 0 ? {
+                        percent: client.progress,
+                        status: client.status,
+                        available: t('ads.pacing.available', { amount: formatMoney(client.remainingBudget, client.client_id), defaultValue: `Disponible: ${formatMoney(client.remainingBudget, client.client_id)}` }),
+                        danger: client.remainingBudget <= 0,
+                      } : null}
+                      metrics={client.budget > 0 ? [
+                        {
+                          label: t('common.actualDaily', 'Diario actual'),
+                          value: formatMoney(client.currentDailyBudget, client.client_id),
+                          hint: t('ads.pacing.googleNoteConfig', 'configurado en Google'),
+                          tone: isOverspending ? 'warn' : 'default',
+                        },
+                        {
+                          label: t('ads.pacing.recommendedDaily', 'Diario recomendado'),
+                          value: formatMoney(client.recommendedDaily, client.client_id),
+                          hint: client.budgetMode === 'period'
+                            ? t('ads.pacing.recommendedDailySubPeriod', 'para cerrar el periodo en el presupuesto')
+                            : t('ads.pacing.recommendedDailySub', 'para cerrar el mes en el presupuesto'),
+                        },
+                      ] : client.currentDailyBudget > 0 ? [
+                        {
+                          label: t('ads.pacing.googleDailyInfo', 'Límite diario en Google'),
+                          value: formatMoney(client.currentDailyBudget, client.client_id),
+                        },
+                      ] : []}
+                      warning={client.budget > 0 && isOverspending && dailyDiff > 5
+                        ? t('ads.pacing.paceWarningGoogle', 'El ritmo de gasto va por encima del objetivo para no superar el presupuesto mensual. Revisa las campañas en Google Ads, esto suele ocurrir si los presupuestos diarios suman más que el objetivo mensual dividido por 30.')
+                        : null}
+                      forecast={{
+                        label: client.budgetMode === 'period'
+                          ? t('ads.pacing.forecastTitlePeriod', 'Proyección fin de periodo')
+                          : t('ads.pacing.forecastTitle', 'Proyección fin de mes'),
+                        value: formatMoney(client.forecast, client.client_id),
+                        danger: client.budget > 0 && client.forecast > client.budget,
+                      }}
+                    />
 
-                    <div className="grid lg:grid-cols-2 gap-6">
-                      {/* Panel de presupuesto */}
-                      <div className="bg-white p-4 rounded-lg border space-y-4">
-                        <div className="space-y-1">
-                          <Label className="text-sm font-medium text-slate-700">
-                            {client.budgetMode === 'period'
-                              ? t('ads.pacing.periodBudget', 'Presupuesto del periodo')
-                              : t('ads.pacing.monthlyBudget', { type: client.is_group ? t('ads.status.total', 'Total') : t('ads.status.monthly', 'Mensual'), defaultValue: `Presupuesto ${client.is_group ? 'Total' : 'Mensual'}` })}
-                          </Label>
-                          <AdBudgetEditor
-                            key={`${client.client_id}-${client.budget}-${client.budgetMode}-${client.periodStart ?? ''}-${client.periodEnd ?? ''}`}
-                            amount={client.budget || 0}
-                            mode={client.budgetMode}
-                            periodStart={client.periodStart}
-                            periodEnd={client.periodEnd}
-                            currencySymbol={currencySymbolForClient(client.client_id, client.realIdsList.map((r) => r.id))}
-                            onCommit={(next) => { void handleSaveBudget(client.client_id, next); }}
-                          />
-                        </div>
-                        {client.budget <= 0 && (
-                          <p className="text-xs text-slate-500 leading-snug">
-                            {t('ads.pacing.setTargetHint', 'Escribe el presupuesto del mes para ver el ritmo. No se rellena solo a partir del límite diario de Google.')}
-                          </p>
-                        )}
-                        {client.budget > 0 && client.budgetMode === 'period' && (
-                          <p className="text-xs text-slate-500 leading-snug">
-                            {t('ads.pacing.periodSpent', { amount: formatMoney(client.budgetSpent, client.client_id), defaultValue: `Gastado en el periodo: ${formatMoney(client.budgetSpent, client.client_id)}` })}
-                            {' · '}
-                            {t('ads.pacing.monthSpent', { amount: formatMoney(client.spent, client.client_id), defaultValue: `Este mes: ${formatMoney(client.spent, client.client_id)}` })}
-                          </p>
-                        )}
-
-                        {client.budget > 0 && <div className="space-y-2">
-                          <div className="flex justify-between text-xs text-slate-500">
-                            <span>{t('common.consumption', 'Consumo')} ({client.progress.toFixed(1)}%)</span>
-                            <span className={client.remainingBudget <= 0 ? 'text-red-500 font-bold' : ''}>
-                              {t('ads.pacing.available', { amount: formatMoney(client.remainingBudget, client.client_id), defaultValue: `Disponible: ${formatMoney(client.remainingBudget, client.client_id)}` })}
-                            </span>
-                          </div>
-                          <Progress
-                            value={Math.min(client.progress, 100)}
-                            className={cn("h-2.5",
-                              client.status === 'over' && "[&>div]:bg-red-500",
-                              client.status === 'risk' && "[&>div]:bg-amber-500",
-                              client.status === 'ok' && "[&>div]:bg-blue-500"
-                            )}
-                          />
-                        </div>}
-
-                        {client.budget > 0 ? (
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className={cn(
-                            "p-3 rounded-lg border-2 text-center",
-                            isOverspending ? "bg-amber-50 border-amber-200" : "bg-slate-50 border-slate-200"
-                          )}>
-                            <div className="text-[10px] uppercase text-slate-500 font-medium mb-1">
-                              {t('common.actualDaily', 'Diario actual')}
-                            </div>
-                            <div className={cn(
-                              "text-xl font-bold",
-                              isOverspending ? "text-amber-600" : "text-slate-700"
-                            )}>
-                              {formatMoney(client.currentDailyBudget, client.client_id)}
-                            </div>
-                            <div className="text-[10px] text-slate-400 mt-1">
-                              {t('ads.pacing.googleNoteConfig', 'configurado en Google')}
-                            </div>
-                          </div>
-                          <div className={cn(
-                            "p-3 rounded-lg border-2 text-center",
-                            "bg-emerald-50 border-emerald-200"
-                          )}>
-                            <div className="text-[10px] uppercase text-slate-500 font-medium mb-1">
-                              {t('ads.pacing.recommendedDaily', 'Diario recomendado')}
-                            </div>
-                            <div className="text-xl font-bold text-emerald-600">
-                              {formatMoney(client.recommendedDaily, client.client_id)}
-                            </div>
-                            <div className="text-[10px] text-slate-400 mt-1">
-                              {client.budgetMode === 'period'
-                                ? t('ads.pacing.recommendedDailySubPeriod', 'para cerrar el periodo en el presupuesto')
-                                : t('ads.pacing.recommendedDailySub', 'para cerrar el mes en el presupuesto')}
-                            </div>
-                          </div>
-                        </div>
-                        ) : client.currentDailyBudget > 0 ? (
-                          <div className="p-3 rounded-lg border bg-slate-50 text-center">
-                            <div className="text-[10px] uppercase text-slate-500 font-medium mb-1">
-                              {t('ads.pacing.googleDailyInfo', 'Límite diario en Google')}
-                            </div>
-                            <div className="text-xl font-bold text-slate-700">
-                              {formatMoney(client.currentDailyBudget, client.client_id)}
-                            </div>
-                          </div>
-                        ) : null}
-
-                        {client.budget > 0 && isOverspending && dailyDiff > 5 && (
-                          <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
-                            <AlertTriangle className="w-4 h-4 shrink-0" />
-                            <span>
-                              {t('ads.pacing.paceWarningGoogle', 'El ritmo de gasto va por encima del objetivo para no superar el presupuesto mensual. Revisa las campañas en Google Ads, esto suele ocurrir si los presupuestos diarios suman más que el objetivo mensual dividido por 30.')}
-                            </span>
-                          </div>
-                        )}
-
-                        {/* Proyección */}
-                        <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg gap-2">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <span className="text-sm text-slate-600 cursor-help border-b border-dotted border-slate-300">
-                                {client.budgetMode === 'period'
-                                  ? t('ads.pacing.forecastTitlePeriod', 'Proyección fin de periodo')
-                                  : t('ads.pacing.forecastTitle', 'Proyección fin de mes')}
-                              </span>
-                            </TooltipTrigger>
-                            <TooltipContent className="max-w-xs text-xs">
-                              {t('ads.pacing.forecastTooltip', 'Usa el gasto medio diario del mes (invertido ÷ días transcurridos) proyectado al calendario completo. Si cambiaste el ritmo recientemente, puede no coincidir con el objetivo medio diario; ese valor es el ritmo para cerrar en el presupuesto objetivo de Taimbox.')}
-                            </TooltipContent>
-                          </Tooltip>
-                          <span className={cn(
-                            "font-bold shrink-0",
-                            client.budget > 0 && client.forecast > client.budget ? "text-red-600" : "text-slate-700"
-                          )}>
-                            {formatMoney(client.forecast, client.client_id)}
-                          </span>
-                        </div>
-                      </div>
-
+                    <div className="min-w-0 space-y-4">
                       <CampaignPerformanceList
                         isSales={client.isSalesAccount}
                         formatMoney={(amount) => formatMoney(amount, client.client_id)}
@@ -954,17 +845,16 @@ export default function AdsPage() {
                           ) : undefined,
                         }))}
                       />
-                    </div>
 
-                    {/* Cuentas vinculadas (grupos) - Tabla de desglose interactiva */}
                     {client.is_group && (
-                      <div className="bg-white p-4 rounded-lg border mt-6">
-                        <h4 className="text-xs font-bold text-slate-500 uppercase mb-3 flex items-center gap-2">
-                          <Layers className="w-3.5 h-3.5" /> {t('ads.table.breakdown', { count: client.realIdsList.length, defaultValue: `Desglose por Cuenta (${client.realIdsList.length})` })}
-                        </h4>
+                      <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+                        <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+                          <h3 className="text-[13px] font-medium text-slate-900">{t('ads.table.groupAccounts', 'Cuentas del grupo')}</h3>
+                          <span className="text-[12px] tabular-nums text-slate-500">{client.realIdsList.length}</span>
+                        </div>
                         <div className="overflow-x-auto">
-                          <table className="w-full text-xs">
-                            <thead className="bg-slate-50 text-slate-500 font-medium border-b">
+                          <table className="w-full text-[13px]">
+                            <thead className="border-b border-slate-100 text-[11px] font-medium text-slate-400">
                               <tr>
                                 <th className="px-3 py-2 text-left w-6"></th>
                                 <th className="px-3 py-2 text-left">{t('ads.table.account', 'Cuenta')}</th>
@@ -989,10 +879,10 @@ export default function AdsPage() {
                                 const isExpanded = expandedSubAccounts[sub.id];
 
                                 return (
-                                  <>
-                                    <tr key={sub.id} className="hover:bg-slate-50 cursor-pointer" onClick={() => setExpandedSubAccounts(prev => ({ ...prev, [sub.id]: !prev[sub.id] }))}>
-                                      <td className="px-3 py-2.5 text-slate-400">
-                                        {isExpanded ? <TrendingDown className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+                                  <Fragment key={sub.id}>
+                                    <tr className="cursor-pointer border-b border-slate-100 hover:bg-slate-50" onClick={() => setExpandedSubAccounts(prev => ({ ...prev, [sub.id]: !prev[sub.id] }))}>
+                                      <td className="px-3 py-3 text-slate-400">
+                                        <ChevronRight className={cn('h-4 w-4 transition-transform', isExpanded && 'rotate-90')} />
                                       </td>
                                       <td className="px-3 py-2.5 font-medium text-slate-700">
                                         <div>
@@ -1026,15 +916,15 @@ export default function AdsPage() {
                                             accountId={sub.id}
                                             anonymized={isAnonymized}
                                           />
-                                          <button
-                                            onClick={(e) => {
-                                              e.stopPropagation();
+                                          <AdsIconButton
+                                            label={t('ads.actions.edit', 'Configurar')}
+                                            onClick={(event) => {
+                                              event.stopPropagation();
                                               setEditingClient({ id: sub.id, name: sub.name, group: client.groupName || '', hidden: false, isSales: true });
                                             }}
-                                            className="text-slate-400 hover:text-blue-500"
                                           >
-                                            <Settings className="w-3.5 h-3.5" />
-                                          </button>
+                                            <Settings className="h-4 w-4" />
+                                          </AdsIconButton>
                                         </div>
                                       </td>
                                     </tr>
@@ -1063,7 +953,7 @@ export default function AdsPage() {
                                         </td>
                                       </tr>
                                     )}
-                                  </>
+                                  </Fragment>
                                 );
                               })}
                             </tbody>
@@ -1072,6 +962,7 @@ export default function AdsPage() {
                       </div>
                     )}
                   </div>
+                  </div>
                 </AccordionContent>
               </AccordionItem>
             );
@@ -1079,16 +970,16 @@ export default function AdsPage() {
         </Accordion>
 
         {attentionOnly && listedAccounts.length === 0 && reportData.length > 0 && (
-          <p className="rounded-lg border bg-white px-4 py-8 text-center text-sm text-slate-500">
+          <p className="px-4 py-12 text-center text-sm text-slate-500">
             {t('ads.header.reviewEmpty', 'Ninguna cuenta por revisar con los filtros actuales.')}
           </p>
         )}
 
         {reportData.length === 0 && !loading && (
-          <div className="text-center py-12 bg-white rounded-xl border">
+          <div className="px-4 py-16 text-center">
             <GoogleIcon />
-            <h3 className="text-lg font-medium text-slate-700 mt-4">{t('ads.status.noData', 'Sin datos')}</h3>
-            <p className="text-sm text-slate-500 mt-1">{t('ads.status.syncPrompt', 'Sincroniza para cargar las cuentas de Google Ads')}</p>
+            <h3 className="mt-3 text-sm font-medium text-slate-800">{t('ads.status.noData', 'Sin datos')}</h3>
+            <p className="mt-1 text-sm text-slate-500">{t('ads.status.syncPrompt', 'Sincroniza para cargar las cuentas de Google Ads')}</p>
           </div>
         )}
       </div>
@@ -1274,15 +1165,15 @@ export default function AdsPage() {
 
       {/* Modal Sincronización */}
       <Dialog open={isSyncing} onOpenChange={(open) => { if (syncStatus !== 'running') setIsSyncing(open); }}>
-        <DialogContent className="sm:max-w-md bg-slate-950 text-slate-100 border-slate-800">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-white">
-              {syncStatus === 'running' && <RefreshCw className="w-5 h-5 animate-spin text-blue-500" />}
-              {syncStatus === 'completed' && <CheckCircle2 className="w-5 h-5 text-emerald-500" />}
-              {syncStatus === 'warning' && <AlertTriangle className="w-5 h-5 text-amber-400" />}
+            <DialogTitle className="flex items-center gap-2">
+              {syncStatus === 'running' && <RefreshCw className="h-4 w-4 animate-spin text-slate-500" />}
+              {syncStatus === 'completed' && <CheckCircle2 className="h-4 w-4 text-emerald-600" />}
+              {syncStatus === 'warning' && <AlertTriangle className="h-4 w-4 text-amber-600" />}
               {t('ads.dialogs.sync.title', { platform: 'Google Ads' })}
             </DialogTitle>
-            <DialogDescription className="text-slate-400">
+            <DialogDescription>
               {syncStatus === 'running'
                 ? t('ads.dialogs.sync.connecting', 'Conectando con la API...')
                 : syncStatus === 'warning'
@@ -1291,10 +1182,10 @@ export default function AdsPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="w-full">
-            <Progress value={syncProgress} className="h-2 bg-slate-800 [&>div]:bg-blue-500" />
+            <Progress value={syncProgress} className="h-1" />
           </div>
-          <div className="bg-black/50 rounded-lg p-4 font-mono text-xs text-green-400 h-64 overflow-hidden border border-slate-800">
-            <div className="h-full overflow-y-auto space-y-1" ref={scrollRef}>
+          <div className="h-64 overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
+            <div className="h-full space-y-1 overflow-y-auto p-3 font-mono text-[12px] leading-5 text-slate-700" ref={scrollRef}>
               {syncLogs.map((log, i) => (
                 <div key={i} className="break-words">{log}</div>
               ))}

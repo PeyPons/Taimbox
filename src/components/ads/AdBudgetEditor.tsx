@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
-import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { addMonths, monthKeyToRange, type BudgetMode } from '@/utils/adBudgetWindow';
@@ -61,7 +60,7 @@ function MonthRangeField({
   toKey: string;
   onChange: (from: string, to: string) => void;
 }) {
-  const { t, i18n } = useTranslation();
+  const { t, i18n } = useTranslation('app');
   const locale = localeTag(i18n.language);
   const [open, setOpen] = useState(false);
   const [year, setYear] = useState(() => Number(fromKey.slice(0, 4)) || new Date().getFullYear());
@@ -106,7 +105,7 @@ function MonthRangeField({
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="flex h-9 w-full items-center justify-between gap-2 rounded-md border border-slate-200 bg-white px-3 text-left text-sm text-slate-800 hover:border-slate-300"
+          className="flex h-9 w-full items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-3 text-left text-sm text-slate-800 hover:border-slate-300"
         >
           <span className="truncate">
             {monthLabel(fromKey, locale, 'long')}
@@ -209,7 +208,7 @@ export function AdBudgetEditor({
   currencySymbol,
   onCommit,
 }: AdBudgetEditorProps) {
-  const { t } = useTranslation();
+  const { t } = useTranslation('app');
   const [draftAmount, setDraftAmount] = useState(amount > 0 ? String(amount) : '');
   const fromKey = monthKey(periodStart) || currentMonthKey();
   const toKey = monthKey(periodEnd) || addMonths(fromKey, 2);
@@ -253,13 +252,13 @@ export function AdBudgetEditor({
 
   return (
     <div className="space-y-2">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="inline-flex rounded-md border border-slate-200 bg-slate-50 p-0.5">
+      <div className="flex flex-col gap-2">
+        <div className="inline-flex w-full rounded-lg bg-slate-100 p-0.5">
           <button
             type="button"
             className={cn(
-              'rounded px-2 py-1 text-[11px]',
-              mode === 'month' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500',
+              'h-8 flex-1 rounded-md text-[13px] transition-colors',
+              mode === 'month' ? 'bg-white font-medium text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800',
             )}
             onClick={() => setMode('month')}
           >
@@ -268,17 +267,17 @@ export function AdBudgetEditor({
           <button
             type="button"
             className={cn(
-              'rounded px-2 py-1 text-[11px]',
-              mode === 'period' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500',
+              'h-8 flex-1 rounded-md text-[13px] transition-colors',
+              mode === 'period' ? 'bg-white font-medium text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800',
             )}
             onClick={() => setMode('period')}
           >
             {t('ads.pacing.modePeriod', 'Varios meses')}
           </button>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-slate-400">{currencySymbol}</span>
-          <Input
+        <div className="flex h-9 items-center rounded-lg border border-slate-200 bg-white px-3 focus-within:border-slate-400">
+          <span className="text-sm text-slate-400">{currencySymbol}</span>
+          <input
             type="number"
             value={draftAmount}
             onChange={(e) => setDraftAmount(e.target.value)}
@@ -288,7 +287,7 @@ export function AdBudgetEditor({
               periodStart: mode === 'period' ? (monthKeyToRange(fromKey)?.start ?? null) : null,
               periodEnd: mode === 'period' ? (monthKeyToRange(toKey)?.end ?? null) : null,
             })}
-            className="h-8 w-28 text-right"
+            className="h-full w-full border-0 bg-transparent text-right text-sm tabular-nums text-slate-900 outline-none"
             placeholder={t('ads.pacing.noTarget', 'Sin objetivo')}
           />
         </div>

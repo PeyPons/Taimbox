@@ -26,7 +26,7 @@ type CampaignPerformanceListProps = {
 function Metric({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0">
-      <div className="text-[10px] uppercase tracking-wide text-slate-400">{label}</div>
+      <div className="text-[11px] text-slate-500">{label}</div>
       <div className="text-sm font-semibold text-slate-800 tabular-nums truncate">{value}</div>
     </div>
   );
@@ -52,23 +52,29 @@ export function CampaignPerformanceList({ rows, isSales, formatMoney }: Campaign
 
   if (rows.length === 0) {
     return (
-      <div className="bg-white rounded-lg border px-4 py-8 text-center text-sm text-slate-400">
+      <div className="rounded-lg border border-dashed border-slate-200 bg-white px-4 py-10 text-center text-sm text-slate-400">
         {t('ads.table.noCampaigns', 'Sin campañas')}
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg border overflow-hidden">
-      <div className="flex flex-wrap gap-x-4 gap-y-1 px-3 py-2 border-b bg-slate-50 text-[11px] text-slate-500">
-        <span>{t('ads.table.campaignSummary', { total: rows.length, active: activeCount, defaultValue: '{{active}} activas de {{total}}' })}</span>
-        <span>CTR {ctr.toFixed(2)}%</span>
-        <span>CPC {formatMoney(cpc)}</span>
-        {isSales && totals.value > 0 && (
-          <span>
-            {t('ads.stats.valueLabel', 'Valor')} {formatMoney(totals.value)}
-          </span>
-        )}
+    <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-slate-100 px-4 py-3">
+        <h3 className="text-[13px] font-medium text-slate-900">{t('ads.table.campaignsTitle', 'Campañas')}</h3>
+        <p className="text-[12px] text-slate-500">
+          {t('ads.table.campaignSummary', { total: rows.length, active: activeCount, defaultValue: '{{active}} activas de {{total}}' })}
+          <span className="px-1.5 text-slate-300">·</span>
+          CTR {ctr.toFixed(2)}%
+          <span className="px-1.5 text-slate-300">·</span>
+          CPC {formatMoney(cpc)}
+          {isSales && totals.value > 0 && (
+            <>
+              <span className="px-1.5 text-slate-300">·</span>
+              {t('ads.stats.valueLabel', 'Valor')} {formatMoney(totals.value)}
+            </>
+          )}
+        </p>
       </div>
 
       <div className="md:hidden divide-y">
@@ -120,11 +126,11 @@ export function CampaignPerformanceList({ rows, isSales, formatMoney }: Campaign
         })}
       </div>
 
-      <div className="hidden md:block max-h-[420px] overflow-auto">
-        <table className="w-full text-xs">
-          <thead className="bg-slate-50 text-slate-500 font-medium sticky top-0 border-b">
+      <div className="hidden max-h-[420px] overflow-auto md:block">
+        <table className="w-full text-[13px]">
+          <thead className="sticky top-0 border-b border-slate-100 bg-white text-[11px] font-medium text-slate-400">
             <tr>
-              <th className="px-3 py-2.5 text-left">{t('ads.table.campaign', 'Campaña')}</th>
+              <th className="px-4 py-2.5 text-left font-medium">{t('ads.table.campaign', 'Campaña')}</th>
               {showDaily && <th className="px-2 py-2.5 text-right">{t('common.dailyBudget', 'P. diario')}</th>}
               <th className="px-2 py-2.5 text-right">{t('ads.table.spent', 'Gasto')}</th>
               <th className="px-2 py-2.5 text-right">{t('ads.table.impressions', 'Impresiones')}</th>
@@ -136,14 +142,14 @@ export function CampaignPerformanceList({ rows, isSales, formatMoney }: Campaign
               {isSales && <th className="px-2 py-2.5 text-center">{t('ads.table.roas', 'ROAS')}</th>}
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody>
             {rows.map((row) => {
               const active = isAdsCampaignActive(row.status);
               const rowCtr = row.impressions > 0 ? (row.clicks / row.impressions) * 100 : 0;
               const rowCpc = row.clicks > 0 ? row.cost / row.clicks : 0;
               return (
-                <tr key={row.key} className="hover:bg-slate-50">
-                  <td className="px-3 py-2.5">
+                <tr key={row.key} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/80">
+                  <td className="px-4 py-3">
                     <div className="font-medium text-slate-800 leading-snug">{row.name}</div>
                     <div className="mt-1 flex items-center gap-2 text-[10px] text-slate-400">
                       <span className={cn('w-1.5 h-1.5 rounded-full', active ? 'bg-emerald-500' : 'bg-slate-300')} />

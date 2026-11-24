@@ -2301,7 +2301,8 @@
       "synced": "Sincronizado {{time}} · {{source}}",
       "accounts": "{{count}} cuentas",
       "review": "{{count}} por revisar",
-      "reviewEmpty": "Ninguna cuenta por revisar con los filtros actuales."
+      "reviewEmpty": "Ninguna cuenta por revisar con los filtros actuales.",
+      "thisMonth": "Este mes"
     },
     "syncSource": {
       "scheduled": "automática",
@@ -2351,6 +2352,7 @@
       "searchPlaceholder": "Buscar cuenta o campaña...",
       "showHidden": "Ocultos",
       "showZeroSpend": "Sin inversión (0 €)",
+      "zeroSpendShort": "Sin inversión",
       "accountsCount": "{{count}} cuentas"
     },
     "table": {
@@ -2367,7 +2369,9 @@
       "paused": "Pausada",
       "sharedBudgetTooltip": "Cartera compartida: {{total}} diarios en total entre varias campañas.",
       "impressions": "Impresiones",
-      "campaignSummary": "{{active}} activas de {{total}}"
+      "campaignSummary": "{{active}} activas de {{total}}",
+      "campaignsTitle": "Campañas",
+      "groupAccounts": "Cuentas del grupo"
     },
     "pacing": {
       "spentPct": "{{percent}}% gastado",

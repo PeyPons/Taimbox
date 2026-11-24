@@ -3464,7 +3464,8 @@
       "synced": "Synced {{time}} · {{source}}",
       "accounts": "{{count}} accounts",
       "review": "{{count}} to review",
-      "reviewEmpty": "No accounts to review with the current filters."
+      "reviewEmpty": "No accounts to review with the current filters.",
+      "thisMonth": "This month"
     },
     "syncSource": {
       "scheduled": "scheduled",
@@ -3514,6 +3515,7 @@
       "searchPlaceholder": "Search account or campaign...",
       "showHidden": "Hidden",
       "showZeroSpend": "Zero spend (0 €)",
+      "zeroSpendShort": "Zero spend",
       "accountsCount": "{{count}} accounts"
     },
     "table": {
@@ -3530,7 +3532,9 @@
       "paused": "Paused",
       "sharedBudgetTooltip": "Shared budget: {{total}} daily in total across multiple campaigns.",
       "impressions": "Impressions",
-      "campaignSummary": "{{active}} active of {{total}}"
+      "campaignSummary": "{{active}} active of {{total}}",
+      "campaignsTitle": "Campaigns",
+      "groupAccounts": "Accounts in the group"
     },
     "pacing": {
       "spentPct": "{{percent}}% spent",
