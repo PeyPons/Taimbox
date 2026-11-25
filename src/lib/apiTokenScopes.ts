@@ -24,6 +24,7 @@ export const API_TOKEN_SCOPE_CATALOG = [
   'google_ads_campaigns',
   'meta_ads_campaigns',
   'segmentation_rules',
+  'agent_actions',
 ] as const;
 
 export type ApiTokenScope = (typeof API_TOKEN_SCOPE_CATALOG)[number];
@@ -49,6 +50,7 @@ export const API_TOKEN_SCOPE_LABELS: Record<ApiTokenScope, { es: string; en: str
   google_ads_campaigns: { es: 'Campañas Google Ads', en: 'Google Ads campaigns' },
   meta_ads_campaigns: { es: 'Campañas Meta Ads', en: 'Meta Ads campaigns' },
   segmentation_rules: { es: 'Cuentas virtuales Ads', en: 'Ads virtual accounts' },
+  agent_actions: { es: 'Acciones de agentes', en: 'Agent actions' },
 };
 
 /** Recursos fuera de la API de integración (denegados al issuer `timeboxing-api`). */

@@ -307,6 +307,12 @@
       },
       "entries": [
         {
+          "date": "2026-11-25",
+          "type": "new",
+          "title": "agent_actions and record_agent_action RPC",
+          "description": "New resource for the Claude/Codex/Antigravity tree (intake, triage, client_work, internal, noise). Scope agent_actions. Prefer writing through RPC record_agent_action (idempotent on external_id). The Parallel work screen (/agentes) splits the person clock on overlaps; do not sum raw minutes per client."
+        },
+        {
           "date": "2026-07-26",
           "type": "improved",
           "title": "allocations.agency_id (explicit tenant)",

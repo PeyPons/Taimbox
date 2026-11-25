@@ -30,6 +30,7 @@ const PROTECTED_PATH_PREFIXES = [
   "/reports",
   "/weekly-forecast",
   "/actividad",
+  "/agentes",
   "/settings",
   "/agency",
   "/exportacion-informes",

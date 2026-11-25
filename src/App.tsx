@@ -83,6 +83,7 @@ const AdsPage = lazyWithRetry(() => import("@/pages/AdsPage"));
 const DeadlinesPage = lazyWithRetry(() => import("./pages/DeadlinesPage"));
 const WeeklyForecastPage = lazyWithRetry(() => import("./pages/WeeklyForecastPage"));
 const ActivityPage = lazyWithRetry(() => import("./pages/ActivityPage"));
+const AgentActivityPage = lazyWithRetry(() => import("./pages/AgentActivityPage"));
 const OkrsPage = lazyWithRetry(() => import("./pages/OkrsPage"));
 const AgencySettingsPage = lazyWithRetry(() => import("./pages/AgencySettingsPage"));
 const DataExportHubPage = lazyWithRetry(() => import("./pages/DataExportHubPage"));
@@ -266,6 +267,7 @@ const App = () => (
                             <Route path="/weekly-forecast" element={<PlanGuard><PermissionProtectedRoute requiredPermission="/weekly-forecast"><ModuleGuard module="weeklyFeedback"><WeeklyForecastPage /></ModuleGuard></PermissionProtectedRoute></PlanGuard>} />
                             {/* Registro de actividad: historial de auditoría independiente del módulo Weekly */}
                             <Route path="/actividad" element={<PlanGuard><PermissionProtectedRoute requiredPermission="/actividad"><ActivityPage /></PermissionProtectedRoute></PlanGuard>} />
+                            <Route path="/agentes" element={<PlanGuard><PermissionProtectedRoute requiredPermission="/agentes"><AgentActivityPage /></PermissionProtectedRoute></PlanGuard>} />
                             <Route path="/settings" element={<PermissionProtectedRoute requiredPermission="/settings"><SettingsPage /></PermissionProtectedRoute>} />
                             <Route path="/agency" element={<PermissionProtectedRoute requiredPermission="/agency"><AgencySettingsPage /></PermissionProtectedRoute>} />
                             <Route path="/exportacion-informes" element={<PlanGuard><PermissionProtectedRoute requiredPermission="/exportacion-informes"><DataExportHubPage /></PermissionProtectedRoute></PlanGuard>} />

@@ -7,6 +7,7 @@ import {
   Zap,
   Lock,
   Megaphone,
+  GitBranch,
 } from 'lucide-react';
 import type { TableGroup, ErrorCode } from './types';
 
@@ -1506,6 +1507,109 @@ const { data, error } = await taimbox
   "platform": "meta",
   "keyword": "Organico",
   "virtual_name": "Organico"
+}`,
+        },
+      },
+    ],
+  },
+  {
+    anchorId: 'res-agentes',
+    group: 'Agentes',
+    icon: GitBranch,
+    tables: [
+      {
+        name: 'agent_actions',
+        description:
+          'Arbol de lo que una persona pide a Claude, Codex o Antigravity y del trabajo que sale de esa peticion. La peticion (intake) y la deteccion (triage) no se imputan a un cliente. Solo la hoja de trabajo de cliente con cliente resuelto, o una gestion interna, entra en el reparto. Si dos hojas se solapan, el reloj de la persona se divide. La via de escritura es la RPC record_agent_action, idempotente por external_id.',
+        authNote: 'Scope agent_actions. Lectura con el token. Escritura con permissions=readwrite. No suma duraciones por cliente: el reparto vive en la pantalla Trabajo en paralelo.',
+        columns: [
+          { name: 'id', type: 'uuid', required: false, default: 'gen_random_uuid()', pk: true, description: 'Identificador del nodo.' },
+          { name: 'agency_id', type: 'uuid', required: true, fk: 'agencies(id)', description: 'Agencia.' },
+          { name: 'parent_id', type: 'uuid', required: false, fk: 'agent_actions(id)', description: 'Nodo padre. Nulo en la peticion humana.' },
+          { name: 'root_id', type: 'uuid', required: false, description: 'Raiz del arbol. Lo rellena el sistema.' },
+          { name: 'depth', type: 'integer', required: false, default: '0', description: 'Profundidad. Maximo 6.' },
+          { name: 'external_id', type: 'text', required: false, description: 'Clave idempotente dentro de la agencia. Obligatoria en la RPC.' },
+          { name: 'employee_id', type: 'uuid', required: false, fk: 'employees(id)', description: 'Persona. La RPC la resuelve por nombre o email exactos.' },
+          { name: 'client_id', type: 'uuid', required: false, fk: 'clients(id)', description: 'Cliente resuelto. Si el nombre no es unico, queda vacio y no se imputa.' },
+          { name: 'project_id', type: 'uuid', required: false, fk: 'projects(id)', description: 'Proyecto, si el nombre es unico en la agencia o dentro del cliente.' },
+          { name: 'allocation_id', type: 'uuid', required: false, fk: 'allocations(id)', description: 'Tarea del planificador, solo si ya existe. No crea la tarea.' },
+          { name: 'tool', type: 'text', required: true, check: "IN ('claude','codex','antigravity','other')", description: 'Herramienta que ejecuta.' },
+          { name: 'category', type: 'text', required: true, check: "IN ('intake','triage','client_work','internal','noise')", description: 'intake peticion, triage deteccion, client_work trabajo de cliente, internal gestion interna, noise descartado.' },
+          { name: 'channel', type: 'text', required: false, description: 'google_ads, meta, seo, dv360, analytics, email, crm, chatgpt_ads, internal, reporting u other.' },
+          { name: 'status', type: 'text', required: true, check: "IN ('requested','in_progress','completed','cancelled')", description: 'Estado. En curso no cierra finished_at.' },
+          { name: 'attention', type: 'text', required: true, default: "'shared'", description: 'exclusive, shared o background. shared reparte el tramo solapado.' },
+          { name: 'work_mode', type: 'text', required: false, description: 'Modo de arranque del sistema: rapida, cliente, critica o repetible. Va en la raiz.' },
+          { name: 'match_status', type: 'text', required: true, description: 'matched, unmatched, ambiguous o not_required. Lo calcula el sistema.' },
+          { name: 'title', type: 'text', required: true, description: 'Que se pidio o que se hizo, en una frase de hasta 300 caracteres.' },
+          { name: 'outcome', type: 'text', required: false, description: 'Resultado breve, hasta 2000 caracteres. No el hilo ni el documento.' },
+          { name: 'client_label', type: 'text', required: false, description: 'Nombre de cliente enviado o nombre canonico si hubo match.' },
+          { name: 'project_label', type: 'text', required: false, description: 'Nombre de proyecto enviado o canonico.' },
+          { name: 'employee_label', type: 'text', required: false, description: 'Nombre de la persona.' },
+          { name: 'client_tier', type: 'text', required: false, description: 'Escalon corto del cliente en su memoria: responsable, apoyo, cobertura u otro rotulo. No es un importe.' },
+          { name: 'history_ref', type: 'text', required: false, description: 'Ruta o ancla del historico usado. Sin pegar el contenido.' },
+          { name: 'started_at', type: 'timestamptz', required: true, description: 'Inicio real de este nodo.' },
+          { name: 'finished_at', type: 'timestamptz', required: false, description: 'Fin real. Nulo mientras sigue en curso.' },
+          { name: 'reported_minutes', type: 'numeric', required: false, description: 'Estimacion opcional del agente. No sustituye al reparto por solape.' },
+          { name: 'metadata', type: 'jsonb', required: false, default: "'{}'", description: 'Hasta 4000 bytes. Sin transcripciones ni documentos.' },
+          { name: 'created_at', type: 'timestamptz', required: false, default: 'now()', description: 'Alta.' },
+          { name: 'updated_at', type: 'timestamptz', required: false, default: 'now()', description: 'Ultima actualizacion.' },
+        ],
+        examples: {
+          select: `const { data } = await taimbox
+  .from('agent_actions')
+  .select('id, parent_id, tool, category, channel, status, title, outcome, client_label, started_at, finished_at')
+  .eq('agency_id', agencyId)
+  .order('started_at', { ascending: false })
+  .limit(50)`,
+          insert: `const { data, error } = await taimbox.rpc('record_agent_action', {
+  p_agency_id: agencyId,
+  p_external_id: 'codex:ana@agencia.com:hangout-pablo:root',
+  p_parent_external_id: null,
+  p_tool: 'codex',
+  p_category: 'intake',
+  p_status: 'completed',
+  p_work_mode: 'cliente',
+  p_attention: 'shared',
+  p_title: 'Revisa el Hangout de Pablo a ver que necesita',
+  p_employee_name: 'Ana Garcia',
+  p_started_at: '2026-11-25T09:00:00Z',
+  p_finished_at: '2026-11-25T09:40:00Z'
+})
+// data.warnings puede traer client_unmatched o client_ambiguous: no elijas otro cliente.`,
+        },
+        responses: {
+          getList: `[
+  {
+    "id": "aa1-...",
+    "category": "client_work",
+    "channel": "google_ads",
+    "tool": "codex",
+    "title": "Revision de conversiones",
+    "client_label": "Avioa",
+    "match_status": "matched",
+    "started_at": "2026-11-25T09:10:00Z",
+    "finished_at": "2026-11-25T09:25:00Z"
+  }
+]`,
+          getOne: `{
+  "id": "aa1-...",
+  "parent_id": "aa0-...",
+  "category": "client_work",
+  "channel": "google_ads",
+  "status": "completed",
+  "attention": "shared",
+  "title": "Revision de conversiones",
+  "outcome": "Las conversiones de compra siguen disparando. No habia que cambiar la etiqueta.",
+  "client_id": "c1d2e3f4-...",
+  "client_label": "Avioa",
+  "match_status": "matched",
+  "history_ref": "clientes/avioa/README.md#estado-operativo"
+}`,
+          post: `{
+  "id": "aa0-...",
+  "category": "intake",
+  "external_id": "codex:ana@agencia.com:hangout-pablo:root",
+  "warnings": []
 }`,
         },
       },

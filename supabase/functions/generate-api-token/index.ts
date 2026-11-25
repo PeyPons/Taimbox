@@ -123,7 +123,8 @@ serve(async (req) => {
       'meta_ads_campaigns',
       'segmentation_rules',
     ] as const
-    const DEFAULT_SCOPES = [...LEGACY_FULL_SCOPES, ...ADS_SCOPES] as const
+    const AGENT_SCOPES = ['agent_actions'] as const
+    const DEFAULT_SCOPES = [...LEGACY_FULL_SCOPES, ...ADS_SCOPES, ...AGENT_SCOPES] as const
 
     const allowedScopeSet = new Set<string>(DEFAULT_SCOPES)
     let validScopes: string[] = [...DEFAULT_SCOPES]
@@ -139,8 +140,14 @@ serve(async (req) => {
       )
       const requestedLegacyFull = LEGACY_FULL_SCOPES.every((scope) => requestedAllowed.has(scope))
         && requestedAllowed.size === LEGACY_FULL_SCOPES.length
+      const previousFull = [...LEGACY_FULL_SCOPES, ...ADS_SCOPES]
+      const requestedPreviousFull = previousFull.every((scope) => requestedAllowed.has(scope))
+        && requestedAllowed.size === previousFull.length
       if (requestedLegacyFull) {
         for (const scope of ADS_SCOPES) unique.add(scope)
+      }
+      if (requestedLegacyFull || requestedPreviousFull) {
+        for (const scope of AGENT_SCOPES) unique.add(scope)
       }
       if (unique.size === 0) {
         throw new Error('Debes seleccionar al menos un scope de recurso válido.')

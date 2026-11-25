@@ -7,6 +7,7 @@ import {
   Zap,
   Lock,
   Megaphone,
+  GitBranch,
 } from 'lucide-react';
 import type { TableGroup, ErrorCode } from './types';
 
@@ -1505,6 +1506,99 @@ const { data, error } = await taimbox
   "platform": "meta",
   "keyword": "Organic",
   "virtual_name": "Organic"
+}`,
+        },
+      },
+    ],
+  },
+  {
+    anchorId: 'res-agentes',
+    group: 'Agents',
+    icon: GitBranch,
+    tables: [
+      {
+        name: 'agent_actions',
+        description:
+          'Tree of what a person asks Claude, Codex or Antigravity and the work that comes out of that request. The request (intake) and the detection (triage) are not imputed to a client. Only a client-work leaf with a resolved client, or an internal task, enters the split. Overlapping leaves share the person clock. Write through RPC record_agent_action, idempotent on external_id.',
+        authNote: 'Scope agent_actions. Read with the token. Write requires permissions=readwrite. Do not sum durations per client: the split is shown on Parallel work.',
+        columns: [
+          { name: 'id', type: 'uuid', required: false, default: 'gen_random_uuid()', pk: true, description: 'Node id.' },
+          { name: 'agency_id', type: 'uuid', required: true, fk: 'agencies(id)', description: 'Agency.' },
+          { name: 'parent_id', type: 'uuid', required: false, fk: 'agent_actions(id)', description: 'Parent node. Null on the human request.' },
+          { name: 'root_id', type: 'uuid', required: false, description: 'Tree root. Set by the system.' },
+          { name: 'depth', type: 'integer', required: false, default: '0', description: 'Depth. Maximum 6.' },
+          { name: 'external_id', type: 'text', required: false, description: 'Idempotency key inside the agency. Required by the RPC.' },
+          { name: 'employee_id', type: 'uuid', required: false, fk: 'employees(id)', description: 'Person. The RPC resolves an exact name or email.' },
+          { name: 'client_id', type: 'uuid', required: false, fk: 'clients(id)', description: 'Resolved client. A non-unique name stays empty and is not imputed.' },
+          { name: 'project_id', type: 'uuid', required: false, fk: 'projects(id)', description: 'Project, when the name is unique in the agency or under the client.' },
+          { name: 'allocation_id', type: 'uuid', required: false, fk: 'allocations(id)', description: 'Planner task, only when it already exists. This does not create the task.' },
+          { name: 'tool', type: 'text', required: true, check: "IN ('claude','codex','antigravity','other')", description: 'Tool that ran the work.' },
+          { name: 'category', type: 'text', required: true, check: "IN ('intake','triage','client_work','internal','noise')", description: 'intake request, triage detection, client_work client work, internal internal work, noise discarded.' },
+          { name: 'channel', type: 'text', required: false, description: 'google_ads, meta, seo, dv360, analytics, email, crm, chatgpt_ads, internal, reporting or other.' },
+          { name: 'status', type: 'text', required: true, check: "IN ('requested','in_progress','completed','cancelled')", description: 'Status. In progress keeps finished_at empty.' },
+          { name: 'attention', type: 'text', required: true, default: "'shared'", description: 'exclusive, shared or background. shared splits an overlapping slice.' },
+          { name: 'work_mode', type: 'text', required: false, description: 'Startup mode: rapida, cliente, critica or repetible. Set it on the root.' },
+          { name: 'match_status', type: 'text', required: true, description: 'matched, unmatched, ambiguous or not_required. Computed by the system.' },
+          { name: 'title', type: 'text', required: true, description: 'What was asked or done, one sentence up to 300 characters.' },
+          { name: 'outcome', type: 'text', required: false, description: 'Short result, up to 2000 characters. Not the thread or the document.' },
+          { name: 'client_label', type: 'text', required: false, description: 'Submitted client name, or the canonical name after a match.' },
+          { name: 'project_label', type: 'text', required: false, description: 'Submitted or canonical project name.' },
+          { name: 'employee_label', type: 'text', required: false, description: 'Person name.' },
+          { name: 'client_tier', type: 'text', required: false, description: 'Short tier from client memory: owner, support, coverage or another label. Not an amount.' },
+          { name: 'history_ref', type: 'text', required: false, description: 'Path or anchor of the history that was used. Do not paste the body.' },
+          { name: 'started_at', type: 'timestamptz', required: true, description: 'Real start of this node.' },
+          { name: 'finished_at', type: 'timestamptz', required: false, description: 'Real end. Null while still running.' },
+          { name: 'reported_minutes', type: 'numeric', required: false, description: 'Optional agent estimate. It does not replace the overlap split.' },
+          { name: 'metadata', type: 'jsonb', required: false, default: "'{}'", description: 'Up to 4000 bytes. No transcripts or documents.' },
+          { name: 'created_at', type: 'timestamptz', required: false, default: 'now()', description: 'Created at.' },
+          { name: 'updated_at', type: 'timestamptz', required: false, default: 'now()', description: 'Updated at.' },
+        ],
+        examples: {
+          select: `const { data } = await taimbox
+  .from('agent_actions')
+  .select('id, parent_id, tool, category, channel, status, title, outcome, client_label, started_at, finished_at')
+  .eq('agency_id', agencyId)
+  .order('started_at', { ascending: false })
+  .limit(50)`,
+          insert: `const { data, error } = await taimbox.rpc('record_agent_action', {
+  p_agency_id: agencyId,
+  p_external_id: 'codex:ana@agency.com:hangout-pablo:root',
+  p_parent_external_id: null,
+  p_tool: 'codex',
+  p_category: 'intake',
+  p_status: 'completed',
+  p_work_mode: 'cliente',
+  p_attention: 'shared',
+  p_title: 'Check Pablo Hangout and see what he needs',
+  p_employee_name: 'Ana Garcia',
+  p_started_at: '2026-11-25T09:00:00Z',
+  p_finished_at: '2026-11-25T09:40:00Z'
+})`,
+        },
+        responses: {
+          getList: `[
+  {
+    "id": "aa1-...",
+    "category": "client_work",
+    "channel": "google_ads",
+    "tool": "codex",
+    "title": "Conversion review",
+    "client_label": "Avioa",
+    "match_status": "matched"
+  }
+]`,
+          getOne: `{
+  "id": "aa1-...",
+  "category": "client_work",
+  "channel": "google_ads",
+  "match_status": "matched",
+  "client_label": "Avioa",
+  "history_ref": "clientes/avioa/README.md#estado-operativo"
+}`,
+          post: `{
+  "id": "aa0-...",
+  "category": "intake",
+  "warnings": []
 }`,
         },
       },

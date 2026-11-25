@@ -43,6 +43,7 @@ export const ROUTE_PERMISSIONS: Record<string, keyof UserPermissions> = {
   '/okrs': 'can_access_okrs',
   '/weekly-forecast': 'can_access_weekly_forecast',
   '/actividad': 'can_access_activity_log',
+  '/agentes': 'can_access_activity_log',
   '/settings': 'can_access_settings',
   '/agency': 'can_access_agency_settings',
   '/exportacion-informes': 'can_access_agency_settings',

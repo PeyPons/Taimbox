@@ -37,6 +37,7 @@ import {
   DollarSign,
   FileText,
   History,
+  GitBranch,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from '@/lib/utils';
@@ -202,6 +203,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     canAccessNav('/finanzas') ||
     canAccessNav('/team-capacity') ||
     canAccessNav('/actividad') ||
+    canAccessNav('/agentes') ||
     canAccessWeeklyForecast;
 
   const showPlanningGroup =
@@ -293,7 +295,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               {showTrackingGroup && (
                 <NavGroup
                   label={t('sidebar.groups.tracking', 'Seguimiento')}
-                  isActive={['/operaciones', '/finanzas', '/capacidad', '/weekly-forecast', '/actividad'].includes(location.pathname)}
+                  isActive={['/operaciones', '/finanzas', '/capacidad', '/weekly-forecast', '/actividad', '/agentes'].includes(location.pathname)}
                 >
                   {canAccessNav('/operaciones') && (
                     <NavLink to="/operaciones" icon={Activity} active={location.pathname === '/operaciones'}>
@@ -318,6 +320,11 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   {canAccessNav('/actividad') && (
                     <NavLink to="/actividad" icon={History} active={location.pathname === '/actividad'}>
                       {t('sidebar.menu.activityLog', 'Actividad')}
+                    </NavLink>
+                  )}
+                  {canAccessNav('/agentes') && (
+                    <NavLink to="/agentes" icon={GitBranch} active={location.pathname === '/agentes'}>
+                      {t('sidebar.menu.agentWork', 'Trabajo en paralelo')}
                     </NavLink>
                   )}
                 </NavGroup>

@@ -33,6 +33,7 @@ const KNOWN_TABLES = [
   'google_ads_campaigns',
   'meta_ads_campaigns',
   'segmentation_rules',
+  'agent_actions',
 ];
 
 function unescapeSingleQuoted(str) {

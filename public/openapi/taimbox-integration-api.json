@@ -2066,7 +2066,7 @@
           "Integration resources"
         ],
         "summary": "List client_settings",
-        "description": "Ajustes avanzados por cliente: limite de presupuesto, agrupacion, visibilidad. Requiere autenticacion. Monthly Ads target is budget_limit; client_id is the ad account, virtual account, or holding name.",
+        "description": "Ajustes por cuenta: presupuesto, agrupacion y visibilidad. En Ads, client_id es el id de la cuenta, el id virtual (cuenta_PALABRA) o GROUP-{nombre del holding}. Scope client_settings. Escritura con permissions=readwrite. La sincronizacion de Ads no modifica estas filas. Monthly Ads target is budget_limit; client_id is the ad account, virtual account, or holding name.",
         "operationId": "list_client_settings",
         "parameters": [
           {
@@ -2116,7 +2116,7 @@
           "Integration resources"
         ],
         "summary": "Create client_settings",
-        "description": "Ajustes avanzados por cliente: limite de presupuesto, agrupacion, visibilidad. Requires readwrite token where RLS allows INSERT.",
+        "description": "Ajustes por cuenta: presupuesto, agrupacion y visibilidad. En Ads, client_id es el id de la cuenta, el id virtual (cuenta_PALABRA) o GROUP-{nombre del holding}. Requires readwrite token where RLS allows INSERT.",
         "operationId": "create_client_settings",
         "parameters": [
           {
@@ -2981,7 +2981,7 @@
           "Integration resources"
         ],
         "summary": "List ad_accounts_config",
-        "description": "Cuentas publicitarias de Google o Meta vinculadas a la agencia. Scope ad_accounts_config. El objetivo mensual no vive aqui: esta en client_settings.budget_limit, con client_id = account_id (o el id virtual / el nombre del holding). Scope ad_accounts_config. Lectura con el token; escritura solo si permissions=readwrite. Filtra por agency_id.",
+        "description": "Cuentas publicitarias de Google o Meta vinculadas a la agencia. Scope ad_accounts_config. El objetivo no vive aqui: esta en client_settings (budget_limit, budget_mode y, si es period, las fechas), con client_id = account_id, id virtual o GROUP-{holding}. Scope ad_accounts_config. Lectura con el token; escritura solo si permissions=readwrite. Filtra por agency_id.",
         "operationId": "list_ad_accounts_config",
         "parameters": [
           {
@@ -3031,7 +3031,7 @@
           "Integration resources"
         ],
         "summary": "Create ad_accounts_config",
-        "description": "Cuentas publicitarias de Google o Meta vinculadas a la agencia. Scope ad_accounts_config. El objetivo mensual no vive aqui: esta en client_settings.budget_limit, con client_id = account_id (o el id virtual / el nombre del holding). Requires readwrite token where RLS allows INSERT.",
+        "description": "Cuentas publicitarias de Google o Meta vinculadas a la agencia. Scope ad_accounts_config. El objetivo no vive aqui: esta en client_settings (budget_limit, budget_mode y, si es period, las fechas), con client_id = account_id, id virtual o GROUP-{holding}. Requires readwrite token where RLS allows INSERT.",
         "operationId": "create_ad_accounts_config",
         "parameters": [
           {
@@ -3164,7 +3164,7 @@
           "Integration resources"
         ],
         "summary": "List google_ads_campaigns",
-        "description": "Metricas mensuales por campana de Google Ads. Scope google_ads_campaigns. La sincronizacion vuelve a escribir el mes en curso; un PATCH manual puede pisarse en la siguiente sync. Scope google_ads_campaigns. Clave (campaign_id, date). date es el primer dia del mes. Escritura con permissions=readwrite. Monthly rows. date is the first day of the month. Sync may overwrite the current month.",
+        "description": "Metricas por campana de Google Ads, una fila por campana y mes (date = dia 1). Scope google_ads_campaigns. La sincronizacion reescribe solo el mes en curso y conserva los meses anteriores, que hacen falta para un budget_mode=period. Un PATCH del mes en curso puede pisarse en la siguiente sync. Scope google_ads_campaigns. Clave (campaign_id, date). date es el primer dia del mes. Escritura con permissions=readwrite. Monthly rows. date is the first day of the month. Sync may overwrite the current month.",
         "operationId": "list_google_ads_campaigns",
         "parameters": [
           {
@@ -3214,7 +3214,7 @@
           "Integration resources"
         ],
         "summary": "Create google_ads_campaigns",
-        "description": "Metricas mensuales por campana de Google Ads. Scope google_ads_campaigns. La sincronizacion vuelve a escribir el mes en curso; un PATCH manual puede pisarse en la siguiente sync. Requires readwrite token where RLS allows INSERT.",
+        "description": "Metricas por campana de Google Ads, una fila por campana y mes (date = dia 1). Scope google_ads_campaigns. La sincronizacion reescribe solo el mes en curso y conserva los meses anteriores, que hacen falta para un budget_mode=period. Un PATCH del mes en curso puede pisarse en la siguiente sync. Requires readwrite token where RLS allows INSERT.",
         "operationId": "create_google_ads_campaigns",
         "parameters": [
           {
@@ -3347,7 +3347,7 @@
           "Integration resources"
         ],
         "summary": "List meta_ads_campaigns",
-        "description": "Metricas mensuales por campana de Meta Ads. Scope meta_ads_campaigns. status usa ACTIVE o PAUSED. Scope meta_ads_campaigns. Unico (campaign_id, date). Escritura con permissions=readwrite. La siguiente sincronizacion puede reemplazar el mes. Monthly rows. status is ACTIVE or PAUSED. Sync may overwrite the current month.",
+        "description": "Metricas por campana de Meta Ads, una fila por campana y mes. Scope meta_ads_campaigns. status usa ACTIVE o PAUSED. daily_budget es el limite diario en la moneda de la cuenta: el de la campana o, si no tiene, la suma de los conjuntos activos. No es el objetivo de client_settings. Scope meta_ads_campaigns. Unico (campaign_id, date). Escritura con permissions=readwrite. La siguiente sincronizacion reemplaza el mes en curso, diario incluido. Monthly rows. status is ACTIVE or PAUSED. Sync may overwrite the current month.",
         "operationId": "list_meta_ads_campaigns",
         "parameters": [
           {
@@ -3397,7 +3397,7 @@
           "Integration resources"
         ],
         "summary": "Create meta_ads_campaigns",
-        "description": "Metricas mensuales por campana de Meta Ads. Scope meta_ads_campaigns. status usa ACTIVE o PAUSED. Requires readwrite token where RLS allows INSERT.",
+        "description": "Metricas por campana de Meta Ads, una fila por campana y mes. Scope meta_ads_campaigns. status usa ACTIVE o PAUSED. daily_budget es el limite diario en la moneda de la cuenta: el de la campana o, si no tiene, la suma de los conjuntos activos. No es el objetivo de client_settings. Requires readwrite token where RLS allows INSERT.",
         "operationId": "create_meta_ads_campaigns",
         "parameters": [
           {
@@ -3705,6 +3705,224 @@
           }
         ],
         "x-taimbox-write": "readwrite"
+      }
+    },
+    "/rest/v1/agent_actions": {
+      "get": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "List agent_actions",
+        "description": "Arbol de lo que una persona pide a Claude, Codex o Antigravity y del trabajo que sale de esa peticion. La peticion (intake) y la deteccion (triage) no se imputan a un cliente. Solo la hoja de trabajo de cliente con cliente resuelto, o una gestion interna, entra en el reparto. Si dos hojas se solapan, el reloj de la persona se divide. La via de escritura es la RPC record_agent_action, idempotente por external_id. Scope agent_actions. Lectura con el token. Escritura con permissions=readwrite. No suma duraciones por cliente: el reparto vive en la pantalla Trabajo en paralelo. Prefer POST /rpc/record_agent_action. Overlapping client work is split in the app; do not sum durations per client.",
+        "operationId": "list_agent_actions",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/select"
+          },
+          {
+            "$ref": "#/components/parameters/order"
+          },
+          {
+            "$ref": "#/components/parameters/limit"
+          },
+          {
+            "$ref": "#/components/parameters/offset"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of rows (may be empty when RLS filters all results).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/agent_actions"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-read": true
+      },
+      "post": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "Create agent_actions",
+        "description": "Arbol de lo que una persona pide a Claude, Codex o Antigravity y del trabajo que sale de esa peticion. La peticion (intake) y la deteccion (triage) no se imputan a un cliente. Solo la hoja de trabajo de cliente con cliente resuelto, o una gestion interna, entra en el reparto. Si dos hojas se solapan, el reloj de la persona se divide. La via de escritura es la RPC record_agent_action, idempotente por external_id. Requires readwrite token where RLS allows INSERT.",
+        "operationId": "create_agent_actions",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/preferReturn"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/agent_actions"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created row (with Prefer: return=representation).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/agent_actions"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-write": "readwrite"
+      },
+      "patch": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "Update agent_actions",
+        "operationId": "update_agent_actions",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter: id=eq.{uuid}"
+          },
+          {
+            "$ref": "#/components/parameters/preferReturn"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/agent_actions"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated row.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/agent_actions"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-write": "readwrite"
+      },
+      "delete": {
+        "tags": [
+          "Integration resources"
+        ],
+        "summary": "Delete agent_actions",
+        "operationId": "delete_agent_actions",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter: id=eq.{uuid}"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted."
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-write": "readwrite"
+      }
+    },
+    "/rest/v1/rpc/record_agent_action": {
+      "post": {
+        "tags": [
+          "RPC (integration)"
+        ],
+        "summary": "Record one node of an agent work tree",
+        "description": "Idempotent upsert by agency_id + external_id. Resolves employee, client and project by exact name. Returns the row plus warnings (client_unmatched, client_ambiguous, employee_unmatched, employee_ambiguous, project_unmatched, project_ambiguous). Requires readwrite and scope agent_actions.",
+        "operationId": "rpc_record_agent_action",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "RPC result (JSON)."
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": [],
+            "BearerAuth": []
+          }
+        ],
+        "x-taimbox-integration": true
       }
     },
     "/rest/v1/rpc/list_my_agencies_directory": {
@@ -4760,11 +4978,25 @@
         "properties": {
           "client_id": {
             "type": "string",
-            "description": "ID del cliente (clave primaria)."
+            "description": "Clave. En Ads: account_id, id virtual o GROUP-{holding}."
           },
           "budget_limit": {
             "type": "number",
-            "description": "Limite de presupuesto total."
+            "description": "Importe del objetivo. Con budget_mode=month es el mes en curso. Con period es el total del intervalo."
+          },
+          "budget_mode": {
+            "type": "string",
+            "description": "month o period. period exige budget_period_start y budget_period_end, con inicio <= fin."
+          },
+          "budget_period_start": {
+            "type": "string",
+            "format": "date",
+            "description": "Primer dia del periodo. Null si budget_mode=month. Puede caer en el ano anterior, p. ej. 2026-12-01."
+          },
+          "budget_period_end": {
+            "type": "string",
+            "format": "date",
+            "description": "Ultimo dia del periodo. Null si budget_mode=month. P. ej. 2027-02-28."
           },
           "group_name": {
             "type": "string",
@@ -4783,7 +5015,10 @@
             "format": "date-time",
             "description": "Auto-generado."
           }
-        }
+        },
+        "required": [
+          "budget_mode"
+        ]
       },
       "weekly_feedback": {
         "type": "object",
@@ -5133,6 +5368,10 @@
             "type": "number",
             "description": "Valor de conversion."
           },
+          "daily_budget": {
+            "type": "number",
+            "description": "Limite diario en la moneda de la cuenta. 0 si Meta solo tiene presupuesto vitalicio o no lo devuelve."
+          },
           "agency_id": {
             "type": "string",
             "format": "uuid",
@@ -5187,6 +5426,153 @@
           "keyword",
           "virtual_name",
           "agency_id"
+        ]
+      },
+      "agent_actions": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Identificador del nodo."
+          },
+          "agency_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Agencia."
+          },
+          "parent_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Nodo padre. Nulo en la peticion humana."
+          },
+          "root_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Raiz del arbol. Lo rellena el sistema."
+          },
+          "depth": {
+            "type": "integer",
+            "description": "Profundidad. Maximo 6."
+          },
+          "external_id": {
+            "type": "string",
+            "description": "Clave idempotente dentro de la agencia. Obligatoria en la RPC."
+          },
+          "employee_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Persona. La RPC la resuelve por nombre o email exactos."
+          },
+          "client_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Cliente resuelto. Si el nombre no es unico, queda vacio y no se imputa."
+          },
+          "project_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Proyecto, si el nombre es unico en la agencia o dentro del cliente."
+          },
+          "allocation_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Tarea del planificador, solo si ya existe. No crea la tarea."
+          },
+          "tool": {
+            "type": "string",
+            "description": "Herramienta que ejecuta."
+          },
+          "category": {
+            "type": "string",
+            "description": "intake peticion, triage deteccion, client_work trabajo de cliente, internal gestion interna, noise descartado."
+          },
+          "channel": {
+            "type": "string",
+            "description": "google_ads, meta, seo, dv360, analytics, email, crm, chatgpt_ads, internal, reporting u other."
+          },
+          "status": {
+            "type": "string",
+            "description": "Estado. En curso no cierra finished_at."
+          },
+          "attention": {
+            "type": "string",
+            "description": "exclusive, shared o background. shared reparte el tramo solapado."
+          },
+          "work_mode": {
+            "type": "string",
+            "description": "Modo de arranque del sistema: rapida, cliente, critica o repetible. Va en la raiz."
+          },
+          "match_status": {
+            "type": "string",
+            "description": "matched, unmatched, ambiguous o not_required. Lo calcula el sistema."
+          },
+          "title": {
+            "type": "string",
+            "description": "Que se pidio o que se hizo, en una frase de hasta 300 caracteres."
+          },
+          "outcome": {
+            "type": "string",
+            "description": "Resultado breve, hasta 2000 caracteres. No el hilo ni el documento."
+          },
+          "client_label": {
+            "type": "string",
+            "description": "Nombre de cliente enviado o nombre canonico si hubo match."
+          },
+          "project_label": {
+            "type": "string",
+            "description": "Nombre de proyecto enviado o canonico."
+          },
+          "employee_label": {
+            "type": "string",
+            "description": "Nombre de la persona."
+          },
+          "client_tier": {
+            "type": "string",
+            "description": "Escalon corto del cliente en su memoria: responsable, apoyo, cobertura u otro rotulo. No es un importe."
+          },
+          "history_ref": {
+            "type": "string",
+            "description": "Ruta o ancla del historico usado. Sin pegar el contenido."
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Inicio real de este nodo."
+          },
+          "finished_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Fin real. Nulo mientras sigue en curso."
+          },
+          "reported_minutes": {
+            "type": "number",
+            "description": "Estimacion opcional del agente. No sustituye al reparto por solape."
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Hasta 4000 bytes. Sin transcripciones ni documentos."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Alta."
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Ultima actualizacion."
+          }
+        },
+        "required": [
+          "agency_id",
+          "tool",
+          "category",
+          "status",
+          "attention",
+          "match_status",
+          "title",
+          "started_at"
         ]
       }
     }

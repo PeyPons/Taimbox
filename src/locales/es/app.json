@@ -1209,6 +1209,34 @@
     "subtitle": "Historial de cambios en las tareas del equipo: quién hizo qué y cuándo",
     "monthCurrent": "Mes actual"
   },
+  "agentActivity": {
+    "title": "Trabajo en paralelo",
+    "subtitle": "Lo que cada persona pide a Claude, Codex o Antigravity, y el trabajo de cliente que sale de ahí. Si varias cosas coinciden en el tiempo, la hora se reparte: no se suma entera a cada cliente.",
+    "refresh": "Actualizar",
+    "range": { "today": "Hoy", "week": "7 días", "month": "Mes" },
+    "metrics": {
+      "wall": "Reloj de la persona",
+      "wallHint": "Tiempo real con algo abierto, sin duplicar solapes.",
+      "imputable": "Imputable",
+      "imputableHint": "Solo trabajo de cliente resuelto, o gestión interna, ya repartido.",
+      "presence": "Suma sin repartir",
+      "presenceHint": "La cifra que se infla cuando hay cuatro clientes a la vez.",
+      "unattributed": "Sin imputar",
+      "unattributedHint": "Lectura, detección o petición que no llegó a un cliente."
+    },
+    "clientsTitle": "Por cliente",
+    "clientsEmpty": "Todavía no hay trabajo de cliente en este periodo.",
+    "col": { "client": "Cliente", "actions": "Acciones", "imputable": "Imputable", "presence": "Suma sin repartir" },
+    "filterEmployee": "Persona",
+    "allEmployees": "Todas las personas",
+    "filterTool": "Herramienta",
+    "allTools": "Todas las herramientas",
+    "otherTool": "Otro",
+    "onlyImputable": "Solo lo imputable",
+    "showNoise": "Ver descartados",
+    "empty": "Cuando un agente cierre una petición real, el árbol aparece aquí. Una lectura suelta o un comando local no debería registrarse.",
+    "apiLink": "Contrato para registrarlo por API"
+  },
   "weeklyForecast": {
     "title": "Previsión mensual",
     "subtitle": "Historial de cambios en tareas y redistribución de carga entre compañeros",
@@ -2199,6 +2227,7 @@
       "teamCapacity": "Capacidad de Equipo",
       "weeklyForecast": "Weekly Forecast",
       "activityLog": "Actividad",
+      "agentWork": "Trabajo en paralelo",
       "planner": "Planificador",
       "members": "Miembros",
       "times": "Tiempos",

@@ -133,6 +133,7 @@ export const PLAN_MODULES: Record<PlanId, { weeklyFeedback?: boolean; profession
 export const ROUTES_REQUIRE_PRO: string[] = [
   '/weekly-forecast',
   '/actividad',
+  '/agentes',
   '/okrs',
   '/operaciones',
   '/finanzas',

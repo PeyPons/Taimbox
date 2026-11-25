@@ -1204,6 +1204,34 @@
       "stoppedDescription": "Time has been saved successfully."
     }
   },
+  "agentActivity": {
+    "title": "Parallel work",
+    "subtitle": "What each person asks Claude, Codex or Antigravity, and the client work that comes out of it. When several things overlap, the hour is split: it is not added in full to every client.",
+    "refresh": "Refresh",
+    "range": { "today": "Today", "week": "7 days", "month": "Month" },
+    "metrics": {
+      "wall": "Person clock",
+      "wallHint": "Real time with something open, without duplicating overlaps.",
+      "imputable": "Imputable",
+      "imputableHint": "Only resolved client work, or internal work, after the split.",
+      "presence": "Unsplit sum",
+      "presenceHint": "The figure that inflates when four clients run at once.",
+      "unattributed": "Not imputed",
+      "unattributedHint": "Reading, detection or a request that never became a client."
+    },
+    "clientsTitle": "By client",
+    "clientsEmpty": "No client work in this period yet.",
+    "col": { "client": "Client", "actions": "Actions", "imputable": "Imputable", "presence": "Unsplit sum" },
+    "filterEmployee": "Person",
+    "allEmployees": "Everyone",
+    "filterTool": "Tool",
+    "allTools": "All tools",
+    "otherTool": "Other",
+    "onlyImputable": "Imputable only",
+    "showNoise": "Show discarded",
+    "empty": "When an agent closes a real request, the tree shows up here. A loose read or a local command should not be logged.",
+    "apiLink": "API contract"
+  },
   "activityPage": {
     "title": "Activity log",
     "subtitle": "Change history for your team's tasks: who did what and when",
@@ -3081,6 +3109,7 @@
       "teamCapacity": "Team Capacity",
       "weeklyForecast": "Weekly Forecast",
       "activityLog": "Activity",
+      "agentWork": "Parallel work",
       "planner": "Planner",
       "members": "Members",
       "times": "Times",

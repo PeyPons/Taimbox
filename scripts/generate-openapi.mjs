@@ -35,6 +35,11 @@ const ACCESS = {
   google_ads_campaigns: { read: true, write: true, note: 'Monthly rows. date is the first day of the month. Sync may overwrite the current month.' },
   meta_ads_campaigns: { read: true, write: true, note: 'Monthly rows. status is ACTIVE or PAUSED. Sync may overwrite the current month.' },
   segmentation_rules: { read: true, write: true },
+  agent_actions: {
+    read: true,
+    write: true,
+    note: 'Prefer POST /rpc/record_agent_action. Overlapping client work is split in the app; do not sum durations per client.',
+  },
   weekly_feedback: { read: true, write: true },
   professional_goals: { read: true, write: true },
   user_routines: { read: true, write: true },
@@ -42,6 +47,12 @@ const ACCESS = {
 };
 
 const RPC_INTEGRATION = [
+  {
+    name: 'record_agent_action',
+    summary: 'Record one node of an agent work tree',
+    description:
+      'Idempotent upsert by agency_id + external_id. Resolves employee, client and project by exact name. Returns the row plus warnings (client_unmatched, client_ambiguous, employee_unmatched, employee_ambiguous, project_unmatched, project_ambiguous). Requires readwrite and scope agent_actions.',
+  },
   {
     name: 'list_my_agencies_directory',
     summary: 'List agency directory (optional)',

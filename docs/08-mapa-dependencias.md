@@ -46,6 +46,8 @@ Si modificas una interface, revisa estos consumidores:
 | `capacityUtils.ts` → `getDailyReduction()` | `getCapacityReductionInRange()`, `getCapacityReductionBreakdown()`, `AppContext.tsx`, `appMetrics.ts` |
 | `capacityUtils.ts` → `getScheduledHoursForDay()` | Todas las funciones de capacidad, `WeekCell.tsx` |
 | `permissions.ts` → `ROUTE_PERMISSIONS` | `App.tsx` (guards), `PermissionProtectedRoute.tsx`, `Sidebar.tsx` |
+| `agentActionAttribution.ts` | `AgentActivityPage.tsx`, tests `agentActionAttribution.test.ts` |
+| `agentActions` (types) | `useAgentActions.ts`, `AgentActivityPage.tsx`, docs API `agent_actions` |
 | `plans.ts` → `ROUTES_REQUIRE_PRO` / `ROUTES_REQUIRE_BUSINESS`, `PLAN_MODULES`, `PLAN_LIMITS` | `PlanGuard.tsx`, `useSubscriptionLimits.ts`, `Sidebar.tsx` (`canAccessRouteByPlan`), `OnboardingWizard`, `AgencyBillingTab`, `planExportBlocks.ts`, `plans.access.test.ts` |
 | `useSubscriptionLimits.ts` | `PlanGuard`, `TeamPage`, `SubscriptionSoftLockBanner`, `usePlanMonthNavigation`, páginas con tope de mes (planificador, finanzas, capacidad, deadlines, radar, clientes, dashboard empleado) |
 | `plannerMonthStorage.ts` / `useMonthNavigation.ts` | `PlannerMonthBanner`, planificador, previsión, capacidad, deadlines, radar, finanzas; evento `taimbox:planner-month-change` |
