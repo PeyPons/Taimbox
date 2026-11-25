@@ -76,17 +76,34 @@ salvo que te lo pidan aparte.
 - Llamada: POST /rest/v1/rpc/record_agent_action
 
 ## Quién eres (OBLIGATORIO en cada registro)
-En TODAS las llamadas envía tu persona de Taimbox:
-- p_employee_id = tu UUID de empleado si lo tienes guardado, O
-- p_employee_name = tu nombre completo o email EXACTOS como en Taimbox.
+Sin persona el registro no sirve. En TODAS las llamadas:
 
-No inventes otro nombre. Si la respuesta avisa employee_unmatched o employee_ambiguous,
-para y avisa a tu responsable: no inventes otra persona.
+1) Si tienes usuario/empleado en Taimbox (lo normal):
+   - Preferible: p_employee_id = tu UUID de empleado
+   - Alternativa: p_employee_name = tu nombre completo O email EXACTOS como en Taimbox
+     (ej. "Alexander Outeiral" o "aouteiral@cocosolution.com")
+   Taimbox rellenará el nombre visible desde el empleado.
 
-Identificador estable de cada nodo (external_id):
+2) Si aún no tienes usuario en Taimbox:
+   - p_employee_name = tu nombre real de persona (no el nick del agente)
+   - Aparecerá el aviso employee_unmatched; avisa para que te den de alta.
+
+No inventes otro nombre. Si llega employee_ambiguous o employee_missing: para y avisa.
+
+## Misma conversación = misma raíz (como el historial de tareas)
+No crees una petición nueva cada vez que retomas el mismo hilo (chat recuperado,
+continuación, “sigue con lo de antes”).
+
+- La raíz (intake) tiene un external_id estable de la petición.
+- Al retomar: reutiliza ese external_id (actualiza) O añade hijos con
+  p_parent_external_id apuntando a esa raíz.
+- Solo crea una raíz nueva si es una petición distinta.
+
+Identificador estable (external_id):
 {tool}:{tu-email-o-id}:{slug-corto-de-la-peticion}:{nodo}
-Ejemplo: claude:ana@agencia.com:hangout-pablo:root
-Si actualizas el mismo trabajo, reutiliza el mismo external_id.
+Ejemplo raíz: antigravity:aouteiral@cocosolution.com:tracy-bull-maps:root
+Hijo:       antigravity:aouteiral@cocosolution.com:tracy-bull-maps:client-maps
+Si actualizas el mismo nodo, reutiliza el mismo external_id (es idempotente).
 
 ## Qué NO registres
 - Inventarios, recuentos o comandos locales sin entrega.

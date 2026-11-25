@@ -1571,12 +1571,13 @@ const { data, error } = await taimbox.rpc('record_agent_action', {
   p_status: 'completed',
   p_attention: 'shared',
   p_title: 'Conversion review',
-  p_employee_name: 'Ana Garcia', // or p_employee_id
+  p_employee_name: 'Ana Garcia', // prefer p_employee_id when you have it
   p_client_name: 'Avioa',
   p_project_name: 'Avioa Google Ads', // exact Taimbox name; omit if unknown
   p_started_at: '2026-11-25T09:10:00Z',
   p_finished_at: '2026-11-25T09:25:00Z'
-})`,
+})
+// Same request = same root (reuse external_id / parent). warnings: employee_missing|unmatched…`,
         },
         responses: {
           getList: `[

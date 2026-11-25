@@ -7,6 +7,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Filter,
+  HelpCircle,
   Loader2,
   RefreshCw,
   Search,
@@ -14,6 +15,17 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { SensitiveText } from '@/components/privacy/SensitiveText';
 import { useAgency } from '@/contexts/AgencyContext';
 import { useAgentActions } from '@/hooks/useAgentActions';
@@ -30,6 +42,7 @@ import {
   formatMinutes,
   type ActionAttribution,
 } from '@/utils/agentActionAttribution';
+import { cn } from '@/lib/utils';
 
 type RangeMode = 'today' | 'week' | 'day' | 'month' | 'custom';
 type ViewMode = 'tree' | 'list';
@@ -37,9 +50,17 @@ type ViewMode = 'tree' | 'list';
 const CATEGORY_LABEL: Record<AgentActionCategory, string> = {
   intake: 'Petición',
   triage: 'Detección',
-  client_work: 'Trabajo de cliente',
+  client_work: 'Cliente',
   internal: 'Interno',
   noise: 'Descartado',
+};
+
+const CATEGORY_STYLE: Record<AgentActionCategory, string> = {
+  intake: 'bg-sky-100 text-sky-800 border-sky-200',
+  triage: 'bg-cyan-100 text-cyan-800 border-cyan-200',
+  client_work: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+  internal: 'bg-amber-100 text-amber-900 border-amber-200',
+  noise: 'bg-stone-100 text-stone-600 border-stone-200',
 };
 
 const TOOL_LABEL: Record<AgentTool, string> = {
@@ -47,6 +68,13 @@ const TOOL_LABEL: Record<AgentTool, string> = {
   codex: 'Codex',
   antigravity: 'Antigravity',
   other: 'Otro',
+};
+
+const TOOL_STYLE: Record<AgentTool, string> = {
+  claude: 'bg-orange-100 text-orange-800 border-orange-200',
+  codex: 'bg-teal-100 text-teal-800 border-teal-200',
+  antigravity: 'bg-indigo-100 text-indigo-800 border-indigo-200',
+  other: 'bg-slate-100 text-slate-700 border-slate-200',
 };
 
 const CHANNEL_LABEL: Record<string, string> = {
@@ -68,6 +96,13 @@ const STATUS_LABEL: Record<AgentActionStatus, string> = {
   in_progress: 'En curso',
   completed: 'Terminada',
   cancelled: 'Cancelada',
+};
+
+const STATUS_STYLE: Record<AgentActionStatus, string> = {
+  requested: 'text-sky-700',
+  in_progress: 'text-amber-700',
+  completed: 'text-emerald-700',
+  cancelled: 'text-rose-700',
 };
 
 function startOfLocalDay(date: Date): Date {
@@ -130,6 +165,10 @@ function projectKeyOf(action: AgentAction): string {
   return `label:${label.toLowerCase()}`;
 }
 
+function employeeDisplayName(action: AgentAction): string {
+  return action.employeeLabel?.trim() || (action.employeeId ? 'Persona' : 'Sin persona');
+}
+
 function buildChildren(actions: AgentAction[]): Map<string, AgentAction[]> {
   const ids = new Set(actions.map((action) => action.id));
   const map = new Map<string, AgentAction[]>();
@@ -144,6 +183,20 @@ function buildChildren(actions: AgentAction[]): Map<string, AgentAction[]> {
     list.sort((a, b) => a.startedAt.localeCompare(b.startedAt));
   }
   return map;
+}
+
+function countDescendants(id: string, forest: Map<string, AgentAction[]>): number {
+  const children = forest.get(id) ?? [];
+  return children.reduce((sum, child) => sum + 1 + countDescendants(child.id, forest), 0);
+}
+
+function deepLatest(action: AgentAction, forest: Map<string, AgentAction[]>): string {
+  let latest = action.finishedAt ?? action.startedAt;
+  for (const child of forest.get(action.id) ?? []) {
+    const childLatest = deepLatest(child, forest);
+    if (childLatest > latest) latest = childLatest;
+  }
+  return latest;
 }
 
 function matchesSearch(action: AgentAction, query: string): boolean {
@@ -179,7 +232,7 @@ function expandWithAncestors(matchedIds: Set<string>, byId: Map<string, AgentAct
 }
 
 const selectClass =
-  'h-10 rounded-md border border-slate-200 bg-white px-3 text-sm min-w-[9.5rem] max-w-full';
+  'h-9 rounded-md border border-slate-200 bg-white px-2.5 text-sm min-w-[9rem] max-w-full';
 
 export default function AgentActivityPage() {
   const { t } = useTranslation('app');
@@ -203,6 +256,8 @@ export default function AgentActivityPage() {
   const [onlyImputable, setOnlyImputable] = useState(false);
   const [onlyUnresolved, setOnlyUnresolved] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('tree');
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [clientsOpen, setClientsOpen] = useState(false);
   const [expandAllToken, setExpandAllToken] = useState(0);
   const [collapseAllToken, setCollapseAllToken] = useState(0);
 
@@ -266,9 +321,12 @@ export default function AgentActivityPage() {
     for (const row of attribution.byClient) map.set(row.clientKey, row.label);
     for (const action of actions) {
       if (!action.clientLabel && action.category !== 'internal') continue;
-      map.set(clientKeyOf(action), action.category === 'internal' && !action.clientId
-        ? t('agentActivity.internalBucket', 'Gestiones internas')
-        : (action.clientLabel ?? t('agentActivity.noClient', 'Sin cliente')));
+      map.set(
+        clientKeyOf(action),
+        action.category === 'internal' && !action.clientId
+          ? t('agentActivity.internalBucket', 'Gestiones internas')
+          : (action.clientLabel ?? t('agentActivity.noClient', 'Sin cliente')),
+      );
     }
     return [...map.entries()].sort((a, b) => a[1].localeCompare(b[1], 'es'));
   }, [actions, attribution.byClient, t]);
@@ -290,18 +348,19 @@ export default function AgentActivityPage() {
     return [...set].sort((a, b) => (CHANNEL_LABEL[a] ?? a).localeCompare(CHANNEL_LABEL[b] ?? b, 'es'));
   }, [actions]);
 
-  const hasActiveFilters =
-    searchQuery !== ''
-    || employeeKey !== 'all'
-    || clientKey !== 'all'
-    || projectKey !== 'all'
-    || channel !== 'all'
-    || category !== 'all'
-    || tool !== 'all'
-    || status !== 'all'
-    || onlyImputable
-    || onlyUnresolved
-    || showNoise;
+  const advancedFilterCount = [
+    clientKey !== 'all',
+    projectKey !== 'all',
+    channel !== 'all',
+    category !== 'all',
+    tool !== 'all',
+    status !== 'all',
+    onlyImputable,
+    onlyUnresolved,
+    showNoise,
+  ].filter(Boolean).length;
+
+  const hasActiveFilters = searchQuery !== '' || employeeKey !== 'all' || advancedFilterCount > 0;
 
   const clearFilters = () => {
     setSearchInput('');
@@ -337,7 +396,6 @@ export default function AgentActivityPage() {
     }
 
     const keep = expandWithAncestors(matched, byId);
-    // If ancestors were noise-hidden, still hide them unless showNoise
     return actions.filter((action) => {
       if (!keep.has(action.id)) return false;
       if (!showNoise && action.category === 'noise' && !matched.has(action.id)) return false;
@@ -360,8 +418,12 @@ export default function AgentActivityPage() {
   ]);
 
   const forest = useMemo(() => buildChildren(visible), [visible]);
-  const roots = forest.get('__root__') ?? [];
-  const defaultRootsOpen = roots.length <= 8 && searchQuery === '';
+  const roots = useMemo(() => {
+    const list = [...(forest.get('__root__') ?? [])];
+    list.sort((a, b) => deepLatest(b, forest).localeCompare(deepLatest(a, forest)));
+    return list;
+  }, [forest]);
+  const defaultRootsOpen = searchQuery !== '' || roots.length <= 3;
 
   const flatList = useMemo(
     () => [...visible].sort((a, b) => b.startedAt.localeCompare(a.startedAt)),
@@ -381,414 +443,412 @@ export default function AgentActivityPage() {
   }, [attribution.byClient, clientKey, employeeKey, projectKey, searchQuery, visible]);
 
   return (
-    <div className="max-w-7xl mx-auto p-6 space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900">
-            {t('agentActivity.title', 'Trabajo de agentes')}
-          </h1>
-          <p className="text-slate-500 mt-1 max-w-3xl">
-            {t(
-              'agentActivity.subtitle',
-              'Aquí ves qué se pidió a Claude, Codex o Antigravity y a qué cliente fue el tiempo. Si alguien tiene varias cosas a la vez, la hora se reparte: no se cuenta entera en cada cliente.',
-            )}
-          </p>
-        </div>
-        <Button variant="outline" size="sm" onClick={refresh} className="gap-2">
-          <RefreshCw className="h-3.5 w-3.5" />
-          {t('agentActivity.refresh', 'Actualizar')}
-        </Button>
-      </div>
-
-      <section className="space-y-3 rounded-lg border bg-white p-4">
-        <div className="text-sm font-medium text-slate-700">
-          {t('agentActivity.periodTitle', 'Periodo')}
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {(
-            [
-              ['today', 'Hoy'],
-              ['week', '7 días'],
-              ['day', 'Día'],
-              ['month', 'Mes'],
-              ['custom', 'Rango'],
-            ] as const
-          ).map(([key, fallback]) => (
-            <Button
-              key={key}
-              variant={rangeMode === key ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setRangeMode(key)}
-            >
-              {t(`agentActivity.range.${key}`, fallback)}
-            </Button>
-          ))}
-          <span className="text-sm text-slate-500 ml-1">
-            {format(start, 'd MMM', { locale: dateLocale })} –{' '}
-            {format(new Date(end.getTime() - 1), 'd MMM yyyy', { locale: dateLocale })}
-            {loading && <Loader2 className="inline h-3.5 w-3.5 ml-2 animate-spin" />}
-          </span>
-        </div>
-
-        {rangeMode === 'day' && (
-          <div className="flex flex-wrap items-center gap-2">
-            <Button type="button" variant="outline" size="icon" className="h-9 w-9" onClick={() => shiftDay(-1)} aria-label={t('agentActivity.range.prevDay', 'Día anterior')}>
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Input
-              type="date"
-              value={selectedDay}
-              onChange={(event) => {
-                setSelectedDay(event.target.value);
-                setRangeMode('day');
-              }}
-              className="w-[11.5rem] h-9"
-              aria-label={t('agentActivity.range.pickDay', 'Elegir día')}
-            />
-            <Button type="button" variant="outline" size="icon" className="h-9 w-9" onClick={() => shiftDay(1)} aria-label={t('agentActivity.range.nextDay', 'Día siguiente')}>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-            <Button type="button" variant="ghost" size="sm" onClick={() => { setSelectedDay(toDateInputValue(today)); setRangeMode('day'); }}>
-              {t('agentActivity.range.jumpToday', 'Ir a hoy')}
-            </Button>
+    <TooltipProvider delayDuration={200}>
+      <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-3">
+        {/* Cabecera compacta */}
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="min-w-0">
+            <h1 className="text-2xl font-bold text-slate-900">
+              {t('agentActivity.title', 'Trabajo de agentes')}
+            </h1>
+            <p className="text-sm text-slate-500 mt-0.5 max-w-2xl">
+              {t(
+                'agentActivity.subtitleShort',
+                'Peticiones a Claude, Codex o Antigravity y el tiempo repartido por cliente.',
+              )}
+            </p>
           </div>
-        )}
+          <Button variant="outline" size="sm" onClick={refresh} className="gap-2 shrink-0">
+            <RefreshCw className="h-3.5 w-3.5" />
+            {t('agentActivity.refresh', 'Actualizar')}
+          </Button>
+        </div>
 
-        {rangeMode === 'month' && (
-          <div className="flex flex-wrap items-center gap-2">
-            <Button type="button" variant="outline" size="icon" className="h-9 w-9" onClick={() => shiftMonth(-1)} aria-label={t('agentActivity.range.prevMonth', 'Mes anterior')}>
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Input
-              type="month"
-              value={selectedMonth}
-              onChange={(event) => {
-                setSelectedMonth(event.target.value);
-                setRangeMode('month');
-              }}
-              className="w-[11.5rem] h-9"
-              aria-label={t('agentActivity.range.pickMonth', 'Elegir mes')}
-            />
-            <Button type="button" variant="outline" size="icon" className="h-9 w-9" onClick={() => shiftMonth(1)} aria-label={t('agentActivity.range.nextMonth', 'Mes siguiente')}>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setSelectedMonth(toMonthInputValue(today));
-                setRangeMode('month');
-              }}
-            >
-              {t('agentActivity.range.jumpThisMonth', 'Mes actual')}
-            </Button>
-            <span className="text-sm text-slate-600">
-              {format(start, 'MMMM yyyy', { locale: dateLocale })}
+        {/* Periodo + métricas en una franja */}
+        <div className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 space-y-2">
+          <div className="flex flex-wrap items-center gap-1.5">
+            {(
+              [
+                ['today', 'Hoy'],
+                ['week', '7 días'],
+                ['day', 'Día'],
+                ['month', 'Mes'],
+                ['custom', 'Rango'],
+              ] as const
+            ).map(([key, fallback]) => (
+              <Button
+                key={key}
+                variant={rangeMode === key ? 'default' : 'outline'}
+                size="sm"
+                className={cn('h-8', rangeMode === key && 'bg-teal-700 hover:bg-teal-800')}
+                onClick={() => setRangeMode(key)}
+              >
+                {t(`agentActivity.range.${key}`, fallback)}
+              </Button>
+            ))}
+            <span className="text-xs text-slate-500 ml-1">
+              {format(start, 'd MMM', { locale: dateLocale })} –{' '}
+              {format(new Date(end.getTime() - 1), 'd MMM yyyy', { locale: dateLocale })}
+              {loading && <Loader2 className="inline h-3.5 w-3.5 ml-1.5 animate-spin" />}
             </span>
           </div>
-        )}
 
-        {rangeMode === 'custom' && (
-          <div className="flex flex-wrap items-end gap-3">
-            <label className="space-y-1 text-sm text-slate-600">
-              <span className="block">{t('agentActivity.range.from', 'Desde')}</span>
-              <Input
-                type="date"
-                value={customFrom}
-                onChange={(event) => setCustomFrom(event.target.value)}
-                className="w-[11.5rem] h-9"
-              />
-            </label>
-            <label className="space-y-1 text-sm text-slate-600">
-              <span className="block">{t('agentActivity.range.to', 'Hasta')}</span>
-              <Input
-                type="date"
-                value={customTo}
-                onChange={(event) => setCustomTo(event.target.value)}
-                className="w-[11.5rem] h-9"
-              />
-            </label>
+          {(rangeMode === 'day' || rangeMode === 'month' || rangeMode === 'custom') && (
+            <div className="flex flex-wrap items-center gap-2">
+              {rangeMode === 'day' && (
+                <>
+                  <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => shiftDay(-1)}>
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <Input type="date" value={selectedDay} onChange={(e) => { setSelectedDay(e.target.value); setRangeMode('day'); }} className="w-[10.5rem] h-8" />
+                  <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => shiftDay(1)}>
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </>
+              )}
+              {rangeMode === 'month' && (
+                <>
+                  <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => shiftMonth(-1)}>
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <Input type="month" value={selectedMonth} onChange={(e) => { setSelectedMonth(e.target.value); setRangeMode('month'); }} className="w-[10.5rem] h-8" />
+                  <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => shiftMonth(1)}>
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </>
+              )}
+              {rangeMode === 'custom' && (
+                <>
+                  <Input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)} className="w-[10.5rem] h-8" aria-label={t('agentActivity.range.from', 'Desde')} />
+                  <span className="text-xs text-slate-400">→</span>
+                  <Input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)} className="w-[10.5rem] h-8" aria-label={t('agentActivity.range.to', 'Hasta')} />
+                </>
+              )}
+            </div>
+          )}
+
+          <div className="flex flex-wrap gap-2 pt-1 border-t border-slate-100">
+            <MetricPill
+              tone="sky"
+              label={t('agentActivity.metrics.wall', 'Tiempo real')}
+              value={formatMinutes(attribution.totals.wallMinutes)}
+              tip={t(
+                'agentActivity.metrics.wallTip',
+                'Unión de intervalos con algo abierto. Si hay dos cosas a la vez, el reloj no se duplica.',
+              )}
+            />
+            <MetricPill
+              tone="emerald"
+              label={t('agentActivity.metrics.imputable', 'A clientes')}
+              value={formatMinutes(attribution.totals.imputableMinutes)}
+              tip={t(
+                'agentActivity.metrics.imputableTip',
+                'Solo trabajo de cliente resuelto o gestiones internas. Si hay solape, se reparte a partes iguales (salvo attention=exclusive).',
+              )}
+            />
+            <MetricPill
+              tone="amber"
+              label={t('agentActivity.metrics.presence', 'Si sumaras')}
+              value={formatMinutes(attribution.totals.presenceMinutes)}
+              tip={t(
+                'agentActivity.metrics.presenceTip',
+                'Suma bruta de cada bloque sin repartir. Se infla cuando hay varios clientes en paralelo.',
+              )}
+            />
+            <MetricPill
+              tone="rose"
+              label={t('agentActivity.metrics.unattributed', 'Sin cliente')}
+              value={formatMinutes(attribution.totals.unattributedMinutes)}
+              tip={t(
+                'agentActivity.metrics.unattributedTip',
+                'Petición, detección o lectura que no acabó en un cliente concreto.',
+              )}
+            />
           </div>
-        )}
-      </section>
-
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Metric
-          label={t('agentActivity.metrics.wall', 'Tiempo real')}
-          value={formatMinutes(attribution.totals.wallMinutes)}
-          hint={t('agentActivity.metrics.wallHint', 'Cuánto tiempo estuvo alguien con trabajo abierto. Si había dos cosas a la vez, no se duplica.')}
-        />
-        <Metric
-          label={t('agentActivity.metrics.imputable', 'A clientes')}
-          value={formatMinutes(attribution.totals.imputableMinutes)}
-          hint={t('agentActivity.metrics.imputableHint', 'Tiempo que sí se puede asignar a un cliente (o a gestiones internas), ya repartido si había solapes.')}
-        />
-        <Metric
-          label={t('agentActivity.metrics.presence', 'Si sumaras todo')}
-          value={formatMinutes(attribution.totals.presenceMinutes)}
-          hint={t('agentActivity.metrics.presenceHint', 'La cifra que se infla si sumas cada cliente por separado cuando hay varios a la vez.')}
-        />
-        <Metric
-          label={t('agentActivity.metrics.unattributed', 'Sin cliente')}
-          value={formatMinutes(attribution.totals.unattributedMinutes)}
-          hint={t('agentActivity.metrics.unattributedHint', 'Peticiones, lecturas o detecciones que no acabaron en trabajo de un cliente.')}
-        />
-      </div>
-
-      <section className="rounded-lg border bg-white p-4 space-y-3">
-        <div className="flex flex-wrap items-center gap-2 text-sm text-slate-600">
-          <Filter className="h-4 w-4 text-slate-400" />
-          <span className="font-medium text-slate-700">
-            {t('agentActivity.filtersTitle', 'Filtros y búsqueda')}
-          </span>
-          <span className="text-slate-400">·</span>
-          <span>
-            {t('agentActivity.resultsCount', '{{count}} resultados', { count: visible.length })}
-            {actions.length !== visible.length
-              ? ` ${t('agentActivity.ofTotal', 'de {{total}}', { total: actions.length })}`
-              : ''}
-          </span>
-          {hasActiveFilters && (
-            <Button type="button" variant="ghost" size="sm" className="h-8 gap-1 text-slate-600" onClick={clearFilters}>
-              <X className="h-3.5 w-3.5" />
-              {t('agentActivity.clearFilters', 'Limpiar filtros')}
-            </Button>
-          )}
         </div>
 
-        <div className="relative max-w-xl">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-          <Input
-            value={searchInput}
-            onChange={(event) => setSearchInput(event.target.value)}
-            placeholder={t(
-              'agentActivity.searchPlaceholder',
-              'Buscar por título, cliente, proyecto, persona…',
-            )}
-            className="pl-9 h-10"
-            aria-label={t('agentActivity.searchAria', 'Buscar actividad de agentes')}
-          />
-          {searchInput && (
-            <button
-              type="button"
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-slate-400 hover:text-slate-600"
-              onClick={() => setSearchInput('')}
-              aria-label={t('agentActivity.clearSearch', 'Borrar búsqueda')}
+        {/* Barra de búsqueda / filtros rápidos */}
+        <div className="rounded-lg border border-teal-200/80 bg-teal-50/40 px-3 py-2.5 space-y-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="relative flex-1 min-w-[14rem] max-w-md">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-teal-600/70 pointer-events-none" />
+              <Input
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                placeholder={t('agentActivity.searchPlaceholder', 'Buscar título, cliente, proyecto, persona…')}
+                className="pl-8 h-9 bg-white border-teal-200 focus-visible:ring-teal-600"
+                aria-label={t('agentActivity.searchAria', 'Buscar actividad de agentes')}
+              />
+              {searchInput && (
+                <button type="button" className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" onClick={() => setSearchInput('')}>
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+
+            <select
+              className={cn(selectClass, 'border-teal-200')}
+              value={employeeKey}
+              onChange={(e) => setEmployeeKey(e.target.value)}
+              aria-label={t('agentActivity.filterEmployee', 'Persona')}
             >
-              <X className="h-4 w-4" />
-            </button>
-          )}
-        </div>
+              <option value="all">{t('agentActivity.allEmployees', 'Todas las personas')}</option>
+              {employees.map(([key, label]) => (
+                <option key={key} value={key}>{label}</option>
+              ))}
+            </select>
 
-        <div className="flex flex-wrap gap-2">
-          <select className={selectClass} value={employeeKey} onChange={(e) => setEmployeeKey(e.target.value)} aria-label={t('agentActivity.filterEmployee', 'Persona')}>
-            <option value="all">{t('agentActivity.allEmployees', 'Todas las personas')}</option>
-            {employees.map(([key, label]) => (
-              <option key={key} value={key}>{label}</option>
-            ))}
-          </select>
-          <select className={selectClass} value={clientKey} onChange={(e) => setClientKey(e.target.value)} aria-label={t('agentActivity.filterClient', 'Cliente')}>
-            <option value="all">{t('agentActivity.allClients', 'Todos los clientes')}</option>
-            {clients.map(([key, label]) => (
-              <option key={key} value={key}>{label}</option>
-            ))}
-          </select>
-          <select className={selectClass} value={projectKey} onChange={(e) => setProjectKey(e.target.value)} aria-label={t('agentActivity.filterProject', 'Proyecto')}>
-            <option value="all">{t('agentActivity.allProjects', 'Todos los proyectos')}</option>
-            {projects.map(([key, label]) => (
-              <option key={key} value={key}>{label}</option>
-            ))}
-          </select>
-          <select
-            className={selectClass}
-            value={channel}
-            onChange={(e) => setChannel(e.target.value as 'all' | AgentActionChannel)}
-            aria-label={t('agentActivity.filterChannel', 'Canal')}
-          >
-            <option value="all">{t('agentActivity.allChannels', 'Todos los canales')}</option>
-            {channels.map((value) => (
-              <option key={value} value={value}>{CHANNEL_LABEL[value] ?? value}</option>
-            ))}
-          </select>
-          <select
-            className={selectClass}
-            value={category}
-            onChange={(e) => setCategory(e.target.value as 'all' | AgentActionCategory)}
-            aria-label={t('agentActivity.filterCategory', 'Tipo')}
-          >
-            <option value="all">{t('agentActivity.allCategories', 'Todos los tipos')}</option>
-            {(Object.keys(CATEGORY_LABEL) as AgentActionCategory[]).map((value) => (
-              <option key={value} value={value}>{CATEGORY_LABEL[value]}</option>
-            ))}
-          </select>
-          <select
-            className={selectClass}
-            value={tool}
-            onChange={(e) => setTool(e.target.value as 'all' | AgentTool)}
-            aria-label={t('agentActivity.filterTool', 'Herramienta')}
-          >
-            <option value="all">{t('agentActivity.allTools', 'Todas las herramientas')}</option>
-            <option value="claude">Claude</option>
-            <option value="codex">Codex</option>
-            <option value="antigravity">Antigravity</option>
-            <option value="other">{t('agentActivity.otherTool', 'Otro')}</option>
-          </select>
-          <select
-            className={selectClass}
-            value={status}
-            onChange={(e) => setStatus(e.target.value as 'all' | AgentActionStatus)}
-            aria-label={t('agentActivity.filterStatus', 'Estado')}
-          >
-            <option value="all">{t('agentActivity.allStatuses', 'Todos los estados')}</option>
-            {(Object.keys(STATUS_LABEL) as AgentActionStatus[]).map((value) => (
-              <option key={value} value={value}>{STATUS_LABEL[value]}</option>
-            ))}
-          </select>
-        </div>
-
-        <div className="flex flex-wrap gap-2 items-center">
-          <FilterChip
-            active={onlyImputable}
-            onClick={() => setOnlyImputable((value) => !value)}
-            label={t('agentActivity.onlyImputable', 'Solo tiempo a clientes')}
-          />
-          <FilterChip
-            active={onlyUnresolved}
-            onClick={() => setOnlyUnresolved((value) => !value)}
-            label={t('agentActivity.onlyUnresolved', 'Cliente sin resolver')}
-          />
-          <FilterChip
-            active={showNoise}
-            onClick={() => setShowNoise((value) => !value)}
-            label={t('agentActivity.showNoise', 'Ver descartados')}
-          />
-          <div className="ml-auto flex flex-wrap gap-2">
             <Button
               type="button"
               size="sm"
-              variant={viewMode === 'tree' ? 'default' : 'outline'}
+              variant={filtersOpen || advancedFilterCount > 0 ? 'default' : 'outline'}
+              className={cn(
+                'h-9 gap-1.5',
+                (filtersOpen || advancedFilterCount > 0) && 'bg-teal-700 hover:bg-teal-800',
+              )}
+              onClick={() => setFiltersOpen((v) => !v)}
+            >
+              <Filter className="h-3.5 w-3.5" />
+              {t('agentActivity.moreFilters', 'Más filtros')}
+              {advancedFilterCount > 0 && (
+                <span className="rounded-full bg-white/20 px-1.5 text-[11px]">{advancedFilterCount}</span>
+              )}
+            </Button>
+
+            {hasActiveFilters && (
+              <Button type="button" size="sm" variant="ghost" className="h-9 text-teal-800" onClick={clearFilters}>
+                <X className="h-3.5 w-3.5 mr-1" />
+                {t('agentActivity.clearFilters', 'Limpiar')}
+              </Button>
+            )}
+
+            <span className="text-xs text-teal-900/70 ml-auto">
+              {t('agentActivity.resultsCount', '{{count}} resultados', { count: visible.length })}
+              {actions.length !== visible.length
+                ? ` ${t('agentActivity.ofTotal', 'de {{total}}', { total: actions.length })}`
+                : ''}
+              {' · '}
+              {t('agentActivity.rootsCount', '{{count}} raíces', { count: roots.length })}
+            </span>
+          </div>
+
+          {filtersOpen && (
+            <div className="flex flex-wrap gap-2 pt-2 border-t border-teal-100">
+              <select className={selectClass} value={clientKey} onChange={(e) => setClientKey(e.target.value)}>
+                <option value="all">{t('agentActivity.allClients', 'Todos los clientes')}</option>
+                {clients.map(([key, label]) => <option key={key} value={key}>{label}</option>)}
+              </select>
+              <select className={selectClass} value={projectKey} onChange={(e) => setProjectKey(e.target.value)}>
+                <option value="all">{t('agentActivity.allProjects', 'Todos los proyectos')}</option>
+                {projects.map(([key, label]) => <option key={key} value={key}>{label}</option>)}
+              </select>
+              <select className={selectClass} value={channel} onChange={(e) => setChannel(e.target.value as 'all' | AgentActionChannel)}>
+                <option value="all">{t('agentActivity.allChannels', 'Todos los canales')}</option>
+                {channels.map((value) => <option key={value} value={value}>{CHANNEL_LABEL[value] ?? value}</option>)}
+              </select>
+              <select className={selectClass} value={category} onChange={(e) => setCategory(e.target.value as 'all' | AgentActionCategory)}>
+                <option value="all">{t('agentActivity.allCategories', 'Todos los tipos')}</option>
+                {(Object.keys(CATEGORY_LABEL) as AgentActionCategory[]).map((value) => (
+                  <option key={value} value={value}>{CATEGORY_LABEL[value]}</option>
+                ))}
+              </select>
+              <select className={selectClass} value={tool} onChange={(e) => setTool(e.target.value as 'all' | AgentTool)}>
+                <option value="all">{t('agentActivity.allTools', 'Todas las herramientas')}</option>
+                <option value="claude">Claude</option>
+                <option value="codex">Codex</option>
+                <option value="antigravity">Antigravity</option>
+                <option value="other">{t('agentActivity.otherTool', 'Otro')}</option>
+              </select>
+              <select className={selectClass} value={status} onChange={(e) => setStatus(e.target.value as 'all' | AgentActionStatus)}>
+                <option value="all">{t('agentActivity.allStatuses', 'Todos los estados')}</option>
+                {(Object.keys(STATUS_LABEL) as AgentActionStatus[]).map((value) => (
+                  <option key={value} value={value}>{STATUS_LABEL[value]}</option>
+                ))}
+              </select>
+              <FilterChip active={onlyImputable} onClick={() => setOnlyImputable((v) => !v)} label={t('agentActivity.onlyImputable', 'Solo a clientes')} tone="emerald" />
+              <FilterChip active={onlyUnresolved} onClick={() => setOnlyUnresolved((v) => !v)} label={t('agentActivity.onlyUnresolved', 'Cliente sin resolver')} tone="amber" />
+              <FilterChip active={showNoise} onClick={() => setShowNoise((v) => !v)} label={t('agentActivity.showNoise', 'Descartados')} tone="stone" />
+            </div>
+          )}
+        </div>
+
+        {/* Resumen clientes colapsable */}
+        <Collapsible open={clientsOpen} onOpenChange={setClientsOpen}>
+          <div className="rounded-lg border border-emerald-200/70 bg-white overflow-hidden">
+            <CollapsibleTrigger asChild>
+              <button type="button" className="w-full flex items-center justify-between gap-2 px-3 py-2 text-sm hover:bg-emerald-50/60">
+                <span className="font-medium text-emerald-900 flex items-center gap-2">
+                  <span className="inline-block h-2 w-2 rounded-full bg-emerald-500" />
+                  {t('agentActivity.clientsTitle', 'Resumen por cliente')}
+                  <span className="text-xs font-normal text-emerald-700/70">({filteredClientRows.length})</span>
+                </span>
+                <span className="text-xs text-slate-500 flex items-center gap-1">
+                  {t('agentActivity.clientsToggle', 'Ver tiempos')}
+                  <ChevronDown className={cn('h-4 w-4 transition-transform', clientsOpen && 'rotate-180')} />
+                </span>
+              </button>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              {filteredClientRows.length === 0 ? (
+                <p className="px-3 py-4 text-sm text-slate-500 border-t">
+                  {t('agentActivity.clientsEmpty', 'Todavía no hay trabajo de cliente en este periodo.')}
+                </p>
+              ) : (
+                <div className="overflow-x-auto border-t">
+                  <table className="w-full text-sm">
+                    <thead className="text-left text-slate-500 bg-emerald-50/40">
+                      <tr>
+                        <th className="px-3 py-1.5 font-medium">{t('agentActivity.col.client', 'Cliente')}</th>
+                        <th className="px-3 py-1.5 font-medium">{t('agentActivity.col.actions', 'Acciones')}</th>
+                        <th className="px-3 py-1.5 font-medium">{t('agentActivity.col.imputable', 'A clientes')}</th>
+                        <th className="px-3 py-1.5 font-medium">{t('agentActivity.col.presence', 'Si sumaras')}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredClientRows.map((row) => {
+                        const selected = clientKey === row.clientKey;
+                        return (
+                          <tr
+                            key={row.clientKey}
+                            className={cn('border-t cursor-pointer hover:bg-emerald-50/50', selected && 'bg-emerald-50')}
+                            onClick={() => setClientKey(selected ? 'all' : row.clientKey)}
+                          >
+                            <td className="px-3 py-1.5 text-slate-900">
+                              {row.clientId ? (
+                                <SensitiveText kind="account" id={row.clientId}>{row.label}</SensitiveText>
+                              ) : row.label}
+                            </td>
+                            <td className="px-3 py-1.5">{row.actionCount}</td>
+                            <td className="px-3 py-1.5 text-emerald-800 font-medium">{formatMinutes(row.imputableMinutes)}</td>
+                            <td className="px-3 py-1.5 text-amber-800/80">{formatMinutes(row.presenceMinutes)}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CollapsibleContent>
+          </div>
+        </Collapsible>
+
+        {/* Controles de vista + listado */}
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm font-medium text-slate-700">
+            {t('agentActivity.listTitle', 'Actividad')}
+          </span>
+          <div className="flex rounded-md border border-slate-200 overflow-hidden">
+            <button
+              type="button"
+              className={cn('px-2.5 h-8 text-xs', viewMode === 'tree' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600')}
               onClick={() => setViewMode('tree')}
             >
               {t('agentActivity.viewTree', 'Árbol')}
-            </Button>
-            <Button
+            </button>
+            <button
               type="button"
-              size="sm"
-              variant={viewMode === 'list' ? 'default' : 'outline'}
+              className={cn('px-2.5 h-8 text-xs border-l', viewMode === 'list' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600')}
               onClick={() => setViewMode('list')}
             >
               {t('agentActivity.viewList', 'Lista')}
-            </Button>
-            {viewMode === 'tree' && (
-              <>
-                <Button type="button" size="sm" variant="ghost" onClick={() => setExpandAllToken((n) => n + 1)}>
-                  {t('agentActivity.expandAll', 'Abrir todo')}
-                </Button>
-                <Button type="button" size="sm" variant="ghost" onClick={() => setCollapseAllToken((n) => n + 1)}>
-                  {t('agentActivity.collapseAll', 'Cerrar todo')}
-                </Button>
-              </>
+            </button>
+          </div>
+          {viewMode === 'tree' && (
+            <>
+              <Button type="button" size="sm" variant="ghost" className="h-8" onClick={() => setExpandAllToken((n) => n + 1)}>
+                {t('agentActivity.expandAll', 'Abrir')}
+              </Button>
+              <Button type="button" size="sm" variant="ghost" className="h-8" onClick={() => setCollapseAllToken((n) => n + 1)}>
+                {t('agentActivity.collapseAll', 'Cerrar')}
+              </Button>
+            </>
+          )}
+          <p className="text-xs text-slate-500 ml-auto max-w-md text-right">
+            {t(
+              'agentActivity.rootHint',
+              'Cada petición es una raíz. Si retomas la misma conversación, no crees otra: reutiliza el external_id o añade hijos.',
+            )}
+          </p>
+        </div>
+
+        {error && <p className="text-sm text-red-600">{error}</p>}
+
+        {!loading && visible.length === 0 && (
+          <div className="border border-dashed border-slate-300 rounded-lg p-5 text-sm text-slate-500 space-y-2 bg-slate-50/50">
+            <p>
+              {hasActiveFilters
+                ? t('agentActivity.emptyFiltered', 'No hay nada con estos filtros. Prueba a limpiarlos o cambia el periodo.')
+                : t('agentActivity.empty', 'Cuando un agente termine un trabajo real, aparecerá aquí.')}
+            </p>
+            {!hasActiveFilters && (
+              <p>
+                <Link className="text-teal-800 underline" to="/api-docs#resource-agent_actions">
+                  {t('agentActivity.apiLink', 'Cómo registrarlo por API')}
+                </Link>
+              </p>
             )}
           </div>
-        </div>
-      </section>
+        )}
 
-      <div className="bg-white border rounded-lg overflow-hidden">
-        <div className="px-4 py-3 border-b text-sm font-medium text-slate-700 flex flex-wrap items-center justify-between gap-2">
-          <span>{t('agentActivity.clientsTitle', 'Resumen por cliente')}</span>
-          <span className="text-xs font-normal text-slate-500">
-            {t('agentActivity.clientsHint', 'Pulsa un cliente para filtrar la lista de abajo.')}
-          </span>
-        </div>
-        {filteredClientRows.length === 0 ? (
-          <p className="px-4 py-6 text-sm text-slate-500">
-            {t('agentActivity.clientsEmpty', 'Todavía no hay trabajo de cliente en este periodo.')}
-          </p>
+        {viewMode === 'tree' ? (
+          <div className="space-y-2">
+            {roots.map((action) => (
+              <ActionNode
+                key={action.id}
+                action={action}
+                forest={forest}
+                attribution={attribution.byAction}
+                depth={0}
+                defaultOpen={defaultRootsOpen}
+                expandAllToken={expandAllToken}
+                collapseAllToken={collapseAllToken}
+              />
+            ))}
+          </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="text-left text-slate-500">
-                <tr>
-                  <th className="px-4 py-2 font-medium">{t('agentActivity.col.client', 'Cliente')}</th>
-                  <th className="px-4 py-2 font-medium">{t('agentActivity.col.actions', 'Acciones')}</th>
-                  <th className="px-4 py-2 font-medium">{t('agentActivity.col.imputable', 'A clientes')}</th>
-                  <th className="px-4 py-2 font-medium">{t('agentActivity.col.presence', 'Si sumaras todo')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredClientRows.map((row) => {
-                  const selected = clientKey === row.clientKey;
-                  return (
-                    <tr
-                      key={row.clientKey}
-                      className={`border-t cursor-pointer hover:bg-slate-50 ${selected ? 'bg-slate-100' : ''}`}
-                      onClick={() => setClientKey(selected ? 'all' : row.clientKey)}
-                    >
-                      <td className="px-4 py-2 text-slate-900">
-                        {row.clientId ? (
-                          <SensitiveText kind="account" id={row.clientId}>{row.label}</SensitiveText>
-                        ) : row.label}
-                      </td>
-                      <td className="px-4 py-2">{row.actionCount}</td>
-                      <td className="px-4 py-2">{formatMinutes(row.imputableMinutes)}</td>
-                      <td className="px-4 py-2 text-slate-500">{formatMinutes(row.presenceMinutes)}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          <div className="bg-white border border-slate-200 rounded-lg divide-y">
+            {flatList.map((action) => (
+              <FlatActionRow key={action.id} action={action} part={attribution.byAction.get(action.id)} />
+            ))}
           </div>
         )}
       </div>
+    </TooltipProvider>
+  );
+}
 
-      {error && (
-        <p className="text-sm text-red-600">{error}</p>
-      )}
+function MetricPill({
+  label,
+  value,
+  tip,
+  tone,
+}: {
+  label: string;
+  value: string;
+  tip: string;
+  tone: 'sky' | 'emerald' | 'amber' | 'rose';
+}) {
+  const toneClass = {
+    sky: 'bg-sky-50 border-sky-200 text-sky-950',
+    emerald: 'bg-emerald-50 border-emerald-200 text-emerald-950',
+    amber: 'bg-amber-50 border-amber-200 text-amber-950',
+    rose: 'bg-rose-50 border-rose-200 text-rose-950',
+  }[tone];
 
-      {!loading && visible.length === 0 && (
-        <div className="border border-dashed rounded-lg p-6 text-sm text-slate-500 space-y-2">
-          <p>
-            {hasActiveFilters
-              ? t('agentActivity.emptyFiltered', 'No hay nada con estos filtros. Prueba a limpiarlos o cambia el periodo.')
-              : t('agentActivity.empty', 'Cuando un agente termine un trabajo real, aparecerá aquí. Una lectura suelta o un comando local no debería registrarse.')}
-          </p>
-          {!hasActiveFilters && (
-            <p>
-              <Link className="text-slate-900 underline" to="/api-docs#resource-agent_actions">
-                {t('agentActivity.apiLink', 'Cómo registrarlo por API')}
-              </Link>
-            </p>
-          )}
-        </div>
-      )}
-
-      {viewMode === 'tree' ? (
-        <div className="space-y-3">
-          {roots.map((action) => (
-            <ActionNode
-              key={action.id}
-              action={action}
-              forest={forest}
-              attribution={attribution.byAction}
-              depth={0}
-              defaultOpen={defaultRootsOpen}
-              expandAllToken={expandAllToken}
-              collapseAllToken={collapseAllToken}
-            />
-          ))}
-        </div>
-      ) : (
-        <div className="bg-white border rounded-lg divide-y">
-          {flatList.map((action) => (
-            <FlatActionRow
-              key={action.id}
-              action={action}
-              part={attribution.byAction.get(action.id)}
-            />
-          ))}
-        </div>
-      )}
+  return (
+    <div className={cn('inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs', toneClass)}>
+      <span className="opacity-70">{label}</span>
+      <span className="font-semibold tabular-nums">{value}</span>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button type="button" className="opacity-60 hover:opacity-100" aria-label={tip}>
+            <HelpCircle className="h-3.5 w-3.5" />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="bottom" className="max-w-xs text-xs leading-relaxed">
+          {tip}
+        </TooltipContent>
+      </Tooltip>
     </div>
   );
 }
@@ -797,33 +857,30 @@ function FilterChip({
   active,
   onClick,
   label,
+  tone,
 }: {
   active: boolean;
   onClick: () => void;
   label: string;
+  tone: 'emerald' | 'amber' | 'stone';
 }) {
+  const activeClass = {
+    emerald: 'border-emerald-700 bg-emerald-700 text-white',
+    amber: 'border-amber-700 bg-amber-700 text-white',
+    stone: 'border-stone-700 bg-stone-700 text-white',
+  }[tone];
+
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`h-8 rounded-md border px-3 text-sm transition-colors ${
-        active
-          ? 'border-slate-900 bg-slate-900 text-white'
-          : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-      }`}
+      className={cn(
+        'h-9 rounded-md border px-3 text-sm transition-colors',
+        active ? activeClass : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50',
+      )}
     >
       {label}
     </button>
-  );
-}
-
-function Metric({ label, value, hint }: { label: string; value: string; hint: string }) {
-  return (
-    <div className="bg-white border rounded-lg p-4">
-      <div className="text-xs uppercase tracking-wide text-slate-500">{label}</div>
-      <div className="text-2xl font-semibold text-slate-900 mt-1">{value}</div>
-      <p className="text-xs text-slate-500 mt-2">{hint}</p>
-    </div>
   );
 }
 
@@ -845,7 +902,8 @@ function ActionNode({
   collapseAllToken: number;
 }) {
   const children = forest.get(action.id) ?? [];
-  const [open, setOpen] = useState(defaultOpen);
+  const parts = countDescendants(action.id, forest);
+  const [open, setOpen] = useState(depth === 0 ? defaultOpen : true);
 
   useEffect(() => {
     if (expandAllToken > 0) setOpen(true);
@@ -860,19 +918,28 @@ function ActionNode({
     ? `${format(new Date(action.startedAt), 'd MMM HH:mm')} – ${format(new Date(action.finishedAt), 'HH:mm')}`
     : format(new Date(action.startedAt), 'd MMM HH:mm');
 
+  const borderTone =
+    depth === 0
+      ? action.category === 'client_work'
+        ? 'border-l-emerald-500'
+        : action.category === 'internal'
+          ? 'border-l-amber-500'
+          : 'border-l-sky-500'
+      : 'border-l-slate-200';
+
   return (
-    <div className={depth === 0 ? 'bg-white border rounded-lg' : 'border-l border-slate-200 ml-4 pl-3'}>
-      <div className={depth === 0 ? 'p-4' : 'py-3'}>
-        <ActionBadges action={action} />
-        <div className="mt-2 flex items-start gap-2">
+    <div className={cn(depth === 0 ? 'bg-white border border-slate-200 rounded-lg border-l-4' : 'ml-3 pl-3 border-l-2', borderTone)}>
+      <div className={depth === 0 ? 'p-3' : 'py-2'}>
+        <div className="flex items-start gap-2">
           {children.length > 0 ? (
-            <button type="button" className="mt-0.5 text-slate-400 shrink-0" onClick={() => setOpen((value) => !value)} aria-expanded={open}>
+            <button type="button" className="mt-0.5 text-slate-400 shrink-0" onClick={() => setOpen((v) => !v)} aria-expanded={open}>
               {open ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
             </button>
           ) : <span className="w-4 shrink-0" />}
-          <div className="min-w-0 flex-1">
-            <div className="text-sm text-slate-900 font-medium">{action.title}</div>
-            {action.outcome && <p className="mt-1 text-sm text-slate-600">{action.outcome}</p>}
+          <div className="min-w-0 flex-1 space-y-1.5">
+            <ActionBadges action={action} parts={depth === 0 ? parts : 0} />
+            <div className="text-sm text-slate-900 font-medium leading-snug">{action.title}</div>
+            {action.outcome && <p className="text-sm text-slate-600">{action.outcome}</p>}
             <ActionMeta action={action} when={when} part={part} />
           </div>
         </div>
@@ -906,41 +973,55 @@ function FlatActionRow({
   const pad = Math.min(action.depth, 4) * 12;
 
   return (
-    <div className="p-4" style={{ paddingLeft: 16 + pad }}>
-      <ActionBadges action={action} />
-      <div className="mt-2 text-sm text-slate-900 font-medium">{action.title}</div>
+    <div className="p-3" style={{ paddingLeft: 12 + pad }}>
+      <ActionBadges action={action} parts={0} />
+      <div className="mt-1.5 text-sm text-slate-900 font-medium">{action.title}</div>
       {action.outcome && <p className="mt-1 text-sm text-slate-600">{action.outcome}</p>}
       <ActionMeta action={action} when={when} part={part} />
     </div>
   );
 }
 
-function ActionBadges({ action }: { action: AgentAction }) {
+function ActionBadges({ action, parts }: { action: AgentAction; parts: number }) {
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <span className="text-xs rounded-full bg-slate-100 text-slate-700 px-2 py-0.5">{CATEGORY_LABEL[action.category]}</span>
-      <span className="text-xs rounded-full bg-slate-100 text-slate-700 px-2 py-0.5">{TOOL_LABEL[action.tool]}</span>
+    <div className="flex flex-wrap items-center gap-1.5">
+      <span className={cn('text-[11px] rounded-md border px-1.5 py-0.5 font-medium', CATEGORY_STYLE[action.category])}>
+        {CATEGORY_LABEL[action.category]}
+      </span>
+      <span className={cn('text-[11px] rounded-md border px-1.5 py-0.5 font-medium', TOOL_STYLE[action.tool])}>
+        {TOOL_LABEL[action.tool]}
+      </span>
       {action.channel && (
-        <span className="text-xs rounded-full bg-slate-100 text-slate-700 px-2 py-0.5">{CHANNEL_LABEL[action.channel] ?? action.channel}</span>
+        <span className="text-[11px] rounded-md border border-slate-200 bg-slate-50 text-slate-700 px-1.5 py-0.5">
+          {CHANNEL_LABEL[action.channel] ?? action.channel}
+        </span>
       )}
       {action.clientLabel && (
-        <span className="text-xs text-slate-700">
+        <span className="text-[11px] text-emerald-800 font-medium">
           {action.clientId ? (
             <SensitiveText kind="account" id={action.clientId}>{action.clientLabel}</SensitiveText>
           ) : action.clientLabel}
-          {action.matchStatus === 'unmatched' || action.matchStatus === 'ambiguous' ? ' · sin imputar' : ''}
+          {action.matchStatus === 'unmatched' || action.matchStatus === 'ambiguous' ? (
+            <span className="text-amber-700"> · sin imputar</span>
+          ) : null}
         </span>
       )}
       {action.projectLabel && (
-        <span className="text-xs text-slate-600">
+        <span className="text-[11px] text-teal-800">
           {action.projectId ? (
             <SensitiveText kind="project" id={action.projectId}>{action.projectLabel}</SensitiveText>
           ) : action.projectLabel}
         </span>
       )}
-      {action.clientTier && <span className="text-xs text-slate-500">{action.clientTier}</span>}
+      {parts > 0 && (
+        <span className="text-[11px] rounded-md bg-sky-50 border border-sky-200 text-sky-800 px-1.5 py-0.5">
+          {parts} {parts === 1 ? 'parte' : 'partes'}
+        </span>
+      )}
       {action.status !== 'completed' && (
-        <span className="text-xs text-amber-700">{STATUS_LABEL[action.status]}</span>
+        <span className={cn('text-[11px] font-medium', STATUS_STYLE[action.status])}>
+          {STATUS_LABEL[action.status]}
+        </span>
       )}
     </div>
   );
@@ -955,17 +1036,18 @@ function ActionMeta({
   when: string;
   part: ActionAttribution | undefined;
 }) {
+  const name = employeeDisplayName(action);
   return (
-    <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
-      <span>
+    <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-slate-500">
+      <span className="text-slate-700 font-medium">
         {action.employeeId ? (
-          <SensitiveText kind="employee" id={action.employeeId}>{action.employeeLabel ?? 'Persona'}</SensitiveText>
-        ) : (action.employeeLabel ?? 'Sin persona')}
+          <SensitiveText kind="employee" id={action.employeeId}>{name}</SensitiveText>
+        ) : name}
       </span>
       <span>{when}</span>
-      {part?.imputable && <span>A cliente {formatMinutes(part.imputableMinutes)}</span>}
+      {part?.imputable && <span className="text-emerald-700">A cliente {formatMinutes(part.imputableMinutes)}</span>}
       {part?.imputable && part.presenceMinutes - part.imputableMinutes > 0.5 && (
-        <span>Sin repartir {formatMinutes(part.presenceMinutes)}</span>
+        <span className="text-amber-700">Sin repartir {formatMinutes(part.presenceMinutes)}</span>
       )}
       {action.historyRef && <span className="truncate max-w-md">{action.historyRef}</span>}
     </div>
