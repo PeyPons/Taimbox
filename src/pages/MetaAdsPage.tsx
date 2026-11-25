@@ -359,6 +359,8 @@ export default function MetaAdsPage() {
             const isOverspending = client.currentDailyBudget > 0 && dailyDiff > 0 && client.status !== 'ok';
             const dailyShown = client.currentDailyBudget > 0 ? client.currentDailyBudget : client.avgDailySpend;
             const visibleName = isAnonymized ? anonymizer.account(client.client_id) : formatProjectName(client.client_name);
+            const memberIds = client.realIdsList.map((row) => row.id);
+            const money = (amount: number) => formatMoney(amount, client.client_id, memberIds);
             const statusLabel = client.budget <= 0
               ? undefined
               : client.status === 'ok'
@@ -402,8 +404,8 @@ export default function MetaAdsPage() {
                       caption: client.remainingBudget > 0
                         ? t('ads.header.paceLine', {
                           percent: Math.round(client.progress),
-                          amount: formatMoney(client.remainingBudget, client.client_id),
-                          defaultValue: `${Math.round(client.progress)}% del presupuesto · quedan ${formatMoney(client.remainingBudget, client.client_id)}`,
+                          amount: money(client.remainingBudget),
+                          defaultValue: `${Math.round(client.progress)}% del presupuesto · quedan ${money(client.remainingBudget)}`,
                         })
                         : t('ads.header.paceOver', {
                           percent: Math.round(client.progress),
@@ -411,12 +413,12 @@ export default function MetaAdsPage() {
                         }),
                     } : null}
                     spentCaption={t('ads.header.thisMonth', 'Este mes')}
-                    spent={formatMoney(client.spent, client.client_id)}
+                    spent={money(client.spent)}
                     budgetLine={client.budget > 0
-                      ? t('ads.header.ofBudget', { amount: formatMoney(client.budget, client.client_id), defaultValue: `de ${formatMoney(client.budget, client.client_id)}` })
+                      ? t('ads.header.ofBudget', { amount: money(client.budget), defaultValue: `de ${money(client.budget)}` })
                       : t('ads.header.noBudget', 'Sin presupuesto')}
                     valueCaption={client.isSalesAccount && client.total_conversions_val > 0 ? t('ads.stats.revenue', 'Valor') : undefined}
-                    value={client.isSalesAccount && client.total_conversions_val > 0 ? formatMoney(client.total_conversions_val, client.client_id) : undefined}
+                    value={client.isSalesAccount && client.total_conversions_val > 0 ? money(client.total_conversions_val) : undefined}
                     actions={(
                       <>
                         {!client.is_group && (
@@ -467,9 +469,9 @@ export default function MetaAdsPage() {
                           {client.budget <= 0 && t('ads.pacing.setTargetHintMeta', 'Escribe el presupuesto del mes para ver el ritmo. Meta no trae un objetivo mensual: lo defines aquí.')}
                           {client.budget > 0 && client.budgetMode === 'period' && (
                             <>
-                              {t('ads.pacing.periodSpent', { amount: formatMoney(client.budgetSpent, client.client_id), defaultValue: `Gastado en el periodo: ${formatMoney(client.budgetSpent, client.client_id)}` })}
+                              {t('ads.pacing.periodSpent', { amount: money(client.budgetSpent), defaultValue: `Gastado en el periodo: ${money(client.budgetSpent)}` })}
                               {' · '}
-                              {t('ads.pacing.monthSpent', { amount: formatMoney(client.spent, client.client_id), defaultValue: `Este mes: ${formatMoney(client.spent, client.client_id)}` })}
+                              {t('ads.pacing.monthSpent', { amount: money(client.spent), defaultValue: `Este mes: ${money(client.spent)}` })}
                             </>
                           )}
                           {client.budget > 0 && (
@@ -482,7 +484,7 @@ export default function MetaAdsPage() {
                       progress={client.budget > 0 ? {
                         percent: client.progress,
                         status: client.status,
-                        available: t('ads.pacing.available', { amount: formatMoney(client.remainingBudget, client.client_id), defaultValue: `Disponible: ${formatMoney(client.remainingBudget, client.client_id)}` }),
+                        available: t('ads.pacing.available', { amount: money(client.remainingBudget), defaultValue: `Disponible: ${money(client.remainingBudget)}` }),
                         danger: client.remainingBudget <= 0,
                       } : null}
                       metrics={client.budget > 0 ? [
@@ -490,7 +492,7 @@ export default function MetaAdsPage() {
                           label: client.currentDailyBudget > 0
                             ? t('ads.pacing.metaDailyInfo', 'Límite diario en Meta')
                             : t('ads.pacing.avgDaily', 'Gasto medio diario'),
-                          value: formatMoney(dailyShown, client.client_id),
+                          value: money(dailyShown),
                           hint: client.currentDailyBudget > 0
                             ? t('ads.pacing.metaDailySub', 'campañas activas en Meta')
                             : client.budgetMode === 'period'
@@ -500,7 +502,7 @@ export default function MetaAdsPage() {
                         },
                         {
                           label: t('ads.pacing.recommendedDaily', 'Objetivo medio diario'),
-                          value: formatMoney(client.recommendedDaily, client.client_id),
+                          value: money(client.recommendedDaily),
                           hint: client.budgetMode === 'period'
                             ? t('ads.pacing.recommendedDailySubPeriod', 'para cerrar el periodo en el presupuesto')
                             : t('ads.pacing.recommendedDailySub', 'para cerrar el mes en el presupuesto'),
@@ -508,7 +510,7 @@ export default function MetaAdsPage() {
                       ] : client.currentDailyBudget > 0 ? [
                         {
                           label: t('ads.pacing.metaDailyInfo', 'Límite diario en Meta'),
-                          value: formatMoney(client.currentDailyBudget, client.client_id),
+                          value: money(client.currentDailyBudget),
                         },
                       ] : []}
                       warning={client.budget > 0 && isOverspending && dailyDiff > 1
@@ -518,14 +520,14 @@ export default function MetaAdsPage() {
                         label: client.budgetMode === 'period'
                           ? t('ads.pacing.forecastTitlePeriod', 'Proyección fin de periodo')
                           : t('ads.pacing.forecastTitle', 'Proyección fin de mes'),
-                        value: formatMoney(client.forecast, client.client_id),
+                        value: money(client.forecast),
                         danger: client.budget > 0 && client.forecast > client.budget,
                       }}
                     />
                     <div className="min-w-0 space-y-4">
                       <CampaignPerformanceList
                         isSales={client.isSalesAccount}
-                        formatMoney={(amount) => formatMoney(amount, client.client_id)}
+                        formatMoney={(amount) => money(amount)}
                         rows={client.campaigns.map((camp, idx): CampaignMetricRow => ({
                           key: `${camp.campaign_id}-${camp.date || idx}`,
                           name: (
@@ -539,7 +541,7 @@ export default function MetaAdsPage() {
                           impressions: Number(camp.impressions) || 0,
                           conversions: Number(camp.conversions) || 0,
                           conversionValue: Number(camp.conversions_value) || 0,
-                          dailyBudget: Number(camp.daily_budget) > 0 ? formatMoney(Number(camp.daily_budget), client.client_id) : undefined,
+                          dailyBudget: Number(camp.daily_budget) > 0 ? money(Number(camp.daily_budget)) : undefined,
                           subtitle: client.is_group && (camp.original_client_name || camp.original_client_id) ? (
                             <AnonymizedContent isActive={isAnonymized} className="truncate max-w-[140px]" placeholder={anonymizer.account(camp.original_client_id || camp.client_id || '')}>
                               | {formatProjectName(camp.original_client_name || '')}

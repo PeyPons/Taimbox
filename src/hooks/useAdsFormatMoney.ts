@@ -36,6 +36,20 @@ export function resolveCurrencyForClientId(
   return null;
 }
 
+/** Moneda única de un conjunto de cuentas. Null si falta o si hay más de una. */
+export function sharedCurrencyForAccountIds(
+  accountIds: string[],
+  currencyByAccountId: Map<string, string>,
+): string | null {
+  const codes = new Set<string>();
+  for (const id of accountIds) {
+    const currency = resolveCurrencyForClientId(id, currencyByAccountId);
+    if (currency) codes.add(currency);
+  }
+  if (codes.size !== 1) return null;
+  return [...codes][0];
+}
+
 /** Monedas distintas entre varias cuentas (ids de ad_accounts_config). */
 export function hasMixedCurrenciesForAccountIds(
   accountIds: string[],
@@ -43,16 +57,31 @@ export function hasMixedCurrenciesForAccountIds(
 ): boolean {
   const codes = new Set<string>();
   for (const id of accountIds) {
-    const norm = normalizeAccountId(id);
-    const direct = currencyByAccountId.get(norm);
-    if (direct) codes.add(direct);
-    for (const [accountId, currency] of currencyByAccountId) {
-      if (norm === normalizeAccountId(accountId) || norm.startsWith(`${normalizeAccountId(accountId)}_`)) {
-        codes.add(currency);
-      }
-    }
+    const currency = resolveCurrencyForClientId(id, currencyByAccountId);
+    if (currency) codes.add(currency);
   }
   return codes.size > 1;
+}
+
+/**
+ * Moneda a mostrar. Un grupo (GROUP-…) no tiene divisa propia: usa la de sus
+ * cuentas si todas coinciden. Si hay varias, no se elige una.
+ */
+export function resolveAdsDisplayCurrency(
+  clientId: string | undefined,
+  relatedAccountIds: string[] | undefined,
+  currencyByAccountId: Map<string, string>,
+): string | null {
+  const related = relatedAccountIds ?? [];
+  if (related.length > 0 && hasMixedCurrenciesForAccountIds(related, currencyByAccountId)) {
+    return null;
+  }
+  if (clientId) {
+    const direct = resolveCurrencyForClientId(clientId, currencyByAccountId);
+    if (direct) return direct;
+  }
+  if (related.length > 0) return sharedCurrencyForAccountIds(related, currencyByAccountId);
+  return null;
 }
 
 /**
@@ -75,11 +104,6 @@ export function useAdsFormatMoney(accounts: AdAccountCurrencySource[]) {
     return map;
   }, [accounts]);
 
-  const resolveClientCurrency = useCallback(
-    (clientId: string) => resolveCurrencyForClientId(clientId, currencyByAccountId),
-    [currencyByAccountId],
-  );
-
   const hasMixedCurrencies = useMemo(() => {
     const set = new Set(currencyByAccountId.values());
     return set.size > 1;
@@ -91,17 +115,15 @@ export function useAdsFormatMoney(accounts: AdAccountCurrencySource[]) {
   );
 
   const formatMoney = useCallback(
-    (amount: number, clientId?: string) => {
-      let currency: string | null = null;
-      if (clientId) {
-        currency = resolveClientCurrency(clientId);
-      } else if (!hasMixedCurrencies && currencyByAccountId.size > 0) {
+    (amount: number, clientId?: string, relatedAccountIds?: string[]) => {
+      let currency = resolveAdsDisplayCurrency(clientId, relatedAccountIds, currencyByAccountId);
+      if (!currency && !clientId && !relatedAccountIds?.length && !hasMixedCurrencies && currencyByAccountId.size > 0) {
         currency = [...currencyByAccountId.values()][0];
       }
       if (!currency) return formatPlainAmount(amount, locale);
       return formatMoneyAmount(amount, currency, locale);
     },
-    [resolveClientCurrency, currencyByAccountId, hasMixedCurrencies, locale],
+    [currencyByAccountId, hasMixedCurrencies, locale],
   );
 
   /** Totales agregados: no mezclar importes si hay cuentas en distintas divisas. */
@@ -119,11 +141,11 @@ export function useAdsFormatMoney(accounts: AdAccountCurrencySource[]) {
       if (relatedAccountIds?.length && hasMixedCurrenciesForAccountIds(relatedAccountIds, currencyByAccountId)) {
         return mixedCurrenciesLabel;
       }
-      const currency = resolveClientCurrency(clientId);
+      const currency = resolveAdsDisplayCurrency(clientId, relatedAccountIds, currencyByAccountId);
       if (!currency) return '';
       return getCurrencySymbol(currency, locale);
     },
-    [resolveClientCurrency, currencyByAccountId, locale, mixedCurrenciesLabel],
+    [currencyByAccountId, locale, mixedCurrenciesLabel],
   );
 
   const primaryCurrency = useMemo(() => {

@@ -674,6 +674,8 @@ export default function AdsPage() {
             const isOverspending = dailyDiff > 0 && client.status !== 'ok';
             const sharedBudgetCounts = countSharedBudgetCampaigns(client.campaigns);
             const visibleName = isAnonymized ? anonymizer.account(client.client_id) : formatProjectName(client.client_name);
+            const memberIds = client.realIdsList.map((row) => row.id);
+            const money = (amount: number) => formatMoney(amount, client.client_id, memberIds);
             const statusLabel = client.budget <= 0
               ? undefined
               : client.status === 'ok'
@@ -722,8 +724,8 @@ export default function AdsPage() {
                       caption: client.remainingBudget > 0
                         ? t('ads.header.paceLine', {
                           percent: Math.round(client.progress),
-                          amount: formatMoney(client.remainingBudget, client.client_id),
-                          defaultValue: `${Math.round(client.progress)}% del presupuesto · quedan ${formatMoney(client.remainingBudget, client.client_id)}`,
+                          amount: money(client.remainingBudget),
+                          defaultValue: `${Math.round(client.progress)}% del presupuesto · quedan ${money(client.remainingBudget)}`,
                         })
                         : t('ads.header.paceOver', {
                           percent: Math.round(client.progress),
@@ -731,12 +733,12 @@ export default function AdsPage() {
                         }),
                     } : null}
                     spentCaption={t('ads.header.thisMonth', 'Este mes')}
-                    spent={formatMoney(client.spent, client.client_id)}
+                    spent={money(client.spent)}
                     budgetLine={client.budget > 0
-                      ? t('ads.header.ofBudget', { amount: formatMoney(client.budget, client.client_id), defaultValue: `de ${formatMoney(client.budget, client.client_id)}` })
+                      ? t('ads.header.ofBudget', { amount: money(client.budget), defaultValue: `de ${money(client.budget)}` })
                       : t('ads.header.noBudget', 'Sin presupuesto')}
                     valueCaption={client.isSalesAccount && client.total_conversions_val > 0 ? t('ads.stats.revenue', 'Valor') : undefined}
-                    value={client.isSalesAccount && client.total_conversions_val > 0 ? formatMoney(client.total_conversions_val, client.client_id) : undefined}
+                    value={client.isSalesAccount && client.total_conversions_val > 0 ? money(client.total_conversions_val) : undefined}
                     actions={(
                       <>
                         {!client.is_group && (
@@ -788,9 +790,9 @@ export default function AdsPage() {
                           {client.budget <= 0 && t('ads.pacing.setTargetHint', 'Escribe el presupuesto del mes para ver el ritmo. No se rellena solo a partir del límite diario de Google.')}
                           {client.budget > 0 && client.budgetMode === 'period' && (
                             <>
-                              {t('ads.pacing.periodSpent', { amount: formatMoney(client.budgetSpent, client.client_id), defaultValue: `Gastado en el periodo: ${formatMoney(client.budgetSpent, client.client_id)}` })}
+                              {t('ads.pacing.periodSpent', { amount: money(client.budgetSpent), defaultValue: `Gastado en el periodo: ${money(client.budgetSpent)}` })}
                               {' · '}
-                              {t('ads.pacing.monthSpent', { amount: formatMoney(client.spent, client.client_id), defaultValue: `Este mes: ${formatMoney(client.spent, client.client_id)}` })}
+                              {t('ads.pacing.monthSpent', { amount: money(client.spent), defaultValue: `Este mes: ${money(client.spent)}` })}
                             </>
                           )}
                         </>
@@ -798,19 +800,19 @@ export default function AdsPage() {
                       progress={client.budget > 0 ? {
                         percent: client.progress,
                         status: client.status,
-                        available: t('ads.pacing.available', { amount: formatMoney(client.remainingBudget, client.client_id), defaultValue: `Disponible: ${formatMoney(client.remainingBudget, client.client_id)}` }),
+                        available: t('ads.pacing.available', { amount: money(client.remainingBudget), defaultValue: `Disponible: ${money(client.remainingBudget)}` }),
                         danger: client.remainingBudget <= 0,
                       } : null}
                       metrics={client.budget > 0 ? [
                         {
                           label: t('common.actualDaily', 'Diario actual'),
-                          value: formatMoney(client.currentDailyBudget, client.client_id),
+                          value: money(client.currentDailyBudget),
                           hint: t('ads.pacing.googleNoteConfig', 'configurado en Google'),
                           tone: isOverspending ? 'warn' : 'default',
                         },
                         {
                           label: t('ads.pacing.recommendedDaily', 'Diario recomendado'),
-                          value: formatMoney(client.recommendedDaily, client.client_id),
+                          value: money(client.recommendedDaily),
                           hint: client.budgetMode === 'period'
                             ? t('ads.pacing.recommendedDailySubPeriod', 'para cerrar el periodo en el presupuesto')
                             : t('ads.pacing.recommendedDailySub', 'para cerrar el mes en el presupuesto'),
@@ -818,7 +820,7 @@ export default function AdsPage() {
                       ] : client.currentDailyBudget > 0 ? [
                         {
                           label: t('ads.pacing.googleDailyInfo', 'Límite diario en Google'),
-                          value: formatMoney(client.currentDailyBudget, client.client_id),
+                          value: money(client.currentDailyBudget),
                         },
                       ] : []}
                       warning={client.budget > 0 && isOverspending && dailyDiff > 5
@@ -828,7 +830,7 @@ export default function AdsPage() {
                         label: client.budgetMode === 'period'
                           ? t('ads.pacing.forecastTitlePeriod', 'Proyección fin de periodo')
                           : t('ads.pacing.forecastTitle', 'Proyección fin de mes'),
-                        value: formatMoney(client.forecast, client.client_id),
+                        value: money(client.forecast),
                         danger: client.budget > 0 && client.forecast > client.budget,
                       }}
                     />
@@ -836,7 +838,7 @@ export default function AdsPage() {
                     <div className="min-w-0 space-y-4">
                       <CampaignPerformanceList
                         isSales={client.isSalesAccount}
-                        formatMoney={(amount) => formatMoney(amount, client.client_id)}
+                        formatMoney={(amount) => money(amount)}
                         rows={client.campaigns.map((camp, idx): CampaignMetricRow => ({
                           key: `${camp.campaign_id}-${camp.date || idx}`,
                           name: (
