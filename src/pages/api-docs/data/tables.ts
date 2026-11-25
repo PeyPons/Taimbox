@@ -1561,21 +1561,24 @@ const { data, error } = await taimbox
   .eq('agency_id', agencyId)
   .order('started_at', { ascending: false })
   .limit(50)`,
-          insert: `const { data, error } = await taimbox.rpc('record_agent_action', {
+          insert: `// Trabajador siempre. Proyecto cuando lo conozcas (ademas del cliente).
+const { data, error } = await taimbox.rpc('record_agent_action', {
   p_agency_id: agencyId,
-  p_external_id: 'codex:ana@agencia.com:hangout-pablo:root',
-  p_parent_external_id: null,
+  p_external_id: 'codex:ana@agencia.com:hangout-pablo:ads',
+  p_parent_external_id: 'codex:ana@agencia.com:hangout-pablo:root',
   p_tool: 'codex',
-  p_category: 'intake',
+  p_category: 'client_work',
+  p_channel: 'google_ads',
   p_status: 'completed',
-  p_work_mode: 'cliente',
   p_attention: 'shared',
-  p_title: 'Revisa el Hangout de Pablo a ver que necesita',
-  p_employee_name: 'Ana Garcia',
-  p_started_at: '2026-11-25T09:00:00Z',
-  p_finished_at: '2026-11-25T09:40:00Z'
+  p_title: 'Revision de conversiones',
+  p_employee_name: 'Ana Garcia', // o p_employee_id
+  p_client_name: 'Avioa',
+  p_project_name: 'Avioa Google Ads', // nombre exacto en Taimbox; opcional si no lo sabes
+  p_started_at: '2026-11-25T09:10:00Z',
+  p_finished_at: '2026-11-25T09:25:00Z'
 })
-// data.warnings puede traer client_unmatched o client_ambiguous: no elijas otro cliente.`,
+// warnings: client_*/project_*/employee_* unmatched|ambiguous → no inventes otro.`,
         },
         responses: {
           getList: `[

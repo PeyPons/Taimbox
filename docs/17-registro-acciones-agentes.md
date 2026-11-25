@@ -60,6 +60,14 @@ Agency id: <AGENCY_ID>
 Base: <BASE_URL>/rest/v1
 Headers: apikey + Authorization Bearer
 
+## Trabajador (obligatorio en TODOS los nodos)
+Tu workspace sabe siempre quién eres. En cada llamada a record_agent_action envía:
+- p_employee_id = UUID del empleado en Taimbox si lo tienes en memoria/config, O
+- p_employee_name = nombre completo o email EXACTOS como en Taimbox (employees).
+No inventes otra persona. No dejes el nodo sin trabajador.
+Si warnings trae employee_unmatched o employee_ambiguous: avisa y no inventes otro nombre.
+El external_id debe incluir tu identidad estable: {tool}:{tu-email-o-id}:{slug-peticion}:{nodo}
+
 ## Qué NO registrar
 - Inventario, recuento o comando local sin cliente ni entrega.
 - Lectura de docs/INDEX.md, resumen-operativas, buscar_contexto o listados.
@@ -70,26 +78,31 @@ Headers: apikey + Authorization Bearer
 Cuando clasifiques la petición (rapida / cliente / critica / repetible) y haya un resultado
 de cliente o una gestión interna cerrada:
 
-1) Un nodo raíz category=intake con el texto de la petición (title ≤ 300).
+1) Un nodo raíz category=intake con el texto de la petición (title ≤ 300) + trabajador.
    work_mode = el modo de arranque. attention=shared salvo que Alex diga que era lo único.
-2) Si detectas cliente/canal antes de trabajar: hijo category=triage (no imputa).
-3) Por cada trabajo real:
-   - category=client_work + client_name exacto de Taimbox (o client_id) + channel
+2) Si detectas cliente/canal antes de trabajar: hijo category=triage (no imputa) + trabajador.
+3) Por cada trabajo real (+ trabajador siempre):
+   - category=client_work + channel
      (google_ads|meta|seo|dv360|analytics|email|crm|chatgpt_ads|reporting|other)
+   - Cliente: client_id o client_name exacto de Taimbox.
+   - Proyecto (preferible): si conoces el proyecto del canal/servicio, envía también
+     project_id o project_name exacto (ej. "Google Ads · Avioa", el nombre tal cual en Taimbox).
+     El proyecto ancla mejor que solo el cliente cuando hay varios servicios.
+     Si el nombre de proyecto no es único o no lo sabes, deja solo el cliente; no inventes.
    - o category=internal si es RRHH / informe de agencia / sin cliente
 4) outcome = resultado breve (≤ 2000). No pegues el hilo ni el documento.
 5) history_ref = ruta corta del README o estado usado (ej. clientes/avioa/README.md#estado-operativo).
 6) client_tier = escalón corto si lo conoces (responsable / apoyo / cobertura). No inventes importes.
 7) started_at / finished_at reales del nodo. Si hay varios clientes a la vez, attention=shared.
-8) external_id estable: {tool}:{email-o-nombre}:{slug-peticion}:{nodo}
-   Reutiliza el mismo external_id al actualizar (idempotente).
-9) Si warnings trae client_unmatched o client_ambiguous: NO elijas otro cliente.
-   Deja el nodo y avisa. No se imputará hasta resolver el nombre.
+8) external_id estable (ver arriba). Reutiliza el mismo al actualizar (idempotente).
+9) Si warnings trae client_unmatched, client_ambiguous, project_unmatched o project_ambiguous:
+   NO elijas otro. Deja el nodo y avisa. Sin cliente único no se imputa client_work.
 
 ## Ejemplo Hangout → Avioa
-Raíz intake: "Revisa el Hangout de Pablo a ver qué necesita"
-Hijo client_work google_ads: "Revisión de conversiones" client_name=Avioa
-Hijo client_work email: "Borrador de respuesta" client_name=Avioa parent=raíz
+Raíz intake + employee_name/id: "Revisa el Hangout de Pablo a ver qué necesita"
+Hijo client_work google_ads: client_name=Avioa, project_name=<nombre exacto del proyecto Google Ads de Avioa en Taimbox>
+Hijo client_work email: client_name=Avioa, mismo trabajador, parent=raíz
+(Si no hay proyecto de correo, solo cliente está bien.)
 
 No crees allocations ni time_entries desde este flujo salvo que te lo pidan aparte.
 La pantalla /agentes reparte el solape; no sumes minutos a mano por cliente.
